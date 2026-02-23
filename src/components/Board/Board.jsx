@@ -5,7 +5,7 @@ import Column from '../Column/Column';
 import { Plus } from 'lucide-react';
 
 function Board() {
-  const { currentBoard, columns, createColumn, moveColumn, moveCard, loadBoard, loading } = useApp();
+  const { currentBoard, columns, createColumn, moveColumn, moveCard, moveCategory, moveSubcategory, loadBoard, loading } = useApp();
   const [newColumnTitle, setNewColumnTitle] = useState('');
   const [showNewColumn, setShowNewColumn] = useState(false);
 
@@ -21,24 +21,41 @@ function Board() {
   const handleDragEnd = async (result) => {
     if (!result.destination) return;
 
-    const { source, destination, draggableId } = result;
+    const { source, destination, draggableId, type } = result;
 
     if (source.droppableId === destination.droppableId && 
         source.index === destination.index) {
       return;
     }
 
-    if (result.type === 'column') {
+    if (type === 'column') {
       await moveColumn(parseInt(draggableId), destination.index);
       return;
     }
 
-    // Handle card dragging between columns
-    const cardId = parseInt(draggableId);
-    const newColumnId = parseInt(destination.droppableId);
-    const newPosition = destination.index;
-    
-    await moveCard(cardId, newColumnId, newPosition);
+    if (type === 'card') {
+      const cardId = parseInt(draggableId);
+      const newColumnId = parseInt(destination.droppableId);
+      const newPosition = destination.index;
+      await moveCard(cardId, newColumnId, newPosition);
+      return;
+    }
+
+    if (type === 'category') {
+      const categoryId = parseInt(draggableId);
+      const newCardId = parseInt(destination.droppableId.replace('card-', ''));
+      const newPosition = destination.index;
+      await moveCategory(categoryId, newCardId, newPosition);
+      return;
+    }
+
+    if (type === 'subcategory') {
+      const subcategoryId = parseInt(draggableId);
+      const newCategoryId = parseInt(destination.droppableId.replace('category-', ''));
+      const newPosition = destination.index;
+      await moveSubcategory(subcategoryId, newCategoryId, newPosition);
+      return;
+    }
   };
 
   if (loading) {
