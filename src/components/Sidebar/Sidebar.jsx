@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { 
   Layout, 
@@ -14,7 +14,8 @@ import {
 } from 'lucide-react';
 
 function Sidebar() {
-  const { boards, currentBoard, createBoard, deleteBoard, loadBoard, sidebarOpen, setSidebarOpen } = useApp();
+  const navigate = useNavigate();
+  const { boards, currentBoard, createBoard, deleteBoard, loadBoard, loadBoards, sidebarOpen, setSidebarOpen } = useApp();
   const [showBoards, setShowBoards] = useState(true);
   const [newBoardTitle, setNewBoardTitle] = useState('');
   const [showNewBoard, setShowNewBoard] = useState(false);
@@ -23,7 +24,10 @@ function Sidebar() {
   const handleCreateBoard = async (e) => {
     e.preventDefault();
     if (newBoardTitle.trim()) {
-      await createBoard(newBoardTitle.trim());
+      const boardId = await createBoard(newBoardTitle.trim());
+      if (boardId) {
+        await loadBoard(boardId);
+      }
       setNewBoardTitle('');
       setShowNewBoard(false);
     }
@@ -79,7 +83,10 @@ function Sidebar() {
                   className={`group flex items-center justify-between px-2 py-1 rounded cursor-pointer ${
                     currentBoard?.id === board.id ? 'bg-blue-600' : 'hover:bg-gray-800'
                   }`}
-                  onClick={() => loadBoard(board.id)}
+                  onClick={() => {
+                    loadBoard(board.id);
+                    navigate('/');
+                  }}
                 >
                   <span className="truncate text-sm">{board.title}</span>
                   <div className="relative">
@@ -111,11 +118,29 @@ function Sidebar() {
               ))}
 
               {showNewBoard ? (
-                <form onSubmit={handleCreateBoard} className="mt-1">
+                <div className="mt-1">
                   <input
                     type="text"
                     value={newBoardTitle}
                     onChange={(e) => setNewBoardTitle(e.target.value)}
+                    onKeyDown={async (e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (newBoardTitle.trim()) {
+                          const boardId = await createBoard(newBoardTitle.trim());
+                          if (boardId) {
+                            await loadBoard(boardId);
+                            await loadBoards();
+                          }
+                          setNewBoardTitle('');
+                          setShowNewBoard(false);
+                        }
+                      }
+                      if (e.key === 'Escape') {
+                        setNewBoardTitle('');
+                        setShowNewBoard(false);
+                      }
+                    }}
                     placeholder="Nom du tableau..."
                     className="w-full px-2 py-1 text-sm bg-gray-800 border border-gray-700 rounded text-white focus:outline-none focus:border-blue-500"
                     autoFocus
@@ -123,7 +148,34 @@ function Sidebar() {
                       if (!newBoardTitle.trim()) setShowNewBoard(false);
                     }}
                   />
-                </form>
+                  <div className="flex gap-1 mt-1">
+                    <button
+                      onClick={async () => {
+                        if (newBoardTitle.trim()) {
+                          const boardId = await createBoard(newBoardTitle.trim());
+                          if (boardId) {
+                            await loadBoard(boardId);
+                            await loadBoards();
+                          }
+                          setNewBoardTitle('');
+                          setShowNewBoard(false);
+                        }
+                      }}
+                      className="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
+                    >
+                      Ajouter
+                    </button>
+                    <button
+                      onClick={() => {
+                        setNewBoardTitle('');
+                        setShowNewBoard(false);
+                      }}
+                      className="px-2 py-1 text-xs text-gray-400 hover:text-white"
+                    >
+                      Annuler
+                    </button>
+                  </div>
+                </div>
               ) : (
                 <button
                   onClick={() => setShowNewBoard(true)}

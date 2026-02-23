@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Droppable, Draggable } from 'react-beautiful-dnd';
 import { useApp } from '../../context/AppContext';
 import Card from '../Card/Card';
@@ -12,6 +12,17 @@ function Column({ column }) {
   const [showNewCard, setShowNewCard] = useState(false);
   const [newCardTitle, setNewCardTitle] = useState('');
   const [showColorPicker, setShowColorPicker] = useState(false);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (showMenu && !e.target.closest('.column-menu')) {
+        setShowMenu(false);
+        setShowColorPicker(false);
+      }
+    };
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [showMenu]);
 
   const columnCards = cards
     .filter(card => card.column_id === column.id)
@@ -82,7 +93,7 @@ function Column({ column }) {
           </div>
         )}
 
-        <div className="relative">
+        <div className="relative column-menu">
           <button
             onClick={() => setShowMenu(!showMenu)}
             className="p-1 text-gray-500 hover:bg-gray-200 rounded"
@@ -91,7 +102,7 @@ function Column({ column }) {
           </button>
 
           {showMenu && (
-            <div className="absolute right-0 top-8 bg-white rounded-lg shadow-lg py-1 z-10 w-40">
+            <div className="absolute right-0 top-8 bg-white rounded-lg shadow-lg py-1 z-50 w-40">
               <button
                 onClick={() => {
                   setIsEditing(true);
@@ -140,7 +151,7 @@ function Column({ column }) {
           <div
             ref={provided.innerRef}
             {...provided.droppableProps}
-            className={`flex-1 overflow-y-auto px-2 pb-2 scrollbar-thin ${
+            className={`flex-1 overflow-y-visible px-2 pb-2 scrollbar-thin ${
               snapshot.isDraggingOver ? 'bg-gray-200' : ''
             }`}
           >
@@ -151,8 +162,14 @@ function Column({ column }) {
                     ref={provided.innerRef}
                     {...provided.draggableProps}
                     {...provided.dragHandleProps}
+                    onClick={(e) => {
+                      if (snapshot.isDragging) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                      }
+                    }}
                   >
-                    <Card card={card} />
+                    <Card card={card} isDragging={snapshot.isDragging} />
                   </div>
                 )}
               </Draggable>

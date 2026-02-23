@@ -1,18 +1,30 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import { Save, Info } from 'lucide-react';
 
 function Settings() {
-  const { currentBoard, updateBoard } = useApp();
-  const [boardTitle, setBoardTitle] = useState(currentBoard?.title || '');
-  const [boardDescription, setBoardDescription] = useState(currentBoard?.description || '');
+  const { boards, currentBoard, updateBoard } = useApp();
+  const [boardTitle, setBoardTitle] = useState('');
+  const [boardDescription, setBoardDescription] = useState('');
   const [saved, setSaved] = useState(false);
 
-  const handleSave = async () => {
+  useEffect(() => {
+    // Only update form when currentBoard changes
     if (currentBoard) {
+      setBoardTitle(currentBoard.title || '');
+      setBoardDescription(currentBoard.description || '');
+    }
+  }, [currentBoard]);
+
+  const handleSave = async () => {
+    console.log('handleSave called', { currentBoard, boardTitle, boardDescription });
+    if (currentBoard) {
+      console.log('Updating board...', currentBoard.id);
       await updateBoard(currentBoard.id, boardTitle, boardDescription);
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
+    } else {
+      console.log('No currentBoard!');
     }
   };
 
@@ -20,8 +32,13 @@ function Settings() {
     <div className="p-6 max-w-2xl">
       <h1 className="text-2xl font-bold text-gray-800 mb-6">Paramètres</h1>
 
-      <div className="bg-white rounded-lg shadow border border-gray-200 p-6 mb-6">
-        <h2 className="text-lg font-semibold text-gray-700 mb-4">Tableau actuel</h2>
+      {!currentBoard ? (
+        <div className="bg-white rounded-lg shadow border border-gray-200 p-6">
+          <p className="text-gray-500">Sélectionnez un tableau dans la sidebar pour voir ses paramètres.</p>
+        </div>
+      ) : (
+        <div className="bg-white rounded-lg shadow border border-gray-200 p-6 mb-6">
+          <h2 className="text-lg font-semibold text-gray-700 mb-4">Tableau actuel</h2>
         
         <div className="space-y-4">
           <div>
@@ -45,14 +62,19 @@ function Settings() {
           </div>
 
           <button
-            onClick={handleSave}
+            type="button"
+            onClick={(e) => {
+              console.log('Button clicked!');
+              handleSave();
+            }}
             className="flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
           >
             <Save size={16} className="mr-2" />
             {saved ? 'Enregistré !' : 'Enregistrer'}
           </button>
         </div>
-      </div>
+        </div>
+        )}
 
       <div className="bg-white rounded-lg shadow border border-gray-200 p-6 mb-6">
         <h2 className="text-lg font-semibold text-gray-700 mb-4">À propos</h2>

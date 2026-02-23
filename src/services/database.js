@@ -9,12 +9,17 @@ function getDbPath() {
   if (path.isAbsolute(dbPath)) {
     return dbPath;
   }
-  return path.join(__dirname, '..', dbPath);
+  // Use app.getAppPath() for Electron, or __dirname for dev
+  const basePath = process.resourcesPath || path.join(__dirname, '..', '..');
+  return path.join(basePath, dbPath);
 }
 
 function initDatabase() {
   const dbPath = getDbPath();
   const dbDir = path.dirname(dbPath);
+  
+  console.log('DB Path:', dbPath);
+  console.log('DB Dir:', dbDir);
   
   if (!fs.existsSync(dbDir)) {
     fs.mkdirSync(dbDir, { recursive: true });
@@ -24,7 +29,26 @@ function initDatabase() {
   db.pragma('journal_mode = WAL');
   db.pragma('foreign_keys = ON');
 
-  const schemaPath = path.join(__dirname, '..', 'database', 'schema.sql');
+  // Find schema.sql - check multiple locations
+  const possiblePaths = [
+    path.join(__dirname, '..', '..', 'database', 'schema.sql'),
+    path.join(process.cwd(), 'database', 'schema.sql'),
+    path.join(__dirname, 'database', 'schema.sql')
+  ];
+  
+  let schemaPath = null;
+  for (const p of possiblePaths) {
+    if (fs.existsSync(p)) {
+      schemaPath = p;
+      break;
+    }
+  }
+  
+  if (!schemaPath) {
+    throw new Error('schema.sql not found in any of: ' + possiblePaths.join(', '));
+  }
+  
+  console.log('Schema path:', schemaPath);
   const schema = fs.readFileSync(schemaPath, 'utf8');
   
   db.exec(schema);

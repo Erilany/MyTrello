@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Droppable, Draggable } from 'react-beautiful-dnd';
 import { useApp } from '../../context/AppContext';
 import Category from '../Category/Category';
@@ -18,7 +18,7 @@ const priorityColors = {
   low: '#6B7280'
 };
 
-function Card({ card }) {
+function Card({ card, isDragging }) {
   const { 
     categories, 
     updateCard, 
@@ -28,6 +28,16 @@ function Card({ card }) {
   
   const [showMenu, setShowMenu] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (showMenu && !e.target.closest('.card-menu')) {
+        setShowMenu(false);
+      }
+    };
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [showMenu]);
   
   const cardCategories = categories
     .filter(cat => cat.card_id === card.id)
@@ -68,8 +78,13 @@ function Card({ card }) {
   return (
     <>
       <div 
-        className="bg-white rounded-lg shadow-sm border border-gray-200 mb-2 cursor-pointer hover:shadow-md transition-shadow"
-        onClick={() => setModalOpen(true)}
+        className={`bg-white rounded-lg shadow-sm border border-gray-200 mb-2 hover:shadow-md transition-shadow ${isDragging ? 'opacity-50' : ''}`}
+        onDoubleClick={(e) => {
+          if (e.target.closest('[data-rbd-drag-handle]') || e.target.closest('.categories-container')) {
+            return;
+          }
+          setModalOpen(true);
+        }}
       >
         {card.color && card.color !== '#FFFFFF' && (
           <div 
@@ -129,7 +144,7 @@ function Card({ card }) {
               </div>
             </div>
 
-            <div className="relative">
+            <div className="relative card-menu">
               <button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -141,7 +156,7 @@ function Card({ card }) {
               </button>
 
               {showMenu && (
-                <div className="absolute right-0 top-6 bg-white rounded-lg shadow-lg py-1 z-20 w-40">
+                <div className="absolute right-0 top-6 bg-white rounded-lg shadow-lg py-1 z-50 w-40">
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -187,7 +202,7 @@ function Card({ card }) {
                 <div
                   ref={provided.innerRef}
                   {...provided.droppableProps}
-                  className="mt-3 pt-2 border-t border-gray-100"
+                  className="mt-3 pt-2 border-t border-gray-100 categories-container"
                 >
                   {cardCategories.map((category, index) => (
                     <Draggable key={category.id} draggableId={`category-${category.id}`} index={index}>
@@ -197,7 +212,7 @@ function Card({ card }) {
                           {...provided.draggableProps}
                           {...provided.dragHandleProps}
                         >
-                          <Category category={category} />
+                          <Category category={category} isDragging={snapshot.isDragging} />
                         </div>
                       )}
                     </Draggable>

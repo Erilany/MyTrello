@@ -12,7 +12,7 @@ let mainWindow = null;
 let db = null;
 let tray = null;
 
-const isDev = process.env.NODE_ENV !== 'production';
+const isDev = process.env.NODE_ENV !== 'production' || true; // Force dev mode
 
 function createWindow() {
   mainWindow = new BrowserWindow({

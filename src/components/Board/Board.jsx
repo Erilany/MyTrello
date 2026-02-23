@@ -5,7 +5,7 @@ import Column from '../Column/Column';
 import { Plus } from 'lucide-react';
 
 function Board() {
-  const { currentBoard, columns, createColumn, moveColumn, loadBoard, loading } = useApp();
+  const { currentBoard, columns, createColumn, moveColumn, moveCard, loadBoard, loading } = useApp();
   const [newColumnTitle, setNewColumnTitle] = useState('');
   const [showNewColumn, setShowNewColumn] = useState(false);
 
@@ -32,6 +32,13 @@ function Board() {
       await moveColumn(parseInt(draggableId), destination.index);
       return;
     }
+
+    // Handle card dragging between columns
+    const cardId = parseInt(draggableId);
+    const newColumnId = parseInt(destination.droppableId);
+    const newPosition = destination.index;
+    
+    await moveCard(cardId, newColumnId, newPosition);
   };
 
   if (loading) {

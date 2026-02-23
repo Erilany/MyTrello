@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import SubCategoryModal from './SubCategoryModal';
 import { MoreHorizontal, Trash2 } from 'lucide-react';
@@ -10,7 +10,7 @@ const priorityColors = {
   low: '#6B7280'
 };
 
-function SubCategory({ subcategory }) {
+function SubCategory({ subcategory, isDragging = false }) {
   const { 
     updateSubcategory, 
     deleteSubcategory 
@@ -43,9 +43,26 @@ function SubCategory({ subcategory }) {
 
   const dateInfo = formatDate(subcategory.due_date);
 
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (showMenu && !e.target.closest('.subcategory-menu')) {
+        setShowMenu(false);
+      }
+    };
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [showMenu]);
+
   return (
     <>
-      <div className="bg-white rounded border border-gray-100 mb-1 py-1.5 px-2 flex items-center group">
+      <div 
+        className="bg-white rounded border border-gray-100 mb-1 py-1.5 px-2 flex items-center group cursor-pointer hover:bg-gray-50"
+        onDoubleClick={(e) => {
+          e.stopPropagation();
+          if (e.target.closest('button')) return;
+          setModalOpen(true);
+        }}
+      >
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <span className="text-sm text-gray-600">{subcategory.title}</span>
@@ -75,7 +92,7 @@ function SubCategory({ subcategory }) {
           </div>
         </div>
 
-        <div className="relative">
+        <div className="relative subcategory-menu">
           <button
             onClick={() => setShowMenu(!showMenu)}
             className="p-1 text-gray-400 hover:text-gray-600 rounded opacity-0 group-hover:opacity-100"

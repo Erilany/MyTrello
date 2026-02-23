@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Droppable, Draggable } from 'react-beautiful-dnd';
 import { useApp } from '../../context/AppContext';
 import SubCategory from '../SubCategory/SubCategory';
@@ -12,7 +12,7 @@ const priorityColors = {
   low: '#6B7280'
 };
 
-function Category({ category }) {
+function Category({ category, isDragging = false }) {
   const { 
     subcategories, 
     updateCategory, 
@@ -21,6 +21,8 @@ function Category({ category }) {
   
   const [showMenu, setShowMenu] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState(category.title);
 
   const categorySubcategories = subcategories
     .filter(sc => sc.category_id === category.id)
@@ -35,6 +37,23 @@ function Category({ category }) {
       await deleteCategory(category.id);
     }
   };
+
+  const handleSaveTitle = async () => {
+    if (editTitle.trim()) {
+      await updateCategory(category.id, { title: editTitle.trim() });
+    }
+    setIsEditing(false);
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (showMenu && !e.target.closest('.category-menu')) {
+        setShowMenu(false);
+      }
+    };
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [showMenu]);
 
   const formatDate = (dateStr) => {
     if (!dateStr) return null;
@@ -57,15 +76,24 @@ function Category({ category }) {
   return (
     <>
       <div 
-        className="bg-gray-50 rounded border border-gray-200 mb-2"
+        className="bg-gray-50 rounded border border-gray-200 mb-2 cursor-pointer hover:bg-gray-100 select-none"
         style={{ borderLeftColor: category.color || '#E5E7EB', borderLeftWidth: '3px' }}
+        onDoubleClick={(e) => {
+          if (e.target.closest('button')) return;
+          setModalOpen(true);
+        }}
       >
         <div className="p-2 flex items-start">
           <button
             onClick={handleToggleCollapse}
-            className="text-gray-400 hover:text-gray-600 mr-1 mt-0.5"
+            className="text-gray-400 hover:text-gray-600 mr-1 mt-0.5 flex items-center justify-center w-4 h-4"
+            title={category.collapsed ? "Développer" : "Réduire"}
           >
-            {category.collapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
+            {categorySubcategories.length > 0 ? (
+              category.collapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />
+            ) : (
+              <span className="text-xs text-gray-300">•</span>
+            )}
           </button>
           
           <div className="flex-1 min-w-0">
@@ -75,7 +103,36 @@ function Category({ category }) {
                   {category.collapsed ? `(${categorySubcategories.length})` : ''}
                 </span>
               )}
-              <span className="text-sm font-medium text-gray-700">{category.title}</span>
+              {isEditing ? (
+                <input
+                  type="text"
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  onBlur={handleSaveTitle}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleSaveTitle();
+                    if (e.key === 'Escape') {
+                      setEditTitle(category.title);
+                      setIsEditing(false);
+                    }
+                  }}
+                  className="px-1 py-0.5 text-sm font-medium bg-white border border-blue-500 rounded focus:outline-none"
+                  autoFocus
+                />
+              ) : (
+                <span 
+                  className="text-sm font-medium text-gray-700 cursor-pointer hover:text-blue-600"
+                  title="Cliquez pour modifier"
+                  onClick={() => {
+                    if (isDragging) return;
+                    console.log('Category title clicked');
+                    setEditTitle(category.title);
+                    setIsEditing(true);
+                  }}
+                >
+                  {category.title}
+                </span>
+              )}
             </div>
             
             <div className="flex items-center gap-2 mt-1 flex-wrap">
@@ -102,7 +159,7 @@ function Category({ category }) {
             </div>
           </div>
 
-          <div className="relative">
+          <div className="relative category-menu">
             <button
               onClick={() => setShowMenu(!showMenu)}
               className="p-1 text-gray-400 hover:text-gray-600 rounded"
@@ -140,7 +197,7 @@ function Category({ category }) {
               <div
                 ref={provided.innerRef}
                 {...provided.droppableProps}
-                className="px-2 pb-2 pl-7"
+                className="px-2 pb-2 pl-7 overflow-visible subcategories-container"
               >
                 {categorySubcategories.map((subcategory, index) => (
                   <Draggable key={subcategory.id} draggableId={`subcategory-${subcategory.id}`} index={index}>
@@ -150,7 +207,7 @@ function Category({ category }) {
                         {...provided.draggableProps}
                         {...provided.dragHandleProps}
                       >
-                        <SubCategory subcategory={subcategory} />
+                        <SubCategory subcategory={subcategory} isDragging={snapshot.isDragging} />
                       </div>
                     )}
                   </Draggable>

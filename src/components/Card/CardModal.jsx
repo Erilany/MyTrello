@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
-import { X, Calendar, User, Tag, MessageSquare, Trash2 } from 'lucide-react';
+import { X, Calendar, User, Tag, MessageSquare, Trash2, Plus, Folder } from 'lucide-react';
 
 function CardModal({ card, onClose }) {
-  const { updateCard, categories, subcategories, addComment, getComments, deleteComment, saveToLibrary } = useApp();
+  const { updateCard, categories, subcategories, addComment, getComments, deleteComment, saveToLibrary, createCategory } = useApp();
   
   const [title, setTitle] = useState(card.title);
   const [description, setDescription] = useState(card.description || '');
@@ -13,6 +13,7 @@ function CardModal({ card, onClose }) {
   const [color, setColor] = useState(card.color || '#FFFFFF');
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
+  const [newCategoryTitle, setNewCategoryTitle] = useState('');
 
   useEffect(() => {
     loadComments();
@@ -61,6 +62,16 @@ function CardModal({ card, onClose }) {
     await saveToLibrary('card', title, JSON.stringify(content));
     alert('Carte sauvegardée dans la bibliothèque');
   };
+
+  const handleAddCategory = async (e) => {
+    e.preventDefault();
+    if (newCategoryTitle.trim()) {
+      await createCategory(card.id, newCategoryTitle.trim());
+      setNewCategoryTitle('');
+    }
+  };
+
+  const cardCategories = categories.filter(c => c.card_id === card.id);
 
   const priorities = [
     { value: 'urgent', label: 'Urgent', color: '#EF4444' },
@@ -160,6 +171,46 @@ function CardModal({ card, onClose }) {
                 />
               ))}
             </div>
+          </div>
+
+          <div className="pt-4 border-t">
+            <h4 className="text-sm font-medium text-gray-700 mb-2">
+              <Folder size={14} className="inline mr-1" />
+              Catégories ({cardCategories.length})
+            </h4>
+            
+            <div className="space-y-2 mb-3">
+              {cardCategories.map(cat => (
+                <div key={cat.id} className="bg-gray-50 rounded p-2 flex items-center justify-between">
+                  <span className="text-sm text-gray-700">{cat.title}</span>
+                  {cat.priority !== 'normal' && (
+                    <span className={`px-2 py-0.5 text-xs rounded text-white ${
+                      cat.priority === 'urgent' ? 'bg-red-500' : 
+                      cat.priority === 'high' ? 'bg-orange-500' : 'bg-gray-500'
+                    }`}>
+                      {cat.priority}
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <form onSubmit={handleAddCategory} className="flex gap-2">
+              <input
+                type="text"
+                value={newCategoryTitle}
+                onChange={(e) => setNewCategoryTitle(e.target.value)}
+                placeholder="Nouvelle catégorie..."
+                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+              />
+              <button
+                type="submit"
+                className="px-3 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 text-sm flex items-center"
+              >
+                <Plus size={14} className="mr-1" />
+                Ajouter
+              </button>
+            </form>
           </div>
 
           <div className="pt-4 border-t">

@@ -103,22 +103,41 @@ export function AppProvider({ children }) {
   };
 
   const createBoard = async (title, description = '') => {
+    console.log('createBoard called:', { title, description });
     const result = await dbRun(
       'INSERT INTO boards (title, description) VALUES (?, ?)',
       [title, description]
     );
+    console.log('createBoard result:', result);
     if (result.success) {
-      await loadBoards();
-      return result.data.lastInsertRowid;
+      const boardId = result.data.lastInsertRowid;
+      
+      await dbRun(
+        'INSERT INTO columns (board_id, title, position, color) VALUES (?, ?, ?, ?)',
+        [boardId, 'À faire', 0, '#4A90D9']
+      );
+      await dbRun(
+        'INSERT INTO columns (board_id, title, position, color) VALUES (?, ?, ?, ?)',
+        [boardId, 'En cours', 1, '#F5A623']
+      );
+      await dbRun(
+        'INSERT INTO columns (board_id, title, position, color) VALUES (?, ?, ?, ?)',
+        [boardId, 'Terminé', 2, '#7ED321']
+      );
+      
+      await loadBoard(boardId);
+      return boardId;
     }
     return null;
   };
 
   const updateBoard = async (id, title, description) => {
-    await dbRun(
+    console.log('updateBoard called:', { id, title, description });
+    const result = await dbRun(
       'UPDATE boards SET title = ?, description = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
       [title, description, id]
     );
+    console.log('updateBoard result:', result);
     await loadBoards();
   };
 

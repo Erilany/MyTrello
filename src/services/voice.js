@@ -57,32 +57,32 @@ class VoiceService {
       stop: ['stop', 'pause', 'arrêter', 'arrête', 'stop écoute'],
       cancel: ['annuler', 'annule', '取消'],
       help: ['aide', 'help', 'liste commandes', 'commandes'],
-      repeat: ['répète', 'refaire', 'répéter'],
+      repeat: ['répète', 'refaire', 'répète ça'],
       
       create: {
-        card: ['créer une carte', 'nouvelle carte', 'ajouter carte', 'créer carte'],
-        category: ['créer une catégorie', 'nouvelle catégorie', 'ajouter catégorie', 'créer catégorie'],
-        subcategory: ['créer une sous catégorie', 'nouvelle sous catégorie', 'ajouter sous catégorie']
+        card: ['crée une carte', 'nouvelle carte', 'ajoute une carte', 'créer carte', 'créer une carte'],
+        category: ['crée une catégorie', 'nouvelle catégorie', 'ajoute une catégorie', 'créer catégorie', 'créer une catégorie'],
+        subcategory: ['crée une sous catégorie', 'nouvelle sous catégorie', 'ajoute une sous catégorie']
       },
       
       navigation: {
-        open: ['ouvrir', 'ouvre', 'afficher'],
-        close: ['fermer', 'ferme', 'ferme la carte', 'ferme carte'],
-        showBoard: ['afficher le tableau', 'voir le tableau', 'tableau']
+        open: ['ouvre', 'ouvrir', 'afficher'],
+        close: ['ferme', 'fermer', 'ferme la carte', 'ferme carte'],
+        showBoard: ['affiche le tableau', 'voir le tableau', 'tableau']
       },
       
       actions: {
-        tag: ['taguer', 'étiqueter', 'priorité', 'tag'],
-        assign: ['assigner à', 'assigner', 'attribuer à'],
-        dueDate: ['date d\'échéance', 'échéance', 'deadline', 'date limite'],
-        archive: ['archiver', 'archive'],
-        comment: ['ajouter commentaire', 'commentaire']
+        tag: ['tag', 'taguer', 'étiquette', 'priorité'],
+        assign: ['assigne à', 'assigner à', 'attribuer à'],
+        dueDate: ['échéance', 'deadline', 'date limite', 'date d\'échéance'],
+        archive: ['archive', 'archiver'],
+        comment: ['ajoute un commentaire', 'commentaire', 'ajouter commentaire']
       },
       
       library: {
-        save: ['sauvegarder comme modèle', 'sauvegarder modèle', 'enregistrer modèle'],
-        use: ['utiliser le modèle', 'appliquer modèle', 'utiliser modèle'],
-        open: ['ouvrir la bibliothèque', 'bibliothèque']
+        save: ['sauvegarde comme modèle', 'sauvegarder modèle', 'enregistrer modèle'],
+        use: ['utilise le modèle', 'applique le modèle', 'utiliser modèle'],
+        open: ['ouvre la bibliothèque', 'bibliothèque']
       }
     };
   }
