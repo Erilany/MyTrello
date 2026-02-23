@@ -95,3 +95,12 @@ CREATE INDEX IF NOT EXISTS idx_cards_column_id ON cards(column_id);
 CREATE INDEX IF NOT EXISTS idx_categories_card_id ON categories(card_id);
 CREATE INDEX IF NOT EXISTS idx_subcategories_category_id ON subcategories(category_id);
 CREATE INDEX IF NOT EXISTS idx_comments_ref ON comments(ref_type, ref_id);
+
+-- Historique des commandes vocales
+CREATE TABLE IF NOT EXISTS voice_history (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  command    TEXT NOT NULL,
+  action     TEXT NOT NULL,
+  status     TEXT NOT NULL,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);

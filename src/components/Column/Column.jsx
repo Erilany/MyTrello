@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
+import { Droppable, Draggable } from 'react-beautiful-dnd';
 import { useApp } from '../../context/AppContext';
 import Card from '../Card/Card';
 import { MoreHorizontal, Plus, Pencil, Trash2, Palette } from 'lucide-react';
 
 function Column({ column }) {
-  const { cards, createCard, updateColumn, deleteColumn, currentBoard } = useApp();
+  const { cards, createCard, updateColumn, deleteColumn, moveCard, currentBoard } = useApp();
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState(column.title);
   const [showMenu, setShowMenu] = useState(false);
@@ -12,7 +13,9 @@ function Column({ column }) {
   const [newCardTitle, setNewCardTitle] = useState('');
   const [showColorPicker, setShowColorPicker] = useState(false);
 
-  const columnCards = cards.filter(card => card.column_id === column.id);
+  const columnCards = cards
+    .filter(card => card.column_id === column.id)
+    .sort((a, b) => a.position - b.position);
 
   const handleUpdateColumn = async () => {
     if (title.trim()) {
@@ -132,11 +135,32 @@ function Column({ column }) {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-2 pb-2 scrollbar-thin">
-        {columnCards.map(card => (
-          <Card key={card.id} card={card} />
-        ))}
-      </div>
+      <Droppable droppableId={String(column.id)} type="card">
+        {(provided, snapshot) => (
+          <div
+            ref={provided.innerRef}
+            {...provided.droppableProps}
+            className={`flex-1 overflow-y-auto px-2 pb-2 scrollbar-thin ${
+              snapshot.isDraggingOver ? 'bg-gray-200' : ''
+            }`}
+          >
+            {columnCards.map((card, index) => (
+              <Draggable key={card.id} draggableId={String(card.id)} index={index}>
+                {(provided, snapshot) => (
+                  <div
+                    ref={provided.innerRef}
+                    {...provided.draggableProps}
+                    {...provided.dragHandleProps}
+                  >
+                    <Card card={card} />
+                  </div>
+                )}
+              </Draggable>
+            ))}
+            {provided.placeholder}
+          </div>
+        )}
+      </Droppable>
 
       <div className="p-2">
         {showNewCard ? (

@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
+import { Droppable, Draggable } from 'react-beautiful-dnd';
 import { useApp } from '../../context/AppContext';
 import SubCategory from '../SubCategory/SubCategory';
 import CategoryModal from './CategoryModal';
-import { MoreHorizontal, ChevronDown, ChevronRight, Trash2, ArrowUp, ArrowDown } from 'lucide-react';
+import { MoreHorizontal, ChevronDown, ChevronRight, Trash2 } from 'lucide-react';
 
 const priorityColors = {
   urgent: '#EF4444',
@@ -14,21 +15,16 @@ const priorityColors = {
 function Category({ category }) {
   const { 
     subcategories, 
-    cards,
-    categories: allCategories,
     updateCategory, 
-    deleteCategory, 
-    moveCategory,
-    categories: allCategoriesList 
+    deleteCategory 
   } = useApp();
   
   const [showMenu, setShowMenu] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
 
-  const categorySubcategories = subcategories.filter(sc => sc.category_id === category.id);
-  const parentCard = cards.find(c => c.id === category.card_id);
-  const cardCategories = allCategories.filter(c => c.card_id === category.card_id);
-  const categoryIndex = cardCategories.findIndex(c => c.id === category.id);
+  const categorySubcategories = subcategories
+    .filter(sc => sc.category_id === category.id)
+    .sort((a, b) => a.position - b.position);
 
   const handleToggleCollapse = async () => {
     await updateCategory(category.id, { collapsed: category.collapsed ? 0 : 1 });
@@ -39,26 +35,6 @@ function Category({ category }) {
       await deleteCategory(category.id);
     }
   };
-
-  const handleMove = async (direction) => {
-    const newIndex = categoryIndex + direction;
-    if (newIndex >= 0 && newIndex < cardCategories.length) {
-      const newCategory = cardCategories[newIndex];
-      await moveCategory(category.id, category.card_id, newCategory.position);
-    }
-  };
-
-  const handleMoveToCard = async (targetCardId) => {
-    const targetCard = cards.find(c => c.id === targetCardId);
-    if (targetCard) {
-      const targetCategories = allCategories.filter(c => c.card_id === targetCardId);
-      const maxPosition = Math.max(...targetCategories.map(c => c.position), -1);
-      await moveCategory(category.id, targetCardId, maxPosition + 1);
-    }
-    setShowMenu(false);
-  };
-
-  const availableCards = cards.filter(c => c.id !== category.card_id);
 
   const formatDate = (dateStr) => {
     if (!dateStr) return null;
@@ -145,45 +121,6 @@ function Category({ category }) {
                 >
                   Modifier
                 </button>
-                
-                <button
-                  onClick={() => handleMove(-1)}
-                  disabled={categoryIndex === 0}
-                  className="flex items-center w-full px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-50"
-                >
-                  <ArrowUp size={14} className="mr-2" />
-                  Monter
-                </button>
-                
-                <button
-                  onClick={() => handleMove(1)}
-                  disabled={categoryIndex === cardCategories.length - 1}
-                  className="flex items-center w-full px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-50"
-                >
-                  <ArrowDown size={14} className="mr-2" />
-                  Descendre
-                </button>
-
-                {availableCards.length > 0 && (
-                  <div className="relative">
-                    <button
-                      className="flex items-center w-full px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100"
-                    >
-                      Déplacer vers...
-                    </button>
-                    <div className="absolute left-full top-0 bg-white rounded-lg shadow-lg py-1 z-30 w-48 max-h-32 overflow-y-auto">
-                      {availableCards.map(card => (
-                        <button
-                          key={card.id}
-                          onClick={() => handleMoveToCard(card.id)}
-                          className="flex items-center w-full px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100"
-                        >
-                          {card.title.substring(0, 20)}...
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
 
                 <button
                   onClick={handleDelete}
@@ -198,11 +135,30 @@ function Category({ category }) {
         </div>
 
         {!category.collapsed && categorySubcategories.length > 0 && (
-          <div className="px-2 pb-2 pl-7">
-            {categorySubcategories.map(subcategory => (
-              <SubCategory key={subcategory.id} subcategory={subcategory} />
-            ))}
-          </div>
+          <Droppable droppableId={`category-${category.id}`} type="subcategory">
+            {(provided, snapshot) => (
+              <div
+                ref={provided.innerRef}
+                {...provided.droppableProps}
+                className="px-2 pb-2 pl-7"
+              >
+                {categorySubcategories.map((subcategory, index) => (
+                  <Draggable key={subcategory.id} draggableId={`subcategory-${subcategory.id}`} index={index}>
+                    {(provided, snapshot) => (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.draggableProps}
+                        {...provided.dragHandleProps}
+                      >
+                        <SubCategory subcategory={subcategory} />
+                      </div>
+                    )}
+                  </Draggable>
+                ))}
+                {provided.placeholder}
+              </div>
+            )}
+          </Droppable>
         )}
       </div>
 

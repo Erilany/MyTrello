@@ -7,6 +7,7 @@ import Archives from './components/Archives/Archives';
 import Library from './components/Library/Library';
 import Sidebar from './components/Sidebar/Sidebar';
 import Header from './components/Header/Header';
+import VoiceControl from './components/VoiceControl/VoiceControl';
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
             </main>
           </div>
         </div>
+        <VoiceControl />
       </BrowserRouter>
     </AppProvider>
   );

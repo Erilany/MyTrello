@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import SubCategoryModal from './SubCategoryModal';
-import { MoreHorizontal, Trash2, ArrowUp, ArrowDown } from 'lucide-react';
+import { MoreHorizontal, Trash2 } from 'lucide-react';
 
 const priorityColors = {
   urgent: '#EF4444',
@@ -12,45 +12,18 @@ const priorityColors = {
 
 function SubCategory({ subcategory }) {
   const { 
-    categories, 
-    subcategories: allSubcategories,
     updateSubcategory, 
-    deleteSubcategory, 
-    moveSubcategory 
+    deleteSubcategory 
   } = useApp();
   
   const [showMenu, setShowMenu] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
-
-  const parentCategory = categories.find(c => c.id === subcategory.category_id);
-  const categorySubcategories = allSubcategories.filter(sc => sc.category_id === subcategory.category_id);
-  const subcategoryIndex = categorySubcategories.findIndex(sc => sc.id === subcategory.id);
 
   const handleDelete = async () => {
     if (window.confirm('Voulez-vous vraiment supprimer cette sous-catégorie ?')) {
       await deleteSubcategory(subcategory.id);
     }
   };
-
-  const handleMove = async (direction) => {
-    const newIndex = subcategoryIndex + direction;
-    if (newIndex >= 0 && newIndex < categorySubcategories.length) {
-      const newSubcategory = categorySubcategories[newIndex];
-      await moveSubcategory(subcategory.id, subcategory.category_id, newSubcategory.position);
-    }
-  };
-
-  const handleMoveToCategory = async (targetCategoryId) => {
-    const targetCategory = categories.find(c => c.id === targetCategoryId);
-    if (targetCategory) {
-      const targetSubcategories = allSubcategories.filter(sc => sc.category_id === targetCategoryId);
-      const maxPosition = Math.max(...targetSubcategories.map(sc => sc.position), -1);
-      await moveSubcategory(subcategory.id, targetCategoryId, maxPosition + 1);
-    }
-    setShowMenu(false);
-  };
-
-  const availableCategories = categories.filter(c => c.id !== subcategory.category_id);
 
   const formatDate = (dateStr) => {
     if (!dateStr) return null;
@@ -121,45 +94,6 @@ function SubCategory({ subcategory }) {
               >
                 Modifier
               </button>
-              
-              <button
-                onClick={() => handleMove(-1)}
-                disabled={subcategoryIndex === 0}
-                className="flex items-center w-full px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-50"
-              >
-                <ArrowUp size={14} className="mr-2" />
-                Monter
-              </button>
-              
-              <button
-                onClick={() => handleMove(1)}
-                disabled={subcategoryIndex === categorySubcategories.length - 1}
-                className="flex items-center w-full px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-50"
-              >
-                <ArrowDown size={14} className="mr-2" />
-                Descendre
-              </button>
-
-              {availableCategories.length > 0 && (
-                <div className="relative">
-                  <button
-                    className="flex items-center w-full px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100"
-                  >
-                    Déplacer vers...
-                  </button>
-                  <div className="absolute left-full top-0 bg-white rounded-lg shadow-lg py-1 z-40 w-48 max-h-32 overflow-y-auto">
-                    {availableCategories.map(cat => (
-                      <button
-                        key={cat.id}
-                        onClick={() => handleMoveToCategory(cat.id)}
-                        className="flex items-center w-full px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100"
-                      >
-                        {cat.title.substring(0, 20)}...
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
 
               <button
                 onClick={handleDelete}

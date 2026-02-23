@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Droppable, Draggable } from 'react-beautiful-dnd';
 import { useApp } from '../../context/AppContext';
 import Category from '../Category/Category';
 import CardModal from './CardModal';
@@ -7,10 +8,7 @@ import {
   ChevronDown, 
   ChevronRight, 
   Archive, 
-  Trash2,
-  ArrowLeft,
-  ArrowRight,
-  MessageSquare
+  Trash2
 } from 'lucide-react';
 
 const priorityColors = {
@@ -23,20 +21,17 @@ const priorityColors = {
 function Card({ card }) {
   const { 
     categories, 
-    columns, 
     updateCard, 
     deleteCard, 
-    archiveCard, 
-    moveCard,
-    columns: allColumns 
+    archiveCard 
   } = useApp();
   
   const [showMenu, setShowMenu] = useState(false);
-  const [showMoveMenu, setShowMoveMenu] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   
-  const cardCategories = categories.filter(cat => cat.card_id === card.id);
-  const currentColumnIndex = allColumns.findIndex(c => c.id === card.column_id);
+  const cardCategories = categories
+    .filter(cat => cat.card_id === card.id)
+    .sort((a, b) => a.position - b.position);
 
   const handleToggleCollapse = async () => {
     await updateCard(card.id, { collapsed: card.collapsed ? 0 : 1 });
@@ -50,19 +45,6 @@ function Card({ card }) {
 
   const handleArchive = async () => {
     await archiveCard(card.id);
-  };
-
-  const handleMove = async (direction) => {
-    const newIndex = currentColumnIndex + direction;
-    if (newIndex >= 0 && newIndex < allColumns.length) {
-      const newColumnId = allColumns[newIndex].id;
-      const cardsInNewColumn = allColumns.find(c => c.id === newColumnId).id;
-      const maxPos = Math.max(...allColumns
-        .filter(c => c.id === newColumnId)
-        .map(c => c.id), 0);
-      await moveCard(card.id, newColumnId, maxPos + 1);
-    }
-    setShowMoveMenu(false);
   };
 
   const formatDate = (dateStr) => {
@@ -170,48 +152,6 @@ function Card({ card }) {
                   >
                     Modifier
                   </button>
-                  
-                  <div className="relative">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setShowMoveMenu(!showMoveMenu);
-                      }}
-                      className="flex items-center w-full px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100"
-                    >
-                      <ArrowRight size={14} className="mr-2" />
-                      Déplacer
-                    </button>
-                    
-                    {showMoveMenu && (
-                      <div className="absolute left-full top-0 bg-white rounded-lg shadow-lg py-1 z-30 w-32">
-                        {currentColumnIndex > 0 && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleMove(-1);
-                            }}
-                            className="flex items-center w-full px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100"
-                          >
-                            <ArrowLeft size={14} className="mr-2" />
-                            Vers gauche
-                          </button>
-                        )}
-                        {currentColumnIndex < allColumns.length - 1 && (
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleMove(1);
-                            }}
-                            className="flex items-center w-full px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100"
-                          >
-                            <ArrowRight size={14} className="mr-2" />
-                            Vers droite
-                          </button>
-                        )}
-                      </div>
-                    )}
-                  </div>
 
                   <button
                     onClick={(e) => {
@@ -242,11 +182,30 @@ function Card({ card }) {
           </div>
 
           {!card.collapsed && cardCategories.length > 0 && (
-            <div className="mt-3 pt-2 border-t border-gray-100">
-              {cardCategories.map(category => (
-                <Category key={category.id} category={category} />
-              ))}
-            </div>
+            <Droppable droppableId={`card-${card.id}`} type="category">
+              {(provided, snapshot) => (
+                <div
+                  ref={provided.innerRef}
+                  {...provided.droppableProps}
+                  className="mt-3 pt-2 border-t border-gray-100"
+                >
+                  {cardCategories.map((category, index) => (
+                    <Draggable key={category.id} draggableId={`category-${category.id}`} index={index}>
+                      {(provided, snapshot) => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.draggableProps}
+                          {...provided.dragHandleProps}
+                        >
+                          <Category category={category} />
+                        </div>
+                      )}
+                    </Draggable>
+                  ))}
+                  {provided.placeholder}
+                </div>
+              )}
+            </Droppable>
           )}
         </div>
       </div>
