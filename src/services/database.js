@@ -9,9 +9,8 @@ function getDbPath() {
   if (path.isAbsolute(dbPath)) {
     return dbPath;
   }
-  // Use app.getAppPath() for Electron, or __dirname for dev
-  const basePath = process.resourcesPath || path.join(__dirname, '..', '..');
-  return path.join(basePath, dbPath);
+  // Use cwd() for consistency in both dev and production
+  return path.join(process.cwd(), dbPath);
 }
 
 function initDatabase() {

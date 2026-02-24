@@ -1,17 +1,7 @@
-const {
-  app,
-  BrowserWindow,
-  ipcMain,
-  dialog,
-  Menu,
-  Tray,
-  globalShortcut,
-  nativeTheme,
-} = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, Menu, Tray, globalShortcut } = require('electron');
 const path = require('path');
-const Database = require('better-sqlite3');
 const Store = require('electron-store');
-const { initDatabase, getDatabase } = require('./src/services/database');
+const { initDatabase } = require('./src/services/database');
 
 const store = new Store({
   encryptionKey: process.env.ENCRYPTION_KEY || 'default-dev-key-change-in-production',
@@ -41,6 +31,12 @@ function createWindow() {
   if (isDev) {
     mainWindow.loadURL('http://localhost:5173');
     mainWindow.webContents.openDevTools();
+    mainWindow.webContents.on('console-message', (event, level, message, line, sourceId) => {
+      console.log('[RENDERER]', message);
+    });
+    mainWindow.webContents.on('render-process-gone', (event, details) => {
+      console.log('[RENDERER CRASH]', details);
+    });
   } else {
     mainWindow.loadFile(path.join(__dirname, 'dist', 'index.html'));
   }

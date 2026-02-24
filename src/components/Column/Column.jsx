@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Droppable, Draggable } from 'react-beautiful-dnd';
+import { Droppable, Draggable } from '@hello-pangea/dnd';
 import { useApp } from '../../context/AppContext';
 import Card from '../Card/Card';
 import { MoreHorizontal, Plus, Pencil, Trash2, Palette } from 'lucide-react';
@@ -14,7 +14,7 @@ function Column({ column }) {
   const [showColorPicker, setShowColorPicker] = useState(false);
 
   useEffect(() => {
-    const handleClickOutside = (e) => {
+    const handleClickOutside = e => {
       if (showMenu && !e.target.closest('.column-menu')) {
         setShowMenu(false);
         setShowColorPicker(false);
@@ -41,7 +41,7 @@ function Column({ column }) {
     }
   };
 
-  const handleCreateCard = async (e) => {
+  const handleCreateCard = async e => {
     e.preventDefault();
     if (newCardTitle.trim()) {
       await createCard(column.id, newCardTitle.trim());
@@ -50,14 +50,21 @@ function Column({ column }) {
     }
   };
 
-  const handleColorChange = async (color) => {
+  const handleColorChange = async color => {
     await updateColumn(column.id, column.title, color);
     setShowColorPicker(false);
   };
 
   const colors = [
-    '#4A90D9', '#50C878', '#F5A623', '#D0021B', '#9013FE',
-    '#7ED321', '#F8E71C', '#BD10E0', '#B8E986'
+    '#4A90D9',
+    '#50C878',
+    '#F5A623',
+    '#D0021B',
+    '#9013FE',
+    '#7ED321',
+    '#F8E71C',
+    '#BD10E0',
+    '#B8E986',
   ];
 
   return (
@@ -67,9 +74,9 @@ function Column({ column }) {
           <input
             type="text"
             value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            onChange={e => setTitle(e.target.value)}
             onBlur={handleUpdateColumn}
-            onKeyDown={(e) => {
+            onKeyDown={e => {
               if (e.key === 'Enter') handleUpdateColumn();
               if (e.key === 'Escape') {
                 setTitle(column.title);
@@ -80,15 +87,14 @@ function Column({ column }) {
             autoFocus
           />
         ) : (
-          <div 
+          <div
             className="flex items-center flex-1 cursor-pointer"
             onClick={() => setIsEditing(true)}
           >
-            <div 
-              className="w-3 h-3 rounded-full mr-2"
-              style={{ backgroundColor: column.color }}
-            />
-            <h3 className="font-semibold text-sm text-gray-700 dark:text-gray-200">{column.title}</h3>
+            <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: column.color }} />
+            <h3 className="font-semibold text-sm text-gray-700 dark:text-gray-200">
+              {column.title}
+            </h3>
             <span className="ml-2 text-xs text-gray-400">({columnCards.length})</span>
           </div>
         )}
@@ -151,16 +157,16 @@ function Column({ column }) {
           <div
             ref={provided.innerRef}
             {...provided.droppableProps}
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={(e) => {
+            onDragOver={e => e.preventDefault()}
+            onDrop={e => {
               const data = e.dataTransfer.getData('application/json');
               if (data) {
                 const event = new CustomEvent('library-drop', {
-                  detail: { 
+                  detail: {
                     columnId: column.id,
                     boardId: column.board_id,
-                    data: JSON.parse(data)
-                  }
+                    data: JSON.parse(data),
+                  },
                 });
                 window.dispatchEvent(event);
               }
@@ -176,7 +182,7 @@ function Column({ column }) {
                     ref={provided.innerRef}
                     {...provided.draggableProps}
                     {...provided.dragHandleProps}
-                    onClick={(e) => {
+                    onClick={e => {
                       if (snapshot.isDragging) {
                         e.preventDefault();
                         e.stopPropagation();
@@ -199,7 +205,7 @@ function Column({ column }) {
             <input
               type="text"
               value={newCardTitle}
-              onChange={(e) => setNewCardTitle(e.target.value)}
+              onChange={e => setNewCardTitle(e.target.value)}
               placeholder="Titre de la carte..."
               className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
               autoFocus

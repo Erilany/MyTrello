@@ -1,27 +1,39 @@
 import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
-import { 
-  Layout, 
-  Plus, 
-  ChevronDown, 
+import {
+  Layout,
+  Plus,
+  ChevronDown,
   ChevronRight,
   Archive,
   BookOpen,
   Settings,
   Trash2,
-  MoreHorizontal
+  MoreHorizontal,
+  Wand2,
 } from 'lucide-react';
 
 function Sidebar() {
   const navigate = useNavigate();
-  const { boards, currentBoard, createBoard, deleteBoard, loadBoard, loadBoards, sidebarOpen, setSidebarOpen } = useApp();
+  const {
+    boards,
+    currentBoard,
+    createBoard,
+    deleteBoard,
+    loadBoard,
+    loadBoards,
+    sidebarOpen,
+    setSidebarOpen,
+    generateTestData,
+  } = useApp();
   const [showBoards, setShowBoards] = useState(true);
   const [newBoardTitle, setNewBoardTitle] = useState('');
   const [showNewBoard, setShowNewBoard] = useState(false);
   const [menuOpenId, setMenuOpenId] = useState(null);
+  const [isGenerating, setIsGenerating] = useState(false);
 
-  const handleCreateBoard = async (e) => {
+  const handleCreateBoard = async e => {
     e.preventDefault();
     if (newBoardTitle.trim()) {
       const boardId = await createBoard(newBoardTitle.trim());
@@ -33,20 +45,33 @@ function Sidebar() {
     }
   };
 
-  const handleDeleteBoard = async (id) => {
+  const handleDeleteBoard = async id => {
     if (window.confirm('Voulez-vous vraiment supprimer ce projet ?')) {
       await deleteBoard(id);
       setMenuOpenId(null);
     }
   };
 
+  const handleGenerateTestData = async () => {
+    if (
+      window.confirm(
+        'Générer des données de test ? Cela va ajouter des cartes, catégories et sous-catégories.'
+      )
+    ) {
+      setIsGenerating(true);
+      try {
+        await generateTestData();
+        await loadBoards();
+      } finally {
+        setIsGenerating(false);
+      }
+    }
+  };
+
   if (!sidebarOpen) {
     return (
       <div className="w-12 bg-gray-900 flex flex-col items-center py-4">
-        <button 
-          onClick={() => setSidebarOpen(true)}
-          className="p-2 text-gray-400 hover:text-white"
-        >
+        <button onClick={() => setSidebarOpen(true)} className="p-2 text-gray-400 hover:text-white">
           <Layout size={20} />
         </button>
       </div>
@@ -57,7 +82,7 @@ function Sidebar() {
     <div className="w-64 bg-gray-900 text-white flex flex-col h-full">
       <div className="p-4 flex items-center justify-between">
         <h1 className="text-lg font-bold">MyTrello</h1>
-        <button 
+        <button
           onClick={() => setSidebarOpen(false)}
           className="p-1 text-gray-400 hover:text-white"
         >
@@ -78,8 +103,8 @@ function Sidebar() {
           {showBoards && (
             <div className="ml-2">
               {boards.map(board => (
-                <div 
-                  key={board.id} 
+                <div
+                  key={board.id}
                   className={`group flex items-center justify-between px-2 py-1 rounded cursor-pointer ${
                     currentBoard?.id === board.id ? 'bg-blue-600' : 'hover:bg-gray-800'
                   }`}
@@ -90,8 +115,8 @@ function Sidebar() {
                 >
                   <span className="truncate text-sm">{board.title}</span>
                   <div className="relative">
-                    <button 
-                      onClick={(e) => {
+                    <button
+                      onClick={e => {
                         e.stopPropagation();
                         setMenuOpenId(menuOpenId === board.id ? null : board.id);
                       }}
@@ -102,7 +127,7 @@ function Sidebar() {
                     {menuOpenId === board.id && (
                       <div className="absolute right-0 top-6 bg-gray-800 rounded shadow-lg z-10 py-1 w-32">
                         <button
-                          onClick={(e) => {
+                          onClick={e => {
                             e.stopPropagation();
                             handleDeleteBoard(board.id);
                           }}
@@ -122,8 +147,8 @@ function Sidebar() {
                   <input
                     type="text"
                     value={newBoardTitle}
-                    onChange={(e) => setNewBoardTitle(e.target.value)}
-                    onKeyDown={async (e) => {
+                    onChange={e => setNewBoardTitle(e.target.value)}
+                    onKeyDown={async e => {
                       if (e.key === 'Enter') {
                         e.preventDefault();
                         if (newBoardTitle.trim()) {
@@ -190,35 +215,44 @@ function Sidebar() {
         </div>
 
         <div className="border-t border-gray-800 mt-4 pt-4 px-2">
-          <NavLink 
+          <NavLink
             to="/library"
-            className={({ isActive }) => 
+            className={({ isActive }) =>
               `flex items-center px-2 py-1 rounded ${isActive ? 'bg-blue-600' : 'hover:bg-gray-800'}`
             }
           >
             <BookOpen size={16} className="mr-2" />
             Bibliothèque
           </NavLink>
-          
-          <NavLink 
+
+          <NavLink
             to="/archives"
-            className={({ isActive }) => 
+            className={({ isActive }) =>
               `flex items-center px-2 py-1 mt-1 rounded ${isActive ? 'bg-blue-600' : 'hover:bg-gray-800'}`
             }
           >
             <Archive size={16} className="mr-2" />
             Archives
           </NavLink>
-          
-          <NavLink 
+
+          <NavLink
             to="/settings"
-            className={({ isActive }) => 
+            className={({ isActive }) =>
               `flex items-center px-2 py-1 mt-1 rounded ${isActive ? 'bg-blue-600' : 'hover:bg-gray-800'}`
             }
           >
             <Settings size={16} className="mr-2" />
             Paramètres
           </NavLink>
+
+          <button
+            onClick={handleGenerateTestData}
+            disabled={isGenerating}
+            className="flex items-center w-full px-2 py-1 mt-3 rounded bg-purple-600 hover:bg-purple-700 disabled:opacity-50"
+          >
+            <Wand2 size={16} className="mr-2" />
+            {isGenerating ? 'Génération...' : 'Générer données test'}
+          </button>
         </div>
       </nav>
     </div>

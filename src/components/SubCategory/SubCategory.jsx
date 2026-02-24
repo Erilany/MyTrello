@@ -1,21 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import SubCategoryModal from './SubCategoryModal';
-import { MoreHorizontal, Trash2 } from 'lucide-react';
+import { MoreHorizontal, Trash2, BookMarked } from 'lucide-react';
 
 const priorityColors = {
   urgent: '#EF4444',
   high: '#F97316',
   normal: '#22C55E',
-  low: '#6B7280'
+  low: '#6B7280',
 };
 
 function SubCategory({ subcategory, isDragging = false }) {
-  const { 
-    updateSubcategory, 
-    deleteSubcategory 
-  } = useApp();
-  
+  const { updateSubcategory, deleteSubcategory, saveToLibrary } = useApp();
+
   const [showMenu, setShowMenu] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
 
@@ -25,26 +22,62 @@ function SubCategory({ subcategory, isDragging = false }) {
     }
   };
 
-  const formatDate = (dateStr) => {
+  const formatDate = dateStr => {
     if (!dateStr) return null;
     const date = new Date(dateStr);
     const today = new Date();
     const diffDays = Math.ceil((date - today) / (1000 * 60 * 60 * 24));
-    
+
     let colorClass = 'text-gray-500 dark:text-gray-400';
     if (diffDays < 0) colorClass = 'text-red-500 dark:text-red-400';
     else if (diffDays <= 3) colorClass = 'text-orange-500 dark:text-orange-400';
-    
+
     return {
       text: date.toLocaleDateString('fr-FR'),
-      colorClass
+      colorClass,
     };
   };
 
   const dateInfo = formatDate(subcategory.due_date);
 
+  const handleSaveToLibrary = async () => {
+    const content = {
+      subcategory: {
+        title: subcategory.title,
+        description: subcategory.description,
+        priority: subcategory.priority,
+        due_date: subcategory.due_date,
+        assignee: subcategory.assignee,
+      },
+    };
+
+    await saveToLibrary('subcategory', subcategory.title, JSON.stringify(content));
+    alert('Sous-catégorie sauvegardée dans la bibliothèque !');
+  };
+
+  const handleDragStart = e => {
+    const content = {
+      subcategory: {
+        title: subcategory.title,
+        description: subcategory.description,
+        priority: subcategory.priority,
+        due_date: subcategory.due_date,
+        assignee: subcategory.assignee,
+      },
+    };
+
+    const event = new CustomEvent('library-save', {
+      detail: {
+        itemType: 'subcategory',
+        content: JSON.stringify(content),
+        title: subcategory.title,
+      },
+    });
+    window.dispatchEvent(event);
+  };
+
   useEffect(() => {
-    const handleClickOutside = (e) => {
+    const handleClickOutside = e => {
       if (showMenu && !e.target.closest('.subcategory-menu')) {
         setShowMenu(false);
       }
@@ -55,9 +88,11 @@ function SubCategory({ subcategory, isDragging = false }) {
 
   return (
     <>
-      <div 
+      <div
         className="bg-white dark:bg-gray-700 rounded border border-gray-100 dark:border-gray-600 mb-1 py-1.5 px-2 flex items-center group cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-600"
-        onDoubleClick={(e) => {
+        draggable
+        onDragStart={handleDragStart}
+        onDoubleClick={e => {
           e.stopPropagation();
           if (e.target.closest('button')) return;
           setModalOpen(true);
@@ -67,27 +102,25 @@ function SubCategory({ subcategory, isDragging = false }) {
           <div className="flex items-center gap-2">
             <span className="text-sm text-gray-600 dark:text-gray-300">{subcategory.title}</span>
           </div>
-          
+
           <div className="flex items-center gap-2 mt-0.5">
             {subcategory.priority !== 'normal' && (
-              <span 
+              <span
                 className="px-1.5 py-0.5 text-xs rounded text-white"
                 style={{ backgroundColor: priorityColors[subcategory.priority] }}
               >
-                {subcategory.priority === 'urgent' ? 'U' : subcategory.priority === 'high' ? 'H' : 'L'}
+                {subcategory.priority === 'urgent'
+                  ? 'U'
+                  : subcategory.priority === 'high'
+                    ? 'H'
+                    : 'L'}
               </span>
             )}
-            
-            {dateInfo && (
-              <span className={`text-xs ${dateInfo.colorClass}`}>
-                {dateInfo.text}
-              </span>
-            )}
-            
+
+            {dateInfo && <span className={`text-xs ${dateInfo.colorClass}`}>{dateInfo.text}</span>}
+
             {subcategory.assignee && (
-              <span className="text-xs text-gray-400">
-                {subcategory.assignee}
-              </span>
+              <span className="text-xs text-gray-400">{subcategory.assignee}</span>
             )}
           </div>
         </div>
@@ -110,6 +143,17 @@ function SubCategory({ subcategory, isDragging = false }) {
                 className="flex items-center w-full px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100"
               >
                 Modifier
+              </button>
+
+              <button
+                onClick={() => {
+                  handleSaveToLibrary();
+                  setShowMenu(false);
+                }}
+                className="flex items-center w-full px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100"
+              >
+                <BookMarked size={14} className="mr-2" />
+                Sauvegarder
               </button>
 
               <button

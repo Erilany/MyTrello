@@ -7,6 +7,7 @@ function LibraryPanel() {
     libraryItems,
     loadLibrary,
     deleteLibraryItem,
+    saveToLibrary,
     dbRun,
     dbGet,
     loadBoard,
@@ -30,6 +31,7 @@ function LibraryPanel() {
   const [selectedColumnId, setSelectedColumnId] = useState('');
   const [editingTags, setEditingTags] = useState(null);
   const [tagsInput, setTagsInput] = useState('');
+  const [isDragOver, setIsDragOver] = useState(false);
 
   useEffect(() => {
     if (libraryOpen) {
@@ -37,6 +39,42 @@ function LibraryPanel() {
       loadBoards();
     }
   }, [libraryOpen]);
+
+  useEffect(() => {
+    const handleLibrarySave = async e => {
+      const { itemType, content, title } = e.detail;
+      console.log('Library save event received:', { itemType, title });
+
+      try {
+        const parsedContent = JSON.parse(content);
+
+        let dbType = itemType;
+        let dbTitle = title;
+        let dbContent = content;
+
+        if (itemType === 'card' && parsedContent.card) {
+          dbType = 'card';
+          dbTitle = parsedContent.card.title || title;
+          dbContent = content;
+        } else if (itemType === 'category' && parsedContent.category) {
+          dbType = 'category';
+          dbTitle = parsedContent.category.title || title;
+        } else if (itemType === 'subcategory' && parsedContent.subcategory) {
+          dbType = 'subcategory';
+          dbTitle = parsedContent.subcategory.title || title;
+        }
+
+        await saveToLibrary(dbType, dbTitle, dbContent);
+        alert('Élément sauvegardé dans la bibliothèque !');
+      } catch (error) {
+        console.error('Error saving to library:', error);
+        alert('Erreur lors de la sauvegarde');
+      }
+    };
+
+    window.addEventListener('library-save', handleLibrarySave);
+    return () => window.removeEventListener('library-save', handleLibrarySave);
+  }, [saveToLibrary]);
 
   useEffect(() => {
     console.log(
@@ -357,258 +395,6 @@ function LibraryPanel() {
           </div>
         )}
       </div>
-
-      <div className="flex-1 overflow-y-auto p-4">
-        {sortedItems.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            <p>Aucun modèle trouvé</p>
-            <p className="text-sm mt-2">
-              Glissez des éléments depuis le projet pour les sauvegarder
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {sortedItems.map(item => (
-              <div
-                key={item.id}
-                className="bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 p-3 hover:shadow-md transition-shadow cursor-pointer"
-                onDoubleClick={() => handlePreview(item)}
-                draggable
-                onDragStart={e => {
-                  e.dataTransfer.setData(
-                    'application/json',
-                    JSON.stringify({
-                      type: 'library',
-                      itemType: item.type,
-                      content: item.content_json,
-                      title: item.title,
-                    })
-                  );
-                  e.dataTransfer.effectAllowed = 'copy';
-                }}
-              >
-                <div className="flex items-start gap-2">
-                  <GripVertical size={16} className="text-gray-400 mt-1 cursor-grab" />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span
-                        className={`px-2 py-0.5 text-xs rounded ${typeColors[item.type] || 'bg-gray-100'}`}
-                      >
-                        {typeLabels[item.type] || item.type}
-                      </span>
-                      {item.usage_count > 0 && (
-                        <span className="text-xs text-gray-400">×{item.usage_count}</span>
-                      )}
-                    </div>
-                    <h3 className="font-medium text-gray-800 dark:text-white text-sm truncate">
-                      {item.title}
-                    </h3>
-                    {item.tags && item.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {item.tags.split(',').map((tag, i) => (
-                          <span
-                            key={i}
-                            className="px-1.5 py-0.5 text-xs bg-gray-200 text-gray-600 rounded"
-                          >
-                            {tag.trim()}
-                          </span>
-                        ))}
-                      </div>
-                    )}
-                    <p className="text-xs text-gray-400 mt-1">
-                      {new Date(item.created_at).toLocaleDateString('fr-FR')}
-                    </p>
-                  </div>
-                </div>
-
-                {editingTags === item.id ? (
-                  <div
-                    className="flex items-center gap-2 mt-3 ml-6"
-                    onClick={e => e.stopPropagation()}
-                  >
-                    <input
-                      type="text"
-                      value={tagsInput}
-                      onChange={e => setTagsInput(e.target.value)}
-                      placeholder="Tags séparés par virgule"
-                      className="flex-1 px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded"
-                      onKeyDown={e => e.key === 'Enter' && handleSaveTags(item.id)}
-                      autoFocus
-                    />
-                    <button
-                      onClick={() => handleSaveTags(item.id)}
-                      className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
-                    >
-                      OK
-                    </button>
-                    <button
-                      onClick={() => setEditingTags(null)}
-                      className="px-2 py-1 text-xs text-gray-500 hover:bg-gray-200 rounded"
-                    >
-                      Annuler
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2 mt-3 ml-6">
-                    <button
-                      onClick={e => {
-                        e.stopPropagation();
-                        handlePreview(item);
-                      }}
-                      className="flex items-center px-3 py-1.5 text-xs bg-gray-200 dark:bg-gray-600 dark:text-gray-200 rounded hover:bg-gray-300"
-                      title="Voir le contenu"
-                    >
-                      <Eye size={12} className="mr-1" />
-                      Voir
-                    </button>
-                    <button
-                      onClick={e => {
-                        e.stopPropagation();
-                        handleEditTags(item);
-                      }}
-                      className="flex items-center px-3 py-1.5 text-xs bg-gray-200 dark:bg-gray-600 dark:text-gray-200 rounded hover:bg-gray-300"
-                      title="Modifier les tags"
-                    >
-                      Tags
-                    </button>
-                    {item.type === 'card' && (
-                      <button
-                        onClick={e => {
-                          e.stopPropagation();
-                          handleUseClick(item);
-                        }}
-                        className="flex items-center px-3 py-1.5 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
-                      >
-                        <Copy size={12} className="mr-1" />
-                        Utiliser
-                      </button>
-                    )}
-                    <button
-                      onClick={() => handleDelete(item.id)}
-                      className="flex items-center px-3 py-1.5 text-xs text-red-600 hover:bg-red-50 rounded"
-                    >
-                      <Trash2 size={12} className="mr-1" />
-                      Supprimer
-                    </button>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      <div className="p-3 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-xs text-gray-500 text-center">
-        Glissez un élément depuis le projet pour le sauvegarder
-      </div>
-
-      {previewItem && (
-        <div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-          onClick={() => setPreviewItem(null)}
-        >
-          <div
-            className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-lg max-h-[80vh] overflow-auto"
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="p-4 border-b dark:border-gray-700 flex items-center justify-between">
-              <h3 className="text-lg font-semibold dark:text-white">{previewItem.title}</h3>
-              <button
-                onClick={() => setPreviewItem(null)}
-                className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
-              >
-                <X size={20} className="text-gray-500" />
-              </button>
-            </div>
-            <div className="p-4">
-              {(() => {
-                try {
-                  const content = JSON.parse(previewItem.content_json);
-                  return (
-                    <div className="space-y-4">
-                      {previewItem.type === 'card' && content.card && (
-                        <>
-                          <div className="bg-blue-50 dark:bg-blue-900/30 p-3 rounded-lg">
-                            <span className="text-xs font-medium text-blue-600 dark:text-blue-400">
-                              CARTE
-                            </span>
-                            <h4 className="font-medium dark:text-white">{content.card.title}</h4>
-                            {content.card.description && (
-                              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                                {content.card.description}
-                              </p>
-                            )}
-                          </div>
-                          {content.categories &&
-                            content.categories.map((cat, i) => (
-                              <div
-                                key={i}
-                                className="bg-green-50 dark:bg-green-900/30 p-3 rounded-lg ml-4"
-                              >
-                                <span className="text-xs font-medium text-green-600 dark:text-green-400">
-                                  CATÉGORIE
-                                </span>
-                                <h5 className="font-medium dark:text-white">{cat.title}</h5>
-                                {cat.subcategories &&
-                                  cat.subcategories.map((sub, j) => (
-                                    <div
-                                      key={j}
-                                      className="ml-4 mt-2 bg-purple-50 dark:bg-purple-900/30 p-2 rounded"
-                                    >
-                                      <span className="text-xs font-medium text-purple-600 dark:text-purple-400">
-                                        SOUS-CATÉGORIE
-                                      </span>
-                                      <p className="dark:text-gray-200">{sub.title}</p>
-                                    </div>
-                                  ))}
-                              </div>
-                            ))}
-                        </>
-                      )}
-                      {previewItem.type === 'category' && content.category && (
-                        <>
-                          <div className="bg-green-50 dark:bg-green-900/30 p-3 rounded-lg">
-                            <span className="text-xs font-medium text-green-600 dark:text-green-400">
-                              CATÉGORIE
-                            </span>
-                            <h4 className="font-medium dark:text-white">
-                              {content.category.title}
-                            </h4>
-                          </div>
-                          {content.subcategories &&
-                            content.subcategories.map((sub, i) => (
-                              <div
-                                key={i}
-                                className="bg-purple-50 dark:bg-purple-900/30 p-3 rounded-lg ml-4"
-                              >
-                                <span className="text-xs font-medium text-purple-600 dark:text-purple-400">
-                                  SOUS-CATÉGORIE
-                                </span>
-                                <p className="dark:text-gray-200">{sub.title}</p>
-                              </div>
-                            ))}
-                        </>
-                      )}
-                      {previewItem.type === 'subcategory' && content.subcategory && (
-                        <div className="bg-purple-50 dark:bg-purple-900/30 p-3 rounded-lg">
-                          <span className="text-xs font-medium text-purple-600 dark:text-purple-400">
-                            SOUS-CATÉGORIE
-                          </span>
-                          <h4 className="font-medium dark:text-white">
-                            {content.subcategory.title}
-                          </h4>
-                        </div>
-                      )}
-                    </div>
-                  );
-                } catch (e) {
-                  return <p className="text-gray-500">Contenu non disponible</p>;
-                }
-              })()}
-            </div>
-          </div>
-        </div>
-      )}
 
       {showUseModal && (
         <div

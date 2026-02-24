@@ -132,6 +132,80 @@ export function AppProvider({ children }) {
     return () => clearInterval(checkElectron);
   }, [loadBoards]);
 
+  const generateTestData = async () => {
+    if (!currentBoard) return;
+
+    const testCards = [
+      {
+        title: 'Poste 400kV Saint-Étienne-du-Rouvray',
+        description: 'Construction nouveau poste source',
+        priority: 'urgent',
+        dueDate: '2026-06-30',
+      },
+      {
+        title: 'Poste 225kV Lyon-Est',
+        description: 'Rénovation poste existant',
+        priority: 'high',
+        dueDate: '2026-09-15',
+      },
+      {
+        title: 'Liaison Haute Tension Bordeaux-Nantes',
+        description: 'Tracé 45km lignes aériennes',
+        priority: 'normal',
+        dueDate: '2026-12-01',
+      },
+    ];
+
+    const testCategories = [
+      { title: 'Études GC', description: 'Génie civil' },
+      { title: 'Études Électriques HTB', description: ' Haute tension' },
+      { title: 'Réalisation GC', description: 'Travaux génie civil' },
+      { title: 'Suivi administratif', description: 'Permis, autorisations' },
+    ];
+
+    const testSubcategories = [
+      { title: 'Terrassements' },
+      { title: 'Fondations' },
+      { title: 'Dallage' },
+      { title: 'Clôture' },
+      { title: 'Réseaux enterrés' },
+    ];
+
+    for (let i = 0; i < testCards.length; i++) {
+      const card = testCards[i];
+      const cardResult = await dbRun(
+        'INSERT INTO cards (column_id, title, description, priority, due_date, assignee, position) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        [columns[0].id, card.title, card.description, card.priority, card.dueDate, 'Éric', i]
+      );
+
+      if (cardResult.success) {
+        const cardId = cardResult.data.lastInsertRowid;
+
+        for (let j = 0; j < testCategories.length; j++) {
+          const cat = testCategories[j];
+          const catResult = await dbRun(
+            'INSERT INTO categories (card_id, title, description, priority, position) VALUES (?, ?, ?, ?, ?)',
+            [cardId, cat.title, cat.description, 'normal', j]
+          );
+
+          if (catResult.success) {
+            const catId = catResult.data.lastInsertRowid;
+
+            for (let k = 0; k < testSubcategories.length; k++) {
+              const subcat = testSubcategories[k];
+              await dbRun(
+                'INSERT INTO subcategories (category_id, title, description, priority, position) VALUES (?, ?, ?, ?, ?)',
+                [catId, subcat.title, '', 'normal', k]
+              );
+            }
+          }
+        }
+      }
+    }
+
+    await loadBoard(currentBoard.id);
+  };
+
   const createBoard = async (title, description = '') => {
     console.log('createBoard called:', { title, description });
     const result = await dbRun('INSERT INTO boards (title, description) VALUES (?, ?)', [
@@ -663,6 +737,7 @@ export function AppProvider({ children }) {
     deleteSubcategory,
     moveSubcategory,
     loadLibrary,
+    generateTestData,
     saveToLibrary,
     updateLibraryItem,
     deleteLibraryItem,
