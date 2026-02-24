@@ -70,8 +70,8 @@ function Board() {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-center">
-          <p className="text-gray-500 mb-4">Aucun tableau sélectionné</p>
-          <p className="text-sm text-gray-400">Créez un nouveau tableau depuis la barre latérale</p>
+          <p className="text-gray-500 dark:text-gray-400 mb-4">Aucun projet sélectionné</p>
+          <p className="text-sm text-gray-400 dark:text-gray-500">Créez un nouveau projet depuis la barre latérale</p>
         </div>
       </div>
     );
@@ -80,19 +80,19 @@ function Board() {
   const orderedColumns = [...columns].sort((a, b) => a.position - b.position);
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col overflow-hidden">
       {currentBoard.description && (
-        <p className="text-sm text-gray-500 mb-4">{currentBoard.description}</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">{currentBoard.description}</p>
       )}
       
-      <div className="flex-1 overflow-x-auto overflow-y-hidden">
+      <div className="flex-1 overflow-x-auto overflow-y-auto">
         <DragDropContext onDragEnd={handleDragEnd}>
           <Droppable droppableId="board" type="column" direction="horizontal">
             {(provided) => (
               <div
                 {...provided.droppableProps}
                 ref={provided.innerRef}
-                className="flex h-full space-x-4 pb-4"
+                className="flex h-auto min-h-full space-x-4 pb-4"
               >
                 {orderedColumns.map((column, index) => (
                   <Draggable key={column.id} draggableId={String(column.id)} index={index}>

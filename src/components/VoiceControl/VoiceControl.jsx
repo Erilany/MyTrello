@@ -170,17 +170,17 @@ function VoiceControl() {
   const helpCommands = [
     { cmd: 'Hey MyTrello / Écoute', desc: 'Activer l\'écoute' },
     { cmd: 'Stop / Pause', desc: 'Désactiver l\'écoute' },
-    { cmd: 'Créer une carte [nom]', desc: 'Créer une carte' },
-    { cmd: 'Créer une catégorie [nom]', desc: 'Créer une catégorie' },
-    { cmd: 'Ouvrir carte [nom]', desc: 'Ouvrir une carte' },
-    { cmd: 'Fermer carte', desc: 'Fermer la modal' },
-    { cmd: 'Taguer [priorité]', desc: 'Définir la priorité' },
-    { cmd: 'Assigner à [nom]', desc: 'Assigner la tâche' },
-    { cmd: 'Archiver carte', desc: 'Archiver la carte' },
-    { cmd: 'Ajouter commentaire [texte]', desc: 'Ajouter un commentaire' },
-    { cmd: 'Ouvrir la bibliothèque', desc: 'Ouvrir la bibliothèque' },
+    { cmd: 'Crée une carte [nom]', desc: 'Créer une carte' },
+    { cmd: 'Crée une catégorie [nom]', desc: 'Créer une catégorie' },
+    { cmd: 'Ouvre [nom]', desc: 'Ouvrir une carte' },
+    { cmd: 'Ferme', desc: 'Fermer la modal' },
+    { cmd: 'Tag [priorité]', desc: 'Définir la priorité' },
+    { cmd: 'Assigne à [nom]', desc: 'Assigner la tâche' },
+    { cmd: 'Archive', desc: 'Archiver la carte' },
+    { cmd: 'Ajoute un commentaire [texte]', desc: 'Ajouter un commentaire' },
+    { cmd: 'Ouvre la bibliothèque', desc: 'Ouvrir la bibliothèque' },
     { cmd: 'Aide', desc: 'Afficher les commandes' },
-    { cmd: 'Annuler', desc: 'Annuler l\'action' },
+    { cmd: 'Annule', desc: 'Annuler l\'action' },
   ];
 
   return (
@@ -197,27 +197,27 @@ function VoiceControl() {
       <div className="fixed bottom-4 right-4 z-50">
         <div className="flex flex-col items-end space-y-2">
           {isListening && (
-            <div className="bg-white rounded-lg shadow-lg p-3 animate-pulse">
-              <p className="text-sm text-blue-600 font-medium">En écoute...</p>
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-3 animate-pulse border dark:border-gray-700">
+              <p className="text-sm text-blue-600 dark:text-blue-400 font-medium">En écoute...</p>
               {lastCommand && (
-                <p className="text-xs text-gray-500 mt-1">"{lastCommand.original}"</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">"{lastCommand.original}"</p>
               )}
             </div>
           )}
 
           {showHelp && (
-            <div className="bg-white rounded-lg shadow-lg p-4 w-72 max-h-80 overflow-y-auto">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 w-72 max-h-80 overflow-y-auto border dark:border-gray-700">
               <div className="flex justify-between items-center mb-2">
-                <h3 className="font-semibold text-sm">Commandes vocales</h3>
-                <button onClick={() => setShowHelp(false)} className="text-gray-400 hover:text-gray-600">
+                <h3 className="font-semibold text-sm dark:text-white">Commandes vocales</h3>
+                <button onClick={() => setShowHelp(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
                   <X size={16} />
                 </button>
               </div>
               <ul className="space-y-1">
                 {helpCommands.map((item, index) => (
                   <li key={index} className="text-xs">
-                    <span className="font-medium text-blue-600">{item.cmd}</span>
-                    <span className="text-gray-500"> - {item.desc}</span>
+                    <span className="font-medium text-blue-600 dark:text-blue-400">{item.cmd}</span>
+                    <span className="text-gray-500 dark:text-gray-400"> - {item.desc}</span>
                   </li>
                 ))}
               </ul>
@@ -226,10 +226,10 @@ function VoiceControl() {
 
           <button
             onClick={() => setShowHelp(!showHelp)}
-            className={`p-2 rounded-full ${showHelp ? 'bg-blue-100' : 'bg-gray-100'} hover:bg-gray-200 transition-colors`}
+            className={`p-2 rounded-full ${showHelp ? 'bg-blue-100 dark:bg-blue-900' : 'bg-gray-100 dark:bg-gray-700'} hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors`}
             title="Aide"
           >
-            <Volume2 size={20} className="text-gray-600" />
+            <Volume2 size={20} className="text-gray-600 dark:text-gray-300" />
           </button>
 
           <button

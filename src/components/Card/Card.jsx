@@ -63,9 +63,9 @@ function Card({ card, isDragging }) {
     const today = new Date();
     const diffDays = Math.ceil((date - today) / (1000 * 60 * 60 * 24));
     
-    let colorClass = 'text-gray-500';
-    if (diffDays < 0) colorClass = 'text-red-500';
-    else if (diffDays <= 3) colorClass = 'text-orange-500';
+    let colorClass = 'text-gray-500 dark:text-gray-400';
+    if (diffDays < 0) colorClass = 'text-red-500 dark:text-red-400';
+    else if (diffDays <= 3) colorClass = 'text-orange-500 dark:text-orange-400';
     
     return {
       text: date.toLocaleDateString('fr-FR'),
@@ -78,7 +78,7 @@ function Card({ card, isDragging }) {
   return (
     <>
       <div 
-        className={`bg-white rounded-lg shadow-sm border border-gray-200 mb-2 hover:shadow-md transition-shadow ${isDragging ? 'opacity-50' : ''}`}
+        className={`bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 mb-2 hover:shadow-md transition-shadow ${isDragging ? 'opacity-50' : ''}`}
         onDoubleClick={(e) => {
           if (e.target.closest('[data-rbd-drag-handle]') || e.target.closest('.categories-container')) {
             return;
@@ -95,7 +95,7 @@ function Card({ card, isDragging }) {
         
         <div className="p-3">
           <div className="flex items-start justify-between">
-            <div className="flex-1">
+            <div className="flex-1 overflow-hidden">
               <div className="flex items-center gap-2">
                 {cardCategories.length > 0 && (
                   <button
@@ -103,12 +103,12 @@ function Card({ card, isDragging }) {
                       e.stopPropagation();
                       handleToggleCollapse();
                     }}
-                    className="text-gray-400 hover:text-gray-600"
+                    className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                   >
                     {card.collapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
                   </button>
                 )}
-                <h4 className="text-sm font-medium text-gray-800">{card.title}</h4>
+                <h4 className="text-sm font-medium text-gray-800 dark:text-white truncate">{card.title}</h4>
               </div>
               
               <div className="flex items-center gap-2 mt-2 flex-wrap">
@@ -130,7 +130,7 @@ function Card({ card, isDragging }) {
                 )}
                 
                 {card.assignee && (
-                  <span className="px-2 py-0.5 text-xs bg-gray-100 rounded text-gray-600">
+                  <span className="px-2 py-0.5 text-xs bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-300 rounded">
                     {card.assignee}
                   </span>
                 )}
@@ -150,13 +150,13 @@ function Card({ card, isDragging }) {
                   e.stopPropagation();
                   setShowMenu(!showMenu);
                 }}
-                className="p-1 text-gray-400 hover:text-gray-600 rounded"
+                className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded"
               >
                 <MoreHorizontal size={16} />
               </button>
 
               {showMenu && (
-                <div className="absolute right-0 top-6 bg-white rounded-lg shadow-lg py-1 z-50 w-40">
+                <div className="absolute right-0 top-6 bg-white dark:bg-gray-800 rounded-lg shadow-lg py-1 z-50 w-40 border dark:border-gray-700">
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -198,12 +198,14 @@ function Card({ card, isDragging }) {
 
           {!card.collapsed && cardCategories.length > 0 && (
             <Droppable droppableId={`card-${card.id}`} type="category">
-              {(provided, snapshot) => (
-                <div
-                  ref={provided.innerRef}
-                  {...provided.droppableProps}
-                  className="mt-3 pt-2 border-t border-gray-100 categories-container"
-                >
+        {(provided, snapshot) => (
+          <div
+            ref={provided.innerRef}
+            {...provided.droppableProps}
+            className={`flex-1 overflow-y-auto px-2 pb-2 scrollbar-thin ${
+              snapshot.isDraggingOver ? 'bg-gray-200 dark:bg-gray-700' : 'dark:bg-gray-800'
+            }`}
+          >
                   {cardCategories.map((category, index) => (
                     <Draggable key={category.id} draggableId={`category-${category.id}`} index={index}>
                       {(provided, snapshot) => (

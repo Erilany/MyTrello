@@ -34,7 +34,7 @@ function Sidebar() {
   };
 
   const handleDeleteBoard = async (id) => {
-    if (window.confirm('Voulez-vous vraiment supprimer ce tableau ?')) {
+    if (window.confirm('Voulez-vous vraiment supprimer ce projet ?')) {
       await deleteBoard(id);
       setMenuOpenId(null);
     }
@@ -72,7 +72,7 @@ function Sidebar() {
             className="flex items-center w-full px-2 py-1 text-sm text-gray-400 hover:text-white"
           >
             {showBoards ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-            <span className="ml-1">Tableaux</span>
+            <span className="ml-1">Projets</span>
           </button>
 
           {showBoards && (
@@ -141,7 +141,7 @@ function Sidebar() {
                         setShowNewBoard(false);
                       }
                     }}
-                    placeholder="Nom du tableau..."
+                    placeholder="Nom du projet..."
                     className="w-full px-2 py-1 text-sm bg-gray-800 border border-gray-700 rounded text-white focus:outline-none focus:border-blue-500"
                     autoFocus
                     onBlur={() => {
@@ -182,7 +182,7 @@ function Sidebar() {
                   className="flex items-center w-full px-2 py-1 mt-1 text-sm text-gray-400 hover:text-white"
                 >
                   <Plus size={14} className="mr-1" />
-                  Nouveau tableau
+                  Nouveau projet
                 </button>
               )}
             </div>

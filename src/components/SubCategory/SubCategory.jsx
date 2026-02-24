@@ -31,9 +31,9 @@ function SubCategory({ subcategory, isDragging = false }) {
     const today = new Date();
     const diffDays = Math.ceil((date - today) / (1000 * 60 * 60 * 24));
     
-    let colorClass = 'text-gray-500';
-    if (diffDays < 0) colorClass = 'text-red-500';
-    else if (diffDays <= 3) colorClass = 'text-orange-500';
+    let colorClass = 'text-gray-500 dark:text-gray-400';
+    if (diffDays < 0) colorClass = 'text-red-500 dark:text-red-400';
+    else if (diffDays <= 3) colorClass = 'text-orange-500 dark:text-orange-400';
     
     return {
       text: date.toLocaleDateString('fr-FR'),
@@ -56,7 +56,7 @@ function SubCategory({ subcategory, isDragging = false }) {
   return (
     <>
       <div 
-        className="bg-white rounded border border-gray-100 mb-1 py-1.5 px-2 flex items-center group cursor-pointer hover:bg-gray-50"
+        className="bg-white dark:bg-gray-700 rounded border border-gray-100 dark:border-gray-600 mb-1 py-1.5 px-2 flex items-center group cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-600"
         onDoubleClick={(e) => {
           e.stopPropagation();
           if (e.target.closest('button')) return;
@@ -65,7 +65,7 @@ function SubCategory({ subcategory, isDragging = false }) {
       >
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-600">{subcategory.title}</span>
+            <span className="text-sm text-gray-600 dark:text-gray-300">{subcategory.title}</span>
           </div>
           
           <div className="flex items-center gap-2 mt-0.5">

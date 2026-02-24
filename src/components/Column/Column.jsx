@@ -61,8 +61,8 @@ function Column({ column }) {
   ];
 
   return (
-    <div className="flex-shrink-0 w-72 bg-gray-100 rounded-lg flex flex-col max-h-full">
-      <div className="p-3 flex items-center justify-between">
+    <div className="flex-shrink-0 w-72 bg-gray-100 dark:bg-gray-800 rounded-lg flex flex-col h-full max-h-full overflow-hidden">
+      <div className="p-3 flex items-center justify-between flex-shrink-0 bg-gray-100 dark:bg-gray-800">
         {isEditing ? (
           <input
             type="text"
@@ -76,7 +76,7 @@ function Column({ column }) {
                 setIsEditing(false);
               }
             }}
-            className="flex-1 px-2 py-1 text-sm font-semibold bg-white border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="flex-1 px-2 py-1 text-sm font-semibold bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 dark:text-white rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
             autoFocus
           />
         ) : (
@@ -88,7 +88,7 @@ function Column({ column }) {
               className="w-3 h-3 rounded-full mr-2"
               style={{ backgroundColor: column.color }}
             />
-            <h3 className="font-semibold text-sm text-gray-700">{column.title}</h3>
+            <h3 className="font-semibold text-sm text-gray-700 dark:text-gray-200">{column.title}</h3>
             <span className="ml-2 text-xs text-gray-400">({columnCards.length})</span>
           </div>
         )}
@@ -102,7 +102,7 @@ function Column({ column }) {
           </button>
 
           {showMenu && (
-            <div className="absolute right-0 top-8 bg-white rounded-lg shadow-lg py-1 z-50 w-40">
+            <div className="absolute right-0 top-8 bg-white dark:bg-gray-800 rounded-lg shadow-lg py-1 z-50 w-40 border dark:border-gray-700">
               <button
                 onClick={() => {
                   setIsEditing(true);
@@ -151,8 +151,8 @@ function Column({ column }) {
           <div
             ref={provided.innerRef}
             {...provided.droppableProps}
-            className={`flex-1 overflow-y-visible px-2 pb-2 scrollbar-thin ${
-              snapshot.isDraggingOver ? 'bg-gray-200' : ''
+            className={`flex-1 overflow-y-auto px-2 pb-2 scrollbar-thin ${
+              snapshot.isDraggingOver ? 'bg-gray-200 dark:bg-gray-700' : 'dark:bg-gray-800'
             }`}
           >
             {columnCards.map((card, index) => (
@@ -215,7 +215,7 @@ function Column({ column }) {
         ) : (
           <button
             onClick={() => setShowNewCard(true)}
-            className="w-full flex items-center justify-center py-2 text-sm text-gray-500 hover:bg-gray-200 rounded transition-colors"
+            className="w-full flex items-center justify-center py-2 text-sm text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
           >
             <Plus size={16} className="mr-1" />
             Ajouter une carte

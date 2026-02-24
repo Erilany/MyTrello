@@ -61,9 +61,9 @@ function Category({ category, isDragging = false }) {
     const today = new Date();
     const diffDays = Math.ceil((date - today) / (1000 * 60 * 60 * 24));
     
-    let colorClass = 'text-gray-500';
-    if (diffDays < 0) colorClass = 'text-red-500';
-    else if (diffDays <= 3) colorClass = 'text-orange-500';
+    let colorClass = 'text-gray-500 dark:text-gray-400';
+    if (diffDays < 0) colorClass = 'text-red-500 dark:text-red-400';
+    else if (diffDays <= 3) colorClass = 'text-orange-500 dark:text-orange-400';
     
     return {
       text: date.toLocaleDateString('fr-FR'),
@@ -76,7 +76,7 @@ function Category({ category, isDragging = false }) {
   return (
     <>
       <div 
-        className="bg-gray-50 rounded border border-gray-200 mb-2 cursor-pointer hover:bg-gray-100 select-none"
+        className="bg-gray-50 dark:bg-gray-700 rounded border border-gray-200 dark:border-gray-600 mb-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 select-none"
         style={{ borderLeftColor: category.color || '#E5E7EB', borderLeftWidth: '3px' }}
         onDoubleClick={(e) => {
           if (e.target.closest('button')) return;
@@ -99,7 +99,7 @@ function Category({ category, isDragging = false }) {
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1 flex-wrap">
               {categorySubcategories.length > 0 && (
-                <span className="text-xs text-gray-400 mr-1">
+                <span className="text-xs text-gray-400 dark:text-gray-400 mr-1">
                   {category.collapsed ? `(${categorySubcategories.length})` : ''}
                 </span>
               )}
@@ -121,7 +121,7 @@ function Category({ category, isDragging = false }) {
                 />
               ) : (
                 <span 
-                  className="text-sm font-medium text-gray-700 cursor-pointer hover:text-blue-600"
+                  className="text-sm font-medium text-gray-700 dark:text-gray-200 cursor-pointer hover:text-blue-600"
                   title="Cliquez pour modifier"
                   onClick={() => {
                     if (isDragging) return;
@@ -174,7 +174,7 @@ function Category({ category, isDragging = false }) {
                     setModalOpen(true);
                     setShowMenu(false);
                   }}
-                  className="flex items-center w-full px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100"
+                  className="flex items-center w-full px-3 py-1.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
                 >
                   Modifier
                 </button>

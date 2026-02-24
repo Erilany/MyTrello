@@ -37,15 +37,15 @@ function Archives() {
   return (
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-gray-800 flex items-center">
+        <h1 className="text-2xl font-bold text-gray-800 dark:text-white flex items-center">
           <Archive size={28} className="mr-2" />
           Archives
         </h1>
       </div>
 
       {archivedCards.length === 0 ? (
-        <div className="text-center py-12 text-gray-500">
-          <Archive size={48} className="mx-auto mb-4 text-gray-300" />
+        <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+          <Archive size={48} className="mx-auto mb-4 text-gray-300 dark:text-gray-600" />
           <p>Aucune carte archivée</p>
         </div>
       ) : (
@@ -53,11 +53,11 @@ function Archives() {
           {archivedCards.map(card => (
             <div 
               key={card.id} 
-              className="bg-white rounded-lg shadow border border-gray-200 p-4 flex items-center justify-between"
+              className="bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700 p-4 flex items-center justify-between"
             >
               <div className="flex-1">
                 <div className="flex items-center gap-2">
-                  <h3 className="font-medium text-gray-800">{card.title}</h3>
+                  <h3 className="font-medium text-gray-800 dark:text-white">{card.title}</h3>
                   {card.priority !== 'normal' && (
                     <span 
                       className="px-2 py-0.5 text-xs rounded-full text-white"
@@ -68,9 +68,9 @@ function Archives() {
                   )}
                 </div>
                 {card.description && (
-                  <p className="text-sm text-gray-500 mt-1">{card.description}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{card.description}</p>
                 )}
-                <p className="text-xs text-gray-400 mt-2">
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
                   Archivé le {new Date(card.updated_at).toLocaleDateString('fr-FR')}
                 </p>
               </div>

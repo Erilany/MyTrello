@@ -13,6 +13,23 @@ export function AppProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [libraryOpen, setLibraryOpen] = useState(false);
+  const [theme, setTheme] = useState('light');
+
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('mytrello-theme');
+    if (savedTheme) {
+      setTheme(savedTheme);
+    }
+  }, []);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+    localStorage.setItem('mytrello-theme', theme);
+  }, [theme]);
+
+  const toggleTheme = useCallback(() => {
+    setTheme(prev => prev === 'light' ? 'dark' : 'light');
+  }, []);
 
   const dbQuery = useCallback(async (sql, params = []) => {
     if (window.electron) {
@@ -41,7 +58,7 @@ export function AppProvider({ children }) {
 
   const loadBoards = async () => {
     setLoading(true);
-    const result = await dbQuery('SELECT * FROM boards ORDER BY updated_at DESC');
+    const result = await dbQuery('SELECT * FROM boards ORDER BY title ASC');
     if (result.success) {
       setBoards(result.data);
       if (result.data.length > 0) {
@@ -588,7 +605,9 @@ export function AppProvider({ children }) {
     deleteComment,
     dbQuery,
     dbRun,
-    dbGet
+    dbGet,
+    theme,
+    toggleTheme
   };
 
   return (

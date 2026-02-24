@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
-import { X } from 'lucide-react';
+import { X, Bookmark } from 'lucide-react';
 
 function CategoryModal({ category, onClose }) {
-  const { updateCategory, createSubcategory } = useApp();
+  const { updateCategory, createSubcategory, saveToLibrary, subcategories } = useApp();
   
   const [title, setTitle] = useState(category.title);
   const [description, setDescription] = useState(category.description || '');
@@ -23,6 +23,17 @@ function CategoryModal({ category, onClose }) {
       color
     });
     onClose();
+  };
+
+  const handleSaveToLibrary = async () => {
+    const categorySubcategories = subcategories.filter(sc => sc.category_id === category.id);
+    const content = {
+      category: { title, description, priority, due_date: dueDate, assignee, color },
+      subcategories: categorySubcategories
+    };
+    
+    await saveToLibrary('category', title, JSON.stringify(content));
+    alert('Catégorie sauvegardée dans la bibliothèque');
   };
 
   const handleAddSubcategory = async (e) => {
@@ -147,19 +158,28 @@ function CategoryModal({ category, onClose }) {
           </div>
         </div>
 
-        <div className="flex justify-end gap-2 p-4 border-t bg-gray-50">
+        <div className="flex justify-between p-4 border-t bg-gray-50">
           <button
-            onClick={onClose}
-            className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+            onClick={handleSaveToLibrary}
+            className="flex items-center px-4 py-2 text-blue-600 hover:bg-blue-50 rounded-lg"
           >
-            Annuler
+            <Bookmark size={16} className="mr-2" />
+            Sauvegarder
           </button>
-          <button
-            onClick={handleSave}
-            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-          >
-            Enregistrer
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+            >
+              Annuler
+            </button>
+            <button
+              onClick={handleSave}
+              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+            >
+              Enregistrer
+            </button>
+          </div>
         </div>
       </div>
     </div>

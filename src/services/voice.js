@@ -68,7 +68,7 @@ class VoiceService {
       navigation: {
         open: ['ouvre', 'ouvrir', 'afficher'],
         close: ['ferme', 'fermer', 'ferme la carte', 'ferme carte'],
-        showBoard: ['affiche le tableau', 'voir le tableau', 'tableau']
+        showBoard: ['affiche le projet', 'voir le projet', 'projet']
       },
       
       actions: {
