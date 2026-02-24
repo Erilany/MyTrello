@@ -17,10 +17,10 @@ function getDbPath() {
 function initDatabase() {
   const dbPath = getDbPath();
   const dbDir = path.dirname(dbPath);
-  
+
   console.log('DB Path:', dbPath);
   console.log('DB Dir:', dbDir);
-  
+
   if (!fs.existsSync(dbDir)) {
     fs.mkdirSync(dbDir, { recursive: true });
   }
@@ -33,9 +33,9 @@ function initDatabase() {
   const possiblePaths = [
     path.join(__dirname, '..', '..', 'database', 'schema.sql'),
     path.join(process.cwd(), 'database', 'schema.sql'),
-    path.join(__dirname, 'database', 'schema.sql')
+    path.join(__dirname, 'database', 'schema.sql'),
   ];
-  
+
   let schemaPath = null;
   for (const p of possiblePaths) {
     if (fs.existsSync(p)) {
@@ -43,15 +43,39 @@ function initDatabase() {
       break;
     }
   }
-  
+
   if (!schemaPath) {
     throw new Error('schema.sql not found in any of: ' + possiblePaths.join(', '));
   }
-  
+
   console.log('Schema path:', schemaPath);
   const schema = fs.readFileSync(schemaPath, 'utf8');
-  
+
   db.exec(schema);
+
+  // Migration: add missing columns to library_items if they don't exist
+  const tableInfo = db.prepare('PRAGMA table_info(library_items)').all();
+  const existingColumns = tableInfo.map(col => col.name);
+  console.log('[DB MIGRATION] library_items existing columns:', existingColumns);
+
+  if (!existingColumns.includes('tags')) {
+    console.log('[DB MIGRATION] Adding tags column');
+    db.exec("ALTER TABLE library_items ADD COLUMN tags TEXT DEFAULT ''");
+  }
+  if (!existingColumns.includes('usage_count')) {
+    console.log('[DB MIGRATION] Adding usage_count column');
+    db.exec('ALTER TABLE library_items ADD COLUMN usage_count INTEGER DEFAULT 0');
+  }
+  if (!existingColumns.includes('last_used')) {
+    console.log('[DB MIGRATION] Adding last_used column');
+    db.exec('ALTER TABLE library_items ADD COLUMN last_used DATETIME');
+  }
+
+  const newTableInfo = db.prepare('PRAGMA table_info(library_items)').all();
+  console.log(
+    '[DB MIGRATION] library_items new columns:',
+    newTableInfo.map(c => c.name)
+  );
 
   insertDefaultData();
 
@@ -60,13 +84,15 @@ function initDatabase() {
 
 function insertDefaultData() {
   const boardCount = db.prepare('SELECT COUNT(*) as count FROM boards').get();
-  
+
   if (boardCount.count === 0) {
     const insertBoard = db.prepare('INSERT INTO boards (title, description) VALUES (?, ?)');
     const result = insertBoard.run('Mon Premier Projet', 'Projet par défaut');
     const boardId = result.lastInsertRowid;
 
-    const insertColumn = db.prepare('INSERT INTO columns (board_id, title, position, color) VALUES (?, ?, ?, ?)');
+    const insertColumn = db.prepare(
+      'INSERT INTO columns (board_id, title, position, color) VALUES (?, ?, ?, ?)'
+    );
     insertColumn.run(boardId, 'À faire', 0, '#4A90D9');
     insertColumn.run(boardId, 'En cours', 1, '#F5A623');
     insertColumn.run(boardId, 'Terminé', 2, '#7ED321');
@@ -92,5 +118,5 @@ function closeDatabase() {
 module.exports = {
   initDatabase,
   getDatabase,
-  closeDatabase
+  closeDatabase,
 };

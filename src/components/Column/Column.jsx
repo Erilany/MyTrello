@@ -57,7 +57,7 @@ function Column({ column }) {
 
   const colors = [
     '#4A90D9', '#50C878', '#F5A623', '#D0021B', '#9013FE',
-    '#4A90D9', '#7ED321', '#F8E71C', '#BD10E0', '#B8E986'
+    '#7ED321', '#F8E71C', '#BD10E0', '#B8E986'
   ];
 
   return (
@@ -102,7 +102,7 @@ function Column({ column }) {
           </button>
 
           {showMenu && (
-            <div className="absolute right-0 top-8 bg-white dark:bg-gray-800 rounded-lg shadow-lg py-1 z-50 w-40 border dark:border-gray-700">
+            <div className="absolute right-0 top-8 bg-white dark:bg-gray-800 rounded-lg shadow-lg py-1 z-[100] w-48 border dark:border-gray-700 overflow-visible">
               <button
                 onClick={() => {
                   setIsEditing(true);
@@ -122,7 +122,7 @@ function Column({ column }) {
                   Couleur
                 </button>
                 {showColorPicker && (
-                  <div className="absolute left-full top-0 bg-white rounded-lg shadow-lg p-2 grid grid-cols-5 gap-1 w-32">
+                  <div className="absolute left-full top-0 ml-1 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-2 grid grid-cols-5 gap-1 w-32 z-[99999]">
                     {colors.map(color => (
                       <button
                         key={color}

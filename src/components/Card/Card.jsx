@@ -157,7 +157,11 @@ function Card({ card, isDragging }) {
               </button>
 
               {showMenu && (
-                <div className="absolute right-0 top-6 bg-white dark:bg-gray-800 rounded-lg shadow-lg py-1 z-50 w-40 border dark:border-gray-700">
+                <div className="fixed" style={{ zIndex: 9999 }}>
+                  <div 
+                    className="absolute right-0 top-0 bg-white dark:bg-gray-800 rounded-lg shadow-lg py-1 w-40 border dark:border-gray-700"
+                    style={{ maxHeight: '200px', overflowY: 'auto' }}
+                  >
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -192,6 +196,7 @@ function Card({ card, isDragging }) {
                     <Trash2 size={14} className="mr-2" />
                     Supprimer
                   </button>
+                </div>
                 </div>
               )}
             </div>

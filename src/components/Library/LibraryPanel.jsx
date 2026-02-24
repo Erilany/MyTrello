@@ -3,23 +3,23 @@ import { useApp } from '../../context/AppContext';
 import { Trash2, Copy, Search, X, GripVertical, Eye } from 'lucide-react';
 
 function LibraryPanel() {
-  const { 
-    libraryItems, 
-    loadLibrary, 
-    deleteLibraryItem, 
-    dbRun, 
-    dbGet, 
-    loadBoard, 
-    currentBoard, 
-    categories, 
+  const {
+    libraryItems,
+    loadLibrary,
+    deleteLibraryItem,
+    dbRun,
+    dbGet,
+    loadBoard,
+    currentBoard,
+    categories,
     subcategories,
     libraryOpen,
     setLibraryOpen,
     boards,
     columns,
-    loadBoards
+    loadBoards,
   } = useApp();
-  
+
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState('date');
@@ -39,26 +39,42 @@ function LibraryPanel() {
   }, [libraryOpen]);
 
   useEffect(() => {
+    console.log(
+      'Library items updated:',
+      libraryItems.map(i => ({ id: i.id, title: i.title, tags: i.tags }))
+    );
+  }, [libraryItems]);
+
+  useEffect(() => {
     if (selectedBoardId) {
       loadBoard(parseInt(selectedBoardId));
     }
   }, [selectedBoardId]);
 
-  const handleSaveTags = async (itemId) => {
-    await dbRun('UPDATE library_items SET tags = ? WHERE id = ?', [tagsInput, itemId]);
-    loadLibrary();
+  const handleSaveTags = async itemId => {
+    console.log('Saving tags:', tagsInput, 'for item:', itemId);
+    const result = await dbRun(
+      'UPDATE library_items SET tags = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+      [tagsInput, itemId]
+    );
+    console.log('DB update result:', result);
+    await loadLibrary();
+    console.log('Library reloaded, items:', libraryItems);
     setEditingTags(null);
+    console.log('Tags saved for item:', itemId);
   };
 
-  const handleEditTags = (item) => {
+  const handleEditTags = item => {
     setEditingTags(item.id);
     setTagsInput(item.tags || '');
   };
 
   const filteredItems = libraryItems.filter(item => {
     const matchesFilter = filter === 'all' || item.type === filter;
-    const matchesSearch = item.title.toLowerCase().includes(search.toLowerCase()) ||
-      (item.tags && item.tags.toLowerCase().includes(search.toLowerCase()));
+    const itemTags = item.tags || '';
+    const matchesSearch =
+      item.title.toLowerCase().includes(search.toLowerCase()) ||
+      itemTags.toLowerCase().includes(search.toLowerCase());
     return matchesFilter && matchesSearch;
   });
 
@@ -68,17 +84,17 @@ function LibraryPanel() {
     return new Date(b.created_at) - new Date(a.created_at);
   });
 
-  const handleDelete = async (id) => {
+  const handleDelete = async id => {
     if (window.confirm('Voulez-vous vraiment supprimer ce modèle ?')) {
       await deleteLibraryItem(id);
     }
   };
 
-  const handlePreview = (item) => {
+  const handlePreview = item => {
     setPreviewItem(item);
   };
 
-  const handleUseClick = (item) => {
+  const handleUseClick = item => {
     setSelectedItem(item);
     setShowUseModal(true);
     setSelectedBoardId(currentBoard?.id?.toString() || '');
@@ -94,7 +110,7 @@ function LibraryPanel() {
       const content = JSON.parse(selectedItem.content_json);
       const boardId = parseInt(selectedBoardId);
       const columnId = parseInt(selectedColumnId);
-      
+
       const maxPositionResult = await dbGet(
         'SELECT MAX(position) as maxPos FROM cards WHERE column_id = ?',
         [columnId]
@@ -112,10 +128,10 @@ function LibraryPanel() {
             content.card.due_date || null,
             content.card.assignee || '',
             newPosition,
-            content.card.color || '#FFFFFF'
+            content.card.color || '#FFFFFF',
           ]
         );
-        
+
         if (cardResult.success && content.categories) {
           for (const cat of content.categories) {
             const catResult = await dbRun(
@@ -128,10 +144,10 @@ function LibraryPanel() {
                 cat.due_date || null,
                 cat.assignee || '',
                 cat.position,
-                cat.color || '#F5F5F5'
+                cat.color || '#F5F5F5',
               ]
             );
-            
+
             if (catResult.success && cat.subcategories) {
               for (const subcat of cat.subcategories) {
                 await dbRun(
@@ -143,15 +159,18 @@ function LibraryPanel() {
                     subcat.priority || 'normal',
                     subcat.due_date || null,
                     subcat.assignee || '',
-                    subcat.position
+                    subcat.position,
                   ]
                 );
               }
             }
           }
         }
-        
-        await dbRun('UPDATE library_items SET usage_count = usage_count + 1, last_used = CURRENT_TIMESTAMP WHERE id = ?', [selectedItem.id]);
+
+        await dbRun(
+          'UPDATE library_items SET usage_count = usage_count + 1, last_used = CURRENT_TIMESTAMP WHERE id = ?',
+          [selectedItem.id]
+        );
         await loadBoard(boardId);
         alert('Modèle utilisé avec succès !');
       } else if (selectedItem.type === 'category' && content.category) {
@@ -160,7 +179,7 @@ function LibraryPanel() {
           [columnId]
         );
         const newCatPosition = (maxCatPosResult?.data?.maxPos ?? -1) + 1;
-        
+
         const catResult = await dbRun(
           'INSERT INTO categories (card_id, title, description, priority, due_date, assignee, position, color) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
           [
@@ -171,10 +190,10 @@ function LibraryPanel() {
             content.category.due_date || null,
             content.category.assignee || '',
             newCatPosition,
-            content.category.color || '#F5F5F5'
+            content.category.color || '#F5F5F5',
           ]
         );
-        
+
         if (catResult.success && content.subcategories) {
           for (const subcat of content.subcategories) {
             await dbRun(
@@ -186,13 +205,16 @@ function LibraryPanel() {
                 subcat.priority || 'normal',
                 subcat.due_date || null,
                 subcat.assignee || '',
-                subcat.position
+                subcat.position,
               ]
             );
           }
         }
-        
-        await dbRun('UPDATE library_items SET usage_count = usage_count + 1, last_used = CURRENT_TIMESTAMP WHERE id = ?', [selectedItem.id]);
+
+        await dbRun(
+          'UPDATE library_items SET usage_count = usage_count + 1, last_used = CURRENT_TIMESTAMP WHERE id = ?',
+          [selectedItem.id]
+        );
         await loadBoard(boardId);
         alert('Catégorie appliquée avec succès !');
       } else if (selectedItem.type === 'subcategory' && content.subcategory) {
@@ -201,7 +223,7 @@ function LibraryPanel() {
           [columnId]
         );
         const newSubPosition = (maxSubPosResult?.data?.maxPos ?? -1) + 1;
-        
+
         await dbRun(
           'INSERT INTO subcategories (category_id, title, description, priority, due_date, assignee, position) VALUES (?, ?, ?, ?, ?, ?, ?)',
           [
@@ -211,20 +233,23 @@ function LibraryPanel() {
             content.subcategory.priority || 'normal',
             content.subcategory.due_date || null,
             content.subcategory.assignee || '',
-            newSubPosition
+            newSubPosition,
           ]
         );
-        
-        await dbRun('UPDATE library_items SET usage_count = usage_count + 1, last_used = CURRENT_TIMESTAMP WHERE id = ?', [selectedItem.id]);
+
+        await dbRun(
+          'UPDATE library_items SET usage_count = usage_count + 1, last_used = CURRENT_TIMESTAMP WHERE id = ?',
+          [selectedItem.id]
+        );
         await loadBoard(boardId);
         alert('Sous-catégorie appliquée avec succès !');
       }
-      
+
       setShowUseModal(false);
       setSelectedItem(null);
     } catch (error) {
       console.error('Error using template:', error);
-      alert('Erreur lors de l\'utilisation du modèle');
+      alert("Erreur lors de l'utilisation du modèle");
     }
   };
 
@@ -236,13 +261,32 @@ function LibraryPanel() {
   const typeLabels = {
     card: 'Carte',
     category: 'Catégorie',
-    subcategory: 'Sous-catégorie'
+    subcategory: 'Sous-catégorie',
+  };
+
+  const allTags = [
+    ...new Set(
+      libraryItems
+        .filter(item => item.tags)
+        .flatMap(item => item.tags.split(',').map(t => t.trim()))
+        .filter(tag => tag)
+    ),
+  ].sort();
+
+  console.log(
+    'All tags calculated from:',
+    libraryItems.map(i => ({ id: i.id, tags: i.tags }))
+  );
+  console.log('All tags:', allTags);
+
+  const handleTagClick = tag => {
+    setSearch(tag);
   };
 
   const typeColors = {
     card: 'bg-blue-100 text-blue-700',
     category: 'bg-green-100 text-green-700',
-    subcategory: 'bg-purple-100 text-purple-700'
+    subcategory: 'bg-purple-100 text-purple-700',
   };
 
   if (!libraryOpen) return null;
@@ -252,20 +296,20 @@ function LibraryPanel() {
       <div className="p-4 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold text-gray-800 dark:text-white">Bibliothèque</h2>
-          <button
-            onClick={() => setLibraryOpen(false)}
-            className="p-1 hover:bg-gray-100 rounded"
-          >
+          <button onClick={() => setLibraryOpen(false)} className="p-1 hover:bg-gray-100 rounded">
             <X size={20} className="text-gray-500" />
           </button>
         </div>
 
         <div className="relative mb-3">
-          <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+          <Search
+            size={16}
+            className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+          />
           <input
             type="text"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={e => setSearch(e.target.value)}
             placeholder="Rechercher..."
             className="w-full pl-9 pr-4 py-2 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
@@ -274,7 +318,7 @@ function LibraryPanel() {
         <div className="flex gap-2">
           <select
             value={filter}
-            onChange={(e) => setFilter(e.target.value)}
+            onChange={e => setFilter(e.target.value)}
             className="flex-1 px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="all">Tous</option>
@@ -285,7 +329,7 @@ function LibraryPanel() {
 
           <select
             value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
+            onChange={e => setSortBy(e.target.value)}
             className="flex-1 px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="date">Date</option>
@@ -293,29 +337,53 @@ function LibraryPanel() {
             <option value="usage">Utilisation</option>
           </select>
         </div>
+
+        {allTags.length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-2">
+            <span className="text-xs text-gray-500 dark:text-gray-400 mr-1">Tags:</span>
+            {allTags.map(tag => (
+              <button
+                key={tag}
+                onClick={() => handleTagClick(tag)}
+                className={`px-2 py-0.5 text-xs rounded ${
+                  search.toLowerCase() === tag.toLowerCase()
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-gray-200 dark:bg-gray-600 dark:text-gray-300'
+                }`}
+              >
+                {tag}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="flex-1 overflow-y-auto p-4">
         {sortedItems.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
             <p>Aucun modèle trouvé</p>
-            <p className="text-sm mt-2">Glissez des éléments depuis le projet pour les sauvegarder</p>
+            <p className="text-sm mt-2">
+              Glissez des éléments depuis le projet pour les sauvegarder
+            </p>
           </div>
         ) : (
           <div className="space-y-3">
             {sortedItems.map(item => (
-              <div 
-                key={item.id} 
+              <div
+                key={item.id}
                 className="bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 p-3 hover:shadow-md transition-shadow cursor-pointer"
                 onDoubleClick={() => handlePreview(item)}
                 draggable
-                onDragStart={(e) => {
-                  e.dataTransfer.setData('application/json', JSON.stringify({
-                    type: 'library',
-                    itemType: item.type,
-                    content: item.content_json,
-                    title: item.title
-                  }));
+                onDragStart={e => {
+                  e.dataTransfer.setData(
+                    'application/json',
+                    JSON.stringify({
+                      type: 'library',
+                      itemType: item.type,
+                      content: item.content_json,
+                      title: item.title,
+                    })
+                  );
                   e.dataTransfer.effectAllowed = 'copy';
                 }}
               >
@@ -323,18 +391,25 @@ function LibraryPanel() {
                   <GripVertical size={16} className="text-gray-400 mt-1 cursor-grab" />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className={`px-2 py-0.5 text-xs rounded ${typeColors[item.type] || 'bg-gray-100'}`}>
+                      <span
+                        className={`px-2 py-0.5 text-xs rounded ${typeColors[item.type] || 'bg-gray-100'}`}
+                      >
                         {typeLabels[item.type] || item.type}
                       </span>
                       {item.usage_count > 0 && (
                         <span className="text-xs text-gray-400">×{item.usage_count}</span>
                       )}
                     </div>
-                    <h3 className="font-medium text-gray-800 dark:text-white text-sm truncate">{item.title}</h3>
-                    {item.tags && (
+                    <h3 className="font-medium text-gray-800 dark:text-white text-sm truncate">
+                      {item.title}
+                    </h3>
+                    {item.tags && item.tags.length > 0 && (
                       <div className="flex flex-wrap gap-1 mt-1">
                         {item.tags.split(',').map((tag, i) => (
-                          <span key={i} className="px-1.5 py-0.5 text-xs bg-gray-200 text-gray-600 rounded">
+                          <span
+                            key={i}
+                            className="px-1.5 py-0.5 text-xs bg-gray-200 text-gray-600 rounded"
+                          >
                             {tag.trim()}
                           </span>
                         ))}
@@ -347,14 +422,18 @@ function LibraryPanel() {
                 </div>
 
                 {editingTags === item.id ? (
-                  <div className="flex items-center gap-2 mt-3 ml-6">
+                  <div
+                    className="flex items-center gap-2 mt-3 ml-6"
+                    onClick={e => e.stopPropagation()}
+                  >
                     <input
                       type="text"
                       value={tagsInput}
-                      onChange={(e) => setTagsInput(e.target.value)}
+                      onChange={e => setTagsInput(e.target.value)}
                       placeholder="Tags séparés par virgule"
                       className="flex-1 px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded"
-                      onKeyDown={(e) => e.key === 'Enter' && handleSaveTags(item.id)}
+                      onKeyDown={e => e.key === 'Enter' && handleSaveTags(item.id)}
+                      autoFocus
                     />
                     <button
                       onClick={() => handleSaveTags(item.id)}
@@ -372,7 +451,10 @@ function LibraryPanel() {
                 ) : (
                   <div className="flex items-center gap-2 mt-3 ml-6">
                     <button
-                      onClick={(e) => { e.stopPropagation(); handlePreview(item); }}
+                      onClick={e => {
+                        e.stopPropagation();
+                        handlePreview(item);
+                      }}
                       className="flex items-center px-3 py-1.5 text-xs bg-gray-200 dark:bg-gray-600 dark:text-gray-200 rounded hover:bg-gray-300"
                       title="Voir le contenu"
                     >
@@ -380,7 +462,10 @@ function LibraryPanel() {
                       Voir
                     </button>
                     <button
-                      onClick={(e) => { e.stopPropagation(); handleEditTags(item); }}
+                      onClick={e => {
+                        e.stopPropagation();
+                        handleEditTags(item);
+                      }}
                       className="flex items-center px-3 py-1.5 text-xs bg-gray-200 dark:bg-gray-600 dark:text-gray-200 rounded hover:bg-gray-300"
                       title="Modifier les tags"
                     >
@@ -388,7 +473,10 @@ function LibraryPanel() {
                     </button>
                     {item.type === 'card' && (
                       <button
-                        onClick={(e) => { e.stopPropagation(); handleUseClick(item); }}
+                        onClick={e => {
+                          e.stopPropagation();
+                          handleUseClick(item);
+                        }}
                         className="flex items-center px-3 py-1.5 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
                       >
                         <Copy size={12} className="mr-1" />
@@ -415,11 +503,20 @@ function LibraryPanel() {
       </div>
 
       {previewItem && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setPreviewItem(null)}>
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-lg max-h-[80vh] overflow-auto" onClick={e => e.stopPropagation()}>
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+          onClick={() => setPreviewItem(null)}
+        >
+          <div
+            className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-lg max-h-[80vh] overflow-auto"
+            onClick={e => e.stopPropagation()}
+          >
             <div className="p-4 border-b dark:border-gray-700 flex items-center justify-between">
               <h3 className="text-lg font-semibold dark:text-white">{previewItem.title}</h3>
-              <button onClick={() => setPreviewItem(null)} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
+              <button
+                onClick={() => setPreviewItem(null)}
+                className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+              >
                 <X size={20} className="text-gray-500" />
               </button>
             </div>
@@ -432,42 +529,74 @@ function LibraryPanel() {
                       {previewItem.type === 'card' && content.card && (
                         <>
                           <div className="bg-blue-50 dark:bg-blue-900/30 p-3 rounded-lg">
-                            <span className="text-xs font-medium text-blue-600 dark:text-blue-400">CARTE</span>
+                            <span className="text-xs font-medium text-blue-600 dark:text-blue-400">
+                              CARTE
+                            </span>
                             <h4 className="font-medium dark:text-white">{content.card.title}</h4>
-                            {content.card.description && <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{content.card.description}</p>}
+                            {content.card.description && (
+                              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                {content.card.description}
+                              </p>
+                            )}
                           </div>
-                          {content.categories && content.categories.map((cat, i) => (
-                            <div key={i} className="bg-green-50 dark:bg-green-900/30 p-3 rounded-lg ml-4">
-                              <span className="text-xs font-medium text-green-600 dark:text-green-400">CATÉGORIE</span>
-                              <h5 className="font-medium dark:text-white">{cat.title}</h5>
-                              {cat.subcategories && cat.subcategories.map((sub, j) => (
-                                <div key={j} className="ml-4 mt-2 bg-purple-50 dark:bg-purple-900/30 p-2 rounded">
-                                  <span className="text-xs font-medium text-purple-600 dark:text-purple-400">SOUS-CATÉGORIE</span>
-                                  <p className="dark:text-gray-200">{sub.title}</p>
-                                </div>
-                              ))}
-                            </div>
-                          ))}
+                          {content.categories &&
+                            content.categories.map((cat, i) => (
+                              <div
+                                key={i}
+                                className="bg-green-50 dark:bg-green-900/30 p-3 rounded-lg ml-4"
+                              >
+                                <span className="text-xs font-medium text-green-600 dark:text-green-400">
+                                  CATÉGORIE
+                                </span>
+                                <h5 className="font-medium dark:text-white">{cat.title}</h5>
+                                {cat.subcategories &&
+                                  cat.subcategories.map((sub, j) => (
+                                    <div
+                                      key={j}
+                                      className="ml-4 mt-2 bg-purple-50 dark:bg-purple-900/30 p-2 rounded"
+                                    >
+                                      <span className="text-xs font-medium text-purple-600 dark:text-purple-400">
+                                        SOUS-CATÉGORIE
+                                      </span>
+                                      <p className="dark:text-gray-200">{sub.title}</p>
+                                    </div>
+                                  ))}
+                              </div>
+                            ))}
                         </>
                       )}
                       {previewItem.type === 'category' && content.category && (
                         <>
                           <div className="bg-green-50 dark:bg-green-900/30 p-3 rounded-lg">
-                            <span className="text-xs font-medium text-green-600 dark:text-green-400">CATÉGORIE</span>
-                            <h4 className="font-medium dark:text-white">{content.category.title}</h4>
+                            <span className="text-xs font-medium text-green-600 dark:text-green-400">
+                              CATÉGORIE
+                            </span>
+                            <h4 className="font-medium dark:text-white">
+                              {content.category.title}
+                            </h4>
                           </div>
-                          {content.subcategories && content.subcategories.map((sub, i) => (
-                            <div key={i} className="bg-purple-50 dark:bg-purple-900/30 p-3 rounded-lg ml-4">
-                              <span className="text-xs font-medium text-purple-600 dark:text-purple-400">SOUS-CATÉGORIE</span>
-                              <p className="dark:text-gray-200">{sub.title}</p>
-                            </div>
-                          ))}
+                          {content.subcategories &&
+                            content.subcategories.map((sub, i) => (
+                              <div
+                                key={i}
+                                className="bg-purple-50 dark:bg-purple-900/30 p-3 rounded-lg ml-4"
+                              >
+                                <span className="text-xs font-medium text-purple-600 dark:text-purple-400">
+                                  SOUS-CATÉGORIE
+                                </span>
+                                <p className="dark:text-gray-200">{sub.title}</p>
+                              </div>
+                            ))}
                         </>
                       )}
                       {previewItem.type === 'subcategory' && content.subcategory && (
                         <div className="bg-purple-50 dark:bg-purple-900/30 p-3 rounded-lg">
-                          <span className="text-xs font-medium text-purple-600 dark:text-purple-400">SOUS-CATÉGORIE</span>
-                          <h4 className="font-medium dark:text-white">{content.subcategory.title}</h4>
+                          <span className="text-xs font-medium text-purple-600 dark:text-purple-400">
+                            SOUS-CATÉGORIE
+                          </span>
+                          <h4 className="font-medium dark:text-white">
+                            {content.subcategory.title}
+                          </h4>
                         </div>
                       )}
                     </div>
@@ -482,40 +611,62 @@ function LibraryPanel() {
       )}
 
       {showUseModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setShowUseModal(false)}>
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md" onClick={e => e.stopPropagation()}>
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+          onClick={() => setShowUseModal(false)}
+        >
+          <div
+            className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md"
+            onClick={e => e.stopPropagation()}
+          >
             <div className="p-4 border-b dark:border-gray-700 flex items-center justify-between">
               <h3 className="text-lg font-semibold dark:text-white">Utiliser le modèle</h3>
-              <button onClick={() => setShowUseModal(false)} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded">
+              <button
+                onClick={() => setShowUseModal(false)}
+                className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+              >
                 <X size={20} className="text-gray-500" />
               </button>
             </div>
             <div className="p-4 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Projet</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  Projet
+                </label>
                 <select
                   value={selectedBoardId}
-                  onChange={(e) => { setSelectedBoardId(e.target.value); setSelectedColumnId(''); }}
+                  onChange={e => {
+                    setSelectedBoardId(e.target.value);
+                    setSelectedColumnId('');
+                  }}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">Sélectionner un projet...</option>
                   {boards.map(board => (
-                    <option key={board.id} value={board.id}>{board.title}</option>
+                    <option key={board.id} value={board.id}>
+                      {board.title}
+                    </option>
                   ))}
                 </select>
               </div>
               {selectedBoardId && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Colonne</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Colonne
+                  </label>
                   <select
                     value={selectedColumnId}
-                    onChange={(e) => setSelectedColumnId(e.target.value)}
+                    onChange={e => setSelectedColumnId(e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">Sélectionner une colonne...</option>
-                    {columns.filter(c => c.board_id === parseInt(selectedBoardId)).map(col => (
-                      <option key={col.id} value={col.id}>{col.title}</option>
-                    ))}
+                    {columns
+                      .filter(c => c.board_id === parseInt(selectedBoardId))
+                      .map(col => (
+                        <option key={col.id} value={col.id}>
+                          {col.title}
+                        </option>
+                      ))}
                   </select>
                 </div>
               )}

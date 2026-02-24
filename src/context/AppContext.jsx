@@ -28,13 +28,17 @@ export function AppProvider({ children }) {
   }, [theme]);
 
   const toggleTheme = useCallback(() => {
-    setTheme(prev => prev === 'light' ? 'dark' : 'light');
+    setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
   }, []);
 
   const dbQuery = useCallback(async (sql, params = []) => {
+    console.log('[AppContext] dbQuery called, window.electron:', !!window.electron);
     if (window.electron) {
-      return await window.electron.invoke('db:query', { sql, params });
+      const result = await window.electron.invoke('db:query', { sql, params });
+      console.log('[AppContext] dbQuery result:', result);
+      return result;
     }
+    console.warn('[AppContext] Electron not available!');
     return { success: false, error: 'Electron not available' };
   }, []);
 
@@ -52,11 +56,61 @@ export function AppProvider({ children }) {
     return { success: false, error: 'Electron not available' };
   }, []);
 
-  useEffect(() => {
-    loadBoards();
-  }, []);
+  const loadBoard = useCallback(
+    async boardId => {
+      const boardResult = await dbGet('SELECT * FROM boards WHERE id = ?', [boardId]);
+      if (boardResult.success && boardResult.data) {
+        setCurrentBoard(boardResult.data);
 
-  const loadBoards = async () => {
+        const columnsResult = await dbQuery(
+          'SELECT * FROM columns WHERE board_id = ? ORDER BY position',
+          [boardId]
+        );
+        if (columnsResult.success) {
+          setColumns(columnsResult.data);
+
+          const columnIds = columnsResult.data.map(c => c.id);
+          if (columnIds.length > 0) {
+            const placeholders = columnIds.map(() => '?').join(',');
+            const cardsResult = await dbQuery(
+              `SELECT * FROM cards WHERE column_id IN (${placeholders}) AND is_archived = 0 ORDER BY position`,
+              columnIds
+            );
+            if (cardsResult.success) {
+              setCards(cardsResult.data);
+
+              const cardIds = cardsResult.data.map(c => c.id);
+              if (cardIds.length > 0) {
+                const catPlaceholders = cardIds.map(() => '?').join(',');
+                const categoriesResult = await dbQuery(
+                  `SELECT * FROM categories WHERE card_id IN (${catPlaceholders}) ORDER BY position`,
+                  cardIds
+                );
+                if (categoriesResult.success) {
+                  setCategories(categoriesResult.data);
+
+                  const catIds = categoriesResult.data.map(c => c.id);
+                  if (catIds.length > 0) {
+                    const subcatPlaceholders = catIds.map(() => '?').join(',');
+                    const subcatsResult = await dbQuery(
+                      `SELECT * FROM subcategories WHERE category_id IN (${subcatPlaceholders}) ORDER BY position`,
+                      catIds
+                    );
+                    if (subcatsResult.success) {
+                      setSubcategories(subcatsResult.data);
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    [dbQuery, dbGet]
+  );
+
+  const loadBoards = useCallback(async () => {
     setLoading(true);
     const result = await dbQuery('SELECT * FROM boards ORDER BY title ASC');
     if (result.success) {
@@ -66,82 +120,47 @@ export function AppProvider({ children }) {
       }
     }
     setLoading(false);
-  };
+  }, [dbQuery, loadBoard]);
 
-  const loadBoard = async (boardId) => {
-    const boardResult = await dbGet('SELECT * FROM boards WHERE id = ?', [boardId]);
-    if (boardResult.success && boardResult.data) {
-      setCurrentBoard(boardResult.data);
-
-      const columnsResult = await dbQuery(
-        'SELECT * FROM columns WHERE board_id = ? ORDER BY position',
-        [boardId]
-      );
-      if (columnsResult.success) {
-        setColumns(columnsResult.data);
-
-        const columnIds = columnsResult.data.map(c => c.id);
-        if (columnIds.length > 0) {
-          const placeholders = columnIds.map(() => '?').join(',');
-          const cardsResult = await dbQuery(
-            `SELECT * FROM cards WHERE column_id IN (${placeholders}) AND is_archived = 0 ORDER BY position`,
-            columnIds
-          );
-          if (cardsResult.success) {
-            setCards(cardsResult.data);
-
-            const cardIds = cardsResult.data.map(c => c.id);
-            if (cardIds.length > 0) {
-              const catPlaceholders = cardIds.map(() => '?').join(',');
-              const categoriesResult = await dbQuery(
-                `SELECT * FROM categories WHERE card_id IN (${catPlaceholders}) ORDER BY position`,
-                cardIds
-              );
-              if (categoriesResult.success) {
-                setCategories(categoriesResult.data);
-
-                const catIds = categoriesResult.data.map(c => c.id);
-                if (catIds.length > 0) {
-                  const subcatPlaceholders = catIds.map(() => '?').join(',');
-                  const subcatsResult = await dbQuery(
-                    `SELECT * FROM subcategories WHERE category_id IN (${subcatPlaceholders}) ORDER BY position`,
-                    catIds
-                  );
-                  if (subcatsResult.success) {
-                    setSubcategories(subcatsResult.data);
-                  }
-                }
-              }
-            }
-          }
-        }
+  useEffect(() => {
+    const checkElectron = setInterval(() => {
+      if (window.electron) {
+        clearInterval(checkElectron);
+        loadBoards();
       }
-    }
-  };
+    }, 100);
+    return () => clearInterval(checkElectron);
+  }, [loadBoards]);
 
   const createBoard = async (title, description = '') => {
     console.log('createBoard called:', { title, description });
-    const result = await dbRun(
-      'INSERT INTO boards (title, description) VALUES (?, ?)',
-      [title, description]
-    );
+    const result = await dbRun('INSERT INTO boards (title, description) VALUES (?, ?)', [
+      title,
+      description,
+    ]);
     console.log('createBoard result:', result);
     if (result.success) {
       const boardId = result.data.lastInsertRowid;
-      
-      await dbRun(
-        'INSERT INTO columns (board_id, title, position, color) VALUES (?, ?, ?, ?)',
-        [boardId, 'À faire', 0, '#4A90D9']
-      );
-      await dbRun(
-        'INSERT INTO columns (board_id, title, position, color) VALUES (?, ?, ?, ?)',
-        [boardId, 'En cours', 1, '#F5A623']
-      );
-      await dbRun(
-        'INSERT INTO columns (board_id, title, position, color) VALUES (?, ?, ?, ?)',
-        [boardId, 'Terminé', 2, '#7ED321']
-      );
-      
+
+      await dbRun('INSERT INTO columns (board_id, title, position, color) VALUES (?, ?, ?, ?)', [
+        boardId,
+        'À faire',
+        0,
+        '#4A90D9',
+      ]);
+      await dbRun('INSERT INTO columns (board_id, title, position, color) VALUES (?, ?, ?, ?)', [
+        boardId,
+        'En cours',
+        1,
+        '#F5A623',
+      ]);
+      await dbRun('INSERT INTO columns (board_id, title, position, color) VALUES (?, ?, ?, ?)', [
+        boardId,
+        'Terminé',
+        2,
+        '#7ED321',
+      ]);
+
       await loadBoard(boardId);
       return boardId;
     }
@@ -158,18 +177,17 @@ export function AppProvider({ children }) {
     await loadBoards();
   };
 
-  const deleteBoard = async (id) => {
+  const deleteBoard = async id => {
     await dbRun('DELETE FROM boards WHERE id = ?', [id]);
     await loadBoards();
   };
 
   const createColumn = async (boardId, title, color = '#4A90D9') => {
-    const maxPos = await dbGet(
-      'SELECT MAX(position) as maxPos FROM columns WHERE board_id = ?',
-      [boardId]
-    );
+    const maxPos = await dbGet('SELECT MAX(position) as maxPos FROM columns WHERE board_id = ?', [
+      boardId,
+    ]);
     const position = (maxPos.data?.maxPos ?? -1) + 1;
-    
+
     const result = await dbRun(
       'INSERT INTO columns (board_id, title, position, color) VALUES (?, ?, ?, ?)',
       [boardId, title, position, color]
@@ -182,16 +200,13 @@ export function AppProvider({ children }) {
   };
 
   const updateColumn = async (id, title, color) => {
-    await dbRun(
-      'UPDATE columns SET title = ?, color = ? WHERE id = ?',
-      [title, color, id]
-    );
+    await dbRun('UPDATE columns SET title = ?, color = ? WHERE id = ?', [title, color, id]);
     if (currentBoard) {
       await loadBoard(currentBoard.id);
     }
   };
 
-  const deleteColumn = async (id) => {
+  const deleteColumn = async id => {
     await dbRun('DELETE FROM columns WHERE id = ?', [id]);
     if (currentBoard) {
       await loadBoard(currentBoard.id);
@@ -227,11 +242,17 @@ export function AppProvider({ children }) {
     }
   };
 
-  const createCard = async (columnId, title, description = '', priority = 'normal', dueDate = null, assignee = '') => {
-    const maxPos = await dbGet(
-      'SELECT MAX(position) as maxPos FROM cards WHERE column_id = ?',
-      [columnId]
-    );
+  const createCard = async (
+    columnId,
+    title,
+    description = '',
+    priority = 'normal',
+    dueDate = null,
+    assignee = ''
+  ) => {
+    const maxPos = await dbGet('SELECT MAX(position) as maxPos FROM cards WHERE column_id = ?', [
+      columnId,
+    ]);
     const position = (maxPos.data?.maxPos ?? -1) + 1;
 
     const result = await dbRun(
@@ -258,21 +279,21 @@ export function AppProvider({ children }) {
     }
   };
 
-  const deleteCard = async (id) => {
+  const deleteCard = async id => {
     await dbRun('DELETE FROM cards WHERE id = ?', [id]);
     if (currentBoard) {
       await loadBoard(currentBoard.id);
     }
   };
 
-  const archiveCard = async (id) => {
+  const archiveCard = async id => {
     await dbRun('UPDATE cards SET is_archived = 1 WHERE id = ?', [id]);
     if (currentBoard) {
       await loadBoard(currentBoard.id);
     }
   };
 
-  const restoreCard = async (id) => {
+  const restoreCard = async id => {
     await dbRun('UPDATE cards SET is_archived = 0 WHERE id = ?', [id]);
     if (currentBoard) {
       await loadBoard(currentBoard.id);
@@ -320,7 +341,11 @@ export function AppProvider({ children }) {
         }
       }
 
-      await dbRun('UPDATE cards SET column_id = ?, position = ? WHERE id = ?', [newColumnId, newPosition, cardId]);
+      await dbRun('UPDATE cards SET column_id = ?, position = ? WHERE id = ?', [
+        newColumnId,
+        newPosition,
+        cardId,
+      ]);
     }
 
     if (currentBoard) {
@@ -328,11 +353,17 @@ export function AppProvider({ children }) {
     }
   };
 
-  const createCategory = async (cardId, title, description = '', priority = 'normal', dueDate = null, assignee = '') => {
-    const maxPos = await dbGet(
-      'SELECT MAX(position) as maxPos FROM categories WHERE card_id = ?',
-      [cardId]
-    );
+  const createCategory = async (
+    cardId,
+    title,
+    description = '',
+    priority = 'normal',
+    dueDate = null,
+    assignee = ''
+  ) => {
+    const maxPos = await dbGet('SELECT MAX(position) as maxPos FROM categories WHERE card_id = ?', [
+      cardId,
+    ]);
     const position = (maxPos.data?.maxPos ?? -1) + 1;
 
     const result = await dbRun(
@@ -359,7 +390,7 @@ export function AppProvider({ children }) {
     }
   };
 
-  const deleteCategory = async (id) => {
+  const deleteCategory = async id => {
     await dbRun('DELETE FROM categories WHERE id = ?', [id]);
     if (currentBoard) {
       await loadBoard(currentBoard.id);
@@ -382,9 +413,15 @@ export function AppProvider({ children }) {
         const c = categories.find(cat => cat.card_id === newCardId && cat.position === i);
         if (c) {
           if (i === oldPosition) {
-            await dbRun('UPDATE categories SET position = ? WHERE id = ?', [newPosition, categoryId]);
+            await dbRun('UPDATE categories SET position = ? WHERE id = ?', [
+              newPosition,
+              categoryId,
+            ]);
           } else if (i === newPosition) {
-            await dbRun('UPDATE categories SET position = ? WHERE id = ?', [oldPosition, categoryId]);
+            await dbRun('UPDATE categories SET position = ? WHERE id = ?', [
+              oldPosition,
+              categoryId,
+            ]);
           } else {
             await dbRun('UPDATE categories SET position = ? WHERE id = ?', [i + direction, c.id]);
           }
@@ -407,7 +444,11 @@ export function AppProvider({ children }) {
         }
       }
 
-      await dbRun('UPDATE categories SET card_id = ?, position = ? WHERE id = ?', [newCardId, newPosition, categoryId]);
+      await dbRun('UPDATE categories SET card_id = ?, position = ? WHERE id = ?', [
+        newCardId,
+        newPosition,
+        categoryId,
+      ]);
     }
 
     if (currentBoard) {
@@ -415,7 +456,14 @@ export function AppProvider({ children }) {
     }
   };
 
-  const createSubcategory = async (categoryId, title, description = '', priority = 'normal', dueDate = null, assignee = '') => {
+  const createSubcategory = async (
+    categoryId,
+    title,
+    description = '',
+    priority = 'normal',
+    dueDate = null,
+    assignee = ''
+  ) => {
     const maxPos = await dbGet(
       'SELECT MAX(position) as maxPos FROM subcategories WHERE category_id = ?',
       [categoryId]
@@ -446,7 +494,7 @@ export function AppProvider({ children }) {
     }
   };
 
-  const deleteSubcategory = async (id) => {
+  const deleteSubcategory = async id => {
     await dbRun('DELETE FROM subcategories WHERE id = ?', [id]);
     if (currentBoard) {
       await loadBoard(currentBoard.id);
@@ -466,19 +514,32 @@ export function AppProvider({ children }) {
       const end = Math.max(oldPosition, newPosition);
 
       for (let i = start; i <= end; i++) {
-        const s = subcategories.find(sub => sub.category_id === newCategoryId && sub.position === i);
+        const s = subcategories.find(
+          sub => sub.category_id === newCategoryId && sub.position === i
+        );
         if (s) {
           if (i === oldPosition) {
-            await dbRun('UPDATE subcategories SET position = ? WHERE id = ?', [newPosition, subcategoryId]);
+            await dbRun('UPDATE subcategories SET position = ? WHERE id = ?', [
+              newPosition,
+              subcategoryId,
+            ]);
           } else if (i === newPosition) {
-            await dbRun('UPDATE subcategories SET position = ? WHERE id = ?', [oldPosition, subcategoryId]);
+            await dbRun('UPDATE subcategories SET position = ? WHERE id = ?', [
+              oldPosition,
+              subcategoryId,
+            ]);
           } else {
-            await dbRun('UPDATE subcategories SET position = ? WHERE id = ?', [i + direction, s.id]);
+            await dbRun('UPDATE subcategories SET position = ? WHERE id = ?', [
+              i + direction,
+              s.id,
+            ]);
           }
         }
       }
     } else {
-      const oldCatSubcats = subcategories.filter(s => s.category_id === oldCategoryId && s.id !== subcategoryId);
+      const oldCatSubcats = subcategories.filter(
+        s => s.category_id === oldCategoryId && s.id !== subcategoryId
+      );
       for (let i = 0; i < oldCatSubcats.length; i++) {
         const s = oldCatSubcats.find(sub => sub.position === i);
         if (s) {
@@ -494,7 +555,11 @@ export function AppProvider({ children }) {
         }
       }
 
-      await dbRun('UPDATE subcategories SET category_id = ?, position = ? WHERE id = ?', [newCategoryId, newPosition, subcategoryId]);
+      await dbRun('UPDATE subcategories SET category_id = ?, position = ? WHERE id = ?', [
+        newCategoryId,
+        newPosition,
+        subcategoryId,
+      ]);
     }
 
     if (currentBoard) {
@@ -529,13 +594,15 @@ export function AppProvider({ children }) {
     await loadLibrary();
   };
 
-  const deleteLibraryItem = async (id) => {
+  const deleteLibraryItem = async id => {
     await dbRun('DELETE FROM library_items WHERE id = ?', [id]);
     await loadLibrary();
   };
 
   const getArchivedCards = async () => {
-    const result = await dbQuery('SELECT * FROM cards WHERE is_archived = 1 ORDER BY updated_at DESC');
+    const result = await dbQuery(
+      'SELECT * FROM cards WHERE is_archived = 1 ORDER BY updated_at DESC'
+    );
     return result.success ? result.data : [];
   };
 
@@ -555,7 +622,7 @@ export function AppProvider({ children }) {
     return result.success ? result.data : [];
   };
 
-  const deleteComment = async (id) => {
+  const deleteComment = async id => {
     await dbRun('DELETE FROM comments WHERE id = ?', [id]);
   };
 
@@ -607,14 +674,10 @@ export function AppProvider({ children }) {
     dbRun,
     dbGet,
     theme,
-    toggleTheme
+    toggleTheme,
   };
 
-  return (
-    <AppContext.Provider value={value}>
-      {children}
-    </AppContext.Provider>
-  );
+  return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }
 
 export function useApp() {

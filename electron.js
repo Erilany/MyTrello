@@ -1,11 +1,20 @@
-const { app, BrowserWindow, ipcMain, dialog, Menu, Tray, globalShortcut, nativeTheme } = require('electron');
+const {
+  app,
+  BrowserWindow,
+  ipcMain,
+  dialog,
+  Menu,
+  Tray,
+  globalShortcut,
+  nativeTheme,
+} = require('electron');
 const path = require('path');
 const Database = require('better-sqlite3');
 const Store = require('electron-store');
 const { initDatabase, getDatabase } = require('./src/services/database');
 
 const store = new Store({
-  encryptionKey: process.env.ENCRYPTION_KEY || 'default-dev-key-change-in-production'
+  encryptionKey: process.env.ENCRYPTION_KEY || 'default-dev-key-change-in-production',
 });
 
 let mainWindow = null;
@@ -25,8 +34,8 @@ function createWindow() {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      preload: path.join(__dirname, 'preload.js')
-    }
+      preload: path.join(__dirname, 'preload.js'),
+    },
   });
 
   if (isDev) {
@@ -44,7 +53,7 @@ function createWindow() {
     mainWindow = null;
   });
 
-  mainWindow.on('close', (event) => {
+  mainWindow.on('close', event => {
     if (!app.isQuitting) {
       event.preventDefault();
       mainWindow.hide();
@@ -63,16 +72,16 @@ function createMenu() {
         {
           label: 'Nouveau tableau',
           accelerator: 'CmdOrCtrl+N',
-          click: () => mainWindow.webContents.send('menu:new-board')
+          click: () => mainWindow.webContents.send('menu:new-board'),
         },
         { type: 'separator' },
         {
           label: 'Exporter les données',
-          click: () => mainWindow.webContents.send('menu:export')
+          click: () => mainWindow.webContents.send('menu:export'),
         },
         {
           label: 'Importer les données',
-          click: () => mainWindow.webContents.send('menu:import')
+          click: () => mainWindow.webContents.send('menu:import'),
         },
         { type: 'separator' },
         {
@@ -81,9 +90,9 @@ function createMenu() {
           click: () => {
             app.isQuitting = true;
             app.quit();
-          }
-        }
-      ]
+          },
+        },
+      ],
     },
     {
       label: 'Édition',
@@ -93,8 +102,8 @@ function createMenu() {
         { type: 'separator' },
         { label: 'Couper', accelerator: 'CmdOrCtrl+X', role: 'cut' },
         { label: 'Copier', accelerator: 'CmdOrCtrl+C', role: 'copy' },
-        { label: 'Coller', accelerator: 'CmdOrCtrl+V', role: 'paste' }
-      ]
+        { label: 'Coller', accelerator: 'CmdOrCtrl+V', role: 'paste' },
+      ],
     },
     {
       label: 'Affichage',
@@ -108,8 +117,8 @@ function createMenu() {
         { type: 'separator' },
         { label: 'Plein écran', accelerator: 'F11', role: 'togglefullscreen' },
         { type: 'separator' },
-        { label: 'Outils de développement', accelerator: 'F12', role: 'toggleDevTools' }
-      ]
+        { label: 'Outils de développement', accelerator: 'F12', role: 'toggleDevTools' },
+      ],
     },
     {
       label: 'Aide',
@@ -121,12 +130,12 @@ function createMenu() {
               type: 'info',
               title: 'À propos de MyTrello',
               message: 'MyTrello v0.1.0',
-              detail: 'Application de gestion de projets à 3 niveaux.'
+              detail: 'Application de gestion de projets à 3 niveaux.',
             });
-          }
-        }
-      ]
-    }
+          },
+        },
+      ],
+    },
   ];
 
   const menu = Menu.buildFromTemplate(template);
@@ -134,19 +143,19 @@ function createMenu() {
 }
 
 function createTray() {
-  const iconPath = isDev 
+  const iconPath = isDev
     ? path.join(__dirname, 'assets', 'icon.png')
     : path.join(process.resourcesPath, 'assets', 'icon.png');
-  
+
   try {
     tray = new Tray(iconPath);
-    
+
     const contextMenu = Menu.buildFromTemplate([
       {
         label: 'Ouvrir MyTrello',
         click: () => {
           mainWindow.show();
-        }
+        },
       },
       { type: 'separator' },
       {
@@ -154,13 +163,13 @@ function createTray() {
         click: () => {
           app.isQuitting = true;
           app.quit();
-        }
-      }
+        },
+      },
     ]);
-    
+
     tray.setToolTip('MyTrello');
     tray.setContextMenu(contextMenu);
-    
+
     tray.on('double-click', () => {
       mainWindow.show();
     });
@@ -215,7 +224,15 @@ ipcMain.handle('db:query', async (event, { sql, params }) => {
   try {
     const stmt = db.prepare(sql);
     if (sql.trim().toUpperCase().startsWith('SELECT')) {
-      return { success: true, data: stmt.all(...(params || [])) };
+      const data = stmt.all(...(params || []));
+      console.log('[DB QUERY]', sql, '-> rows:', data.length);
+      if (sql.includes('library_items')) {
+        console.log(
+          '[DB] library_items columns:',
+          data.length > 0 ? Object.keys(data[0]) : 'no rows'
+        );
+      }
+      return { success: true, data };
     } else {
       const result = stmt.run(...(params || []));
       return { success: true, data: result };

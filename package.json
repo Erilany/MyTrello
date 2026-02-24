@@ -47,6 +47,7 @@
     "uuid": "^9.0.1"
   },
   "devDependencies": {
+    "@electron/rebuild": "^3.7.2",
     "@playwright/test": "^1.40.0",
     "@testing-library/react": "^14.1.2",
     "@vitejs/plugin-react": "^4.2.1",
