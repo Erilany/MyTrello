@@ -79,6 +79,9 @@ CREATE TABLE IF NOT EXISTS library_items (
   type         TEXT NOT NULL,
   title        TEXT NOT NULL,
   content_json TEXT NOT NULL,
+  tags         TEXT DEFAULT '',
+  usage_count  INTEGER DEFAULT 0,
+  last_used    DATETIME,
   created_at   DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at   DATETIME DEFAULT CURRENT_TIMESTAMP
 );

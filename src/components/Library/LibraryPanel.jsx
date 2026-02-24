@@ -28,6 +28,8 @@ function LibraryPanel() {
   const [selectedItem, setSelectedItem] = useState(null);
   const [selectedBoardId, setSelectedBoardId] = useState('');
   const [selectedColumnId, setSelectedColumnId] = useState('');
+  const [editingTags, setEditingTags] = useState(null);
+  const [tagsInput, setTagsInput] = useState('');
 
   useEffect(() => {
     if (libraryOpen) {
@@ -41,6 +43,17 @@ function LibraryPanel() {
       loadBoard(parseInt(selectedBoardId));
     }
   }, [selectedBoardId]);
+
+  const handleSaveTags = async (itemId) => {
+    await dbRun('UPDATE library_items SET tags = ? WHERE id = ?', [tagsInput, itemId]);
+    loadLibrary();
+    setEditingTags(null);
+  };
+
+  const handleEditTags = (item) => {
+    setEditingTags(item.id);
+    setTagsInput(item.tags || '');
+  };
 
   const filteredItems = libraryItems.filter(item => {
     const matchesFilter = filter === 'all' || item.type === filter;
@@ -332,33 +345,65 @@ function LibraryPanel() {
                     </p>
                   </div>
                 </div>
-                
-                <div className="flex items-center gap-2 mt-3 ml-6">
-                  <button
-                    onClick={(e) => { e.stopPropagation(); handlePreview(item); }}
-                    className="flex items-center px-3 py-1.5 text-xs bg-gray-200 dark:bg-gray-600 dark:text-gray-200 rounded hover:bg-gray-300"
-                    title="Voir le contenu"
-                  >
-                    <Eye size={12} className="mr-1" />
-                    Voir
-                  </button>
-                  {item.type === 'card' && (
+
+                {editingTags === item.id ? (
+                  <div className="flex items-center gap-2 mt-3 ml-6">
+                    <input
+                      type="text"
+                      value={tagsInput}
+                      onChange={(e) => setTagsInput(e.target.value)}
+                      placeholder="Tags séparés par virgule"
+                      className="flex-1 px-2 py-1 text-xs border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded"
+                      onKeyDown={(e) => e.key === 'Enter' && handleSaveTags(item.id)}
+                    />
                     <button
-                      onClick={(e) => { e.stopPropagation(); handleUseClick(item); }}
-                      className="flex items-center px-3 py-1.5 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
+                      onClick={() => handleSaveTags(item.id)}
+                      className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
                     >
-                      <Copy size={12} className="mr-1" />
-                      Utiliser
+                      OK
                     </button>
-                  )}
-                  <button
-                    onClick={() => handleDelete(item.id)}
-                    className="flex items-center px-3 py-1.5 text-xs text-red-600 hover:bg-red-50 rounded"
-                  >
-                    <Trash2 size={12} className="mr-1" />
-                    Supprimer
-                  </button>
-                </div>
+                    <button
+                      onClick={() => setEditingTags(null)}
+                      className="px-2 py-1 text-xs text-gray-500 hover:bg-gray-200 rounded"
+                    >
+                      Annuler
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2 mt-3 ml-6">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handlePreview(item); }}
+                      className="flex items-center px-3 py-1.5 text-xs bg-gray-200 dark:bg-gray-600 dark:text-gray-200 rounded hover:bg-gray-300"
+                      title="Voir le contenu"
+                    >
+                      <Eye size={12} className="mr-1" />
+                      Voir
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleEditTags(item); }}
+                      className="flex items-center px-3 py-1.5 text-xs bg-gray-200 dark:bg-gray-600 dark:text-gray-200 rounded hover:bg-gray-300"
+                      title="Modifier les tags"
+                    >
+                      Tags
+                    </button>
+                    {item.type === 'card' && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleUseClick(item); }}
+                        className="flex items-center px-3 py-1.5 text-xs bg-blue-500 text-white rounded hover:bg-blue-600"
+                      >
+                        <Copy size={12} className="mr-1" />
+                        Utiliser
+                      </button>
+                    )}
+                    <button
+                      onClick={() => handleDelete(item.id)}
+                      className="flex items-center px-3 py-1.5 text-xs text-red-600 hover:bg-red-50 rounded"
+                    >
+                      <Trash2 size={12} className="mr-1" />
+                      Supprimer
+                    </button>
+                  </div>
+                )}
               </div>
             ))}
           </div>

@@ -95,8 +95,8 @@ function Card({ card, isDragging }) {
         
         <div className="p-3">
           <div className="flex items-start justify-between">
-            <div className="flex-1 overflow-hidden">
-              <div className="flex items-center gap-1">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-1 flex-wrap">
                 {cardCategories.length > 0 ? (
                   <button
                     onClick={(e) => {
@@ -104,14 +104,17 @@ function Card({ card, isDragging }) {
                       handleToggleCollapse();
                     }}
                     className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                    title={card.collapsed ? "Développer" : "Réduire"}
                   >
                     {card.collapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
                   </button>
                 ) : (
                   <span className="w-4 text-xs text-gray-300">•</span>
                 )}
-                {cardCategories.length > 0 && card.collapsed && (
-                  <span className="text-xs text-gray-400 dark:text-gray-400">({cardCategories.length})</span>
+                {cardCategories.length > 0 && (
+                  <span className="text-xs text-gray-400 dark:text-gray-400">
+                    {card.collapsed ? `(${cardCategories.length})` : ''}
+                  </span>
                 )}
                 <h4 className="text-sm font-medium text-gray-800 dark:text-white truncate">{card.title}</h4>
               </div>
