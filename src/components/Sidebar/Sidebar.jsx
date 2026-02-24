@@ -33,18 +33,6 @@ function Sidebar() {
   const [menuOpenId, setMenuOpenId] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
 
-  const handleCreateBoard = async e => {
-    e.preventDefault();
-    if (newBoardTitle.trim()) {
-      const boardId = await createBoard(newBoardTitle.trim());
-      if (boardId) {
-        await loadBoard(boardId);
-      }
-      setNewBoardTitle('');
-      setShowNewBoard(false);
-    }
-  };
-
   const handleDeleteBoard = async id => {
     if (window.confirm('Voulez-vous vraiment supprimer ce projet ?')) {
       await deleteBoard(id);
@@ -70,8 +58,11 @@ function Sidebar() {
 
   if (!sidebarOpen) {
     return (
-      <div className="w-12 bg-gray-900 flex flex-col items-center py-4">
-        <button onClick={() => setSidebarOpen(true)} className="p-2 text-gray-400 hover:text-white">
+      <div className="w-[220px] bg-sidebar flex flex-col items-center py-4 border-r border-std">
+        <button
+          onClick={() => setSidebarOpen(true)}
+          className="icon-btn text-secondary hover:text-primary"
+        >
           <Layout size={20} />
         </button>
       </div>
@@ -79,59 +70,67 @@ function Sidebar() {
   }
 
   return (
-    <div className="w-64 bg-gray-900 text-white flex flex-col h-full">
-      <div className="p-4 flex items-center justify-between">
-        <h1 className="text-lg font-bold">MyTrello</h1>
+    <div className="w-[220px] bg-sidebar text-primary flex flex-col h-full border-r border-std">
+      <div className="p-4 flex items-center justify-between border-b border-std">
+        <h1
+          className="font-display text-lg font-extrabold tracking-tight"
+          style={{ fontSize: '18px', letterSpacing: '-0.5px' }}
+        >
+          MyTrello
+        </h1>
         <button
           onClick={() => setSidebarOpen(false)}
-          className="p-1 text-gray-400 hover:text-white"
+          className="icon-btn text-secondary hover:text-primary"
         >
           <ChevronDown size={16} className="rotate-90" />
         </button>
       </div>
 
       <nav className="flex-1 overflow-y-auto scrollbar-thin">
-        <div className="px-2">
+        <div className="px-2 pt-4">
           <button
             onClick={() => setShowBoards(!showBoards)}
-            className="flex items-center w-full px-2 py-1 text-sm text-gray-400 hover:text-white"
+            className="flex items-center w-full px-2 py-1 text-xs font-semibold uppercase tracking-widest text-muted hover:text-secondary"
+            style={{ letterSpacing: '1.2px' }}
           >
-            {showBoards ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+            {showBoards ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
             <span className="ml-1">Projets</span>
           </button>
 
           {showBoards && (
-            <div className="ml-2">
+            <div className="ml-2 mt-1">
               {boards.map(board => (
                 <div
                   key={board.id}
-                  className={`group flex items-center justify-between px-2 py-1 rounded cursor-pointer ${
-                    currentBoard?.id === board.id ? 'bg-blue-600' : 'hover:bg-gray-800'
+                  className={`group flex items-center justify-between px-2 py-1.5 rounded cursor-pointer transition-std ${
+                    currentBoard?.id === board.id
+                      ? 'bg-accent-soft border-l-[3px] border-l-accent'
+                      : 'hover:bg-card'
                   }`}
                   onClick={() => {
                     loadBoard(board.id);
                     navigate('/');
                   }}
                 >
-                  <span className="truncate text-sm">{board.title}</span>
+                  <span className="truncate text-sm font-body">{board.title}</span>
                   <div className="relative">
                     <button
                       onClick={e => {
                         e.stopPropagation();
                         setMenuOpenId(menuOpenId === board.id ? null : board.id);
                       }}
-                      className="p-1 opacity-0 group-hover:opacity-100 hover:bg-gray-700 rounded"
+                      className="p-1 opacity-0 group-hover:opacity-100 icon-btn"
                     >
                       <MoreHorizontal size={14} />
                     </button>
                     {menuOpenId === board.id && (
-                      <div className="absolute right-0 top-6 bg-gray-800 rounded shadow-lg z-10 py-1 w-32">
+                      <div className="absolute right-0 top-6 bg-card rounded-lg shadow-card z-10 py-1 w-36 border border-std">
                         <button
                           onClick={e => {
                             e.stopPropagation();
                             handleDeleteBoard(board.id);
                           }}
-                          className="flex items-center w-full px-3 py-1 text-sm text-red-400 hover:bg-gray-700"
+                          className="flex items-center w-full px-3 py-1.5 text-sm text-urgent hover:bg-card-hover"
                         >
                           <Trash2 size={12} className="mr-2" />
                           Supprimer
@@ -167,13 +166,13 @@ function Sidebar() {
                       }
                     }}
                     placeholder="Nom du projet..."
-                    className="w-full px-2 py-1 text-sm bg-gray-800 border border-gray-700 rounded text-white focus:outline-none focus:border-blue-500"
+                    className="w-full px-3 py-2 text-sm bg-input border border-std rounded-md text-primary focus:outline-none focus:border-accent"
                     autoFocus
                     onBlur={() => {
                       if (!newBoardTitle.trim()) setShowNewBoard(false);
                     }}
                   />
-                  <div className="flex gap-1 mt-1">
+                  <div className="flex gap-2 mt-2">
                     <button
                       onClick={async () => {
                         if (newBoardTitle.trim()) {
@@ -186,7 +185,7 @@ function Sidebar() {
                           setShowNewBoard(false);
                         }
                       }}
-                      className="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
+                      className="px-3 py-1.5 text-xs font-medium bg-accent text-white rounded-md hover:opacity-90 transition-std"
                     >
                       Ajouter
                     </button>
@@ -195,7 +194,7 @@ function Sidebar() {
                         setNewBoardTitle('');
                         setShowNewBoard(false);
                       }}
-                      className="px-2 py-1 text-xs text-gray-400 hover:text-white"
+                      className="px-3 py-1.5 text-xs text-secondary hover:text-primary"
                     >
                       Annuler
                     </button>
@@ -204,7 +203,7 @@ function Sidebar() {
               ) : (
                 <button
                   onClick={() => setShowNewBoard(true)}
-                  className="flex items-center w-full px-2 py-1 mt-1 text-sm text-gray-400 hover:text-white"
+                  className="flex items-center w-full px-2 py-1.5 mt-1 text-sm text-secondary hover:text-primary transition-std"
                 >
                   <Plus size={14} className="mr-1" />
                   Nouveau projet
@@ -214,41 +213,47 @@ function Sidebar() {
           )}
         </div>
 
-        <div className="border-t border-gray-800 mt-4 pt-4 px-2">
+        <div className="border-t border-std mt-4 pt-4 px-2">
           <NavLink
             to="/library"
             className={({ isActive }) =>
-              `flex items-center px-2 py-1 rounded ${isActive ? 'bg-blue-600' : 'hover:bg-gray-800'}`
+              `flex items-center px-2 py-1.5 rounded transition-std ${
+                isActive ? 'bg-accent-soft border-l-[3px] border-l-accent' : 'hover:bg-card'
+              }`
             }
           >
-            <BookOpen size={16} className="mr-2" />
-            Bibliothèque
+            <BookOpen size={16} className="mr-2 text-secondary" />
+            <span className="text-sm">Bibliothèque</span>
           </NavLink>
 
           <NavLink
             to="/archives"
             className={({ isActive }) =>
-              `flex items-center px-2 py-1 mt-1 rounded ${isActive ? 'bg-blue-600' : 'hover:bg-gray-800'}`
+              `flex items-center px-2 py-1.5 mt-1 rounded transition-std ${
+                isActive ? 'bg-accent-soft border-l-[3px] border-l-accent' : 'hover:bg-card'
+              }`
             }
           >
-            <Archive size={16} className="mr-2" />
-            Archives
+            <Archive size={16} className="mr-2 text-secondary" />
+            <span className="text-sm">Archives</span>
           </NavLink>
 
           <NavLink
             to="/settings"
             className={({ isActive }) =>
-              `flex items-center px-2 py-1 mt-1 rounded ${isActive ? 'bg-blue-600' : 'hover:bg-gray-800'}`
+              `flex items-center px-2 py-1.5 mt-1 rounded transition-std ${
+                isActive ? 'bg-accent-soft border-l-[3px] border-l-accent' : 'hover:bg-card'
+              }`
             }
           >
-            <Settings size={16} className="mr-2" />
-            Paramètres
+            <Settings size={16} className="mr-2 text-secondary" />
+            <span className="text-sm">Paramètres</span>
           </NavLink>
 
           <button
             onClick={handleGenerateTestData}
             disabled={isGenerating}
-            className="flex items-center w-full px-2 py-1 mt-3 rounded bg-purple-600 hover:bg-purple-700 disabled:opacity-50"
+            className="flex items-center w-full px-2 py-1.5 mt-4 rounded-md bg-etudes hover:opacity-90 disabled:opacity-50 transition-std text-white font-medium text-sm"
           >
             <Wand2 size={16} className="mr-2" />
             {isGenerating ? 'Génération...' : 'Générer données test'}

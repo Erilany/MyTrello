@@ -5,13 +5,6 @@ import SubCategory from '../SubCategory/SubCategory';
 import CategoryModal from './CategoryModal';
 import { MoreHorizontal, ChevronDown, ChevronRight, Trash2, BookMarked } from 'lucide-react';
 
-const priorityColors = {
-  urgent: '#EF4444',
-  high: '#F97316',
-  normal: '#22C55E',
-  low: '#6B7280',
-};
-
 function Category({ category, isDragging = false }) {
   const { subcategories, updateCategory, deleteCategory, saveToLibrary } = useApp();
 
@@ -57,17 +50,27 @@ function Category({ category, isDragging = false }) {
     const today = new Date();
     const diffDays = Math.ceil((date - today) / (1000 * 60 * 60 * 24));
 
-    let colorClass = 'text-gray-500 dark:text-gray-400';
-    if (diffDays < 0) colorClass = 'text-red-500 dark:text-red-400';
-    else if (diffDays <= 3) colorClass = 'text-orange-500 dark:text-orange-400';
+    let badgeClass = 'badge-date';
+    if (diffDays < 0) badgeClass = 'badge-date-overdue';
+    else if (diffDays <= 3) badgeClass = 'badge-date-soon';
 
     return {
       text: date.toLocaleDateString('fr-FR'),
-      colorClass,
+      badgeClass,
     };
   };
 
+  const getPriorityBadge = () => {
+    const p = category.priority;
+    if (p === 'urgent') return { class: 'badge-urgent', label: 'U' };
+    if (p === 'high') return { class: 'badge-waiting', label: 'H' };
+    if (p === 'low') return { class: 'badge-normal', label: 'B' };
+    if (p === 'done') return { class: 'badge-done', label: '✓' };
+    return null;
+  };
+
   const dateInfo = formatDate(category.due_date);
+  const priorityBadge = getPriorityBadge();
 
   const handleSaveToLibrary = async () => {
     const catSubcategoriesData = subcategories
@@ -88,6 +91,7 @@ function Category({ category, isDragging = false }) {
 
     await saveToLibrary('category', category.title, JSON.stringify(content));
     alert('Catégorie sauvegardée dans la bibliothèque !');
+    setShowMenu(false);
   };
 
   const handleDragStart = e => {
@@ -120,8 +124,8 @@ function Category({ category, isDragging = false }) {
   return (
     <>
       <div
-        className="bg-gray-50 dark:bg-gray-700 rounded border border-gray-200 dark:border-gray-600 mb-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 select-none"
-        style={{ borderLeftColor: category.color || '#E5E7EB', borderLeftWidth: '3px' }}
+        className="bg-card-hover rounded border border-std mb-2 cursor-pointer hover:border-strong select-none transition-std"
+        style={{ borderLeftColor: category.color || '#6366f1', borderLeftWidth: '3px' }}
         draggable
         onDragStart={handleDragStart}
         onDoubleClick={e => {
@@ -132,7 +136,7 @@ function Category({ category, isDragging = false }) {
         <div className="p-2 flex items-start">
           <button
             onClick={handleToggleCollapse}
-            className="text-gray-400 hover:text-gray-600 mr-1 mt-0.5 flex items-center justify-center w-4 h-4"
+            className="text-muted hover:text-secondary mr-1 mt-0.5 flex items-center justify-center w-4 h-4 transition-std"
             title={category.collapsed ? 'Développer' : 'Réduire'}
           >
             {categorySubcategories.length > 0 ? (
@@ -142,14 +146,14 @@ function Category({ category, isDragging = false }) {
                 <ChevronDown size={14} />
               )
             ) : (
-              <span className="text-xs text-gray-300">•</span>
+              <span className="text-xs text-muted">•</span>
             )}
           </button>
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-1 flex-wrap">
               {categorySubcategories.length > 0 && (
-                <span className="text-xs text-gray-400 dark:text-gray-400 mr-1">
+                <span className="text-xs text-muted mr-1">
                   {category.collapsed ? `(${categorySubcategories.length})` : ''}
                 </span>
               )}
@@ -166,16 +170,15 @@ function Category({ category, isDragging = false }) {
                       setIsEditing(false);
                     }
                   }}
-                  className="px-1 py-0.5 text-sm font-medium bg-white border border-blue-500 rounded focus:outline-none"
+                  className="px-1 py-0.5 text-sm font-medium bg-input border border-accent rounded focus:outline-none"
                   autoFocus
                 />
               ) : (
                 <span
-                  className="text-sm font-medium text-gray-700 dark:text-gray-200 cursor-pointer hover:text-blue-600"
+                  className="text-sm font-medium text-primary cursor-pointer hover:text-accent transition-std"
                   title="Cliquez pour modifier"
                   onClick={() => {
                     if (isDragging) return;
-                    console.log('Category title clicked');
                     setEditTitle(category.title);
                     setIsEditing(true);
                   }}
@@ -186,41 +189,33 @@ function Category({ category, isDragging = false }) {
             </div>
 
             <div className="flex items-center gap-2 mt-1 flex-wrap">
-              {category.priority !== 'normal' && (
-                <span
-                  className="px-1.5 py-0.5 text-xs rounded text-white"
-                  style={{ backgroundColor: priorityColors[category.priority] }}
-                >
-                  {category.priority === 'urgent' ? 'U' : category.priority === 'high' ? 'H' : 'L'}
-                </span>
+              {priorityBadge && (
+                <span className={`badge ${priorityBadge.class}`}>{priorityBadge.label}</span>
               )}
 
               {dateInfo && (
-                <span className={`text-xs ${dateInfo.colorClass}`}>{dateInfo.text}</span>
+                <span className={`badge ${dateInfo.badgeClass}`}>📅 {dateInfo.text}</span>
               )}
 
               {category.assignee && (
-                <span className="text-xs text-gray-500">{category.assignee}</span>
+                <span className="badge badge-category">{category.assignee}</span>
               )}
             </div>
           </div>
 
           <div className="relative category-menu">
-            <button
-              onClick={() => setShowMenu(!showMenu)}
-              className="p-1 text-gray-400 hover:text-gray-600 rounded"
-            >
+            <button onClick={() => setShowMenu(!showMenu)} className="icon-btn !w-6 !h-6">
               <MoreHorizontal size={14} />
             </button>
 
             {showMenu && (
-              <div className="absolute right-0 top-6 bg-white rounded-lg shadow-lg py-1 z-20 w-36">
+              <div className="absolute right-0 top-8 bg-card rounded-lg shadow-card py-1 z-20 w-40 border border-std">
                 <button
                   onClick={() => {
                     setModalOpen(true);
                     setShowMenu(false);
                   }}
-                  className="flex items-center w-full px-3 py-1.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                  className="flex items-center w-full px-3 py-2 text-sm text-primary hover:bg-card-hover"
                 >
                   Modifier
                 </button>
@@ -230,15 +225,15 @@ function Category({ category, isDragging = false }) {
                     handleSaveToLibrary();
                     setShowMenu(false);
                   }}
-                  className="flex items-center w-full px-3 py-1.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600"
+                  className="flex items-center w-full px-3 py-2 text-sm text-primary hover:bg-card-hover"
                 >
-                  <BookMarked size={14} className="mr-2" />
+                  <BookMarked size={14} className="mr-2 text-secondary" />
                   Sauvegarder
                 </button>
 
                 <button
                   onClick={handleDelete}
-                  className="flex items-center w-full px-3 py-1.5 text-sm text-red-600 hover:bg-gray-100"
+                  className="flex items-center w-full px-3 py-2 text-sm text-urgent hover:bg-card-hover"
                 >
                   <Trash2 size={14} className="mr-2" />
                   Supprimer

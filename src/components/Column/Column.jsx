@@ -4,8 +4,8 @@ import { useApp } from '../../context/AppContext';
 import Card from '../Card/Card';
 import { MoreHorizontal, Plus, Pencil, Trash2, Palette } from 'lucide-react';
 
-function Column({ column }) {
-  const { cards, createCard, updateColumn, deleteColumn, moveCard, currentBoard } = useApp();
+function Column({ column, index }) {
+  const { cards, createCard, updateColumn, deleteColumn, currentBoard } = useApp();
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState(column.title);
   const [showMenu, setShowMenu] = useState(false);
@@ -27,6 +27,16 @@ function Column({ column }) {
   const columnCards = cards
     .filter(card => card.column_id === column.id)
     .sort((a, b) => a.position - b.position);
+
+  const getColumnClass = colTitle => {
+    const t = colTitle.toLowerCase();
+    if (t.includes('études') || t.includes('etudes')) return 'accent-bar-etudes';
+    if (t.includes('cours') || t.includes('en cours')) return 'accent-bar-en-cours';
+    if (t.includes('réalisé') || t.includes('realis') || t.includes('terminé'))
+      return 'accent-bar-realise';
+    if (t.includes('archiv')) return 'accent-bar-archive';
+    return 'accent-bar-en-cours';
+  };
 
   const handleUpdateColumn = async () => {
     if (title.trim()) {
@@ -56,20 +66,26 @@ function Column({ column }) {
   };
 
   const colors = [
-    '#4A90D9',
-    '#50C878',
-    '#F5A623',
-    '#D0021B',
-    '#9013FE',
-    '#7ED321',
-    '#F8E71C',
-    '#BD10E0',
-    '#B8E986',
+    '#6366f1',
+    '#f59e0b',
+    '#22c55e',
+    '#ef4444',
+    '#3b82f6',
+    '#8b5cf6',
+    '#ec4899',
+    '#14b8a6',
   ];
 
+  const getAnimationClass = () => {
+    const animIndex = (index % 4) + 1;
+    return `column-anim-${animIndex}`;
+  };
+
   return (
-    <div className="flex-shrink-0 w-72 bg-gray-100 dark:bg-gray-800 rounded-lg flex flex-col h-full max-h-full overflow-hidden">
-      <div className="p-3 flex items-center justify-between flex-shrink-0 bg-gray-100 dark:bg-gray-800">
+    <div
+      className={`flex-shrink-0 w-[310px] bg-column rounded-lg flex flex-col h-full max-h-full overflow-hidden border border-std ${getAnimationClass()}`}
+    >
+      <div className="p-3 flex items-center justify-between flex-shrink-0 bg-column">
         {isEditing ? (
           <input
             type="text"
@@ -83,7 +99,8 @@ function Column({ column }) {
                 setIsEditing(false);
               }
             }}
-            className="flex-1 px-2 py-1 text-sm font-semibold bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 dark:text-white rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="flex-1 px-2 py-1 text-sm font-display font-bold bg-input border border-std rounded focus:outline-none focus:border-accent"
+            style={{ letterSpacing: '0.2px' }}
             autoFocus
           />
         ) : (
@@ -91,49 +108,52 @@ function Column({ column }) {
             className="flex items-center flex-1 cursor-pointer"
             onClick={() => setIsEditing(true)}
           >
-            <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: column.color }} />
-            <h3 className="font-semibold text-sm text-gray-700 dark:text-gray-200">
+            <div
+              className="w-3 h-3 rounded-full mr-2"
+              style={{ backgroundColor: column.color, boxShadow: `0 0 6px ${column.color}` }}
+            />
+            <h3
+              className="font-display text-sm font-bold text-primary"
+              style={{ letterSpacing: '0.2px' }}
+            >
               {column.title}
             </h3>
-            <span className="ml-2 text-xs text-gray-400">({columnCards.length})</span>
+            <span className="ml-2 text-xs text-muted">({columnCards.length})</span>
           </div>
         )}
 
         <div className="relative column-menu">
-          <button
-            onClick={() => setShowMenu(!showMenu)}
-            className="p-1 text-gray-500 hover:bg-gray-200 rounded"
-          >
+          <button onClick={() => setShowMenu(!showMenu)} className="icon-btn">
             <MoreHorizontal size={16} />
           </button>
 
           {showMenu && (
-            <div className="absolute right-0 top-8 bg-white dark:bg-gray-800 rounded-lg shadow-lg py-1 z-[100] w-48 border dark:border-gray-700 overflow-visible">
+            <div className="absolute right-0 top-10 bg-card rounded-lg shadow-card py-1 z-[100] w-44 border border-std">
               <button
                 onClick={() => {
                   setIsEditing(true);
                   setShowMenu(false);
                 }}
-                className="flex items-center w-full px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100"
+                className="flex items-center w-full px-3 py-2 text-sm text-primary hover:bg-card-hover"
               >
-                <Pencil size={14} className="mr-2" />
+                <Pencil size={14} className="mr-2 text-secondary" />
                 Renommer
               </button>
               <div className="relative">
                 <button
                   onClick={() => setShowColorPicker(!showColorPicker)}
-                  className="flex items-center w-full px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100"
+                  className="flex items-center w-full px-3 py-2 text-sm text-primary hover:bg-card-hover"
                 >
-                  <Palette size={14} className="mr-2" />
+                  <Palette size={14} className="mr-2 text-secondary" />
                   Couleur
                 </button>
                 {showColorPicker && (
-                  <div className="absolute left-full top-0 ml-1 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-2 grid grid-cols-5 gap-1 w-32 z-[99999]">
+                  <div className="absolute left-full top-0 ml-1 bg-card rounded-lg shadow-card p-2 grid grid-cols-4 gap-1.5 z-[99999]">
                     {colors.map(color => (
                       <button
                         key={color}
                         onClick={() => handleColorChange(color)}
-                        className="w-5 h-5 rounded-full hover:ring-2 hover:ring-offset-1"
+                        className="w-5 h-5 rounded-full hover:ring-2 hover:ring-white/30 transition-std"
                         style={{ backgroundColor: color }}
                       />
                     ))}
@@ -142,7 +162,7 @@ function Column({ column }) {
               </div>
               <button
                 onClick={handleDeleteColumn}
-                className="flex items-center w-full px-3 py-1.5 text-sm text-red-600 hover:bg-gray-100"
+                className="flex items-center w-full px-3 py-2 text-sm text-urgent hover:bg-card-hover"
               >
                 <Trash2 size={14} className="mr-2" />
                 Supprimer
@@ -172,11 +192,11 @@ function Column({ column }) {
               }
             }}
             className={`flex-1 overflow-y-auto px-2 pb-2 scrollbar-thin ${
-              snapshot.isDraggingOver ? 'bg-gray-200 dark:bg-gray-700' : 'dark:bg-gray-800'
+              snapshot.isDraggingOver ? 'bg-card/50' : ''
             }`}
           >
-            {columnCards.map((card, index) => (
-              <Draggable key={card.id} draggableId={String(card.id)} index={index}>
+            {columnCards.map((card, idx) => (
+              <Draggable key={card.id} draggableId={String(card.id)} index={idx}>
                 {(provided, snapshot) => (
                   <div
                     ref={provided.innerRef}
@@ -189,7 +209,12 @@ function Column({ column }) {
                       }
                     }}
                   >
-                    <Card card={card} isDragging={snapshot.isDragging} />
+                    <Card
+                      card={card}
+                      isDragging={snapshot.isDragging}
+                      columnColor={column.color}
+                      columnTitle={column.title}
+                    />
                   </div>
                 )}
               </Draggable>
@@ -199,7 +224,7 @@ function Column({ column }) {
         )}
       </Droppable>
 
-      <div className="p-2">
+      <div className="p-2 border-t border-std">
         {showNewCard ? (
           <form onSubmit={handleCreateCard}>
             <input
@@ -207,7 +232,7 @@ function Column({ column }) {
               value={newCardTitle}
               onChange={e => setNewCardTitle(e.target.value)}
               placeholder="Titre de la carte..."
-              className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 text-sm bg-input border border-std rounded-md text-primary placeholder-muted focus:outline-none focus:border-accent"
               autoFocus
               onBlur={() => {
                 if (!newCardTitle.trim()) setShowNewCard(false);
@@ -216,7 +241,7 @@ function Column({ column }) {
             <div className="flex items-center mt-2 space-x-2">
               <button
                 type="submit"
-                className="px-3 py-1.5 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
+                className="px-3 py-1.5 text-sm font-medium bg-accent text-white rounded-md hover:opacity-90 transition-std"
               >
                 Ajouter
               </button>
@@ -226,7 +251,7 @@ function Column({ column }) {
                   setNewCardTitle('');
                   setShowNewCard(false);
                 }}
-                className="px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-200 rounded"
+                className="px-3 py-1.5 text-sm text-secondary hover:text-primary"
               >
                 Annuler
               </button>
@@ -235,7 +260,7 @@ function Column({ column }) {
         ) : (
           <button
             onClick={() => setShowNewCard(true)}
-            className="w-full flex items-center justify-center py-2 text-sm text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 rounded transition-colors"
+            className="w-full flex items-center justify-center py-2 text-sm text-secondary hover:text-primary hover:bg-card rounded-md transition-std"
           >
             <Plus size={16} className="mr-1" />
             Ajouter une carte

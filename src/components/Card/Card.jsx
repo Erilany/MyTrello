@@ -12,14 +12,7 @@ import {
   BookMarked,
 } from 'lucide-react';
 
-const priorityColors = {
-  urgent: '#EF4444',
-  high: '#F97316',
-  normal: '#22C55E',
-  low: '#6B7280',
-};
-
-function Card({ card, isDragging }) {
+function Card({ card, isDragging, columnColor, columnTitle }) {
   const { categories, updateCard, deleteCard, archiveCard, saveToLibrary, subcategories } =
     useApp();
 
@@ -39,6 +32,16 @@ function Card({ card, isDragging }) {
   const cardCategories = categories
     .filter(cat => cat.card_id === card.id)
     .sort((a, b) => a.position - b.position);
+
+  const getAccentBarClass = () => {
+    const t = (columnTitle || '').toLowerCase();
+    if (t.includes('études') || t.includes('etudes')) return 'accent-bar-etudes';
+    if (t.includes('cours') || t.includes('en cours')) return 'accent-bar-en-cours';
+    if (t.includes('réalisé') || t.includes('realis') || t.includes('terminé'))
+      return 'accent-bar-realise';
+    if (t.includes('archiv')) return 'accent-bar-archive';
+    return 'accent-bar-en-cours';
+  };
 
   const handleToggleCollapse = async () => {
     await updateCard(card.id, { collapsed: card.collapsed ? 0 : 1 });
@@ -127,22 +130,38 @@ function Card({ card, isDragging }) {
     const today = new Date();
     const diffDays = Math.ceil((date - today) / (1000 * 60 * 60 * 24));
 
-    let colorClass = 'text-gray-500 dark:text-gray-400';
-    if (diffDays < 0) colorClass = 'text-red-500 dark:text-red-400';
-    else if (diffDays <= 3) colorClass = 'text-orange-500 dark:text-orange-400';
+    let badgeClass = 'badge-date';
+    if (diffDays < 0) badgeClass = 'badge-date-overdue';
+    else if (diffDays <= 3) badgeClass = 'badge-date-soon';
 
     return {
       text: date.toLocaleDateString('fr-FR'),
-      colorClass,
+      badgeClass,
     };
   };
 
+  const getPriorityBadge = () => {
+    const p = card.priority;
+    if (p === 'urgent') return { class: 'badge-urgent', label: '● URGENT' };
+    if (p === 'high') return { class: 'badge-waiting', label: '● HAUTE' };
+    if (p === 'low') return { class: 'badge-normal', label: '● BASSE' };
+    if (p === 'done') return { class: 'badge-done', label: '✓ TERMINÉ' };
+    return null;
+  };
+
+  const priorityBadge = getPriorityBadge();
   const dateInfo = formatDate(card.due_date);
+
+  const isDone =
+    columnTitle?.toLowerCase().includes('réalisé') ||
+    columnTitle?.toLowerCase().includes('realis') ||
+    columnTitle?.toLowerCase().includes('terminé');
+  const isArchived = columnTitle?.toLowerCase().includes('archiv');
 
   return (
     <>
       <div
-        className={`bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 mb-2 hover:shadow-md transition-shadow ${isDragging ? 'opacity-50' : ''}`}
+        className={`bg-card rounded-md mb-2 border border-std hover:border-strong card-hover transition-card ${isDragging ? 'opacity-50' : ''} ${isDone ? 'card-realise' : ''} ${isArchived ? 'card-archive' : ''}`}
         draggable
         onDragStart={handleDragStart}
         onDoubleClick={e => {
@@ -155,9 +174,7 @@ function Card({ card, isDragging }) {
           setModalOpen(true);
         }}
       >
-        {card.color && card.color !== '#FFFFFF' && (
-          <div className="h-2 rounded-t-lg" style={{ backgroundColor: card.color }} />
-        )}
+        <div className={`h-[3px] rounded-t-md ${getAccentBarClass()}`} />
 
         <div className="p-3">
           <div className="flex items-start justify-between">
@@ -169,51 +186,43 @@ function Card({ card, isDragging }) {
                       e.stopPropagation();
                       handleToggleCollapse();
                     }}
-                    className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                    className="text-muted hover:text-secondary transition-std"
                     title={card.collapsed ? 'Développer' : 'Réduire'}
                   >
-                    {card.collapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
+                    <span className="drag-handle text-muted select-none" style={{ opacity: 1 }}>
+                      ⠿
+                    </span>
                   </button>
                 ) : (
-                  <span className="w-4 text-xs text-gray-300">•</span>
+                  <span className="w-4 text-xs text-muted">•</span>
                 )}
                 {cardCategories.length > 0 && (
-                  <span className="text-xs text-gray-400 dark:text-gray-400">
+                  <span className="text-xs text-muted">
                     {card.collapsed ? `(${cardCategories.length})` : ''}
                   </span>
                 )}
-                <h4 className="text-sm font-medium text-gray-800 dark:text-white truncate">
+                <h4
+                  className="font-display text-sm font-semibold text-primary truncate"
+                  style={{ letterSpacing: '-0.1px' }}
+                >
                   {card.title}
                 </h4>
               </div>
 
               <div className="flex items-center gap-2 mt-2 flex-wrap">
-                {card.priority !== 'normal' && (
-                  <span
-                    className="px-2 py-0.5 text-xs rounded-full text-white"
-                    style={{
-                      backgroundColor: priorityColors[card.priority] || priorityColors.normal,
-                    }}
-                  >
-                    {card.priority === 'urgent'
-                      ? 'Urgent'
-                      : card.priority === 'high'
-                        ? 'Haute'
-                        : card.priority === 'low'
-                          ? 'Basse'
-                          : 'Normale'}
-                  </span>
+                {priorityBadge && (
+                  <span className={`badge ${priorityBadge.class}`}>{priorityBadge.label}</span>
                 )}
 
                 {dateInfo && (
-                  <span className={`text-xs ${dateInfo.colorClass}`}>{dateInfo.text}</span>
+                  <span className={`badge ${dateInfo.badgeClass}`}>📅 {dateInfo.text}</span>
                 )}
 
-                {card.assignee && (
-                  <span className="px-2 py-0.5 text-xs bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-300 rounded">
-                    {card.assignee}
-                  </span>
+                {cardCategories.length > 0 && (
+                  <span className="badge badge-category">📁 {cardCategories.length}</span>
                 )}
+
+                {card.assignee && <span className="badge badge-category">{card.assignee}</span>}
               </div>
             </div>
 
@@ -223,7 +232,7 @@ function Card({ card, isDragging }) {
                   e.stopPropagation();
                   setShowMenu(!showMenu);
                 }}
-                className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded"
+                className="icon-btn"
               >
                 <MoreHorizontal size={16} />
               </button>
@@ -231,7 +240,7 @@ function Card({ card, isDragging }) {
               {showMenu && (
                 <div className="fixed" style={{ zIndex: 9999 }}>
                   <div
-                    className="absolute right-0 top-0 bg-white dark:bg-gray-800 rounded-lg shadow-lg py-1 w-40 border dark:border-gray-700"
+                    className="absolute right-0 top-0 bg-card rounded-lg shadow-card py-1 w-44 border border-std"
                     style={{ maxHeight: '200px', overflowY: 'auto' }}
                   >
                     <button
@@ -240,7 +249,7 @@ function Card({ card, isDragging }) {
                         setModalOpen(true);
                         setShowMenu(false);
                       }}
-                      className="flex items-center w-full px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100"
+                      className="flex items-center w-full px-3 py-2 text-sm text-primary hover:bg-card-hover"
                     >
                       Modifier
                     </button>
@@ -250,9 +259,9 @@ function Card({ card, isDragging }) {
                         e.stopPropagation();
                         handleSaveToLibrary();
                       }}
-                      className="flex items-center w-full px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100"
+                      className="flex items-center w-full px-3 py-2 text-sm text-primary hover:bg-card-hover"
                     >
-                      <BookMarked size={14} className="mr-2" />
+                      <BookMarked size={14} className="mr-2 text-secondary" />
                       Sauvegarder en bibliothèque
                     </button>
 
@@ -262,9 +271,9 @@ function Card({ card, isDragging }) {
                         handleArchive();
                         setShowMenu(false);
                       }}
-                      className="flex items-center w-full px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100"
+                      className="flex items-center w-full px-3 py-2 text-sm text-primary hover:bg-card-hover"
                     >
-                      <Archive size={14} className="mr-2" />
+                      <Archive size={14} className="mr-2 text-secondary" />
                       Archiver
                     </button>
 
@@ -274,7 +283,7 @@ function Card({ card, isDragging }) {
                         handleDelete();
                         setShowMenu(false);
                       }}
-                      className="flex items-center w-full px-3 py-1.5 text-sm text-red-600 hover:bg-gray-100"
+                      className="flex items-center w-full px-3 py-2 text-sm text-urgent hover:bg-card-hover"
                     >
                       <Trash2 size={14} className="mr-2" />
                       Supprimer
@@ -291,8 +300,8 @@ function Card({ card, isDragging }) {
                 <div
                   ref={provided.innerRef}
                   {...provided.droppableProps}
-                  className={`flex-1 overflow-y-auto px-2 pb-2 scrollbar-thin ${
-                    snapshot.isDraggingOver ? 'bg-gray-200 dark:bg-gray-700' : 'dark:bg-gray-800'
+                  className={`flex-1 overflow-y-auto px-2 pb-2 scrollbar-thin mt-2 pt-2 border-t border-std ${
+                    snapshot.isDraggingOver ? 'bg-card-hover' : ''
                   }`}
                 >
                   {cardCategories.map((category, index) => (

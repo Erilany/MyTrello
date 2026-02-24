@@ -151,7 +151,7 @@ function Board() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
-        <div className="text-gray-500">Chargement...</div>
+        <div className="text-secondary">Chargement...</div>
       </div>
     );
   }
@@ -160,10 +160,8 @@ function Board() {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-center">
-          <p className="text-gray-500 dark:text-gray-400 mb-4">Aucun projet sélectionné</p>
-          <p className="text-sm text-gray-400 dark:text-gray-500">
-            Créez un nouveau projet depuis la barre latérale
-          </p>
+          <p className="text-secondary mb-4">Aucun projet sélectionné</p>
+          <p className="text-sm text-muted">Créez un nouveau projet depuis la barre latérale</p>
         </div>
       </div>
     );
@@ -174,7 +172,7 @@ function Board() {
   return (
     <div className="h-full flex flex-col overflow-hidden">
       {currentBoard.description && (
-        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">{currentBoard.description}</p>
+        <p className="text-sm text-secondary mb-4">{currentBoard.description}</p>
       )}
 
       <div className="flex-1 overflow-x-auto overflow-y-auto">
@@ -184,7 +182,7 @@ function Board() {
               <div
                 {...provided.droppableProps}
                 ref={provided.innerRef}
-                className="flex h-auto min-h-full space-x-4 pb-4"
+                className="flex h-auto min-h-full space-x-[14px] pb-4"
               >
                 {orderedColumns.map((column, index) => (
                   <Draggable key={column.id} draggableId={String(column.id)} index={index}>
@@ -195,7 +193,7 @@ function Board() {
                         className="flex-shrink-0"
                       >
                         <div {...provided.dragHandleProps}>
-                          <Column column={column} />
+                          <Column column={column} index={index} />
                         </div>
                       </div>
                     )}
@@ -203,15 +201,18 @@ function Board() {
                 ))}
                 {provided.placeholder}
 
-                <div className="flex-shrink-0 w-72">
+                <div className="flex-shrink-0 w-[310px]">
                   {showNewColumn ? (
-                    <form onSubmit={handleCreateColumn} className="bg-white rounded-lg shadow p-3">
+                    <form
+                      onSubmit={handleCreateColumn}
+                      className="bg-column rounded-lg border border-std p-3"
+                    >
                       <input
                         type="text"
                         value={newColumnTitle}
                         onChange={e => setNewColumnTitle(e.target.value)}
                         placeholder="Nom de la colonne..."
-                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-3 py-2 text-sm bg-input border border-std rounded-md text-primary placeholder-muted focus:outline-none focus:border-accent"
                         autoFocus
                         onBlur={() => {
                           if (!newColumnTitle.trim()) setShowNewColumn(false);
@@ -220,7 +221,7 @@ function Board() {
                       <div className="flex items-center mt-2 space-x-2">
                         <button
                           type="submit"
-                          className="px-3 py-1.5 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
+                          className="px-3 py-1.5 text-sm font-medium bg-accent text-white rounded-md hover:opacity-90 transition-std"
                         >
                           Ajouter
                         </button>
@@ -230,7 +231,7 @@ function Board() {
                             setNewColumnTitle('');
                             setShowNewColumn(false);
                           }}
-                          className="px-3 py-1.5 text-sm text-gray-600 hover:bg-gray-100 rounded"
+                          className="px-3 py-1.5 text-sm text-secondary hover:text-primary"
                         >
                           Annuler
                         </button>
@@ -239,7 +240,7 @@ function Board() {
                   ) : (
                     <button
                       onClick={() => setShowNewColumn(true)}
-                      className="w-full h-12 flex items-center justify-center bg-white/50 hover:bg-white rounded-lg border-2 border-dashed border-gray-300 text-gray-500 hover:text-gray-700 transition-colors"
+                      className="w-full h-12 flex items-center justify-center bg-card/30 hover:bg-card rounded-lg border-2 border-dashed border-std text-secondary hover:text-primary transition-std"
                     >
                       <Plus size={20} className="mr-2" />
                       Ajouter une colonne

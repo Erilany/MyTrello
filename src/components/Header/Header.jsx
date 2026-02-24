@@ -6,42 +6,55 @@ function Header() {
   const { currentBoard, setLibraryOpen, libraryOpen, theme, toggleTheme } = useApp();
 
   return (
-    <header className="h-14 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-4">
+    <header
+      className="h-14 bg-sidebar border-b border-std flex items-center justify-between px-4"
+      style={{ backdropFilter: 'blur(12px)' }}
+    >
       <div className="flex items-center">
-        <h2 className="text-lg font-semibold text-gray-800 dark:text-white">
+        <span className="text-secondary text-sm mr-2">|</span>
+        <h2
+          className="font-display text-base font-bold text-secondary"
+          style={{ letterSpacing: '-0.3px' }}
+        >
           {currentBoard?.title || 'MyTrello'}
         </h2>
       </div>
 
-      <div className="flex items-center space-x-3">
+      <div className="flex items-center space-x-2">
         <div className="relative">
-          <Search size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+          <Search
+            size={16}
+            className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted"
+          />
           <input
             type="text"
             placeholder="Rechercher..."
-            className="pl-9 pr-4 py-1.5 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent w-64"
+            className="pl-9 pr-4 py-1.5 text-sm bg-input border border-std rounded-md text-primary placeholder-muted focus:outline-none focus:border-accent w-56 transition-std"
           />
         </div>
 
         <button
           onClick={() => setLibraryOpen(!libraryOpen)}
-          className={`p-2 rounded-lg ${libraryOpen ? 'bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400' : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300'}`}
+          className={`icon-btn ${libraryOpen ? 'active' : ''}`}
           title="Bibliothèque"
         >
-          <Library size={20} />
+          <Library size={18} />
         </button>
 
         <button
           onClick={toggleTheme}
-          className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300"
+          className="icon-btn"
           title={theme === 'light' ? 'Mode sombre' : 'Mode clair'}
         >
-          {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
+          {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
         </button>
 
-        <button className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 relative">
-          <Bell size={20} />
-          <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+        <button className="icon-btn relative">
+          <Bell size={18} />
+          <span
+            className="absolute top-1 right-1 w-2 h-2 bg-urgent rounded-full"
+            style={{ boxShadow: '0 0 6px #ef4444' }}
+          ></span>
         </button>
       </div>
     </header>

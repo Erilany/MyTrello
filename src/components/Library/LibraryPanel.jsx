@@ -330,26 +330,26 @@ function LibraryPanel() {
   if (!libraryOpen) return null;
 
   return (
-    <div className="fixed inset-y-0 right-0 w-96 bg-white dark:bg-gray-800 shadow-xl z-50 flex flex-col border-l dark:border-gray-700">
-      <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+    <div className="fixed inset-y-0 right-0 w-96 bg-panel shadow-xl z-50 flex flex-col border-l border-std">
+      <div className="p-4 border-b border-std">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-gray-800 dark:text-white">Bibliothèque</h2>
-          <button onClick={() => setLibraryOpen(false)} className="p-1 hover:bg-gray-100 rounded">
-            <X size={20} className="text-gray-500" />
+          <h2 className="text-lg font-display font-bold text-primary">Bibliothèque</h2>
+          <button onClick={() => setLibraryOpen(false)} className="icon-btn">
+            <X size={20} />
           </button>
         </div>
 
         <div className="relative mb-3">
           <Search
             size={16}
-            className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+            className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted"
           />
           <input
             type="text"
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Rechercher..."
-            className="w-full pl-9 pr-4 py-2 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full pl-9 pr-4 py-2 text-sm bg-input border border-std rounded-lg text-primary placeholder-muted focus:outline-none focus:border-accent"
           />
         </div>
 
@@ -357,7 +357,7 @@ function LibraryPanel() {
           <select
             value={filter}
             onChange={e => setFilter(e.target.value)}
-            className="flex-1 px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="flex-1 px-3 py-1.5 text-sm bg-input border border-std rounded-lg text-primary focus:outline-none focus:border-accent"
           >
             <option value="all">Tous</option>
             <option value="card">Cartes</option>
@@ -368,7 +368,7 @@ function LibraryPanel() {
           <select
             value={sortBy}
             onChange={e => setSortBy(e.target.value)}
-            className="flex-1 px-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="flex-1 px-3 py-1.5 text-sm bg-input border border-std rounded-lg text-primary focus:outline-none focus:border-accent"
           >
             <option value="date">Date</option>
             <option value="name">Nom</option>
@@ -378,15 +378,15 @@ function LibraryPanel() {
 
         {allTags.length > 0 && (
           <div className="flex flex-wrap gap-1 mt-2">
-            <span className="text-xs text-gray-500 dark:text-gray-400 mr-1">Tags:</span>
+            <span className="text-xs text-muted mr-1">Tags:</span>
             {allTags.map(tag => (
               <button
                 key={tag}
                 onClick={() => handleTagClick(tag)}
                 className={`px-2 py-0.5 text-xs rounded ${
                   search.toLowerCase() === tag.toLowerCase()
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-gray-200 dark:bg-gray-600 dark:text-gray-300'
+                    ? 'bg-accent text-white'
+                    : 'bg-card-hover text-secondary'
                 }`}
               >
                 {tag}
@@ -402,30 +402,27 @@ function LibraryPanel() {
           onClick={() => setShowUseModal(false)}
         >
           <div
-            className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md"
+            className="bg-card rounded-lg shadow-card w-full max-w-md border border-std"
             onClick={e => e.stopPropagation()}
           >
-            <div className="p-4 border-b dark:border-gray-700 flex items-center justify-between">
-              <h3 className="text-lg font-semibold dark:text-white">Utiliser le modèle</h3>
-              <button
-                onClick={() => setShowUseModal(false)}
-                className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
-              >
-                <X size={20} className="text-gray-500" />
+            <div className="p-4 border-b border-std flex items-center justify-between">
+              <h3 className="text-lg font-display font-semibold text-primary">
+                Utiliser le modèle
+              </h3>
+              <button onClick={() => setShowUseModal(false)} className="icon-btn">
+                <X size={20} />
               </button>
             </div>
             <div className="p-4 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  Projet
-                </label>
+                <label className="block text-sm font-medium text-secondary mb-1">Projet</label>
                 <select
                   value={selectedBoardId}
                   onChange={e => {
                     setSelectedBoardId(e.target.value);
                     setSelectedColumnId('');
                   }}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 bg-input border border-std rounded-lg text-primary focus:outline-none focus:border-accent"
                 >
                   <option value="">Sélectionner un projet...</option>
                   {boards.map(board => (
@@ -437,13 +434,11 @@ function LibraryPanel() {
               </div>
               {selectedBoardId && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Colonne
-                  </label>
+                  <label className="block text-sm font-medium text-secondary mb-1">Colonne</label>
                   <select
                     value={selectedColumnId}
                     onChange={e => setSelectedColumnId(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 bg-input border border-std rounded-lg text-primary focus:outline-none focus:border-accent"
                   >
                     <option value="">Sélectionner une colonne...</option>
                     {columns
@@ -459,13 +454,13 @@ function LibraryPanel() {
               <div className="flex justify-end gap-2 pt-2">
                 <button
                   onClick={() => setShowUseModal(false)}
-                  className="px-4 py-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+                  className="px-4 py-2 text-secondary hover:text-primary hover:bg-card rounded-lg transition-std"
                 >
                   Annuler
                 </button>
                 <button
                   onClick={handleConfirmUse}
-                  className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                  className="px-4 py-2 bg-accent text-white rounded-lg hover:opacity-90 transition-std"
                 >
                   Confirmer
                 </button>

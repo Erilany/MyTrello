@@ -3,13 +3,6 @@ import { useApp } from '../../context/AppContext';
 import SubCategoryModal from './SubCategoryModal';
 import { MoreHorizontal, Trash2, BookMarked } from 'lucide-react';
 
-const priorityColors = {
-  urgent: '#EF4444',
-  high: '#F97316',
-  normal: '#22C55E',
-  low: '#6B7280',
-};
-
 function SubCategory({ subcategory, isDragging = false }) {
   const { updateSubcategory, deleteSubcategory, saveToLibrary } = useApp();
 
@@ -28,17 +21,27 @@ function SubCategory({ subcategory, isDragging = false }) {
     const today = new Date();
     const diffDays = Math.ceil((date - today) / (1000 * 60 * 60 * 24));
 
-    let colorClass = 'text-gray-500 dark:text-gray-400';
-    if (diffDays < 0) colorClass = 'text-red-500 dark:text-red-400';
-    else if (diffDays <= 3) colorClass = 'text-orange-500 dark:text-orange-400';
+    let badgeClass = 'badge-date';
+    if (diffDays < 0) badgeClass = 'badge-date-overdue';
+    else if (diffDays <= 3) badgeClass = 'badge-date-soon';
 
     return {
       text: date.toLocaleDateString('fr-FR'),
-      colorClass,
+      badgeClass,
     };
   };
 
+  const getPriorityBadge = () => {
+    const p = subcategory.priority;
+    if (p === 'urgent') return { class: 'badge-urgent', label: 'U' };
+    if (p === 'high') return { class: 'badge-waiting', label: 'H' };
+    if (p === 'low') return { class: 'badge-normal', label: 'B' };
+    if (p === 'done') return { class: 'badge-done', label: '✓' };
+    return null;
+  };
+
   const dateInfo = formatDate(subcategory.due_date);
+  const priorityBadge = getPriorityBadge();
 
   const handleSaveToLibrary = async () => {
     const content = {
@@ -89,7 +92,7 @@ function SubCategory({ subcategory, isDragging = false }) {
   return (
     <>
       <div
-        className="bg-white dark:bg-gray-700 rounded border border-gray-100 dark:border-gray-600 mb-1 py-1.5 px-2 flex items-center group cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-600"
+        className="bg-card-hover rounded border border-std mb-1 py-1.5 px-2 flex items-center group cursor-pointer hover:border-strong transition-std"
         draggable
         onDragStart={handleDragStart}
         onDoubleClick={e => {
@@ -100,27 +103,18 @@ function SubCategory({ subcategory, isDragging = false }) {
       >
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-600 dark:text-gray-300">{subcategory.title}</span>
+            <span className="text-sm text-primary">{subcategory.title}</span>
           </div>
 
           <div className="flex items-center gap-2 mt-0.5">
-            {subcategory.priority !== 'normal' && (
-              <span
-                className="px-1.5 py-0.5 text-xs rounded text-white"
-                style={{ backgroundColor: priorityColors[subcategory.priority] }}
-              >
-                {subcategory.priority === 'urgent'
-                  ? 'U'
-                  : subcategory.priority === 'high'
-                    ? 'H'
-                    : 'L'}
-              </span>
+            {priorityBadge && (
+              <span className={`badge ${priorityBadge.class}`}>{priorityBadge.label}</span>
             )}
 
-            {dateInfo && <span className={`text-xs ${dateInfo.colorClass}`}>{dateInfo.text}</span>}
+            {dateInfo && <span className={`badge ${dateInfo.badgeClass}`}>📅 {dateInfo.text}</span>}
 
             {subcategory.assignee && (
-              <span className="text-xs text-gray-400">{subcategory.assignee}</span>
+              <span className="badge badge-category">{subcategory.assignee}</span>
             )}
           </div>
         </div>
@@ -128,19 +122,19 @@ function SubCategory({ subcategory, isDragging = false }) {
         <div className="relative subcategory-menu">
           <button
             onClick={() => setShowMenu(!showMenu)}
-            className="p-1 text-gray-400 hover:text-gray-600 rounded opacity-0 group-hover:opacity-100"
+            className="icon-btn !w-6 !h-6 opacity-0 group-hover:opacity-100"
           >
             <MoreHorizontal size={14} />
           </button>
 
           {showMenu && (
-            <div className="absolute right-0 top-6 bg-white rounded-lg shadow-lg py-1 z-30 w-36">
+            <div className="absolute right-0 top-8 bg-card rounded-lg shadow-card py-1 z-30 w-36 border border-std">
               <button
                 onClick={() => {
                   setModalOpen(true);
                   setShowMenu(false);
                 }}
-                className="flex items-center w-full px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100"
+                className="flex items-center w-full px-3 py-2 text-sm text-primary hover:bg-card-hover"
               >
                 Modifier
               </button>
@@ -150,15 +144,15 @@ function SubCategory({ subcategory, isDragging = false }) {
                   handleSaveToLibrary();
                   setShowMenu(false);
                 }}
-                className="flex items-center w-full px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100"
+                className="flex items-center w-full px-3 py-2 text-sm text-primary hover:bg-card-hover"
               >
-                <BookMarked size={14} className="mr-2" />
+                <BookMarked size={14} className="mr-2 text-secondary" />
                 Sauvegarder
               </button>
 
               <button
                 onClick={handleDelete}
-                className="flex items-center w-full px-3 py-1.5 text-sm text-red-600 hover:bg-gray-100"
+                className="flex items-center w-full px-3 py-2 text-sm text-urgent hover:bg-card-hover"
               >
                 <Trash2 size={14} className="mr-2" />
                 Supprimer
