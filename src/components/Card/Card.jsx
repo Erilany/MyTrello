@@ -96,8 +96,8 @@ function Card({ card, isDragging }) {
         <div className="p-3">
           <div className="flex items-start justify-between">
             <div className="flex-1 overflow-hidden">
-              <div className="flex items-center gap-2">
-                {cardCategories.length > 0 && (
+              <div className="flex items-center gap-1">
+                {cardCategories.length > 0 ? (
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -107,6 +107,11 @@ function Card({ card, isDragging }) {
                   >
                     {card.collapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
                   </button>
+                ) : (
+                  <span className="w-4 text-xs text-gray-300">•</span>
+                )}
+                {cardCategories.length > 0 && card.collapsed && (
+                  <span className="text-xs text-gray-400 dark:text-gray-400">({cardCategories.length})</span>
                 )}
                 <h4 className="text-sm font-medium text-gray-800 dark:text-white truncate">{card.title}</h4>
               </div>
@@ -132,13 +137,6 @@ function Card({ card, isDragging }) {
                 {card.assignee && (
                   <span className="px-2 py-0.5 text-xs bg-gray-100 dark:bg-gray-600 text-gray-600 dark:text-gray-300 rounded">
                     {card.assignee}
-                  </span>
-                )}
-
-                {cardCategories.length > 0 && (
-                  <span className="flex items-center text-xs text-gray-400">
-                    <ChevronDown size={12} className="mr-0.5" />
-                    {cardCategories.length}
                   </span>
                 )}
               </div>

@@ -146,11 +146,25 @@ function Column({ column }) {
         </div>
       </div>
 
-      <Droppable droppableId={String(column.id)} type="card">
+      <Droppable droppableId={String(column.id)} type="card" isDropDisabled={false}>
         {(provided, snapshot) => (
           <div
             ref={provided.innerRef}
             {...provided.droppableProps}
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => {
+              const data = e.dataTransfer.getData('application/json');
+              if (data) {
+                const event = new CustomEvent('library-drop', {
+                  detail: { 
+                    columnId: column.id,
+                    boardId: column.board_id,
+                    data: JSON.parse(data)
+                  }
+                });
+                window.dispatchEvent(event);
+              }
+            }}
             className={`flex-1 overflow-y-auto px-2 pb-2 scrollbar-thin ${
               snapshot.isDraggingOver ? 'bg-gray-200 dark:bg-gray-700' : 'dark:bg-gray-800'
             }`}

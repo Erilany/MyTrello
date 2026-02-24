@@ -295,6 +295,16 @@ function LibraryPanel() {
                 key={item.id} 
                 className="bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 p-3 hover:shadow-md transition-shadow cursor-pointer"
                 onDoubleClick={() => handlePreview(item)}
+                draggable
+                onDragStart={(e) => {
+                  e.dataTransfer.setData('application/json', JSON.stringify({
+                    type: 'library',
+                    itemType: item.type,
+                    content: item.content_json,
+                    title: item.title
+                  }));
+                  e.dataTransfer.effectAllowed = 'copy';
+                }}
               >
                 <div className="flex items-start gap-2">
                   <GripVertical size={16} className="text-gray-400 mt-1 cursor-grab" />

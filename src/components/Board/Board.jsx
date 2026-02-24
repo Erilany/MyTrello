@@ -1,13 +1,70 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { useApp } from '../../context/AppContext';
 import Column from '../Column/Column';
 import { Plus } from 'lucide-react';
 
 function Board() {
-  const { currentBoard, columns, createColumn, moveColumn, moveCard, moveCategory, moveSubcategory, loadBoard, loading } = useApp();
+  const { currentBoard, columns, createColumn, moveColumn, moveCard, moveCategory, moveSubcategory, loadBoard, loading, dbRun, dbGet, categories, subcategories } = useApp();
   const [newColumnTitle, setNewColumnTitle] = useState('');
   const [showNewColumn, setShowNewColumn] = useState(false);
+
+  useEffect(() => {
+    const handleLibraryDrop = async (e) => {
+      const { columnId, boardId, data } = e.detail;
+      const { itemType, content, title } = data;
+      
+      if (!columnId) return;
+      
+      try {
+        const parsedContent = JSON.parse(content);
+
+        if (itemType === 'card' && parsedContent.card) {
+          const maxPosResult = await dbGet('SELECT MAX(position) as maxPos FROM cards WHERE column_id = ?', [columnId]);
+          const newPosition = (maxPosResult?.data?.maxPos ?? -1) + 1;
+
+          const cardResult = await dbRun(
+            'INSERT INTO cards (column_id, title, description, priority, due_date, assignee, position, color) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            [
+              columnId,
+              parsedContent.card.title,
+              parsedContent.card.description || '',
+              parsedContent.card.priority || 'normal',
+              parsedContent.card.due_date || null,
+              parsedContent.card.assignee || '',
+              newPosition,
+              parsedContent.card.color || '#FFFFFF'
+            ]
+          );
+
+          if (cardResult.success && parsedContent.categories) {
+            for (const cat of parsedContent.categories) {
+              const catResult = await dbRun(
+                'INSERT INTO categories (card_id, title, description, priority, due_date, assignee, position, color) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+                [cardResult.data.lastInsertRowid, cat.title, cat.description || '', cat.priority || 'normal', cat.due_date || null, cat.assignee || '', cat.position, cat.color || '#F5F5F5']
+              );
+              
+              if (catResult.success && cat.subcategories) {
+                for (const subcat of cat.subcategories) {
+                  await dbRun(
+                    'INSERT INTO subcategories (category_id, title, description, priority, due_date, assignee, position) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                    [catResult.data.lastInsertRowid, subcat.title, subcat.description || '', subcat.priority || 'normal', subcat.due_date || null, subcat.assignee || '', subcat.position]
+                  );
+                }
+              }
+            }
+          }
+          
+          await loadBoard(boardId);
+        }
+      } catch (error) {
+        console.error('Error handling library drop:', error);
+      }
+    };
+
+    window.addEventListener('library-drop', handleLibraryDrop);
+    return () => window.removeEventListener('library-drop', handleLibraryDrop);
+  }, [dbRun, dbGet, loadBoard]);
 
   const handleCreateColumn = async (e) => {
     e.preventDefault();
@@ -85,7 +142,9 @@ function Board() {
         <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">{currentBoard.description}</p>
       )}
       
-      <div className="flex-1 overflow-x-auto overflow-y-auto">
+      <div 
+        className="flex-1 overflow-x-auto overflow-y-auto"
+      >
         <DragDropContext onDragEnd={handleDragEnd}>
           <Droppable droppableId="board" type="column" direction="horizontal">
             {(provided) => (
