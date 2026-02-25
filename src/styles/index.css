@@ -257,6 +257,10 @@ body {
   background-color: var(--bg-card);
 }
 
+.bg-card-hover {
+  background-color: var(--bg-card-hover);
+}
+
 .bg-card-hover:hover {
   background-color: var(--bg-card-hover);
 }

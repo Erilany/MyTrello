@@ -14,6 +14,27 @@ export function AppProvider({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [theme, setTheme] = useState('dark');
+  const [selectedCard, setSelectedCard] = useState(null);
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [selectedSubcategory, setSelectedSubcategory] = useState(null);
+  const [cardColors, setCardColors] = useState({
+    etudes: { gradient: ['#6366f1', '#3b82f6'], keywords: ['études', 'etudes'] },
+    enCours: { gradient: ['#f59e0b', '#fbbf24'], keywords: ['cours', 'en cours'] },
+    realise: { gradient: ['#22c55e', '#4ade80'], keywords: ['réalisé', 'realis', 'terminé'] },
+    archive: { gradient: ['#475569', '#475569'], keywords: ['archiv'] },
+  });
+
+  useEffect(() => {
+    const loadCardColors = async () => {
+      if (window.electron) {
+        const colors = await window.electron.invoke('cardColors:get');
+        if (colors) {
+          setCardColors(colors);
+        }
+      }
+    };
+    loadCardColors();
+  }, []);
 
   useEffect(() => {
     const savedTheme = localStorage.getItem('mytrello-theme');
@@ -29,6 +50,22 @@ export function AppProvider({ children }) {
 
   const toggleTheme = useCallback(() => {
     setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
+  }, []);
+
+  const updateCardColors = useCallback(async newColors => {
+    if (window.electron) {
+      await window.electron.invoke('cardColors:set', newColors);
+      setCardColors(newColors);
+    }
+  }, []);
+
+  const resetCardColors = useCallback(async () => {
+    if (window.electron) {
+      const result = await window.electron.invoke('cardColors:reset');
+      if (result.success && result.data) {
+        setCardColors(result.data);
+      }
+    }
   }, []);
 
   const dbQuery = useCallback(async (sql, params = []) => {
@@ -375,8 +412,12 @@ export function AppProvider({ children }) {
   };
 
   const moveCard = async (cardId, newColumnId, newPosition) => {
+    console.log('[moveCard] Starting', { cardId, newColumnId, newPosition });
     const card = cards.find(c => c.id === cardId);
-    if (!card) return;
+    if (!card) {
+      console.log('[moveCard] Card not found', cardId);
+      return;
+    }
 
     const oldColumnId = card.column_id;
     const oldPosition = card.position;
@@ -422,9 +463,11 @@ export function AppProvider({ children }) {
       ]);
     }
 
+    console.log('[moveCard] Reloading board');
     if (currentBoard) {
       await loadBoard(currentBoard.id);
     }
+    console.log('[moveCard] Complete');
   };
 
   const createCategory = async (
@@ -641,24 +684,29 @@ export function AppProvider({ children }) {
     }
   };
 
-  const loadLibrary = async () => {
+  const loadLibrary = useCallback(async () => {
     const result = await dbQuery('SELECT * FROM library_items ORDER BY updated_at DESC');
     if (result.success) {
       setLibraryItems(result.data);
     }
-  };
+  }, [dbQuery]);
 
-  const saveToLibrary = async (type, title, contentJson) => {
-    const result = await dbRun(
-      'INSERT INTO library_items (type, title, content_json) VALUES (?, ?, ?)',
-      [type, title, contentJson]
-    );
-    if (result.success) {
-      await loadLibrary();
-      return result.data.lastInsertRowid;
-    }
-    return null;
-  };
+  const saveToLibrary = useCallback(
+    async (type, title, contentJson) => {
+      console.log('[saveToLibrary] Called with:', { type, title });
+      const result = await dbRun(
+        'INSERT INTO library_items (type, title, content_json) VALUES (?, ?, ?)',
+        [type, title, contentJson]
+      );
+      console.log('[saveToLibrary] Result:', result);
+      if (result.success) {
+        await loadLibrary();
+        return result.data.lastInsertRowid;
+      }
+      return null;
+    },
+    [dbRun, loadLibrary]
+  );
 
   const updateLibraryItem = async (id, title, contentJson) => {
     await dbRun(
@@ -713,6 +761,14 @@ export function AppProvider({ children }) {
     libraryOpen,
     setSidebarOpen,
     setLibraryOpen,
+    theme,
+    toggleTheme,
+    selectedCard,
+    setSelectedCard,
+    selectedCategory,
+    setSelectedCategory,
+    selectedSubcategory,
+    setSelectedSubcategory,
     loadBoard,
     loadBoards,
     createBoard,
@@ -748,8 +804,9 @@ export function AppProvider({ children }) {
     dbQuery,
     dbRun,
     dbGet,
-    theme,
-    toggleTheme,
+    cardColors,
+    updateCardColors,
+    resetCardColors,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

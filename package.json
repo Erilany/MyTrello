@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "concurrently \"npm run react:dev\" \"npm run electron:dev\"",
     "react:dev": "vite",
-    "electron:dev": "wait-on http://localhost:5173 && electron .",
+    "electron:dev": "wait-on http://localhost:5174 && electron .",
     "build": "vite build",
     "electron": "electron .",
     "db:init": "node scripts/db-init.js",
@@ -45,6 +45,7 @@
     "react-beautiful-dnd": "^13.1.1",
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.20.0",
+    "react-speech-recognition": "^4.0.1",
     "uuid": "^9.0.1"
   },
   "devDependencies": {

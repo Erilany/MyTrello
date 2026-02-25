@@ -1,17 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Droppable, Draggable } from '@hello-pangea/dnd';
 import { useApp } from '../../context/AppContext';
 import Card from '../Card/Card';
 import { MoreHorizontal, Plus, Pencil, Trash2, Palette } from 'lucide-react';
 
 function Column({ column, index }) {
-  const { cards, createCard, updateColumn, deleteColumn, currentBoard } = useApp();
+  const { cards, createCard, updateColumn, deleteColumn, currentBoard, cardColors } = useApp();
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState(column.title);
   const [showMenu, setShowMenu] = useState(false);
   const [showNewCard, setShowNewCard] = useState(false);
   const [newCardTitle, setNewCardTitle] = useState('');
   const [showColorPicker, setShowColorPicker] = useState(false);
+  const droppableRef = useRef(null);
 
   useEffect(() => {
     const handleClickOutside = e => {
@@ -24,17 +25,54 @@ function Column({ column, index }) {
     return () => document.removeEventListener('click', handleClickOutside);
   }, [showMenu]);
 
+  useEffect(() => {
+    const handleLibraryDrop = e => {
+      const { columnId, boardId, data } = e.detail;
+      if (columnId === column.id) {
+        console.log('[Column] Library drop handled', { columnId: column.id });
+      }
+    };
+
+    window.addEventListener('library-drop', handleLibraryDrop);
+    return () => window.removeEventListener('library-drop', handleLibraryDrop);
+  }, [column.id, column.board_id]);
+
   const columnCards = cards
     .filter(card => card.column_id === column.id)
     .sort((a, b) => a.position - b.position);
 
+  const getColumnStyle = colTitle => {
+    const t = (colTitle || '').toLowerCase();
+
+    if (cardColors.etudes.keywords.some(k => t.includes(k))) {
+      return {
+        background: `linear-gradient(90deg, ${cardColors.etudes.gradient[0]}, ${cardColors.etudes.gradient[1]})`,
+      };
+    }
+    if (cardColors.enCours.keywords.some(k => t.includes(k))) {
+      return {
+        background: `linear-gradient(90deg, ${cardColors.enCours.gradient[0]}, ${cardColors.enCours.gradient[1]})`,
+      };
+    }
+    if (cardColors.realise.keywords.some(k => t.includes(k))) {
+      return {
+        background: `linear-gradient(90deg, ${cardColors.realise.gradient[0]}, ${cardColors.realise.gradient[1]})`,
+      };
+    }
+    if (cardColors.archive.keywords.some(k => t.includes(k))) {
+      return { background: cardColors.archive.gradient[0] };
+    }
+    return {
+      background: `linear-gradient(90deg, ${cardColors.enCours.gradient[0]}, ${cardColors.enCours.gradient[1]})`,
+    };
+  };
+
   const getColumnClass = colTitle => {
-    const t = colTitle.toLowerCase();
-    if (t.includes('études') || t.includes('etudes')) return 'accent-bar-etudes';
-    if (t.includes('cours') || t.includes('en cours')) return 'accent-bar-en-cours';
-    if (t.includes('réalisé') || t.includes('realis') || t.includes('terminé'))
-      return 'accent-bar-realise';
-    if (t.includes('archiv')) return 'accent-bar-archive';
+    const t = (colTitle || '').toLowerCase();
+    if (cardColors.etudes.keywords.some(k => t.includes(k))) return 'accent-bar-etudes';
+    if (cardColors.enCours.keywords.some(k => t.includes(k))) return 'accent-bar-en-cours';
+    if (cardColors.realise.keywords.some(k => t.includes(k))) return 'accent-bar-realise';
+    if (cardColors.archive.keywords.some(k => t.includes(k))) return 'accent-bar-archive';
     return 'accent-bar-en-cours';
   };
 
@@ -77,15 +115,14 @@ function Column({ column, index }) {
   ];
 
   const getAnimationClass = () => {
-    const animIndex = (index % 4) + 1;
-    return `column-anim-${animIndex}`;
+    return '';
   };
 
   return (
     <div
       className={`flex-shrink-0 w-[310px] bg-column rounded-lg flex flex-col h-full max-h-full overflow-hidden border border-std ${getAnimationClass()}`}
     >
-      <div className="p-3 flex items-center justify-between flex-shrink-0 bg-column">
+      <div className="p-3 flex items-center justify-between flex-shrink-0 bg-column relative">
         {isEditing ? (
           <input
             type="text"
@@ -128,7 +165,7 @@ function Column({ column, index }) {
           </button>
 
           {showMenu && (
-            <div className="absolute right-0 top-10 bg-card rounded-lg shadow-card py-1 z-[100] w-44 border border-std">
+            <div className="absolute right-0 top-full mt-1 bg-card rounded-lg shadow-card py-1 z-[100] w-44 border border-std">
               <button
                 onClick={() => {
                   setIsEditing(true);
@@ -172,57 +209,85 @@ function Column({ column, index }) {
         </div>
       </div>
 
-      <Droppable droppableId={String(column.id)} type="card" isDropDisabled={false}>
-        {(provided, snapshot) => (
-          <div
-            ref={provided.innerRef}
-            {...provided.droppableProps}
-            onDragOver={e => e.preventDefault()}
-            onDrop={e => {
-              const data = e.dataTransfer.getData('application/json');
-              if (data) {
-                const event = new CustomEvent('library-drop', {
-                  detail: {
-                    columnId: column.id,
-                    boardId: column.board_id,
-                    data: JSON.parse(data),
-                  },
-                });
-                window.dispatchEvent(event);
-              }
-            }}
-            className={`flex-1 overflow-y-auto px-2 pb-2 scrollbar-thin ${
-              snapshot.isDraggingOver ? 'bg-card/50' : ''
-            }`}
-          >
-            {columnCards.map((card, idx) => (
-              <Draggable key={card.id} draggableId={String(card.id)} index={idx}>
-                {(provided, snapshot) => (
-                  <div
-                    ref={provided.innerRef}
-                    {...provided.draggableProps}
-                    {...provided.dragHandleProps}
-                    onClick={e => {
-                      if (snapshot.isDragging) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                      }
-                    }}
-                  >
-                    <Card
-                      card={card}
-                      isDragging={snapshot.isDragging}
-                      columnColor={column.color}
-                      columnTitle={column.title}
-                    />
-                  </div>
-                )}
-              </Draggable>
-            ))}
-            {provided.placeholder}
-          </div>
-        )}
-      </Droppable>
+      <div
+        className="flex-1 flex flex-col min-h-0"
+        onDragOver={e => {
+          if (window.__isLibraryDrag) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'copy';
+          }
+        }}
+        onDrop={e => {
+          if (!window.__isLibraryDrag) return;
+          e.preventDefault();
+          console.log('[Column] Native drop detected', { columnId: column.id });
+          const data = e.dataTransfer.getData('application/json');
+          if (data) {
+            console.log('[Column] Native drop data:', data);
+            const event = new CustomEvent('library-drop', {
+              detail: {
+                columnId: column.id,
+                boardId: column.board_id,
+                data: JSON.parse(data),
+              },
+            });
+            window.dispatchEvent(event);
+          } else if (window.__libraryDragData) {
+            console.log('[Column] Using stored drag data');
+            const event = new CustomEvent('library-drop', {
+              detail: {
+                columnId: column.id,
+                boardId: column.board_id,
+                data: window.__libraryDragData,
+              },
+            });
+            window.dispatchEvent(event);
+            window.__libraryDragData = null;
+          }
+          window.__isLibraryDrag = false;
+        }}
+      >
+        <Droppable droppableId={String(column.id)} type="card" isDropDisabled={false}>
+          {(provided, snapshot) => (
+            <div
+              ref={node => {
+                provided.innerRef(node);
+                droppableRef.current = node;
+              }}
+              {...provided.droppableProps}
+              className={`flex-1 overflow-y-auto px-2 pb-2 scrollbar-thin ${
+                snapshot.isDraggingOver ? 'bg-card/50' : ''
+              }`}
+            >
+              {columnCards.map((card, idx) => (
+                <Draggable key={card.id} draggableId={String(card.id)} index={idx}>
+                  {(provided, snapshot) => (
+                    <div
+                      ref={provided.innerRef}
+                      {...provided.draggableProps}
+                      {...provided.dragHandleProps}
+                      onClick={e => {
+                        if (snapshot.isDragging) {
+                          e.preventDefault();
+                          e.stopPropagation();
+                        }
+                      }}
+                    >
+                      <Card
+                        card={card}
+                        isDragging={snapshot.isDragging}
+                        columnColor={column.color}
+                        columnTitle={column.title}
+                      />
+                    </div>
+                  )}
+                </Draggable>
+              ))}
+              {provided.placeholder}
+            </div>
+          )}
+        </Droppable>
+      </div>
 
       <div className="p-2 border-t border-std">
         {showNewCard ? (

@@ -5,13 +5,17 @@ import SubCategory from '../SubCategory/SubCategory';
 import CategoryModal from './CategoryModal';
 import { MoreHorizontal, ChevronDown, ChevronRight, Trash2, BookMarked } from 'lucide-react';
 
-function Category({ category, isDragging = false }) {
-  const { subcategories, updateCategory, deleteCategory, saveToLibrary } = useApp();
+function Category({ category, isDragging = false, dragHandleProps }) {
+  const { subcategories, updateCategory, deleteCategory, saveToLibrary, setSelectedCategory } =
+    useApp();
 
   const [showMenu, setShowMenu] = useState(false);
-  const [modalOpen, setModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(category.title);
+
+  const handleDoubleClick = () => {
+    setSelectedCategory(category);
+  };
 
   const categorySubcategories = subcategories
     .filter(sc => sc.category_id === category.id)
@@ -124,13 +128,12 @@ function Category({ category, isDragging = false }) {
   return (
     <>
       <div
-        className="bg-card-hover rounded border border-std mb-2 cursor-pointer hover:border-strong select-none transition-std"
+        {...dragHandleProps}
+        className="bg-card-hover rounded border border-std mb-2 cursor-grab hover:border-strong select-none transition-std"
         style={{ borderLeftColor: category.color || '#6366f1', borderLeftWidth: '3px' }}
-        draggable
-        onDragStart={handleDragStart}
         onDoubleClick={e => {
           if (e.target.closest('button')) return;
-          setModalOpen(true);
+          handleDoubleClick();
         }}
       >
         <div className="p-2 flex items-start">
@@ -209,7 +212,7 @@ function Category({ category, isDragging = false }) {
             </button>
 
             {showMenu && (
-              <div className="absolute right-0 top-8 bg-card rounded-lg shadow-card py-1 z-20 w-40 border border-std">
+              <div className="fixed right-0 top-8 bg-card rounded-lg shadow-card py-1 z-[99999] w-44 border border-std">
                 <button
                   onClick={() => {
                     setModalOpen(true);
@@ -274,8 +277,6 @@ function Category({ category, isDragging = false }) {
           </Droppable>
         )}
       </div>
-
-      {modalOpen && <CategoryModal category={category} onClose={() => setModalOpen(false)} />}
     </>
   );
 }

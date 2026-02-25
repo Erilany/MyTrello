@@ -4,10 +4,13 @@ import SubCategoryModal from './SubCategoryModal';
 import { MoreHorizontal, Trash2, BookMarked } from 'lucide-react';
 
 function SubCategory({ subcategory, isDragging = false }) {
-  const { updateSubcategory, deleteSubcategory, saveToLibrary } = useApp();
+  const { updateSubcategory, deleteSubcategory, saveToLibrary, setSelectedSubcategory } = useApp();
 
   const [showMenu, setShowMenu] = useState(false);
-  const [modalOpen, setModalOpen] = useState(false);
+
+  const handleDoubleClick = () => {
+    setSelectedSubcategory(subcategory);
+  };
 
   const handleDelete = async () => {
     if (window.confirm('Voulez-vous vraiment supprimer cette sous-catégorie ?')) {
@@ -93,12 +96,10 @@ function SubCategory({ subcategory, isDragging = false }) {
     <>
       <div
         className="bg-card-hover rounded border border-std mb-1 py-1.5 px-2 flex items-center group cursor-pointer hover:border-strong transition-std"
-        draggable
-        onDragStart={handleDragStart}
         onDoubleClick={e => {
           e.stopPropagation();
           if (e.target.closest('button')) return;
-          setModalOpen(true);
+          handleDoubleClick();
         }}
       >
         <div className="flex-1 min-w-0">
@@ -128,7 +129,7 @@ function SubCategory({ subcategory, isDragging = false }) {
           </button>
 
           {showMenu && (
-            <div className="absolute right-0 top-8 bg-card rounded-lg shadow-card py-1 z-30 w-36 border border-std">
+            <div className="fixed right-0 top-8 bg-card rounded-lg shadow-card py-1 z-[99999] w-40 border border-std">
               <button
                 onClick={() => {
                   setModalOpen(true);
@@ -161,10 +162,6 @@ function SubCategory({ subcategory, isDragging = false }) {
           )}
         </div>
       </div>
-
-      {modalOpen && (
-        <SubCategoryModal subcategory={subcategory} onClose={() => setModalOpen(false)} />
-      )}
     </>
   );
 }

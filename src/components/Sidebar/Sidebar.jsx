@@ -12,6 +12,7 @@ import {
   Trash2,
   MoreHorizontal,
   Wand2,
+  LayoutGrid,
 } from 'lucide-react';
 
 function Sidebar() {
@@ -58,13 +59,81 @@ function Sidebar() {
 
   if (!sidebarOpen) {
     return (
-      <div className="w-[220px] bg-sidebar flex flex-col items-center py-4 border-r border-std">
+      <div className="w-[60px] bg-sidebar flex flex-col items-center py-4 border-r border-std gap-2">
         <button
           onClick={() => setSidebarOpen(true)}
           className="icon-btn text-secondary hover:text-primary"
+          title="Ouvrir le menu"
         >
           <Layout size={20} />
         </button>
+
+        <div className="border-t border-b border-std py-3 flex flex-col gap-2">
+          <div className="group relative">
+            <button className="icon-btn text-secondary hover:text-primary" title="Projets">
+              <LayoutGrid size={20} />
+            </button>
+            <div className="absolute left-full top-0 ml-1 hidden group-hover:block z-50">
+              <div className="bg-card rounded-lg shadow-card border border-std py-1 min-w-[150px]">
+                <div className="px-3 py-1 text-xs font-semibold uppercase text-muted border-b border-std mb-1">
+                  Projets
+                </div>
+                {boards.slice(0, 5).map(board => (
+                  <button
+                    key={board.id}
+                    onClick={() => {
+                      loadBoard(board.id);
+                      navigate('/');
+                    }}
+                    className={`flex items-center w-full px-3 py-1.5 text-sm text-left hover:bg-card-hover ${
+                      currentBoard?.id === board.id ? 'text-accent' : 'text-primary'
+                    }`}
+                  >
+                    <span className="truncate">{board.title}</span>
+                  </button>
+                ))}
+                {boards.length > 5 && (
+                  <button
+                    onClick={() => setSidebarOpen(true)}
+                    className="flex items-center w-full px-3 py-1.5 text-sm text-muted hover:bg-card-hover"
+                  >
+                    Voir tout...
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <NavLink
+            to="/library"
+            className={({ isActive }) =>
+              `icon-btn ${isActive ? 'text-accent' : 'text-secondary hover:text-primary'}`
+            }
+            title="Bibliothèque"
+          >
+            <BookOpen size={20} />
+          </NavLink>
+
+          <NavLink
+            to="/archives"
+            className={({ isActive }) =>
+              `icon-btn ${isActive ? 'text-accent' : 'text-secondary hover:text-primary'}`
+            }
+            title="Archives"
+          >
+            <Archive size={20} />
+          </NavLink>
+
+          <NavLink
+            to="/settings"
+            className={({ isActive }) =>
+              `icon-btn ${isActive ? 'text-accent' : 'text-secondary hover:text-primary'}`
+            }
+            title="Paramètres"
+          >
+            <Settings size={20} />
+          </NavLink>
+        </div>
       </div>
     );
   }

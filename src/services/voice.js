@@ -8,14 +8,52 @@ class VoiceService {
     this.onError = null;
     this.lastCommand = null;
     this.commands = this.initializeCommands();
-    
-    this.initSpeechRecognition();
+    this.useWindowsSpeech = true;
+
+    this.setupElectronListeners();
+    this.initWindowsSpeechRecognition();
   }
 
-  initSpeechRecognition() {
+  setupElectronListeners() {
+    if (window.electron && window.electron.on) {
+      window.electron.on('speech:started', () => {
+        console.log('[VoiceService] Windows Speech: started event received');
+      });
+
+      window.electron.on('speech:result', data => {
+        console.log('[VoiceService] Windows Speech: result received:', data.transcript);
+        if (data.transcript) {
+          this.processCommand(data.transcript);
+        }
+      });
+
+      window.electron.on('speech:stopped', () => {
+        console.log('[VoiceService] Windows Speech: stopped event received');
+        this.isListening = false;
+        if (this.onListeningChange) {
+          this.onListeningChange(false);
+        }
+      });
+    }
+  }
+
+  initWindowsSpeechRecognition() {
+    console.log('[VoiceService] Initializing Windows Speech Recognition...');
+
+    if (window.electron && window.electron.invoke) {
+      console.log('[VoiceService] Using Electron IPC for Windows Speech');
+      this.useWindowsSpeech = true;
+    } else {
+      console.log('[VoiceService] Fallback to Web Speech API');
+      this.useWindowsSpeech = false;
+      this.initWebSpeechRecognition();
+    }
+  }
+
+  initWebSpeechRecognition() {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      console.error('Speech recognition not supported');
+      console.error('[VoiceService] Speech recognition not supported');
       return;
     }
 
@@ -24,7 +62,11 @@ class VoiceService {
     this.recognition.interimResults = true;
     this.recognition.lang = 'fr-FR';
 
-    this.recognition.onresult = (event) => {
+    this.recognition.onstart = () => {
+      console.log('[VoiceService] Web Speech started');
+    };
+
+    this.recognition.onresult = event => {
       const transcript = Array.from(event.results)
         .map(result => result[0].transcript)
         .join('');
@@ -34,21 +76,80 @@ class VoiceService {
       }
     };
 
-    this.recognition.onerror = (event) => {
-      console.error('Speech recognition error:', event.error);
+    this.recognition.onerror = event => {
+      console.error('[VoiceService] Web Speech error:', event.error);
       if (this.onError) {
         this.onError(event.error);
-      }
-      if (event.error !== 'no-speech') {
-        this.stop();
       }
     };
 
     this.recognition.onend = () => {
+      console.log('[VoiceService] Web Speech ended');
       if (this.isListening) {
-        this.recognition.start();
+        try {
+          this.recognition.start();
+        } catch (e) {
+          console.error('[VoiceService] Error restarting:', e);
+        }
       }
     };
+  }
+
+  start() {
+    if (this.isListening) return;
+
+    console.log('[VoiceService] Starting voice recognition...');
+
+    const canUseWindowsSpeech = !!(window.electron && window.electron.invoke);
+    console.log('[VoiceService] Windows Speech available:', canUseWindowsSpeech);
+
+    if (canUseWindowsSpeech) {
+      this.useWindowsSpeech = true;
+      this.startWindowsSpeech();
+    } else if (this.recognition) {
+      try {
+        this.recognition.start();
+        this.isListening = true;
+        if (this.onListeningChange) this.onListeningChange(true);
+      } catch (e) {
+        console.error('[VoiceService] Error starting web speech:', e);
+      }
+    } else {
+      console.error('[VoiceService] Recognition not initialized');
+    }
+  }
+
+  async startWindowsSpeech() {
+    try {
+      console.log('[VoiceService] Invoking Windows Speech via IPC...');
+
+      const result = await window.electron.invoke('speech:start', { lang: 'fr-FR' });
+
+      if (result.success) {
+        this.isListening = true;
+        if (this.onListeningChange) this.onListeningChange(true);
+        console.log('[VoiceService] Windows Speech started successfully');
+      } else {
+        console.error('[VoiceService] Windows Speech failed:', result.error);
+        if (this.onError) this.onError(result.error);
+      }
+    } catch (e) {
+      console.error('[VoiceService] Error starting Windows Speech:', e);
+      if (this.onError) this.onError(e.message);
+    }
+  }
+
+  stop() {
+    this.isListening = false;
+    if (this.onListeningChange) this.onListeningChange(false);
+
+    if (this.useWindowsSpeech && window.electron) {
+      window.electron.invoke('speech:stop').catch(console.error);
+    } else if (this.recognition) {
+      this.recognition.stop();
+    }
+
+    this.clearTimeout();
   }
 
   initializeCommands() {
@@ -58,32 +159,48 @@ class VoiceService {
       cancel: ['annuler', 'annule', '取消'],
       help: ['aide', 'help', 'liste commandes', 'commandes'],
       repeat: ['répète', 'refaire', 'répète ça'],
-      
+
       create: {
-        card: ['crée une carte', 'nouvelle carte', 'ajoute une carte', 'créer carte', 'créer une carte'],
-        category: ['crée une catégorie', 'nouvelle catégorie', 'ajoute une catégorie', 'créer catégorie', 'créer une catégorie'],
-        subcategory: ['crée une sous catégorie', 'nouvelle sous catégorie', 'ajoute une sous catégorie']
+        card: [
+          'crée une carte',
+          'nouvelle carte',
+          'ajoute une carte',
+          'créer carte',
+          'créer une carte',
+        ],
+        category: [
+          'crée une catégorie',
+          'nouvelle catégorie',
+          'ajoute une catégorie',
+          'créer catégorie',
+          'créer une catégorie',
+        ],
+        subcategory: [
+          'crée une sous catégorie',
+          'nouvelle sous catégorie',
+          'ajoute une sous catégorie',
+        ],
       },
-      
+
       navigation: {
         open: ['ouvre', 'ouvrir', 'afficher'],
         close: ['ferme', 'fermer', 'ferme la carte', 'ferme carte'],
-        showBoard: ['affiche le projet', 'voir le projet', 'projet']
+        showBoard: ['affiche le projet', 'voir le projet', 'projet'],
       },
-      
+
       actions: {
         tag: ['tag', 'taguer', 'étiquette', 'priorité'],
         assign: ['assigne à', 'assigner à', 'attribuer à'],
-        dueDate: ['échéance', 'deadline', 'date limite', 'date d\'échéance'],
+        dueDate: ['échéance', 'deadline', 'date limite', "date d'échéance"],
         archive: ['archive', 'archiver'],
-        comment: ['ajoute un commentaire', 'commentaire', 'ajouter commentaire']
+        comment: ['ajoute un commentaire', 'commentaire', 'ajouter commentaire'],
       },
-      
+
       library: {
         save: ['sauvegarde comme modèle', 'sauvegarder modèle', 'enregistrer modèle'],
         use: ['utilise le modèle', 'applique le modèle', 'utiliser modèle'],
-        open: ['ouvre la bibliothèque', 'bibliothèque']
-      }
+        open: ['ouvre la bibliothèque', 'bibliothèque'],
+      },
     };
   }
 
@@ -167,25 +284,6 @@ class VoiceService {
     this.resetTimeout();
   }
 
-  start() {
-    if (!this.recognition) {
-      console.error('Speech recognition not initialized');
-      return;
-    }
-
-    try {
-      this.recognition.start();
-      this.isListening = true;
-      if (this.onListeningChange) {
-        this.onListeningChange(true);
-      }
-      this.playBeep();
-      this.resetTimeout();
-    } catch (error) {
-      console.error('Error starting speech recognition:', error);
-    }
-  }
-
   stop() {
     if (this.recognition) {
       this.recognition.stop();
@@ -218,14 +316,14 @@ class VoiceService {
       const audioContext = new (window.AudioContext || window.webkitAudioContext)();
       const oscillator = audioContext.createOscillator();
       const gainNode = audioContext.createGain();
-      
+
       oscillator.connect(gainNode);
       gainNode.connect(audioContext.destination);
-      
+
       oscillator.frequency.value = 800;
       oscillator.type = 'sine';
       gainNode.gain.value = 0.1;
-      
+
       oscillator.start();
       oscillator.stop(audioContext.currentTime + 0.1);
     } catch (e) {
@@ -238,14 +336,14 @@ class VoiceService {
       const audioContext = new (window.AudioContext || window.webkitAudioContext)();
       const oscillator = audioContext.createOscillator();
       const gainNode = audioContext.createGain();
-      
+
       oscillator.connect(gainNode);
       gainNode.connect(audioContext.destination);
-      
+
       oscillator.frequency.value = 600;
       oscillator.type = 'sine';
       gainNode.gain.value = 0.1;
-      
+
       oscillator.start();
       setTimeout(() => {
         oscillator.frequency.value = 800;

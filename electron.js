@@ -5,6 +5,14 @@ const { initDatabase } = require('./src/services/database');
 
 const store = new Store({
   encryptionKey: process.env.ENCRYPTION_KEY || 'default-dev-key-change-in-production',
+  defaults: {
+    cardColors: {
+      etudes: { gradient: ['#6366f1', '#3b82f6'], keywords: ['études', 'etudes'] },
+      enCours: { gradient: ['#f59e0b', '#fbbf24'], keywords: ['cours', 'en cours'] },
+      realise: { gradient: ['#22c55e', '#4ade80'], keywords: ['réalisé', 'realis', 'terminé'] },
+      archive: { gradient: ['#475569', '#475569'], keywords: ['archiv'] },
+    },
+  },
 });
 
 let mainWindow = null;
@@ -12,6 +20,11 @@ let db = null;
 let tray = null;
 
 const isDev = process.env.NODE_ENV !== 'production' || true; // Force dev mode
+
+app.commandLine.appendSwitch('enable-features', 'VoiceInteractionServices');
+app.commandLine.appendSwitch('allow-file-access-from-files');
+app.commandLine.appendSwitch('ignore-certificate-errors');
+app.commandLine.appendSwitch('disable-gpu-sandbox');
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -29,7 +42,17 @@ function createWindow() {
   });
 
   if (isDev) {
-    mainWindow.loadURL('http://localhost:5173');
+    mainWindow.loadURL('http://localhost:5174');
+    mainWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
+      callback({
+        responseHeaders: {
+          ...details.responseHeaders,
+          'Content-Security-Policy': [
+            "default-src * 'unsafe-inline' 'unsafe-eval'; script-src * 'unsafe-inline' 'unsafe-eval'; style-src * 'unsafe-inline' https://fonts.googleapis.com; font-src * data: https:; img-src * data: https:; connect-src * http://localhost:* https://*; media-src *",
+          ],
+        },
+      });
+    });
     mainWindow.webContents.openDevTools();
     mainWindow.webContents.on('console-message', (event, level, message, line, sourceId) => {
       console.log('[RENDERER]', message);
@@ -282,4 +305,151 @@ ipcMain.handle('app:getVersion', () => {
 
 ipcMain.handle('app:getPath', (event, name) => {
   return app.getPath(name);
+});
+
+let speechProcess = null;
+let speechCallback = null;
+
+ipcMain.handle('speech:start', async (event, options) => {
+  const lang = options.lang || 'fr-FR';
+  console.log('[Electron] === STARTING SPEECH === lang:', lang);
+
+  try {
+    // First, test if System.Speech works
+    const testScript = `
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+try {
+    Add-Type -AssemblyName System.Speech
+    $r = New-Object System.Speech.Recognition.SpeechRecognitionEngine
+    $r.SetInputToDefaultAudioDevice()
+    Write-Output "TEST:OK"
+} catch {
+    Write-Error "TEST:FAILED:$($_.Exception.Message)"
+}
+`;
+
+    const testProc = require('child_process').spawnSync(
+      'powershell.exe',
+      ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-Command', testScript],
+      { encoding: 'utf8' }
+    );
+
+    console.log('[Electron] Test stdout:', testProc.stdout);
+    console.log('[Electron] Test stderr:', testProc.stderr);
+    console.log('[Electron] Test status:', testProc.status);
+
+    if (!testProc.stdout.includes('TEST:OK')) {
+      console.error('[Electron] Speech test failed!');
+      return { success: false, error: 'Speech recognition not available: ' + testProc.stderr };
+    }
+
+    // Now run the actual speech service
+    const scriptPath = path.join(__dirname, 'speech-service.ps1');
+    console.log('[Electron] Script path:', scriptPath);
+
+    let speechProcess;
+    try {
+      speechProcess = require('child_process').spawn(
+        'powershell.exe',
+        ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', scriptPath],
+        {
+          stdio: ['ignore', 'pipe', 'pipe'],
+          detached: false,
+          windowsHide: true,
+        }
+      );
+    } catch (spawnErr) {
+      console.error('[Electron] Spawn error:', spawnErr);
+      return { success: false, error: spawnErr.message };
+    }
+
+    console.log('[Electron] PowerShell spawned, pid:', speechProcess.pid);
+
+    speechProcess.stdout.on('data', data => {
+      const output = data.toString();
+      console.log('[Speech stdout]: >>>', output, '<<<');
+
+      if (output.includes('READY') || output.includes('LISTENING')) {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('speech:started');
+        }
+      }
+
+      if (output.includes('RESULT:')) {
+        const match = output.match(/RESULT:(.+)\|(\d+\.?\d*)/);
+        if (match) {
+          const transcript = match[1].trim();
+          const confidence = parseFloat(match[2]);
+          console.log('[Speech] Recognized:', transcript, 'confidence:', confidence);
+          if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send('speech:result', { transcript, confidence });
+          }
+        }
+      }
+    });
+
+    speechProcess.stderr.on('data', data => {
+      const err = data.toString();
+      console.log('[Speech stderr]: >>>', err, '<<<');
+      if (err.includes('ERROR') || err.includes('Exception') || err.includes('not recognized')) {
+        console.error('[Speech] PowerShell error detected!');
+      }
+    });
+
+    speechProcess.on('close', code => {
+      console.log('[Speech] Process closed with code:', code);
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('speech:stopped');
+      }
+    });
+
+    speechProcess.on('error', err => {
+      console.error('[Speech] Process ERROR:', err);
+    });
+
+    speechProcess.on('error', err => {
+      console.error('[Speech] Process error:', err);
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error('[Speech] Failed to start:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('speech:stop', async () => {
+  console.log('[Electron] Stopping Windows Speech Recognition');
+
+  if (speechProcess) {
+    speechProcess.kill();
+    speechProcess = null;
+  }
+
+  return { success: true };
+});
+
+ipcMain.handle('cardColors:get', async () => {
+  console.log('[Electron] Getting card colors');
+  return store.get('cardColors');
+});
+
+ipcMain.handle('cardColors:set', async (event, colors) => {
+  console.log('[Electron] Setting card colors:', colors);
+  store.set('cardColors', colors);
+  return { success: true };
+});
+
+ipcMain.handle('cardColors:reset', async () => {
+  console.log('[Electron] Resetting card colors to defaults');
+  store.set(
+    'cardColors',
+    store.get('cardColors', {
+      etudes: { gradient: ['#6366f1', '#3b82f6'], keywords: ['études', 'etudes'] },
+      enCours: { gradient: ['#f59e0b', '#fbbf24'], keywords: ['cours', 'en cours'] },
+      realise: { gradient: ['#22c55e', '#4ade80'], keywords: ['réalisé', 'realis', 'terminé'] },
+      archive: { gradient: ['#475569', '#475569'], keywords: ['archiv'] },
+    })
+  );
+  return { success: true, data: store.get('cardColors') };
 });

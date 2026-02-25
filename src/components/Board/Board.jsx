@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { useApp } from '../../context/AppContext';
 import Column from '../Column/Column';
-import { Plus } from 'lucide-react';
+import { Plus, GripVertical } from 'lucide-react';
 
 function Board() {
   const {
@@ -90,6 +90,60 @@ function Board() {
           }
 
           await loadBoard(boardId);
+        } else if (itemType === 'category' && parsedContent.category) {
+          const maxPosResult = await dbGet(
+            'SELECT MAX(position) as maxPos FROM cards WHERE column_id = ?',
+            [columnId]
+          );
+          const newPosition = (maxPosResult?.data?.maxPos ?? -1) + 1;
+
+          const cardResult = await dbRun(
+            'INSERT INTO cards (column_id, title, description, priority, due_date, assignee, position, color) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            [
+              columnId,
+              parsedContent.category.title,
+              parsedContent.category.description || '',
+              parsedContent.category.priority || 'normal',
+              parsedContent.category.due_date || null,
+              parsedContent.category.assignee || '',
+              newPosition,
+              parsedContent.category.color || '#FFFFFF',
+            ]
+          );
+
+          if (cardResult.success && parsedContent.subcategories) {
+            for (const subcat of parsedContent.subcategories) {
+              await dbRun(
+                'INSERT INTO subcategories (category_id, title, description, priority, due_date, assignee, position) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                [
+                  cardResult.data.lastInsertRowid,
+                  subcat.title,
+                  subcat.description || '',
+                  subcat.priority || 'normal',
+                  subcat.due_date || null,
+                  subcat.assignee || '',
+                  subcat.position || 0,
+                ]
+              );
+            }
+          }
+
+          await loadBoard(boardId);
+        } else if (itemType === 'subcategory' && parsedContent.subcategory) {
+          await dbRun(
+            'INSERT INTO subcategories (category_id, title, description, priority, due_date, assignee, position) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [
+              columnId,
+              parsedContent.subcategory.title,
+              parsedContent.subcategory.description || '',
+              parsedContent.subcategory.priority || 'normal',
+              parsedContent.subcategory.due_date || null,
+              parsedContent.subcategory.assignee || '',
+              0,
+            ]
+          );
+
+          await loadBoard(boardId);
         }
       } catch (error) {
         console.error('Error handling library drop:', error);
@@ -110,11 +164,16 @@ function Board() {
   };
 
   const handleDragEnd = async result => {
-    if (!result.destination) return;
+    if (!result.destination) {
+      console.log('[DragEnd] No destination', result);
+      return;
+    }
 
     const { source, destination, draggableId, type } = result;
+    console.log('[DragEnd]', { source, destination, draggableId, type });
 
     if (source.droppableId === destination.droppableId && source.index === destination.index) {
+      console.log('[DragEnd] Same position, skipping');
       return;
     }
 
@@ -127,20 +186,22 @@ function Board() {
       const cardId = parseInt(draggableId);
       const newColumnId = parseInt(destination.droppableId);
       const newPosition = destination.index;
+      console.log('[DragEnd] Moving card', { cardId, newColumnId, newPosition });
       await moveCard(cardId, newColumnId, newPosition);
       return;
     }
 
     if (type === 'category') {
-      const categoryId = parseInt(draggableId);
+      const categoryId = parseInt(draggableId.replace('category-', ''));
       const newCardId = parseInt(destination.droppableId.replace('card-', ''));
       const newPosition = destination.index;
+      console.log('[DragEnd] Moving category', { categoryId, newCardId, newPosition });
       await moveCategory(categoryId, newCardId, newPosition);
       return;
     }
 
     if (type === 'subcategory') {
-      const subcategoryId = parseInt(draggableId);
+      const subcategoryId = parseInt(draggableId.replace('subcategory-', ''));
       const newCategoryId = parseInt(destination.droppableId.replace('category-', ''));
       const newPosition = destination.index;
       await moveSubcategory(subcategoryId, newCategoryId, newPosition);
@@ -190,11 +251,16 @@ function Board() {
                       <div
                         ref={provided.innerRef}
                         {...provided.draggableProps}
-                        className="flex-shrink-0"
+                        className="flex-shrink-0 relative group"
                       >
-                        <div {...provided.dragHandleProps}>
-                          <Column column={column} index={index} />
+                        <div
+                          {...provided.dragHandleProps}
+                          className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 w-6 h-6 cursor-grab z-10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-muted hover:text-secondary"
+                          title="Déplacer la colonne"
+                        >
+                          <GripVertical size={16} />
                         </div>
+                        <Column column={column} index={index} />
                       </div>
                     )}
                   </Draggable>

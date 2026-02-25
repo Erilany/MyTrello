@@ -9,6 +9,35 @@ import LibraryPanel from './components/Library/LibraryPanel';
 import Sidebar from './components/Sidebar/Sidebar';
 import Header from './components/Header/Header';
 import VoiceControl from './components/VoiceControl/VoiceControl';
+import CardModal from './components/Card/CardModal';
+import CategoryModal from './components/Category/CategoryModal';
+import SubCategoryModal from './components/SubCategory/SubCategoryModal';
+
+function Modals() {
+  const {
+    selectedCard,
+    setSelectedCard,
+    selectedCategory,
+    setSelectedCategory,
+    selectedSubcategory,
+    setSelectedSubcategory,
+  } = useApp();
+
+  return (
+    <>
+      {selectedCard && <CardModal card={selectedCard} onClose={() => setSelectedCard(null)} />}
+      {selectedCategory && (
+        <CategoryModal category={selectedCategory} onClose={() => setSelectedCategory(null)} />
+      )}
+      {selectedSubcategory && (
+        <SubCategoryModal
+          subcategory={selectedSubcategory}
+          onClose={() => setSelectedSubcategory(null)}
+        />
+      )}
+    </>
+  );
+}
 
 function AppContent() {
   const { theme } = useApp();
@@ -29,6 +58,7 @@ function AppContent() {
         </main>
       </div>
       <LibraryPanel />
+      <Modals />
     </div>
   );
 }

@@ -13,11 +13,23 @@ import {
 } from 'lucide-react';
 
 function Card({ card, isDragging, columnColor, columnTitle }) {
-  const { categories, updateCard, deleteCard, archiveCard, saveToLibrary, subcategories } =
-    useApp();
+  const {
+    categories,
+    updateCard,
+    deleteCard,
+    archiveCard,
+    saveToLibrary,
+    subcategories,
+    setSelectedCard,
+    selectedCard,
+    cardColors,
+  } = useApp();
 
   const [showMenu, setShowMenu] = useState(false);
-  const [modalOpen, setModalOpen] = useState(false);
+
+  const handleDoubleClick = () => {
+    setSelectedCard(card);
+  };
 
   useEffect(() => {
     const handleClickOutside = e => {
@@ -33,95 +45,55 @@ function Card({ card, isDragging, columnColor, columnTitle }) {
     .filter(cat => cat.card_id === card.id)
     .sort((a, b) => a.position - b.position);
 
+  const getAccentBarStyle = () => {
+    const t = (columnTitle || '').toLowerCase();
+
+    if (cardColors.etudes.keywords.some(k => t.includes(k))) {
+      return {
+        background: `linear-gradient(90deg, ${cardColors.etudes.gradient[0]}, ${cardColors.etudes.gradient[1]})`,
+      };
+    }
+    if (cardColors.enCours.keywords.some(k => t.includes(k))) {
+      return {
+        background: `linear-gradient(90deg, ${cardColors.enCours.gradient[0]}, ${cardColors.enCours.gradient[1]})`,
+      };
+    }
+    if (cardColors.realise.keywords.some(k => t.includes(k))) {
+      return {
+        background: `linear-gradient(90deg, ${cardColors.realise.gradient[0]}, ${cardColors.realise.gradient[1]})`,
+      };
+    }
+    if (cardColors.archive.keywords.some(k => t.includes(k))) {
+      return { background: cardColors.archive.gradient[0] };
+    }
+    return {
+      background: `linear-gradient(90deg, ${cardColors.enCours.gradient[0]}, ${cardColors.enCours.gradient[1]})`,
+    };
+  };
+
   const getAccentBarClass = () => {
     const t = (columnTitle || '').toLowerCase();
-    if (t.includes('études') || t.includes('etudes')) return 'accent-bar-etudes';
-    if (t.includes('cours') || t.includes('en cours')) return 'accent-bar-en-cours';
-    if (t.includes('réalisé') || t.includes('realis') || t.includes('terminé'))
-      return 'accent-bar-realise';
-    if (t.includes('archiv')) return 'accent-bar-archive';
+    if (cardColors.etudes.keywords.some(k => t.includes(k))) return 'accent-bar-etudes';
+    if (cardColors.enCours.keywords.some(k => t.includes(k))) return 'accent-bar-en-cours';
+    if (cardColors.realise.keywords.some(k => t.includes(k))) return 'accent-bar-realise';
+    if (cardColors.archive.keywords.some(k => t.includes(k))) return 'accent-bar-archive';
     return 'accent-bar-en-cours';
   };
 
-  const handleToggleCollapse = async () => {
-    await updateCard(card.id, { collapsed: card.collapsed ? 0 : 1 });
-  };
+  const isDone = cardColors.realise.keywords.some(k =>
+    (columnTitle || '').toLowerCase().includes(k)
+  );
+  const isArchived = cardColors.archive.keywords.some(k =>
+    (columnTitle || '').toLowerCase().includes(k)
+  );
 
-  const handleDelete = async () => {
-    if (window.confirm('Voulez-vous vraiment supprimer cette carte ?')) {
-      await deleteCard(card.id);
-    }
-  };
-
-  const handleArchive = async () => {
-    await archiveCard(card.id);
-  };
-
-  const handleSaveToLibrary = async () => {
-    const cardCategoriesData = categories
-      .filter(cat => cat.card_id === card.id)
-      .sort((a, b) => a.position - b.position)
-      .map(cat => {
-        const catSubcategories = subcategories
-          .filter(sub => sub.category_id === cat.id)
-          .sort((a, b) => a.position - b.position);
-        return {
-          ...cat,
-          subcategories: catSubcategories,
-        };
-      });
-
-    const content = {
-      card: {
-        title: card.title,
-        description: card.description,
-        priority: card.priority,
-        due_date: card.due_date,
-        assignee: card.assignee,
-        color: card.color,
-      },
-      categories: cardCategoriesData,
-    };
-
-    await saveToLibrary('card', card.title, JSON.stringify(content));
-    alert('Carte sauvegardée dans la bibliothèque !');
-    setShowMenu(false);
-  };
-
-  const handleDragStart = e => {
-    const cardCategoriesData = categories
-      .filter(cat => cat.card_id === card.id)
-      .sort((a, b) => a.position - b.position)
-      .map(cat => {
-        const catSubcategories = subcategories
-          .filter(sub => sub.category_id === cat.id)
-          .sort((a, b) => a.position - b.position);
-        return {
-          ...cat,
-          subcategories: catSubcategories,
-        };
-      });
-
-    const content = {
-      card: {
-        title: card.title,
-        description: card.description,
-        priority: card.priority,
-        due_date: card.due_date,
-        assignee: card.assignee,
-        color: card.color,
-      },
-      categories: cardCategoriesData,
-    };
-
-    const event = new CustomEvent('library-save', {
-      detail: {
-        itemType: 'card',
-        content: JSON.stringify(content),
-        title: card.title,
-      },
-    });
-    window.dispatchEvent(event);
+  const getPriorityBadge = () => {
+    const p = card.priority;
+    if (p === 'urgent') return { class: 'badge-urgent', label: '● URGENT' };
+    if (p === 'high') return { class: 'badge-waiting', label: '● HAUTE' };
+    if (p === 'low') return { class: 'badge-normal', label: '● BASSE' };
+    if (p === 'done') return { class: 'badge-done', label: '✓ TERMINÉ' };
+    return null;
   };
 
   const formatDate = dateStr => {
@@ -140,30 +112,13 @@ function Card({ card, isDragging, columnColor, columnTitle }) {
     };
   };
 
-  const getPriorityBadge = () => {
-    const p = card.priority;
-    if (p === 'urgent') return { class: 'badge-urgent', label: '● URGENT' };
-    if (p === 'high') return { class: 'badge-waiting', label: '● HAUTE' };
-    if (p === 'low') return { class: 'badge-normal', label: '● BASSE' };
-    if (p === 'done') return { class: 'badge-done', label: '✓ TERMINÉ' };
-    return null;
-  };
-
   const priorityBadge = getPriorityBadge();
   const dateInfo = formatDate(card.due_date);
-
-  const isDone =
-    columnTitle?.toLowerCase().includes('réalisé') ||
-    columnTitle?.toLowerCase().includes('realis') ||
-    columnTitle?.toLowerCase().includes('terminé');
-  const isArchived = columnTitle?.toLowerCase().includes('archiv');
 
   return (
     <>
       <div
         className={`bg-card rounded-md mb-2 border border-std hover:border-strong card-hover transition-card ${isDragging ? 'opacity-50' : ''} ${isDone ? 'card-realise' : ''} ${isArchived ? 'card-archive' : ''}`}
-        draggable
-        onDragStart={handleDragStart}
         onDoubleClick={e => {
           if (
             e.target.closest('[data-rbd-drag-handle]') ||
@@ -171,10 +126,10 @@ function Card({ card, isDragging, columnColor, columnTitle }) {
           ) {
             return;
           }
-          setModalOpen(true);
+          handleDoubleClick();
         }}
       >
-        <div className={`h-[3px] rounded-t-md ${getAccentBarClass()}`} />
+        <div className="h-[3px] rounded-t-md" style={getAccentBarStyle()} />
 
         <div className="p-3">
           <div className="flex items-start justify-between">
@@ -189,12 +144,10 @@ function Card({ card, isDragging, columnColor, columnTitle }) {
                     className="text-muted hover:text-secondary transition-std"
                     title={card.collapsed ? 'Développer' : 'Réduire'}
                   >
-                    <span className="drag-handle text-muted select-none" style={{ opacity: 1 }}>
-                      ⠿
-                    </span>
+                    <span className="text-muted select-none">⠿</span>
                   </button>
                 ) : (
-                  <span className="w-4 text-xs text-muted">•</span>
+                  <span className="text-muted select-none">⠿</span>
                 )}
                 {cardCategories.length > 0 && (
                   <span className="text-xs text-muted">
@@ -238,10 +191,10 @@ function Card({ card, isDragging, columnColor, columnTitle }) {
               </button>
 
               {showMenu && (
-                <div className="fixed" style={{ zIndex: 9999 }}>
+                <div className="fixed" style={{ zIndex: 99999 }}>
                   <div
-                    className="absolute right-0 top-0 bg-card rounded-lg shadow-card py-1 w-44 border border-std"
-                    style={{ maxHeight: '200px', overflowY: 'auto' }}
+                    className="fixed right-0 top-0 bg-card rounded-lg shadow-card py-1 w-48 border border-std"
+                    style={{ minWidth: '180px' }}
                   >
                     <button
                       onClick={e => {
@@ -295,7 +248,7 @@ function Card({ card, isDragging, columnColor, columnTitle }) {
           </div>
 
           {!card.collapsed && cardCategories.length > 0 && (
-            <Droppable droppableId={`card-${card.id}`} type="category">
+            <Droppable droppableId={`card-${card.id}`} type="category" isDropDisabled={false}>
               {(provided, snapshot) => (
                 <div
                   ref={provided.innerRef}
@@ -328,8 +281,6 @@ function Card({ card, isDragging, columnColor, columnTitle }) {
           )}
         </div>
       </div>
-
-      {modalOpen && <CardModal card={card} onClose={() => setModalOpen(false)} />}
     </>
   );
 }
