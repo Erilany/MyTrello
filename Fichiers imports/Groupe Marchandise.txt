@@ -1,0 +1,112 @@
+{
+  "groupes_marchandises": {
+    "etudes": [
+      { "label": "ETUDE AVIFAUNE, FAUNE, FLORE", "checked": false },
+      { "label": "ETUDES ACOUSTIQUES", "checked": false },
+      { "label": "ETUDES D'IMPACT", "checked": false },
+      { "label": "ETUDES-ARCHITECTE ET MAÎTRISE D'OEUVRE", "checked": false },
+      { "label": "ETUDE TECHNIQUE - LIGNES AERIENNES", "checked": false },
+      { "label": "ETUDE TOPO/CARTOGRAPHIQUE-LIG AERIENNES", "checked": false },
+      { "label": "ETUDES GÉO-TECHNIQUES - LIGNES AÉRIENNES", "checked": false },
+      { "label": "ETUDES MATÉRIELS POUR LIGNES AÉRIENNES", "checked": false },
+      { "label": "ETUDE TECHNIQUE - POSTE", "checked": true },
+      { "label": "ETUDE TOPO/CARTOGRAPHIQUE - POSTE", "checked": false },
+      { "label": "ETUDES ESSAIS & QUALIF MATERIL CCL", "checked": false },
+      { "label": "ETUDES PO-ETUDES GÉO-TECHNIQUES - POSTES", "checked": false },
+      { "label": "ETUDE TOPO/CARTOGRAPHIQUE - LIG SOUTERR", "checked": false },
+      { "label": "ETUDES LS-ETUDE GEO - TECHNIQUE", "checked": false },
+      { "label": "ETUDES TECHNIQUES - LIGNES SOUTERRAINES", "checked": false },
+      { "label": "ETUDES TECHNIQUES LIGNES SOUS-MARINES", "checked": false }
+    ],
+
+    "travaux": [
+      { "label": "SYSTÈME ÉLECTRIQUE INSULAIRE SUR MANDAT", "checked": false },
+      { "label": "LIAISONS HT ET THT-FOUR. PYLÔNES SPÉCIAUX", "checked": false },
+      { "label": "TRAVAUX LA-ELAGAGE", "checked": false },
+      { "label": "TRAVAUX LA-FONDATIONS SPÉCIALES ET GC LA", "checked": false },
+      { "label": "TRAVAUX LA-INSTALLATION, MAINTENANCE DE FO", "checked": false },
+      { "label": "TRAVAUX LA-TRAVAUX DE MONTAGE LA", "checked": false },
+      { "label": "TRAVAUX LA-TRAVAUX PEINTURE SUR PYLÔNES", "checked": false },
+      { "label": "DEPLOIEMENT ELECTRE PETIT D F+T", "checked": false },
+      { "label": "GROS OEUVRE BATIMENT INDUSTRIEL (INVEST)", "checked": false },
+      { "label": "MONTAGE, INSTALLATION DES APPAREILLAGES HTB", "checked": true },
+      { "label": "MONTAGE, INSTALLATION TRANSFORMATEURS ET MATÉRIELS BOBINÉS", "checked": false },
+      { "label": "POSTES HT ET THT-MONTAGE, INSTALLATION DES MATÉRIELS DE COMPENSATION", "checked": false },
+      { "label": "SND OEUVRE BATIMENT INDUSTRIEL", "checked": false },
+      { "label": "SND OEUVRE BATIMENTS D'HABITATION", "checked": false },
+      { "label": "TRAVAUX BÂTIMENTS HORS INSTALLATIONS IRT", "checked": false },
+      { "label": "TRAVAUX DE TERRASSEMENT", "checked": false },
+      { "label": "TRAVAUX GENIE CIVIL -VRD- VOIES D'ACCES", "checked": false },
+      { "label": "TRAVAUX POSTES", "checked": true },
+      { "label": "FONÇAGES - FORAGES DIRIGÉS", "checked": false },
+      { "label": "TRAVAUX GÉNIE CIVIL LIGNES SOUTERRAINES ET DÉROULAGE", "checked": false },
+      { "label": "TRAVAUX LIAISON PROVISOIRE (CAB. SECS)", "checked": false },
+      { "label": "TRAVAUX LS", "checked": false }
+    ],
+
+    "fourniture_materiel": [
+      { "label": "APPAREILS DE MANUTENTION / LEVAGE", "checked": false },
+      { "label": "APPAREILS DE MESURE", "checked": false },
+      { "label": "CONSOMMABLES BUREAUTIQUE ET INFORMATIQUE", "checked": false },
+      { "label": "FOURNITURE DE CÂBLES NUS", "checked": false },
+      { "label": "FOURNITURE DE TOURETS", "checked": false },
+      { "label": "OUTILLAGE ISOLÉ HTBT / TST", "checked": false },
+      { "label": "PETIT MATÉRIEL COURANT", "checked": false },
+      { "label": "MATÉRIELS DE LIGNES", "checked": false },
+      { "label": "FOURN, INSTAL DES SYSTÈMES DE PROTECTION DE POSTES", "checked": false },
+      { "label": "FOURNITURE DE MATÉRIELS DE CCN DES GRANDS POSTES", "checked": false },
+      { "label": "FOURNITURE DE MATÉRIELS DE CCN DES POSTES SOURCES", "checked": false },
+      { "label": "FOURNITURE DE MATÉRIELS DE COMPTAGE", "checked": false },
+      { "label": "FOURNITURE DE MATÉRIELS DE FILERIE", "checked": false },
+      { "label": "FOURNITURE DE MATÉRIELS DE PROTECTION ET D'AUTOMATISME", "checked": false },
+      { "label": "FOURNITURE DE MATÉRIELS DE QUALIMÉTRIE", "checked": false },
+      { "label": "FOURNITURE DE MATÉRIELS DE TÉLÉCONDUITE", "checked": false },
+      { "label": "FOURNITURE DE MOBILIER", "checked": false },
+      { "label": "FOURNITURE DE PIÈCES DÉTACHÉES DE PSEM", "checked": true },
+      { "label": "FOURNITURE DE PIÈCES DÉTACHÉES ET SOUS ENSEMBLES DE DISJ HTB", "checked": false },
+      { "label": "FOURNITURE DE PIÈCES DÉTACHÉES ET SOUS ENSEMBLES DE SECT HTB", "checked": false },
+      { "label": "FOURNITURE DE POSTES INTÉRIEURS MODULAIRES (PIM)", "checked": false },
+      { "label": "FOURNITURE DE POSTES SOUS ENVELOPPE MÉTALLIQUE HTB (PSEM)", "checked": false },
+      { "label": "FOURNITURE D'ÉQUIPEMENTS ET ACCESSOIRES DE TRANSFORMATEURS", "checked": false },
+      { "label": "FOURNITURE D'ÉQUIPEMENTS STATIONS CONVERSION COURANT CONTINU", "checked": false },
+      { "label": "FOURNITURES DE BUREAU", "checked": false },
+      { "label": "PIECES DETACHEES POUR MATL DE CCN", "checked": false }
+    ],
+
+    "prestations": [
+      { "label": "ANALYSES HUILES ET AUTRES LIQUIDES", "checked": false },
+      { "label": "ASSISTANCE MOA CONSTRUCT°/COORD SECURITE", "checked": false },
+      { "label": "DEMOLITION/EVACUATION OUVRAGE TRANSPORT", "checked": false },
+      { "label": "ENLEV/TRAIT DECHETS DANGEREUX AMIANT(DD)", "checked": false },
+      { "label": "ENLEV/TRAIT DECHETS DANGEREUX AUTRES(DD)", "checked": false },
+      { "label": "ENLEV/TRAIT DECHETS DANGEREUX PCB (DD)", "checked": false },
+      { "label": "ENLEV/TRAIT DECHETS DANGEREUX SF6 (DD)", "checked": false },
+      { "label": "ENLEV/TRAIT DECHETS NON DANGEREUX (DND)", "checked": false },
+      { "label": "GARDIENNAGE", "checked": false },
+      { "label": "PHOTOMONTAGE - SIMULATION 3D", "checked": false },
+      { "label": "PRESTATIONS DE DIAGNOSTICS SUR INSTALLATIONS ÉLECTRIQUES", "checked": false },
+      { "label": "SERVICES DE PRISE DE VUES AERIENNES", "checked": false },
+      { "label": "TRANSPORT LOURD", "checked": false }
+    ],
+
+    "maintenance": [
+      { "label": "MAINTENANCE DE MATÉRIELS D'ATELIERS D'ÉNERGIE", "checked": false },
+      { "label": "MAINTENANCE DE MATÉRIELS DE CCN", "checked": false },
+      { "label": "MAINTENANCE DE MATÉRIELS DE COMPTAGE", "checked": false },
+      { "label": "MAINTENANCE DE MATÉRIELS DE FILERIE", "checked": false },
+      { "label": "MAINTENANCE DE MATÉRIELS DE PROTECTION ET D'AUTOMATISME", "checked": false },
+      { "label": "MAINTENANCE DE MATÉRIELS DE QUALIMÉTRIE", "checked": false },
+      { "label": "MAINTENANCE DE MATÉRIELS DE TÉLÉCONDUITE", "checked": false },
+      { "label": "MAINTENANCE DE STATIONS DE CONVERSION", "checked": false },
+      { "label": "MAINTENANCE DES APPAREILLAGES HTB", "checked": false },
+      { "label": "MAINTENANCE DES INSTALLATIONS DE PROTECTION DES POSTES", "checked": false },
+      { "label": "MAINTENANCE DES TRANSFORMATEURS ET DES MATÉRIELS BOBINÉS", "checked": false },
+      { "label": "MAINTENANCE ET CONTRÔLE RÉGLEMENTAIRE OUTILLAGE", "checked": false },
+      { "label": "POSTES HT ET THT-MAINTENANCE DES MATÉRIELS DE COMPENSATION", "checked": false }
+    ],
+
+    "autres": [
+      { "label": "AUTRES (champ libre)", "checked": false }
+    ]
+  }
+}

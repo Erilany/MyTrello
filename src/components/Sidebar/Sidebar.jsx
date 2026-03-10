@@ -312,7 +312,19 @@ function Sidebar() {
             }
           >
             <Settings size={16} className="mr-2 text-secondary" />
-            <span className="text-sm">Paramètres</span>
+            <span className="text-sm">Paramètres utilisateurs</span>
+          </NavLink>
+
+          <NavLink
+            to="/system-settings"
+            className={({ isActive }) =>
+              `flex items-center px-2 py-1.5 mt-1 rounded transition-std ${
+                isActive ? 'bg-accent-soft border-l-[3px] border-l-accent' : 'hover:bg-card'
+              }`
+            }
+          >
+            <Settings size={16} className="mr-2 text-secondary" />
+            <span className="text-sm">Paramètres système</span>
           </NavLink>
 
           <button

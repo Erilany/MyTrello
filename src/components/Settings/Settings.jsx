@@ -1,10 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
-import { Save, Info, Palette, RotateCcw } from 'lucide-react';
+import { Save, Info, Palette, RotateCcw, Download, Upload } from 'lucide-react';
 
 function Settings() {
-  const { boards, currentBoard, updateBoard, cardColors, updateCardColors, resetCardColors } =
-    useApp();
+  const {
+    boards,
+    currentBoard,
+    updateBoard,
+    cardColors,
+    updateCardColors,
+    resetCardColors,
+    exportData,
+    importData,
+  } = useApp();
   const [boardTitle, setBoardTitle] = useState('');
   const [boardDescription, setBoardDescription] = useState('');
   const [saved, setSaved] = useState(false);
@@ -61,6 +69,35 @@ function Settings() {
     setTimeout(() => setSaved(false), 2000);
   };
 
+  const handleExport = () => {
+    exportData();
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
+  };
+
+  const handleImport = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = async e => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = async event => {
+          const result = importData(event.target.result);
+          if (result.success) {
+            alert('Données importées avec succès !');
+            window.location.reload();
+          } else {
+            alert("Erreur lors de l'importation: " + result.error);
+          }
+        };
+        reader.readAsText(file);
+      }
+    };
+    input.click();
+  };
+
   const colorTypes = [
     { key: 'etudes', label: 'Études', keywords: localColors.etudes?.keywords?.join(', ') || '' },
     {
@@ -74,7 +111,33 @@ function Settings() {
 
   return (
     <div className="p-6 max-w-2xl">
-      <h1 className="text-2xl font-bold text-gray-800 dark:text-white mb-6">Paramètres</h1>
+      <h1 className="text-2xl font-bold text-primary mb-6">Paramètres utilisateurs</h1>
+
+      <div className="bg-card rounded-lg border border-std p-6 mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-primary">Sauvegarde</h2>
+          <div className="flex gap-2">
+            <button
+              onClick={handleExport}
+              className="flex items-center px-3 py-1.5 text-sm bg-accent text-white rounded hover:opacity-90"
+            >
+              <Download size={14} className="mr-2" />
+              Exporter
+            </button>
+            <button
+              onClick={handleImport}
+              className="flex items-center px-3 py-1.5 text-sm bg-card hover:bg-card-hover border border-std rounded"
+            >
+              <Upload size={14} className="mr-2" />
+              Importer
+            </button>
+          </div>
+        </div>
+        <p className="text-sm text-secondary">
+          Exporter vos données en fichier JSON pour sauvegarder ou transférer votre projet. Importer
+          un fichier JSON pour restaurer vos données.
+        </p>
+      </div>
 
       {!currentBoard ? (
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700 p-6">

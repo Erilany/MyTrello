@@ -26,6 +26,22 @@ function saveToStorage(data) {
 
 function initDefaultData() {
   const data = loadFromStorage();
+  if (!data.orders) {
+    data.orders = [];
+  }
+  if (!data.nextIds) {
+    data.nextIds = {
+      board: 2,
+      column: 6,
+      card: 1,
+      category: 1,
+      subcategory: 1,
+      libraryItem: 1,
+      order: 1,
+    };
+  } else if (!data.nextIds.order) {
+    data.nextIds.order = 1;
+  }
   if (data.boards.length === 0) {
     const boardId = 1;
     data.boards.push({
@@ -33,13 +49,24 @@ function initDefaultData() {
       title: 'Mon Premier Projet',
       description: 'Projet par défaut',
       created_at: new Date().toISOString(),
+      is_archived: 0,
     });
     data.columns.push(
       { id: 1, board_id: boardId, title: 'À faire', position: 0, color: '#4A90D9' },
       { id: 2, board_id: boardId, title: 'En cours', position: 1, color: '#F5A623' },
-      { id: 3, board_id: boardId, title: 'Terminé', position: 2, color: '#7ED321' }
+      { id: 3, board_id: boardId, title: 'En attente', position: 2, color: '#9CA3AF' },
+      { id: 4, board_id: boardId, title: 'Terminée', position: 3, color: '#7ED321' },
+      { id: 5, board_id: boardId, title: 'Archiver', position: 4, color: '#475569' }
     );
-    data.nextIds = { board: 2, column: 4, card: 1, category: 1, subcategory: 1, libraryItem: 1 };
+    data.nextIds = {
+      board: 2,
+      column: 6,
+      card: 1,
+      category: 1,
+      subcategory: 1,
+      libraryItem: 1,
+      order: 1,
+    };
     saveToStorage(data);
   }
   return data;
@@ -141,43 +168,43 @@ export function AppProvider({ children }) {
     saveToStorage(newDb);
   }, []);
 
-  const loadBoard = useCallback(
-    boardId => {
-      const board = db.boards.find(b => Number(b.id) === Number(boardId));
+  const loadBoard = useCallback(boardId => {
+    setDb(currentDb => {
+      const board = currentDb.boards.find(b => Number(b.id) === Number(boardId));
       if (board) {
         setCurrentBoard(board);
         setColumns(
-          db.columns
+          currentDb.columns
             .filter(c => Number(c.board_id) === Number(boardId))
             .sort((a, b) => a.position - b.position)
         );
-        const boardColumns = db.columns.filter(c => Number(c.board_id) === Number(boardId));
+        const boardColumns = currentDb.columns.filter(c => Number(c.board_id) === Number(boardId));
         const columnIds = boardColumns.map(c => Number(c.id));
         setCards(
-          db.cards
+          currentDb.cards
             .filter(c => columnIds.includes(Number(c.column_id)) && !c.is_archived)
             .sort((a, b) => a.position - b.position)
         );
-        const cardIds = db.cards
+        const cardIds = currentDb.cards
           .filter(c => columnIds.includes(Number(c.column_id)))
           .map(c => Number(c.id));
         setCategories(
-          db.categories
+          currentDb.categories
             .filter(c => cardIds.includes(Number(c.card_id)))
             .sort((a, b) => a.position - b.position)
         );
-        const catIds = db.categories
+        const catIds = currentDb.categories
           .filter(c => cardIds.includes(Number(c.card_id)))
           .map(c => Number(c.id));
         setSubcategories(
-          db.subcategories
+          currentDb.subcategories
             .filter(s => catIds.includes(Number(s.category_id)))
             .sort((a, b) => a.position - b.position)
         );
       }
-    },
-    [db]
-  );
+      return currentDb;
+    });
+  }, []);
 
   const loadBoards = useCallback(() => {
     setLoading(true);
@@ -291,9 +318,49 @@ export function AppProvider({ children }) {
     loadBoard(currentBoard.id);
   };
 
+  const exportData = () => {
+    const exportObj = {
+      version: '1.0',
+      exportedAt: new Date().toISOString(),
+      data: db,
+    };
+    const blob = new Blob([JSON.stringify(exportObj, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `mytrello-backup-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const importData = jsonData => {
+    try {
+      const parsed = typeof jsonData === 'string' ? JSON.parse(jsonData) : jsonData;
+      if (parsed.data) {
+        setDb(parsed.data);
+        saveToStorage(parsed.data);
+        if (parsed.data.boards.length > 0) {
+          loadBoard(parsed.data.boards[0].id);
+        }
+        return { success: true };
+      }
+      return { success: false, error: 'Format de fichier invalide' };
+    } catch (e) {
+      return { success: false, error: e.message };
+    }
+  };
+
   const createBoard = (title, description = '') => {
     const boardId = db.nextIds.board++;
-    const newBoard = { id: boardId, title, description, created_at: new Date().toISOString() };
+    const newBoard = {
+      id: boardId,
+      title,
+      description,
+      created_at: new Date().toISOString(),
+      is_archived: 0,
+    };
     const newDb = {
       ...db,
       boards: [...db.boards, newBoard],
@@ -316,9 +383,23 @@ export function AppProvider({ children }) {
         {
           id: db.nextIds.column++,
           board_id: boardId,
-          title: 'Terminé',
+          title: 'En attente',
           position: 2,
+          color: '#9CA3AF',
+        },
+        {
+          id: db.nextIds.column++,
+          board_id: boardId,
+          title: 'Terminée',
+          position: 3,
           color: '#7ED321',
+        },
+        {
+          id: db.nextIds.column++,
+          board_id: boardId,
+          title: 'Archiver',
+          position: 4,
+          color: '#475569',
         },
       ],
       nextIds: { ...db.nextIds },
@@ -351,6 +432,101 @@ export function AppProvider({ children }) {
       }),
     };
     saveDb(newDb);
+  };
+
+  const createOrder = (boardId, title) => {
+    const orderId = db.nextIds.order++;
+    const newOrder = {
+      id: orderId,
+      board_id: Number(boardId),
+      title,
+      donnees: { numero: '', date: '', objet: '', estimation: '' },
+      groupes: null,
+      avenants: [],
+      ficheAchat: null,
+      created_at: new Date().toISOString(),
+    };
+    const newDb = {
+      ...db,
+      orders: [...(db.orders || []), newOrder],
+      nextIds: { ...db.nextIds },
+    };
+    saveDb(newDb);
+    return orderId;
+  };
+
+  const updateOrder = (orderId, updates) => {
+    const newDb = {
+      ...db,
+      orders: (db.orders || []).map(o =>
+        Number(o.id) === Number(orderId) ? { ...o, ...updates } : o
+      ),
+    };
+    saveDb(newDb);
+  };
+
+  const deleteOrder = orderId => {
+    const newDb = {
+      ...db,
+      orders: (db.orders || []).filter(o => Number(o.id) !== Number(orderId)),
+    };
+    saveDb(newDb);
+  };
+
+  const addAvenant = (orderId, title) => {
+    const order = (db.orders || []).find(o => Number(o.id) === Number(orderId));
+    if (!order) return null;
+    const avenantNumber = (order.avenants?.length || 0) + 1;
+    const newAvenant = {
+      id: Date.now(),
+      numero: avenantNumber,
+      title: title || `Avenant ${avenantNumber}`,
+      groupes: null,
+      ficheAchat: null,
+    };
+    const updatedAvenants = [...(order.avenants || []), newAvenant];
+    const newDb = {
+      ...db,
+      orders: (db.orders || []).map(o =>
+        Number(o.id) === Number(orderId) ? { ...o, avenants: updatedAvenants } : o
+      ),
+    };
+    saveDb(newDb);
+    return newAvenant.id;
+  };
+
+  const updateAvenant = (orderId, avenantId, updates) => {
+    const newDb = {
+      ...db,
+      orders: (db.orders || []).map(o => {
+        if (Number(o.id) !== Number(orderId)) return o;
+        return {
+          ...o,
+          avenants: (o.avenants || []).map(a =>
+            Number(a.id) === Number(avenantId) ? { ...a, ...updates } : a
+          ),
+        };
+      }),
+    };
+    saveDb(newDb);
+  };
+
+  const deleteAvenant = (orderId, avenantId) => {
+    const newDb = {
+      ...db,
+      orders: (db.orders || []).map(o => {
+        if (Number(o.id) !== Number(orderId)) return o;
+        return {
+          ...o,
+          avenants: (o.avenants || []).filter(a => Number(a.id) !== Number(avenantId)),
+        };
+      }),
+    };
+    saveDb(newDb);
+  };
+
+  const getOrdersByBoard = boardId => {
+    return (db.orders || []).filter(o => Number(o.board_id) === Number(boardId));
   };
 
   const createColumn = (boardId, title, color = '#4A90D9') => {
@@ -480,6 +656,49 @@ export function AppProvider({ children }) {
     };
     saveDb(newDb);
     if (currentBoard) loadBoard(currentBoard.id);
+  };
+
+  const canArchiveBoard = boardId => {
+    const boardColumns = db.columns.filter(c => Number(c.board_id) === Number(boardId));
+    const archiveColumn = boardColumns.find(c => c.title.toLowerCase().includes('archiv'));
+    if (!archiveColumn) return { canArchive: false, reason: 'Colonne Archiver non trouvée' };
+
+    const columnIds = boardColumns.map(c => Number(c.id));
+    const boardCards = db.cards.filter(c => columnIds.includes(Number(c.column_id)));
+
+    if (boardCards.length === 0) return { canArchive: true, reason: '' };
+
+    const allInArchive = boardCards.every(c => Number(c.column_id) === Number(archiveColumn.id));
+    if (allInArchive) {
+      return { canArchive: true, reason: '' };
+    } else {
+      return {
+        canArchive: false,
+        reason: 'Toutes les cartes doivent être dans la colonne Archiver',
+      };
+    }
+  };
+
+  const archiveBoard = id => {
+    const { canArchive, reason } = canArchiveBoard(id);
+    if (!canArchive) {
+      alert(reason);
+      return false;
+    }
+    const newDb = {
+      ...db,
+      boards: db.boards.map(b => (Number(b.id) === Number(id) ? { ...b, is_archived: 1 } : b)),
+    };
+    saveDb(newDb);
+    return true;
+  };
+
+  const restoreBoard = id => {
+    const newDb = {
+      ...db,
+      boards: db.boards.map(b => (Number(b.id) === Number(id) ? { ...b, is_archived: 0 } : b)),
+    };
+    saveDb(newDb);
   };
 
   const moveCard = (cardId, newColumnId, newPosition) => {
@@ -772,6 +991,10 @@ export function AppProvider({ children }) {
     return db.cards.filter(c => c.is_archived);
   };
 
+  const getArchivedBoards = () => {
+    return db.boards.filter(b => b.is_archived);
+  };
+
   const addComment = (refType, refId, content) => {
     return true;
   };
@@ -808,6 +1031,13 @@ export function AppProvider({ children }) {
     createBoard,
     updateBoard,
     deleteBoard,
+    createOrder,
+    updateOrder,
+    deleteOrder,
+    addAvenant,
+    updateAvenant,
+    deleteAvenant,
+    getOrdersByBoard,
     createColumn,
     updateColumn,
     deleteColumn,
@@ -817,6 +1047,9 @@ export function AppProvider({ children }) {
     deleteCard,
     archiveCard,
     restoreCard,
+    archiveBoard,
+    restoreBoard,
+    canArchiveBoard,
     moveCard,
     createCategory,
     updateCategory,
@@ -828,10 +1061,13 @@ export function AppProvider({ children }) {
     moveSubcategory,
     loadLibrary,
     generateTestData,
+    exportData,
+    importData,
     saveToLibrary,
     updateLibraryItem,
     deleteLibraryItem,
     getArchivedCards,
+    getArchivedBoards,
     addComment,
     getComments,
     deleteComment,

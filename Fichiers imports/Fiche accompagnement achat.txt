@@ -1,0 +1,85 @@
+{
+  "fiche_accompagnement_achat": {
+    "reference": "FOR-ACHAT-DI-CDI-MAR-02-00001",
+    "indice": 1,
+
+    "expression_besoin": {
+      "libelle_affaire": "Etude geotechnique",
+      "otp_affaire": "SI/TCERDA.2/OLI1",
+      "nom_emetteur": null,
+      "estimation_ht": "145285.00 €",
+      "description_prestation": "Accès sous contrainte",
+      "date": null
+    },
+
+    "marche": {
+      "sur_marche_cadre": true,
+      "numero_marche": "CXR21C5008",
+      "hors_marche_cadre": false,
+      "entreprises_a_consulter": [
+        "GEIE EQOS ENERGIE - INABENSA"
+      ],
+      "regles_consultation": {
+        "1_devis_si_<=6k": true,
+        "3_devis_si_>6k_et_<40k": true
+      },
+      "commentaires": "RAS"
+    },
+
+    "manager_projet": {
+      "nom": "David BONNAUD",
+      "visa": true
+    },
+
+    "consultation_ouverture_offres": {
+      "date_envoi_consultation": null,
+      "prix_objectif_ht": null,
+      "date_limite_reception_offres": null,
+      "date_ouverture_plis": null,
+      "date_validite_offres": null,
+      "variantes_possibles": null,
+
+      "entreprises_consultees": [
+        {
+          "nom": "GEIE EQOS ENERGIE - INABENSA",
+          "date_reception_offre": "31/03/2025",
+          "montant_ht_solution_base": "145285.00 €",
+          "montant_ht_variante": null,
+          "commentaires": null
+        }
+      ]
+    },
+
+    "commentaires_consultation": null,
+
+    "ouverture_plis": {
+      "participants": [
+        {
+          "nom": "DURAND Eric",
+          "fonction": "Chargé d'Etudes",
+          "signature": null
+        }
+      ]
+    },
+
+    "negociation": {
+      "commentaire": "Ne pas remplir si le marché demande la rédaction d’une NAC.",
+      "details": null,
+      "commande_passee_sur_marche": "CXM23T4002"
+    },
+
+    "attribution_marche": {
+      "entreprise_retenue": "GEIE EQOS ENERGIE - INABENSA",
+      "montant_ht": "145285.00 €",
+      "moins_disant": false,
+      "mieux_disant": false,
+      "gre_a_gre": false,
+      "accord_cadre": true
+    },
+
+    "diffusion": [
+      "émetteur",
+      "ARSE"
+    ]
+  }
+}

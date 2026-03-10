@@ -31,6 +31,12 @@ function Card({ card, isDragging, columnColor, columnTitle }) {
     setSelectedCard(card);
   };
 
+  const handleDelete = () => {
+    if (window.confirm('Voulez-vous vraiment supprimer cette carte ?')) {
+      deleteCard(card.id);
+    }
+  };
+
   useEffect(() => {
     const handleClickOutside = e => {
       if (showMenu && !e.target.closest('.card-menu')) {

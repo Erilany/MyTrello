@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AppProvider, useApp } from './context/AppContext';
 import Board from './components/Board/Board';
 import Settings from './components/Settings/Settings';
+import SystemSettings from './components/Settings/SystemSettings';
 import Archives from './components/Archives/Archives';
 import Library from './components/Library/Library';
 import LibraryPanel from './components/Library/LibraryPanel';
@@ -40,7 +41,13 @@ function Modals() {
 }
 
 function AppContent() {
-  const { theme } = useApp();
+  const { theme, boards, loadBoard, currentBoard } = useApp();
+
+  React.useEffect(() => {
+    if (!currentBoard && boards.length > 0) {
+      loadBoard(boards[0].id);
+    }
+  }, [boards, currentBoard, loadBoard]);
 
   return (
     <div className={`flex h-screen bg-app ${theme}`}>
@@ -54,6 +61,7 @@ function AppContent() {
             <Route path="/library" element={<Library />} />
             <Route path="/archives" element={<Archives />} />
             <Route path="/settings" element={<Settings />} />
+            <Route path="/system-settings" element={<SystemSettings />} />
           </Routes>
         </main>
       </div>

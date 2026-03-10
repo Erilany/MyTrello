@@ -120,9 +120,9 @@ function Column({ column, index }) {
 
   return (
     <div
-      className={`flex-shrink-0 w-[310px] bg-column rounded-lg flex flex-col h-full max-h-full overflow-hidden border border-std ${getAnimationClass()}`}
+      className={`flex-shrink-0 w-[310px] bg-column rounded-lg flex flex-col h-[calc(100vh-180px)] border border-std ${getAnimationClass()}`}
     >
-      <div className="p-3 flex items-center justify-between flex-shrink-0 bg-column relative sticky top-0 z-10">
+      <div className="p-3 flex items-center justify-between flex-shrink-0 bg-column relative sticky top-0 z-20">
         {isEditing ? (
           <input
             type="text"

@@ -15,8 +15,7 @@ export default defineConfig({
     },
   },
   server: {
-    port: 5174,
-    strictPort: true,
+    port: 5175,
     headers: {
       'Content-Security-Policy':
         "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' http://localhost:*; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' http://localhost:* https://fonts.googleapis.com https://fonts.gstatic.com",

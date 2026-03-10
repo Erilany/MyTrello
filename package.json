@@ -4,7 +4,7 @@
   "description": "Application de gestion de projets à 3 niveaux avec intégration Outlook, Gmail et commandes vocales",
   "main": "electron.js",
   "scripts": {
-    "dev": "vite",
+    "dev": "npx vite",
     "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint src --ext .js,.jsx",
