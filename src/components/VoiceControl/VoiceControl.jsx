@@ -12,7 +12,6 @@ function VoiceControl() {
     columns,
     currentBoard,
     addComment,
-    dbRun,
     setLibraryOpen,
   } = useApp();
 
@@ -156,12 +155,6 @@ function VoiceControl() {
             showNotification('Commande non reconnue', 'error');
             break;
         }
-
-        await dbRun('INSERT INTO voice_history (command, action, status) VALUES (?, ?, ?)', [
-          original,
-          action,
-          action === 'unknown' ? 'unknown' : 'success',
-        ]);
       } catch (error) {
         console.error('Error executing command:', error);
         showNotification("Erreur lors de l'exécution", 'error');
@@ -175,7 +168,6 @@ function VoiceControl() {
       createCategory,
       createSubcategory,
       addComment,
-      dbRun,
       lastCommand,
       setLibraryOpen,
       showNotification,

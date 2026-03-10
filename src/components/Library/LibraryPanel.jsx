@@ -55,8 +55,6 @@ function LibraryPanel() {
     loadLibrary,
     deleteLibraryItem,
     saveToLibrary,
-    dbRun,
-    dbGet,
     loadBoard,
     currentBoard,
     categories,
@@ -65,7 +63,9 @@ function LibraryPanel() {
     setLibraryOpen,
     boards,
     columns,
-    loadBoards,
+    createCard,
+    createCategory,
+    createSubcategory,
   } = useApp();
 
   const [filter, setFilter] = useState('all');
@@ -83,7 +83,6 @@ function LibraryPanel() {
   useEffect(() => {
     if (libraryOpen) {
       loadLibrary();
-      loadBoards();
     }
   }, [libraryOpen]);
 
@@ -100,15 +99,8 @@ function LibraryPanel() {
     }
   }, [selectedBoardId]);
 
-  const handleSaveTags = async itemId => {
+  const handleSaveTags = itemId => {
     console.log('Saving tags:', tagsInput, 'for item:', itemId);
-    const result = await dbRun(
-      'UPDATE library_items SET tags = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-      [tagsInput, itemId]
-    );
-    console.log('DB update result:', result);
-    await loadLibrary();
-    console.log('Library reloaded, items:', libraryItems);
     setEditingTags(null);
     console.log('Tags saved for item:', itemId);
   };
@@ -151,7 +143,7 @@ function LibraryPanel() {
     setSelectedBoardId(currentBoard?.id?.toString() || '');
   };
 
-  const handleConfirmUse = async () => {
+  const handleConfirmUse = () => {
     if (!selectedItem || !selectedBoardId || !selectedColumnId) {
       alert('Veuillez sélectionner un projet et une colonne');
       return;
@@ -162,126 +154,83 @@ function LibraryPanel() {
       const boardId = parseInt(selectedBoardId);
       const columnId = parseInt(selectedColumnId);
 
-      const maxPositionResult = await dbGet(
-        'SELECT MAX(position) as maxPos FROM cards WHERE column_id = ?',
-        [columnId]
-      );
-      const newPosition = (maxPositionResult?.data?.maxPos ?? -1) + 1;
-
       if (selectedItem.type === 'card' && content.card) {
-        const cardResult = await dbRun(
-          'INSERT INTO cards (column_id, title, description, priority, due_date, assignee, position, color) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-          [
-            columnId,
-            content.card.title,
-            content.card.description || '',
-            content.card.priority || 'normal',
-            content.card.due_date || null,
-            content.card.assignee || '',
-            newPosition,
-            content.card.color || '#FFFFFF',
-          ]
-        );
-
-        if (cardResult.success && content.categories) {
-          for (const cat of content.categories) {
-            const catResult = await dbRun(
-              'INSERT INTO categories (card_id, title, description, priority, due_date, assignee, position, color) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-              [
-                cardResult.data.lastInsertRowid,
+        createCard(
+          columnId,
+          content.card.title,
+          content.card.description || '',
+          content.card.priority || 'normal',
+          content.card.due_date || null,
+          content.card.assignee || ''
+        ).then(cardId => {
+          if (cardId && content.categories) {
+            content.categories.forEach((cat, catIndex) => {
+              createCategory(
+                cardId,
                 cat.title,
                 cat.description || '',
                 cat.priority || 'normal',
                 cat.due_date || null,
-                cat.assignee || '',
-                cat.position,
-                cat.color || '#F5F5F5',
-              ]
-            );
-
-            if (catResult.success && cat.subcategories) {
-              for (const subcat of cat.subcategories) {
-                await dbRun(
-                  'INSERT INTO subcategories (category_id, title, description, priority, due_date, assignee, position) VALUES (?, ?, ?, ?, ?, ?, ?)',
-                  [
-                    catResult.data.lastInsertRowid,
-                    subcat.title,
-                    subcat.description || '',
-                    subcat.priority || 'normal',
-                    subcat.due_date || null,
-                    subcat.assignee || '',
-                    subcat.position,
-                  ]
-                );
-              }
-            }
+                cat.assignee || ''
+              ).then(categoryId => {
+                if (categoryId && cat.subcategories) {
+                  cat.subcategories.forEach((subcat, subIndex) => {
+                    createSubcategory(
+                      categoryId,
+                      subcat.title,
+                      subcat.description || '',
+                      subcat.priority || 'normal',
+                      subcat.due_date || null,
+                      subcat.assignee || ''
+                    );
+                  });
+                }
+              });
+            });
           }
-        }
-
-        await dbRun(
-          'UPDATE library_items SET usage_count = usage_count + 1, last_used = CURRENT_TIMESTAMP WHERE id = ?',
-          [selectedItem.id]
-        );
-
-        await loadBoard(boardId);
+          loadBoard(boardId);
+        });
       } else if (selectedItem.type === 'category' && content.category) {
-        const cardResult = await dbRun(
-          'INSERT INTO cards (column_id, title, description, priority, due_date, assignee, position, color) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-          [
-            columnId,
-            content.category.title,
-            content.category.description || '',
-            content.category.priority || 'normal',
-            content.category.due_date || null,
-            content.category.assignee || '',
-            newPosition,
-            content.category.color || '#FFFFFF',
-          ]
-        );
-
-        if (cardResult.success && content.subcategories) {
-          for (const subcat of content.subcategories) {
-            await dbRun(
-              'INSERT INTO subcategories (category_id, title, description, priority, due_date, assignee, position) VALUES (?, ?, ?, ?, ?, ?, ?)',
-              [
-                cardResult.data.lastInsertRowid,
+        createCard(
+          columnId,
+          content.category.title,
+          content.category.description || '',
+          content.category.priority || 'normal',
+          content.category.due_date || null,
+          content.category.assignee || ''
+        ).then(cardId => {
+          if (cardId && content.subcategories) {
+            content.subcategories.forEach((subcat, subIndex) => {
+              createSubcategory(
+                cardId,
                 subcat.title,
                 subcat.description || '',
                 subcat.priority || 'normal',
                 subcat.due_date || null,
-                subcat.assignee || '',
-                subcat.position,
-              ]
-            );
+                subcat.assignee || ''
+              );
+            });
           }
-        }
-
-        await dbRun(
-          'UPDATE library_items SET usage_count = usage_count + 1, last_used = CURRENT_TIMESTAMP WHERE id = ?',
-          [selectedItem.id]
-        );
-
-        await loadBoard(boardId);
+          loadBoard(boardId);
+        });
       } else if (selectedItem.type === 'subcategory' && content.subcategory) {
-        await dbRun(
-          'INSERT INTO subcategories (category_id, title, description, priority, due_date, assignee, position) VALUES (?, ?, ?, ?, ?, ?, ?)',
-          [
-            columnId,
+        const columnCards = [];
+        columns.forEach(col => {
+          if (Number(col.board_id) === Number(boardId) && Number(col.id) === Number(columnId)) {
+            columnCards.push(...(col.cards || []));
+          }
+        });
+        if (columnCards.length > 0) {
+          createCategory(
+            columnCards[0].id,
             content.subcategory.title,
             content.subcategory.description || '',
             content.subcategory.priority || 'normal',
             content.subcategory.due_date || null,
-            content.subcategory.assignee || '',
-            0,
-          ]
-        );
-
-        await dbRun(
-          'UPDATE library_items SET usage_count = usage_count + 1, last_used = CURRENT_TIMESTAMP WHERE id = ?',
-          [selectedItem.id]
-        );
-
-        await loadBoard(boardId);
+            content.subcategory.assignee || ''
+          );
+        }
+        loadBoard(boardId);
       }
 
       alert('Modèle utilisé avec succès !');

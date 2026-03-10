@@ -23,7 +23,6 @@ function Sidebar() {
     createBoard,
     deleteBoard,
     loadBoard,
-    loadBoards,
     sidebarOpen,
     setSidebarOpen,
     generateTestData,
@@ -41,16 +40,15 @@ function Sidebar() {
     }
   };
 
-  const handleGenerateTestData = async () => {
+  const handleGenerateTestData = () => {
     if (
       window.confirm(
-        'Générer des données de test ? Cela va ajouter des cartes, catégories et sous-catégories.'
+        'Générer des données de test ? Cela va effacer toutes les données existantes et créer de nouvelles données de test.'
       )
     ) {
       setIsGenerating(true);
       try {
-        await generateTestData();
-        await loadBoards();
+        generateTestData();
       } finally {
         setIsGenerating(false);
       }
@@ -86,7 +84,7 @@ function Sidebar() {
                       navigate('/');
                     }}
                     className={`flex items-center w-full px-3 py-1.5 text-sm text-left hover:bg-card-hover ${
-                      currentBoard?.id === board.id ? 'text-accent' : 'text-primary'
+                      Number(currentBoard?.id) === Number(board.id) ? 'text-accent' : 'text-primary'
                     }`}
                   >
                     <span className="truncate">{board.title}</span>
@@ -155,7 +153,7 @@ function Sidebar() {
         </button>
       </div>
 
-      <nav className="flex-1 overflow-y-auto scrollbar-thin">
+      <nav className="flex-1 min-h-0 overflow-y-auto scrollbar-thin">
         <div className="px-2 pt-4">
           <button
             onClick={() => setShowBoards(!showBoards)}
@@ -172,7 +170,7 @@ function Sidebar() {
                 <div
                   key={board.id}
                   className={`group flex items-center justify-between px-2 py-1.5 rounded cursor-pointer transition-std ${
-                    currentBoard?.id === board.id
+                    Number(currentBoard?.id) === Number(board.id)
                       ? 'bg-accent-soft border-l-[3px] border-l-accent'
                       : 'hover:bg-card'
                   }`}
@@ -216,14 +214,13 @@ function Sidebar() {
                     type="text"
                     value={newBoardTitle}
                     onChange={e => setNewBoardTitle(e.target.value)}
-                    onKeyDown={async e => {
+                    onKeyDown={e => {
                       if (e.key === 'Enter') {
                         e.preventDefault();
                         if (newBoardTitle.trim()) {
-                          const boardId = await createBoard(newBoardTitle.trim());
+                          const boardId = createBoard(newBoardTitle.trim());
                           if (boardId) {
-                            await loadBoard(boardId);
-                            await loadBoards();
+                            loadBoard(boardId);
                           }
                           setNewBoardTitle('');
                           setShowNewBoard(false);
@@ -243,12 +240,11 @@ function Sidebar() {
                   />
                   <div className="flex gap-2 mt-2">
                     <button
-                      onClick={async () => {
+                      onClick={() => {
                         if (newBoardTitle.trim()) {
-                          const boardId = await createBoard(newBoardTitle.trim());
+                          const boardId = createBoard(newBoardTitle.trim());
                           if (boardId) {
-                            await loadBoard(boardId);
-                            await loadBoards();
+                            loadBoard(boardId);
                           }
                           setNewBoardTitle('');
                           setShowNewBoard(false);

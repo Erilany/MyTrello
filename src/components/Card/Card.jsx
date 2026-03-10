@@ -42,7 +42,7 @@ function Card({ card, isDragging, columnColor, columnTitle }) {
   }, [showMenu]);
 
   const cardCategories = categories
-    .filter(cat => cat.card_id === card.id)
+    .filter(cat => Number(cat.card_id) === Number(card.id))
     .sort((a, b) => a.position - b.position);
 
   const getAccentBarStyle = () => {

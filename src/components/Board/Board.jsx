@@ -9,14 +9,16 @@ function Board() {
     currentBoard,
     columns,
     createColumn,
+    createCard,
+    createCategory,
+    createSubcategory,
     moveColumn,
     moveCard,
     moveCategory,
     moveSubcategory,
     loadBoard,
     loading,
-    dbRun,
-    dbGet,
+    cards,
     categories,
     subcategories,
   } = useApp();
@@ -24,7 +26,7 @@ function Board() {
   const [showNewColumn, setShowNewColumn] = useState(false);
 
   useEffect(() => {
-    const handleLibraryDrop = async e => {
+    const handleLibraryDrop = e => {
       const { columnId, boardId, data } = e.detail;
       const { itemType, content, title } = data;
 
@@ -34,116 +36,77 @@ function Board() {
         const parsedContent = JSON.parse(content);
 
         if (itemType === 'card' && parsedContent.card) {
-          const maxPosResult = await dbGet(
-            'SELECT MAX(position) as maxPos FROM cards WHERE column_id = ?',
-            [columnId]
-          );
-          const newPosition = (maxPosResult?.data?.maxPos ?? -1) + 1;
-
-          const cardResult = await dbRun(
-            'INSERT INTO cards (column_id, title, description, priority, due_date, assignee, position, color) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-            [
-              columnId,
-              parsedContent.card.title,
-              parsedContent.card.description || '',
-              parsedContent.card.priority || 'normal',
-              parsedContent.card.due_date || null,
-              parsedContent.card.assignee || '',
-              newPosition,
-              parsedContent.card.color || '#FFFFFF',
-            ]
-          );
-
-          if (cardResult.success && parsedContent.categories) {
-            for (const cat of parsedContent.categories) {
-              const catResult = await dbRun(
-                'INSERT INTO categories (card_id, title, description, priority, due_date, assignee, position, color) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-                [
-                  cardResult.data.lastInsertRowid,
+          createCard(
+            columnId,
+            parsedContent.card.title,
+            parsedContent.card.description || '',
+            parsedContent.card.priority || 'normal',
+            parsedContent.card.due_date || null,
+            parsedContent.card.assignee || ''
+          ).then(cardId => {
+            if (cardId && parsedContent.categories) {
+              parsedContent.categories.forEach((cat, catIndex) => {
+                createCategory(
+                  cardId,
                   cat.title,
                   cat.description || '',
                   cat.priority || 'normal',
                   cat.due_date || null,
-                  cat.assignee || '',
-                  cat.position,
-                  cat.color || '#F5F5F5',
-                ]
-              );
-
-              if (catResult.success && cat.subcategories) {
-                for (const subcat of cat.subcategories) {
-                  await dbRun(
-                    'INSERT INTO subcategories (category_id, title, description, priority, due_date, assignee, position) VALUES (?, ?, ?, ?, ?, ?, ?)',
-                    [
-                      catResult.data.lastInsertRowid,
-                      subcat.title,
-                      subcat.description || '',
-                      subcat.priority || 'normal',
-                      subcat.due_date || null,
-                      subcat.assignee || '',
-                      subcat.position,
-                    ]
-                  );
-                }
-              }
+                  cat.assignee || ''
+                ).then(categoryId => {
+                  if (categoryId && cat.subcategories) {
+                    cat.subcategories.forEach((subcat, subIndex) => {
+                      createSubcategory(
+                        categoryId,
+                        subcat.title,
+                        subcat.description || '',
+                        subcat.priority || 'normal',
+                        subcat.due_date || null,
+                        subcat.assignee || ''
+                      );
+                    });
+                  }
+                });
+              });
             }
-          }
-
-          await loadBoard(boardId);
+            loadBoard(boardId);
+          });
         } else if (itemType === 'category' && parsedContent.category) {
-          const maxPosResult = await dbGet(
-            'SELECT MAX(position) as maxPos FROM cards WHERE column_id = ?',
-            [columnId]
-          );
-          const newPosition = (maxPosResult?.data?.maxPos ?? -1) + 1;
-
-          const cardResult = await dbRun(
-            'INSERT INTO cards (column_id, title, description, priority, due_date, assignee, position, color) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-            [
-              columnId,
-              parsedContent.category.title,
-              parsedContent.category.description || '',
-              parsedContent.category.priority || 'normal',
-              parsedContent.category.due_date || null,
-              parsedContent.category.assignee || '',
-              newPosition,
-              parsedContent.category.color || '#FFFFFF',
-            ]
-          );
-
-          if (cardResult.success && parsedContent.subcategories) {
-            for (const subcat of parsedContent.subcategories) {
-              await dbRun(
-                'INSERT INTO subcategories (category_id, title, description, priority, due_date, assignee, position) VALUES (?, ?, ?, ?, ?, ?, ?)',
-                [
-                  cardResult.data.lastInsertRowid,
+          createCard(
+            columnId,
+            parsedContent.category.title,
+            parsedContent.category.description || '',
+            parsedContent.category.priority || 'normal',
+            parsedContent.category.due_date || null,
+            parsedContent.category.assignee || ''
+          ).then(cardId => {
+            if (cardId && parsedContent.subcategories) {
+              parsedContent.subcategories.forEach((subcat, subIndex) => {
+                createSubcategory(
+                  cardId,
                   subcat.title,
                   subcat.description || '',
                   subcat.priority || 'normal',
                   subcat.due_date || null,
-                  subcat.assignee || '',
-                  subcat.position || 0,
-                ]
-              );
+                  subcat.assignee || ''
+                );
+              });
             }
-          }
-
-          await loadBoard(boardId);
+            loadBoard(boardId);
+          });
         } else if (itemType === 'subcategory' && parsedContent.subcategory) {
-          await dbRun(
-            'INSERT INTO subcategories (category_id, title, description, priority, due_date, assignee, position) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            [
-              columnId,
+          const columnCards = cards.filter(c => Number(c.column_id) === Number(columnId));
+          if (columnCards.length > 0) {
+            createCategory(
+              columnCards[0].id,
               parsedContent.subcategory.title,
               parsedContent.subcategory.description || '',
               parsedContent.subcategory.priority || 'normal',
               parsedContent.subcategory.due_date || null,
-              parsedContent.subcategory.assignee || '',
-              0,
-            ]
-          );
-
-          await loadBoard(boardId);
+              parsedContent.subcategory.assignee || ''
+            );
+          }
+          loadBoard(boardId);
         }
       } catch (error) {
         console.error('Error handling library drop:', error);
@@ -152,7 +115,7 @@ function Board() {
 
     window.addEventListener('library-drop', handleLibraryDrop);
     return () => window.removeEventListener('library-drop', handleLibraryDrop);
-  }, [dbRun, dbGet, loadBoard]);
+  }, [createCard, createCategory, createSubcategory, loadBoard, cards]);
 
   const handleCreateColumn = async e => {
     e.preventDefault();
@@ -163,48 +126,43 @@ function Board() {
     }
   };
 
-  const handleDragEnd = async result => {
+  const handleDragEnd = result => {
     if (!result.destination) {
-      console.log('[DragEnd] No destination', result);
       return;
     }
 
     const { source, destination, draggableId, type } = result;
-    console.log('[DragEnd]', { source, destination, draggableId, type });
 
     if (source.droppableId === destination.droppableId && source.index === destination.index) {
-      console.log('[DragEnd] Same position, skipping');
       return;
     }
 
     if (type === 'column') {
-      await moveColumn(parseInt(draggableId), destination.index);
+      moveColumn(Number(draggableId), destination.index);
       return;
     }
 
     if (type === 'card') {
-      const cardId = parseInt(draggableId);
-      const newColumnId = parseInt(destination.droppableId);
+      const cardId = Number(draggableId);
+      const newColumnId = Number(destination.droppableId);
       const newPosition = destination.index;
-      console.log('[DragEnd] Moving card', { cardId, newColumnId, newPosition });
-      await moveCard(cardId, newColumnId, newPosition);
+      moveCard(cardId, newColumnId, newPosition);
       return;
     }
 
     if (type === 'category') {
-      const categoryId = parseInt(draggableId.replace('category-', ''));
-      const newCardId = parseInt(destination.droppableId.replace('card-', ''));
+      const categoryId = Number(draggableId.replace('category-', ''));
+      const newCardId = Number(destination.droppableId.replace('card-', ''));
       const newPosition = destination.index;
-      console.log('[DragEnd] Moving category', { categoryId, newCardId, newPosition });
-      await moveCategory(categoryId, newCardId, newPosition);
+      moveCategory(categoryId, newCardId, newPosition);
       return;
     }
 
     if (type === 'subcategory') {
-      const subcategoryId = parseInt(draggableId.replace('subcategory-', ''));
-      const newCategoryId = parseInt(destination.droppableId.replace('category-', ''));
+      const subcategoryId = Number(draggableId.replace('subcategory-', ''));
+      const newCategoryId = Number(destination.droppableId.replace('category-', ''));
       const newPosition = destination.index;
-      await moveSubcategory(subcategoryId, newCategoryId, newPosition);
+      moveSubcategory(subcategoryId, newCategoryId, newPosition);
       return;
     }
   };

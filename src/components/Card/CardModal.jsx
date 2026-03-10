@@ -59,12 +59,12 @@ function CardModal({ card, onClose }) {
   };
 
   const handleSaveToLibrary = async () => {
-    const cardCategories = categories.filter(c => c.card_id === card.id);
+    const cardCategories = categories.filter(c => Number(c.card_id) === Number(card.id));
     const content = {
       card: { title, description, priority, due_date: dueDate, assignee, color },
       categories: cardCategories.map(cat => ({
         ...cat,
-        subcategories: subcategories.filter(sc => sc.category_id === cat.id),
+        subcategories: subcategories.filter(sc => Number(sc.category_id) === Number(cat.id)),
       })),
     };
 
@@ -75,12 +75,12 @@ function CardModal({ card, onClose }) {
   const handleAddCategory = async e => {
     e.preventDefault();
     if (newCategoryTitle.trim()) {
-      await createCategory(card.id, newCategoryTitle.trim());
+      await createCategory(Number(card.id), newCategoryTitle.trim());
       setNewCategoryTitle('');
     }
   };
 
-  const cardCategories = categories.filter(c => c.card_id === card.id);
+  const cardCategories = categories.filter(c => Number(c.card_id) === Number(card.id));
 
   const priorities = [
     { value: 'urgent', label: 'Urgent', color: '#EF4444' },

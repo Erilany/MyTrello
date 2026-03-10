@@ -26,7 +26,9 @@ function CategoryModal({ category, onClose }) {
   };
 
   const handleSaveToLibrary = async () => {
-    const categorySubcategories = subcategories.filter(sc => sc.category_id === category.id);
+    const categorySubcategories = subcategories.filter(
+      sc => Number(sc.category_id) === Number(category.id)
+    );
     const content = {
       category: { title, description, priority, due_date: dueDate, assignee, color },
       subcategories: categorySubcategories,

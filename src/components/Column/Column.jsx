@@ -38,7 +38,7 @@ function Column({ column, index }) {
   }, [column.id, column.board_id]);
 
   const columnCards = cards
-    .filter(card => card.column_id === column.id)
+    .filter(card => Number(card.column_id) === Number(column.id))
     .sort((a, b) => a.position - b.position);
 
   const getColumnStyle = colTitle => {
@@ -89,10 +89,10 @@ function Column({ column, index }) {
     }
   };
 
-  const handleCreateCard = async e => {
+  const handleCreateCard = e => {
     e.preventDefault();
     if (newCardTitle.trim()) {
-      await createCard(column.id, newCardTitle.trim());
+      createCard(column.id, newCardTitle.trim());
       setNewCardTitle('');
       setShowNewCard(false);
     }
@@ -122,7 +122,7 @@ function Column({ column, index }) {
     <div
       className={`flex-shrink-0 w-[310px] bg-column rounded-lg flex flex-col h-full max-h-full overflow-hidden border border-std ${getAnimationClass()}`}
     >
-      <div className="p-3 flex items-center justify-between flex-shrink-0 bg-column relative">
+      <div className="p-3 flex items-center justify-between flex-shrink-0 bg-column relative sticky top-0 z-10">
         {isEditing ? (
           <input
             type="text"

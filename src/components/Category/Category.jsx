@@ -18,7 +18,7 @@ function Category({ category, isDragging = false, dragHandleProps }) {
   };
 
   const categorySubcategories = subcategories
-    .filter(sc => sc.category_id === category.id)
+    .filter(sc => Number(sc.category_id) === Number(category.id))
     .sort((a, b) => a.position - b.position);
 
   const handleToggleCollapse = async () => {
@@ -78,7 +78,7 @@ function Category({ category, isDragging = false, dragHandleProps }) {
 
   const handleSaveToLibrary = async () => {
     const catSubcategoriesData = subcategories
-      .filter(sc => sc.category_id === category.id)
+      .filter(sc => Number(sc.category_id) === Number(category.id))
       .sort((a, b) => a.position - b.position);
 
     const content = {
@@ -100,7 +100,7 @@ function Category({ category, isDragging = false, dragHandleProps }) {
 
   const handleDragStart = e => {
     const catSubcategoriesData = subcategories
-      .filter(sc => sc.category_id === category.id)
+      .filter(sc => Number(sc.category_id) === Number(category.id))
       .sort((a, b) => a.position - b.position);
 
     const content = {

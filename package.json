@@ -4,22 +4,12 @@
   "description": "Application de gestion de projets à 3 niveaux avec intégration Outlook, Gmail et commandes vocales",
   "main": "electron.js",
   "scripts": {
-    "dev": "concurrently \"npm run react:dev\" \"npm run electron:dev\"",
-    "react:dev": "vite",
-    "electron:dev": "wait-on http://localhost:5174 && electron .",
+    "dev": "vite",
     "build": "vite build",
-    "electron": "electron .",
-    "db:init": "node scripts/db-init.js",
-    "db:reset": "node scripts/db-reset.js",
-    "db:migrate": "node scripts/db-migrate.js",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:e2e": "playwright test",
-    "test:coverage": "jest --coverage",
+    "preview": "vite preview",
     "lint": "eslint src --ext .js,.jsx",
     "lint:fix": "eslint src --ext .js,.jsx --fix",
-    "format": "prettier --write \"src/**/*.{js,jsx}\"",
-    "env:check": "node scripts/check-env.js"
+    "format": "prettier --write \"src/**/*.{js,jsx}\""
   },
   "keywords": [
     "project-management",
