@@ -11,6 +11,10 @@ function SubCategoryModal({ subcategory, onClose }) {
   const [dueDate, setDueDate] = useState(subcategory.due_date || '');
   const [assignee, setAssignee] = useState(subcategory.assignee || '');
 
+  // MS Project fields
+  const [startDate, setStartDate] = useState(subcategory.start_date || '');
+  const [durationDays, setDurationDays] = useState(subcategory.duration_days || 1);
+
   const handleSave = async () => {
     await updateSubcategory(subcategory.id, {
       title,
@@ -18,6 +22,8 @@ function SubCategoryModal({ subcategory, onClose }) {
       priority,
       due_date: dueDate || null,
       assignee,
+      start_date: startDate || null,
+      duration_days: durationDays || 1,
     });
     onClose();
   };
@@ -112,6 +118,36 @@ function SubCategoryModal({ subcategory, onClose }) {
               onChange={e => setAssignee(e.target.value)}
               className="w-full px-3 py-2 bg-input border border-std rounded-lg text-primary focus:outline-none focus:border-accent"
             />
+          </div>
+
+          <div className="pt-4 border-t border-std">
+            <h4 className="text-sm font-medium text-secondary mb-3">Planning MS Project</h4>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-medium text-secondary mb-1">
+                  Date de début
+                </label>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={e => setStartDate(e.target.value)}
+                  className="w-full px-3 py-2 bg-input border border-std rounded-lg text-primary focus:outline-none focus:border-accent text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-secondary mb-1">
+                  Durée (jours)
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  value={durationDays}
+                  onChange={e => setDurationDays(parseInt(e.target.value) || 1)}
+                  className="w-full px-3 py-2 bg-input border border-std rounded-lg text-primary focus:outline-none focus:border-accent text-sm"
+                />
+              </div>
+            </div>
           </div>
         </div>
 

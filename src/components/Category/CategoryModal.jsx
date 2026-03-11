@@ -3,7 +3,7 @@ import { useApp } from '../../context/AppContext';
 import { X, Bookmark } from 'lucide-react';
 
 function CategoryModal({ category, onClose }) {
-  const { updateCategory, createSubcategory, saveToLibrary, subcategories } = useApp();
+  const { updateCategory, createSubcategory, saveToLibrary, subcategories, categories } = useApp();
 
   const [title, setTitle] = useState(category.title);
   const [description, setDescription] = useState(category.description || '');
@@ -13,6 +13,11 @@ function CategoryModal({ category, onClose }) {
   const [color, setColor] = useState(category.color || '#6366f1');
   const [newSubcategoryTitle, setNewSubcategoryTitle] = useState('');
 
+  // MS Project fields
+  const [startDate, setStartDate] = useState(category.start_date || '');
+  const [durationDays, setDurationDays] = useState(category.duration_days || 1);
+  const [parentId, setParentId] = useState(category.parent_id || null);
+
   const handleSave = async () => {
     await updateCategory(category.id, {
       title,
@@ -21,6 +26,9 @@ function CategoryModal({ category, onClose }) {
       due_date: dueDate || null,
       assignee,
       color,
+      start_date: startDate || null,
+      duration_days: durationDays || 1,
+      parent_id: parentId || null,
     });
     onClose();
   };
@@ -136,6 +144,56 @@ function CategoryModal({ category, onClose }) {
               onChange={e => setAssignee(e.target.value)}
               className="w-full px-3 py-2 bg-input border border-std rounded-lg text-primary focus:outline-none focus:border-accent"
             />
+          </div>
+
+          <div className="pt-4 border-t border-std">
+            <h4 className="text-sm font-medium text-secondary mb-3">Planning MS Project</h4>
+
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="block text-xs font-medium text-secondary mb-1">
+                  Date de début
+                </label>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={e => setStartDate(e.target.value)}
+                  className="w-full px-3 py-2 bg-input border border-std rounded-lg text-primary focus:outline-none focus:border-accent text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-secondary mb-1">
+                  Durée (jours)
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  value={durationDays}
+                  onChange={e => setDurationDays(parseInt(e.target.value) || 1)}
+                  className="w-full px-3 py-2 bg-input border border-std rounded-lg text-primary focus:outline-none focus:border-accent text-sm"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-secondary mb-1">
+                Catégorie parente (indentation)
+              </label>
+              <select
+                value={parentId || ''}
+                onChange={e => setParentId(e.target.value ? parseInt(e.target.value) : null)}
+                className="w-full px-3 py-2 bg-input border border-std rounded-lg text-primary focus:outline-none focus:border-accent text-sm"
+              >
+                <option value="">Aucune (niveau principal)</option>
+                {categories
+                  .filter(c => c.id !== category.id && !c.parent_id)
+                  .map(c => (
+                    <option key={c.id} value={c.id}>
+                      {c.title.substring(0, 40)}
+                    </option>
+                  ))}
+              </select>
+            </div>
           </div>
 
           <div>

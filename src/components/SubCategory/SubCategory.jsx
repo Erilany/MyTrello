@@ -114,6 +114,18 @@ function SubCategory({ subcategory, isDragging = false }) {
 
             {dateInfo && <span className={`badge ${dateInfo.badgeClass}`}>📅 {dateInfo.text}</span>}
 
+            {subcategory.start_date && (
+              <span className="badge badge-date">
+                ▶ {new Date(subcategory.start_date).toLocaleDateString('fr-FR')}
+              </span>
+            )}
+
+            {subcategory.duration_days > 0 && (
+              <span className="badge bg-blue-500/20 text-blue-400">
+                ⏱ {subcategory.duration_days}j
+              </span>
+            )}
+
             {subcategory.assignee && (
               <span className="badge badge-category">{subcategory.assignee}</span>
             )}

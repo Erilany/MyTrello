@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { libraryTemplates } from '../data/libraryTemplates';
 
 const STORAGE_KEY = 'mytrello_db';
 
@@ -84,166 +85,7 @@ function initDefaultData() {
     data.nextIds.order = 1;
   }
   if (data.libraryItems.length === 0) {
-    const libraryItemsData = [
-      {
-        id: 1,
-        title: 'Projet Simple - Sans DUP',
-        type: 'card',
-        tags: 'projet,etudes',
-        content_json: JSON.stringify({
-          card: {
-            title: 'Projet Simple - Sans DUP',
-            description: 'Projet ne nécessitant pas de DUP',
-            priority: 'normal',
-          },
-          categories: [
-            {
-              title: 'Rédaction note information synthétique',
-              description: '',
-              priority: 'normal',
-            },
-          ],
-        }),
-      },
-      {
-        id: 2,
-        title: 'Projet LA < 1km',
-        type: 'card',
-        tags: 'projet,travaux',
-        content_json: JSON.stringify({
-          card: {
-            title: 'Projet LA < 1km',
-            description: 'Ligne Aérienne moins de 1km',
-            priority: 'normal',
-          },
-          categories: [
-            { title: 'Déclaration urbanisme', description: '', priority: 'normal' },
-            { title: 'Permis construire', description: '', priority: 'normal' },
-          ],
-        }),
-      },
-      {
-        id: 3,
-        title: 'Projet LS < 3km',
-        type: 'card',
-        tags: 'projet,travaux',
-        content_json: JSON.stringify({
-          card: {
-            title: 'Projet LS < 3km',
-            description: 'Ligne Souterraine moins de 3km',
-            priority: 'normal',
-          },
-          categories: [
-            { title: 'Déclaration urbanisme', description: '', priority: 'normal' },
-            { title: 'Permis construire', description: '', priority: 'normal' },
-          ],
-        }),
-      },
-      {
-        id: 4,
-        title: 'Projet avec DUP',
-        type: 'card',
-        tags: 'projet,procedures',
-        content_json: JSON.stringify({
-          card: {
-            title: 'Projet avec DUP',
-            description: "Projet nécessitant une Déclaration d'Utilité Publique",
-            priority: 'normal',
-          },
-          categories: [
-            {
-              title: 'Rédaction note information synthétique',
-              description: '',
-              priority: 'normal',
-            },
-            { title: 'Rédaction dossier enquête publique', description: '', priority: 'normal' },
-          ],
-        }),
-      },
-      {
-        id: 5,
-        title: 'Déclaration urbanisme',
-        type: 'category',
-        tags: 'procedures,travaux',
-        content_json: JSON.stringify({
-          category: { title: 'Déclaration urbanisme', description: '', priority: 'normal' },
-        }),
-      },
-      {
-        id: 6,
-        title: 'Permis construire',
-        type: 'category',
-        tags: 'procedures,travaux',
-        content_json: JSON.stringify({
-          category: { title: 'Permis construire', description: '', priority: 'normal' },
-        }),
-      },
-      {
-        id: 7,
-        title: 'Rédaction note information synthétique',
-        type: 'subcategory',
-        tags: 'etudes,procedures',
-        content_json: JSON.stringify({
-          subcategory: {
-            title: 'Rédaction note information synthétique',
-            description: '',
-            priority: 'normal',
-          },
-        }),
-      },
-      {
-        id: 8,
-        title: 'Rédaction dossier enquête publique',
-        type: 'subcategory',
-        tags: 'procedures',
-        content_json: JSON.stringify({
-          subcategory: {
-            title: 'Rédaction dossier enquête publique',
-            description: '',
-            priority: 'normal',
-          },
-        }),
-      },
-      {
-        id: 9,
-        title: 'Concertation Ferracci',
-        type: 'card',
-        tags: 'projet,travaux',
-        content_json: JSON.stringify({
-          card: {
-            title: 'Concertation Ferracci',
-            description: 'Concertation avec les riverains',
-            priority: 'normal',
-          },
-          categories: [
-            { title: 'Projet simple (pas de DUP)', description: '', priority: 'normal' },
-            { title: 'LA < 1km', description: '', priority: 'normal' },
-            { title: 'LS < 3km', description: '', priority: 'normal' },
-            { title: 'DUP', description: '', priority: 'normal' },
-          ],
-        }),
-      },
-      {
-        id: 10,
-        title: 'Concertation Ligne',
-        type: 'card',
-        tags: 'projet,etudes',
-        content_json: JSON.stringify({
-          card: {
-            title: 'Concertation Ligne',
-            description: 'Concertation pour projet de ligne',
-            priority: 'normal',
-          },
-          categories: [
-            { title: 'Projet simple (pas de DUP)', description: '', priority: 'normal' },
-            { title: 'LA < 1km', description: '', priority: 'normal' },
-            { title: 'LS < 3km', description: '', priority: 'normal' },
-            { title: 'DUP', description: '', priority: 'normal' },
-          ],
-        }),
-      },
-    ];
-    data.libraryItems = libraryItemsData;
+    data.libraryItems = libraryTemplates;
   }
   if (data.boards.length === 0) {
     const boardId = 1;
@@ -1004,21 +846,31 @@ export function AppProvider({ children }) {
     description = '',
     priority = 'normal',
     dueDate = null,
-    assignee = ''
+    assignee = '',
+    parentId = null
   ) => {
-    const maxPos = db.categories
-      .filter(c => Number(c.card_id) === Number(cardId))
-      .reduce((max, c) => Math.max(max, c.position), -1);
+    let filter;
+    if (parentId) {
+      filter = db.categories.filter(c => Number(c.parent_id) === Number(parentId));
+    } else if (cardId) {
+      filter = db.categories.filter(c => Number(c.card_id) === Number(cardId) && !c.parent_id);
+    } else {
+      filter = [];
+    }
+    const maxPos = filter.reduce((max, c) => Math.max(max, c.position), -1);
     const catId = db.nextIds.category++;
     const newCategory = {
       id: catId,
-      card_id: Number(cardId),
+      card_id: cardId ? Number(cardId) : null,
+      parent_id: parentId || null,
       title,
       description,
       priority,
       due_date: dueDate,
       assignee,
       position: maxPos + 1,
+      start_date: null,
+      duration_days: 1,
       created_at: new Date().toISOString(),
     };
     const newDb = {
@@ -1100,7 +952,9 @@ export function AppProvider({ children }) {
     description = '',
     priority = 'normal',
     dueDate = null,
-    assignee = ''
+    assignee = '',
+    startDate = null,
+    durationDays = 1
   ) => {
     const maxPos = db.subcategories
       .filter(s => Number(s.category_id) === Number(categoryId))
@@ -1115,6 +969,8 @@ export function AppProvider({ children }) {
       due_date: dueDate,
       assignee,
       position: maxPos + 1,
+      start_date: startDate,
+      duration_days: durationDays,
       created_at: new Date().toISOString(),
     };
     const newDb = {
