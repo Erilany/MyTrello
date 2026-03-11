@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { useApp } from '../../context/AppContext';
 import Column from '../Column/Column';
+import Exchange from '../Exchange/Exchange';
 import {
   Plus,
   GripVertical,
@@ -47,6 +48,7 @@ function Board() {
     updateAvenant,
     deleteAvenant,
     getOrdersByBoard,
+    getUnreadCount,
   } = useApp();
   const [newColumnTitle, setNewColumnTitle] = useState('');
   const [showNewColumn, setShowNewColumn] = useState(false);
@@ -96,8 +98,10 @@ function Board() {
 
   const [commandes, setCommandes] = useState([]);
   const [selectedCommande, setSelectedCommande] = useState(null);
+  const [selectedAvenant, setSelectedAvenant] = useState(null);
   const [showAddCommande, setShowAddCommande] = useState(false);
   const [newCommandeTitle, setNewCommandeTitle] = useState('');
+  const [activeTabCommande, setActiveTabCommande] = useState('commande');
 
   const groupesMarchandises = {
     etudes: [
@@ -253,6 +257,10 @@ function Board() {
       const { itemType, content, title } = data;
 
       if (!columnId) return;
+      if (!content) {
+        console.error('No content in library drop');
+        return;
+      }
 
       try {
         const parsedContent = JSON.parse(content);
@@ -443,6 +451,8 @@ function Board() {
       <div className="flex border-b border-std mb-4">
         {tabs.map(tab => {
           const Icon = tab.icon;
+          const unreadCount =
+            tab.id === 'echanges' && currentBoard ? getUnreadCount(currentBoard.id) : 0;
           return (
             <button
               key={tab.id}
@@ -455,6 +465,11 @@ function Board() {
             >
               <Icon size={16} className="mr-2" />
               {tab.label}
+              {unreadCount > 0 && (
+                <span className="ml-2 px-2 py-0.5 text-xs font-bold bg-urgent text-white rounded-full">
+                  {unreadCount}
+                </span>
+              )}
             </button>
           );
         })}
@@ -552,17 +567,111 @@ function Board() {
             ) : (
               <div className="space-y-2">
                 {commandes.map(cmd => (
-                  <button
-                    key={cmd.id}
-                    onClick={() => setSelectedCommande(cmd)}
-                    className={`w-full text-left p-2 rounded border text-sm ${
-                      selectedCommande?.id === cmd.id
-                        ? 'border-accent bg-accent-soft'
-                        : 'border-std bg-card hover:bg-card-hover'
-                    }`}
-                  >
-                    {cmd.title}
-                  </button>
+                  <div key={cmd.id}>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => {
+                          setSelectedCommande(cmd);
+                          setSelectedAvenant(null);
+                        }}
+                        className={`flex-1 text-left p-2 rounded border text-sm ${
+                          selectedCommande?.id === cmd.id && !selectedAvenant
+                            ? 'border-accent bg-accent-soft'
+                            : 'border-std bg-card hover:bg-card-hover'
+                        }`}
+                      >
+                        {cmd.title}
+                      </button>
+                      <button
+                        onClick={() => {
+                          if (
+                            window.confirm(
+                              `Êtes-vous sûr de vouloir supprimer "${cmd.title}" ? Cette action est irréversible.`
+                            )
+                          ) {
+                            if (
+                              window.confirm(
+                                `Confirmer définitivement la suppression de "${cmd.title}" et de tous ses avenants ?`
+                              )
+                            ) {
+                              deleteOrder(cmd.id);
+                              setCommandes(commandes.filter(c => c.id !== cmd.id));
+                              if (selectedCommande?.id === cmd.id) {
+                                setSelectedCommande(null);
+                                setSelectedAvenant(null);
+                              }
+                            }
+                          }
+                        }}
+                        className="p-1 text-muted hover:text-urgent"
+                        title="Supprimer"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                    {cmd.avenants?.map(av => (
+                      <div key={av.id} className="flex items-center gap-2 ml-4">
+                        <button
+                          onClick={() => {
+                            setSelectedCommande(cmd);
+                            setSelectedAvenant(av);
+                          }}
+                          className={`flex-1 text-left p-2 rounded border text-sm ${
+                            selectedAvenant?.id === av.id
+                              ? 'border-accent bg-accent-soft'
+                              : 'border-std bg-card hover:bg-card-hover'
+                          }`}
+                        >
+                          {av.title}
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (
+                              window.confirm(`Êtes-vous sûr de vouloir supprimer "${av.title}" ?`)
+                            ) {
+                              const updatedCommandes = commandes.map(c =>
+                                c.id === cmd.id
+                                  ? {
+                                      ...c,
+                                      avenants: c.avenants?.filter(a => a.id !== av.id) || [],
+                                    }
+                                  : c
+                              );
+                              setCommandes(updatedCommandes);
+                              if (selectedAvenant?.id === av.id) {
+                                setSelectedAvenant(null);
+                              }
+                            }
+                          }}
+                          className="p-1 text-muted hover:text-urgent"
+                          title="Supprimer"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    ))}
+                    <button
+                      onClick={() => {
+                        const avenantNumber = (cmd.avenants?.length || 0) + 1;
+                        const newAvenant = {
+                          id: Date.now(),
+                          title: `Avenant ${avenantNumber}`,
+                          numero: avenantNumber,
+                          donnees: { ...cmd.donnees },
+                        };
+                        const updatedCommandes = commandes.map(c =>
+                          c.id === cmd.id
+                            ? { ...c, avenants: [...(c.avenants || []), newAvenant] }
+                            : c
+                        );
+                        setCommandes(updatedCommandes);
+                        setSelectedAvenant(newAvenant);
+                      }}
+                      className="ml-8 mt-1 text-xs text-accent hover:underline"
+                    >
+                      + Créer un Avenant
+                    </button>
+                  </div>
                 ))}
               </div>
             )}
@@ -622,487 +731,511 @@ function Board() {
             {selectedCommande ? (
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-bold text-primary">{selectedCommande.title}</h2>
-                  <button
-                    onClick={() => {
-                      setCommandes(commandes.filter(c => c.id !== selectedCommande.id));
-                      setSelectedCommande(null);
-                    }}
-                    className="text-sm text-urgent hover:underline"
-                  >
-                    Supprimer
-                  </button>
-                </div>
-
-                <div className="p-4 bg-card rounded-lg border border-std">
-                  <h3 className="text-sm font-semibold text-primary mb-4">Données commandes</h3>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div>
-                      <label className="block text-xs text-secondary mb-1">N° Commande</label>
-                      <input
-                        type="text"
-                        value={selectedCommande.donnees.numero}
-                        onChange={e => {
-                          const updated = commandes.map(c =>
-                            c.id === selectedCommande.id
-                              ? { ...c, donnees: { ...c.donnees, numero: e.target.value } }
-                              : c
-                          );
-                          setCommandes(updated);
-                          setSelectedCommande(updated.find(c => c.id === selectedCommande.id));
-                        }}
-                        className="w-full px-2 py-1 text-sm bg-input border border-std rounded"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs text-secondary mb-1">Date</label>
-                      <input
-                        type="date"
-                        value={selectedCommande.donnees.date}
-                        onChange={e => {
-                          const updated = commandes.map(c =>
-                            c.id === selectedCommande.id
-                              ? { ...c, donnees: { ...c.donnees, date: e.target.value } }
-                              : c
-                          );
-                          setCommandes(updated);
-                          setSelectedCommande(updated.find(c => c.id === selectedCommande.id));
-                        }}
-                        className="w-full px-2 py-1 text-sm bg-input border border-std rounded"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs text-secondary mb-1">Objet</label>
-                      <input
-                        type="text"
-                        value={selectedCommande.donnees.objet}
-                        onChange={e => {
-                          const updated = commandes.map(c =>
-                            c.id === selectedCommande.id
-                              ? { ...c, donnees: { ...c.donnees, objet: e.target.value } }
-                              : c
-                          );
-                          setCommandes(updated);
-                          setSelectedCommande(updated.find(c => c.id === selectedCommande.id));
-                        }}
-                        className="w-full px-2 py-1 text-sm bg-input border border-std rounded"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs text-secondary mb-1">Estimation (€HT)</label>
-                      <input
-                        type="text"
-                        value={selectedCommande.donnees.estimation}
-                        onChange={e => {
-                          const updated = commandes.map(c =>
-                            c.id === selectedCommande.id
-                              ? { ...c, donnees: { ...c.donnees, estimation: e.target.value } }
-                              : c
-                          );
-                          setCommandes(updated);
-                          setSelectedCommande(updated.find(c => c.id === selectedCommande.id));
-                        }}
-                        className="w-full px-2 py-1 text-sm bg-input border border-std rounded"
-                      />
+                  <div>
+                    <h2 className="text-lg font-bold text-primary">{selectedCommande.title}</h2>
+                    <div className="flex gap-2 mt-2">
+                      <button
+                        onClick={() => setActiveTabCommande('affectation')}
+                        className={`px-3 py-1 text-xs rounded ${
+                          activeTabCommande === 'affectation'
+                            ? 'bg-accent text-white'
+                            : 'border border-accent text-accent hover:bg-accent-soft'
+                        }`}
+                      >
+                        Affectation
+                      </button>
+                      <button
+                        onClick={() => setActiveTabCommande('commande')}
+                        className={`px-3 py-1 text-xs rounded ${
+                          activeTabCommande === 'commande'
+                            ? 'bg-accent text-white'
+                            : 'border border-accent text-accent hover:bg-accent-soft'
+                        }`}
+                      >
+                        Commande
+                      </button>
                     </div>
                   </div>
+                  {activeTabCommande === 'commande' && (
+                    <button className="px-4 py-2 text-sm bg-accent text-white rounded hover:bg-accent/90">
+                      Envoyer
+                    </button>
+                  )}
                 </div>
 
-                <div className="p-4 bg-card rounded-lg border border-std">
-                  <h3 className="text-sm font-semibold text-primary mb-4">Groupe Marchandise</h3>
-                  {Object.entries(groupesMarchandises).map(([category, items]) => (
-                    <div key={category} className="mb-4">
-                      <h4 className="text-xs font-medium text-secondary uppercase mb-2">
-                        {category.replace('_', ' ')}
-                      </h4>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                        {items.map((item, idx) => {
-                          const isChecked =
-                            selectedCommande.groupes[category]?.[idx]?.checked || false;
-                          return (
-                            <label key={idx} className="flex items-center gap-2 cursor-pointer">
-                              <input
-                                type="checkbox"
-                                checked={isChecked}
-                                onChange={e => {
-                                  const updatedGroupes = { ...selectedCommande.groupes };
-                                  if (!updatedGroupes[category]) updatedGroupes[category] = [];
-                                  updatedGroupes[category] = [...(updatedGroupes[category] || [])];
-                                  updatedGroupes[category][idx] = {
-                                    ...updatedGroupes[category][idx],
-                                    checked: e.target.checked,
-                                  };
-                                  const updated = commandes.map(c =>
-                                    c.id === selectedCommande.id
-                                      ? { ...c, groupes: updatedGroupes }
-                                      : c
-                                  );
-                                  setCommandes(updated);
-                                  setSelectedCommande(
-                                    updated.find(c => c.id === selectedCommande.id)
-                                  );
-                                }}
-                                className="w-4 h-4 rounded border-std text-accent focus:ring-accent"
-                              />
-                              <span className="text-sm text-primary">{item.label}</span>
-                            </label>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                <div className="p-4 bg-card rounded-lg border border-std">
-                  <h3 className="text-sm font-semibold text-primary mb-4">
-                    Fiche accompagnement achat
-                  </h3>
-                  <div className="space-y-4">
-                    <div className="p-3 bg-card-hover rounded">
-                      <h4 className="text-xs font-medium text-secondary mb-2">
-                        Expression du besoin
-                      </h4>
-                      <div className="grid grid-cols-2 gap-3">
-                        <input
-                          type="text"
-                          placeholder="Libellé affaire"
-                          value={selectedCommande.ficheAchat.expression_besoin.libelle_affaire}
-                          onChange={e => {
-                            const updated = commandes.map(c =>
-                              c.id === selectedCommande.id
-                                ? {
-                                    ...c,
-                                    ficheAchat: {
-                                      ...c.ficheAchat,
-                                      expression_besoin: {
-                                        ...c.ficheAchat.expression_besoin,
-                                        libelle_affaire: e.target.value,
-                                      },
-                                    },
-                                  }
-                                : c
-                            );
-                            setCommandes(updated);
-                            setSelectedCommande(updated.find(c => c.id === selectedCommande.id));
-                          }}
-                          className="px-2 py-1 text-sm bg-input border border-std rounded"
-                        />
-                        <input
-                          type="text"
-                          placeholder="OTP Affaire"
-                          value={selectedCommande.ficheAchat.expression_besoin.otp_affaire}
-                          onChange={e => {
-                            const updated = commandes.map(c =>
-                              c.id === selectedCommande.id
-                                ? {
-                                    ...c,
-                                    ficheAchat: {
-                                      ...c.ficheAchat,
-                                      expression_besoin: {
-                                        ...c.ficheAchat.expression_besoin,
-                                        otp_affaire: e.target.value,
-                                      },
-                                    },
-                                  }
-                                : c
-                            );
-                            setCommandes(updated);
-                            setSelectedCommande(updated.find(c => c.id === selectedCommande.id));
-                          }}
-                          className="px-2 py-1 text-sm bg-input border border-std rounded"
-                        />
-                        <input
-                          type="text"
-                          placeholder="Nom émetteur"
-                          value={selectedCommande.ficheAchat.expression_besoin.nom_emetteur}
-                          onChange={e => {
-                            const updated = commandes.map(c =>
-                              c.id === selectedCommande.id
-                                ? {
-                                    ...c,
-                                    ficheAchat: {
-                                      ...c.ficheAchat,
-                                      expression_besoin: {
-                                        ...c.ficheAchat.expression_besoin,
-                                        nom_emetteur: e.target.value,
-                                      },
-                                    },
-                                  }
-                                : c
-                            );
-                            setCommandes(updated);
-                            setSelectedCommande(updated.find(c => c.id === selectedCommande.id));
-                          }}
-                          className="px-2 py-1 text-sm bg-input border border-std rounded"
-                        />
-                        <input
-                          type="text"
-                          placeholder="Estimation HT"
-                          value={selectedCommande.ficheAchat.expression_besoin.estimation_ht}
-                          onChange={e => {
-                            const updated = commandes.map(c =>
-                              c.id === selectedCommande.id
-                                ? {
-                                    ...c,
-                                    ficheAchat: {
-                                      ...c.ficheAchat,
-                                      expression_besoin: {
-                                        ...c.ficheAchat.expression_besoin,
-                                        estimation_ht: e.target.value,
-                                      },
-                                    },
-                                  }
-                                : c
-                            );
-                            setCommandes(updated);
-                            setSelectedCommande(updated.find(c => c.id === selectedCommande.id));
-                          }}
-                          className="px-2 py-1 text-sm bg-input border border-std rounded"
-                        />
-                        <input
-                          type="text"
-                          placeholder="Description prestation"
-                          value={
-                            selectedCommande.ficheAchat.expression_besoin.description_prestation
-                          }
-                          onChange={e => {
-                            const updated = commandes.map(c =>
-                              c.id === selectedCommande.id
-                                ? {
-                                    ...c,
-                                    ficheAchat: {
-                                      ...c.ficheAchat,
-                                      expression_besoin: {
-                                        ...c.ficheAchat.expression_besoin,
-                                        description_prestation: e.target.value,
-                                      },
-                                    },
-                                  }
-                                : c
-                            );
-                            setCommandes(updated);
-                            setSelectedCommande(updated.find(c => c.id === selectedCommande.id));
-                          }}
-                          className="col-span-2 px-2 py-1 text-sm bg-input border border-std rounded"
-                        />
+                {activeTabCommande === 'affectation' && (
+                  <div className="space-y-6">
+                    <div className="p-4 bg-card rounded-lg border border-std">
+                      <h3 className="text-sm font-semibold text-primary mb-4">RENSEIGNEMENTS</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs text-secondary mb-1">N° Affaire</label>
+                          <input
+                            type="text"
+                            className="w-full px-2 py-1 text-sm bg-input border border-std rounded"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-secondary mb-1">
+                            Date de réception
+                          </label>
+                          <input
+                            type="date"
+                            className="w-full px-2 py-1 text-sm bg-input border border-std rounded"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-secondary mb-1">Date limite</label>
+                          <input
+                            type="date"
+                            className="w-full px-2 py-1 text-sm bg-input border border-std rounded"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-secondary mb-1">Interlocuteur</label>
+                          <input
+                            type="text"
+                            className="w-full px-2 py-1 text-sm bg-input border border-std rounded"
+                          />
+                        </div>
                       </div>
                     </div>
 
-                    <div className="p-3 bg-card-hover rounded">
-                      <h4 className="text-xs font-medium text-secondary mb-2">Marché</h4>
-                      <div className="space-y-2">
-                        <label className="flex items-center gap-2">
+                    <div className="p-4 bg-card rounded-lg border border-std">
+                      <h3 className="text-sm font-semibold text-primary mb-4">
+                        GÉNÉRALITÉS SUR L'OUVRAGE
+                      </h3>
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-xs text-secondary mb-1">Désignation</label>
+                          <textarea
+                            rows={2}
+                            className="w-full px-2 py-1 text-sm bg-input border border-std rounded"
+                          ></textarea>
+                        </div>
+                        <div>
+                          <label className="block text-xs text-secondary mb-1">Localisation</label>
                           <input
-                            type="checkbox"
-                            checked={selectedCommande.ficheAchat.marche.sur_marche_cadre}
-                            onChange={e => {
-                              const updated = commandes.map(c =>
-                                c.id === selectedCommande.id
-                                  ? {
-                                      ...c,
-                                      ficheAchat: {
-                                        ...c.ficheAchat,
-                                        marche: {
-                                          ...c.ficheAchat.marche,
-                                          sur_marche_cadre: e.target.checked,
-                                        },
-                                      },
-                                    }
-                                  : c
-                              );
-                              setCommandes(updated);
-                              setSelectedCommande(updated.find(c => c.id === selectedCommande.id));
-                            }}
-                            className="w-4 h-4"
+                            type="text"
+                            className="w-full px-2 py-1 text-sm bg-input border border-std rounded"
                           />
-                          <span className="text-sm">Sur marché cadre</span>
-                        </label>
-                        <input
-                          type="text"
-                          placeholder="N° Marché"
-                          value={selectedCommande.ficheAchat.marche.numero_marche}
-                          onChange={e => {
-                            const updated = commandes.map(c =>
-                              c.id === selectedCommande.id
-                                ? {
-                                    ...c,
-                                    ficheAchat: {
-                                      ...c.ficheAchat,
-                                      marche: {
-                                        ...c.ficheAchat.marche,
-                                        numero_marche: e.target.value,
-                                      },
-                                    },
-                                  }
-                                : c
-                            );
-                            setCommandes(updated);
-                            setSelectedCommande(updated.find(c => c.id === selectedCommande.id));
-                          }}
-                          className="w-full px-2 py-1 text-sm bg-input border border-std rounded"
-                        />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-secondary mb-1">
+                            Maître d'ouvrage
+                          </label>
+                          <input
+                            type="text"
+                            className="w-full px-2 py-1 text-sm bg-input border border-std rounded"
+                          />
+                        </div>
                       </div>
                     </div>
 
-                    <div className="p-3 bg-card-hover rounded">
-                      <h4 className="text-xs font-medium text-secondary mb-2">Attribution</h4>
-                      <div className="grid grid-cols-2 gap-3">
-                        <input
-                          type="text"
-                          placeholder="Entreprise retenue"
-                          value={selectedCommande.ficheAchat.attribution.entreprise_retenue}
-                          onChange={e => {
-                            const updated = commandes.map(c =>
-                              c.id === selectedCommande.id
-                                ? {
-                                    ...c,
-                                    ficheAchat: {
-                                      ...c.ficheAchat,
-                                      attribution: {
-                                        ...c.ficheAchat.attribution,
-                                        entreprise_retenue: e.target.value,
-                                      },
-                                    },
-                                  }
-                                : c
-                            );
-                            setCommandes(updated);
-                            setSelectedCommande(updated.find(c => c.id === selectedCommande.id));
-                          }}
-                          className="px-2 py-1 text-sm bg-input border border-std rounded"
-                        />
-                        <input
-                          type="text"
-                          placeholder="Montant HT"
-                          value={selectedCommande.ficheAchat.attribution.montant_ht}
-                          onChange={e => {
-                            const updated = commandes.map(c =>
-                              c.id === selectedCommande.id
-                                ? {
-                                    ...c,
-                                    ficheAchat: {
-                                      ...c.ficheAchat,
-                                      attribution: {
-                                        ...c.ficheAchat.attribution,
-                                        montant_ht: e.target.value,
-                                      },
-                                    },
-                                  }
-                                : c
-                            );
-                            setCommandes(updated);
-                            setSelectedCommande(updated.find(c => c.id === selectedCommande.id));
-                          }}
-                          className="px-2 py-1 text-sm bg-input border border-std rounded"
-                        />
-                        <label className="flex items-center gap-2">
+                    <div className="p-4 bg-card rounded-lg border border-std">
+                      <h3 className="text-sm font-semibold text-primary mb-4">
+                        TYPOLOGIE ET DÉTAILS DE CONSISTANCE
+                      </h3>
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-xs text-secondary mb-1">
+                            Type d'intervention
+                          </label>
                           <input
-                            type="checkbox"
-                            checked={selectedCommande.ficheAchat.attribution.moins_disant}
-                            onChange={e => {
-                              const updated = commandes.map(c =>
-                                c.id === selectedCommande.id
-                                  ? {
-                                      ...c,
-                                      ficheAchat: {
-                                        ...c.ficheAchat,
-                                        attribution: {
-                                          ...c.ficheAchat.attribution,
-                                          moins_disant: e.target.checked,
-                                        },
-                                      },
-                                    }
-                                  : c
-                              );
-                              setCommandes(updated);
-                              setSelectedCommande(updated.find(c => c.id === selectedCommande.id));
-                            }}
-                            className="w-4 h-4"
+                            type="text"
+                            className="w-full px-2 py-1 text-sm bg-input border border-std rounded"
                           />
-                          <span className="text-sm">Moins-disant</span>
-                        </label>
-                        <label className="flex items-center gap-2">
+                        </div>
+                        <div>
+                          <label className="block text-xs text-secondary mb-1">
+                            Description sommaire
+                          </label>
+                          <textarea
+                            rows={3}
+                            className="w-full px-2 py-1 text-sm bg-input border border-std rounded"
+                          ></textarea>
+                        </div>
+                        <div>
+                          <label className="block text-xs text-secondary mb-1">
+                            Travaux prévus
+                          </label>
+                          <textarea
+                            rows={3}
+                            className="w-full px-2 py-1 text-sm bg-input border border-std rounded"
+                          ></textarea>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="p-4 bg-card rounded-lg border border-std">
+                      <h3 className="text-sm font-semibold text-primary mb-4">CHIFFRAGE (k€)</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs text-secondary mb-1">
+                            Montant HT (k€)
+                          </label>
                           <input
-                            type="checkbox"
-                            checked={selectedCommande.ficheAchat.attribution.mieux_disant}
-                            onChange={e => {
-                              const updated = commandes.map(c =>
-                                c.id === selectedCommande.id
-                                  ? {
-                                      ...c,
-                                      ficheAchat: {
-                                        ...c.ficheAchat,
-                                        attribution: {
-                                          ...c.ficheAchat.attribution,
-                                          mieux_disant: e.target.checked,
-                                        },
-                                      },
-                                    }
-                                  : c
-                              );
-                              setCommandes(updated);
-                              setSelectedCommande(updated.find(c => c.id === selectedCommande.id));
-                            }}
-                            className="w-4 h-4"
+                            type="text"
+                            className="w-full px-2 py-1 text-sm bg-input border border-std rounded"
                           />
-                          <span className="text-sm">Mieux-disant</span>
-                        </label>
-                        <label className="flex items-center gap-2">
+                        </div>
+                        <div>
+                          <label className="block text-xs text-secondary mb-1">
+                            Montant TTC (k€)
+                          </label>
                           <input
-                            type="checkbox"
-                            checked={selectedCommande.ficheAchat.attribution.gre_a_gre}
-                            onChange={e => {
-                              const updated = commandes.map(c =>
-                                c.id === selectedCommande.id
-                                  ? {
-                                      ...c,
-                                      ficheAchat: {
-                                        ...c.ficheAchat,
-                                        attribution: {
-                                          ...c.ficheAchat.attribution,
-                                          gre_a_gre: e.target.checked,
-                                        },
-                                      },
-                                    }
-                                  : c
-                              );
-                              setCommandes(updated);
-                              setSelectedCommande(updated.find(c => c.id === selectedCommande.id));
-                            }}
-                            className="w-4 h-4"
+                            type="text"
+                            className="w-full px-2 py-1 text-sm bg-input border border-std rounded"
                           />
-                          <span className="text-sm">Gré à gré</span>
-                        </label>
-                        <label className="flex items-center gap-2">
+                        </div>
+                        <div>
+                          <label className="block text-xs text-secondary mb-1">
+                            Honoraires (k€)
+                          </label>
                           <input
-                            type="checkbox"
-                            checked={selectedCommande.ficheAchat.attribution.accord_cadre}
-                            onChange={e => {
-                              const updated = commandes.map(c =>
-                                c.id === selectedCommande.id
-                                  ? {
-                                      ...c,
-                                      ficheAchat: {
-                                        ...c.ficheAchat,
-                                        attribution: {
-                                          ...c.ficheAchat.attribution,
-                                          accord_cadre: e.target.checked,
-                                        },
-                                      },
-                                    }
-                                  : c
-                              );
-                              setCommandes(updated);
-                              setSelectedCommande(updated.find(c => c.id === selectedCommande.id));
-                            }}
-                            className="w-4 h-4"
+                            type="text"
+                            className="w-full px-2 py-1 text-sm bg-input border border-std rounded"
                           />
-                          <span className="text-sm">Accord cadre</span>
-                        </label>
+                        </div>
+                        <div>
+                          <label className="block text-xs text-secondary mb-1">
+                            Frais annexes (k€)
+                          </label>
+                          <input
+                            type="text"
+                            className="w-full px-2 py-1 text-sm bg-input border border-std rounded"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="p-4 bg-card rounded-lg border border-std">
+                      <h3 className="text-sm font-semibold text-primary mb-4">
+                        VÉRIFICATION DU CHIFFRAGE ET DES DONNÉES D'ENTRÉES DU CCTP
+                      </h3>
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-xs text-secondary mb-1">
+                            Hypothèses de calculs
+                          </label>
+                          <textarea
+                            rows={2}
+                            className="w-full px-2 py-1 text-sm bg-input border border-std rounded"
+                          ></textarea>
+                        </div>
+                        <div>
+                          <label className="block text-xs text-secondary mb-1">
+                            Base de prix utilisée
+                          </label>
+                          <input
+                            type="text"
+                            className="w-full px-2 py-1 text-sm bg-input border border-std rounded"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-secondary mb-1">
+                            Coefficients appliqués
+                          </label>
+                          <input
+                            type="text"
+                            className="w-full px-2 py-1 text-sm bg-input border border-std rounded"
+                          />
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <input type="checkbox" className="w-4 h-4" />
+                          <span className="text-sm">CCTP vérifié et complet</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <input type="checkbox" className="w-4 h-4" />
+                          <span className="text-sm">Données d'entrées cohérentes</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="p-4 bg-card rounded-lg border border-std">
+                      <h3 className="text-sm font-semibold text-primary mb-4">SYNTHÈSE</h3>
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-xs text-secondary mb-1">Commentaires</label>
+                          <textarea
+                            rows={4}
+                            className="w-full px-2 py-1 text-sm bg-input border border-std rounded"
+                          ></textarea>
+                        </div>
+                        <div>
+                          <label className="block text-xs text-secondary mb-1">
+                            Risques identifiés
+                          </label>
+                          <textarea
+                            rows={2}
+                            className="w-full px-2 py-1 text-sm bg-input border border-std rounded"
+                          ></textarea>
+                        </div>
+                        <div>
+                          <label className="block text-xs text-secondary mb-1">Validation</label>
+                          <select className="w-full px-2 py-1 text-sm bg-input border border-std rounded">
+                            <option value="">Sélectionner...</option>
+                            <option value="valide">Validé</option>
+                            <option value="en_attente">En attente</option>
+                            <option value="rejeté">Rejeté</option>
+                          </select>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
+                )}
+
+                {activeTabCommande === 'commande' && (
+                  <div className="p-4 bg-card rounded-lg border border-std">
+                    <h3 className="text-sm font-semibold text-primary mb-4">Données commandes</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div className="space-y-4">
+                        <h4 className="text-xs font-medium text-secondary uppercase border-b border-std pb-1">
+                          Demandeur
+                        </h4>
+                        <div>
+                          <label className="block text-xs text-secondary mb-1">
+                            Nom rédacteur / Interlocuteur
+                          </label>
+                          <input
+                            type="text"
+                            value={selectedCommande.donnees?.nomRedacteur || ''}
+                            onChange={e => {
+                              const updated = commandes.map(c =>
+                                c.id === selectedCommande.id
+                                  ? {
+                                      ...c,
+                                      donnees: { ...c.donnees, nomRedacteur: e.target.value },
+                                    }
+                                  : c
+                              );
+                              setCommandes(updated);
+                              setSelectedCommande(updated.find(c => c.id === selectedCommande.id));
+                            }}
+                            className="w-full px-2 py-1 text-sm bg-input border border-std rounded"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-secondary mb-1">
+                            Responsable Projet
+                          </label>
+                          <input
+                            type="text"
+                            value={selectedCommande.donnees?.responsableProjet || ''}
+                            onChange={e => {
+                              const updated = commandes.map(c =>
+                                c.id === selectedCommande.id
+                                  ? {
+                                      ...c,
+                                      donnees: { ...c.donnees, responsableProjet: e.target.value },
+                                    }
+                                  : c
+                              );
+                              setCommandes(updated);
+                              setSelectedCommande(updated.find(c => c.id === selectedCommande.id));
+                            }}
+                            className="w-full px-2 py-1 text-sm bg-input border border-std rounded"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-secondary mb-1">Téléphone</label>
+                          <input
+                            type="text"
+                            value={selectedCommande.donnees?.telephone || ''}
+                            onChange={e => {
+                              const updated = commandes.map(c =>
+                                c.id === selectedCommande.id
+                                  ? { ...c, donnees: { ...c.donnees, telephone: e.target.value } }
+                                  : c
+                              );
+                              setCommandes(updated);
+                              setSelectedCommande(updated.find(c => c.id === selectedCommande.id));
+                            }}
+                            className="w-full px-2 py-1 text-sm bg-input border border-std rounded"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-secondary mb-1">Service</label>
+                          <select
+                            value={selectedCommande.donnees?.service || ''}
+                            onChange={e => {
+                              const updated = commandes.map(c =>
+                                c.id === selectedCommande.id
+                                  ? { ...c, donnees: { ...c.donnees, service: e.target.value } }
+                                  : c
+                              );
+                              setCommandes(updated);
+                              setSelectedCommande(updated.find(c => c.id === selectedCommande.id));
+                            }}
+                            className="w-full px-2 py-1 text-sm bg-input border border-std rounded"
+                          >
+                            <option value="">Sélectionner...</option>
+                            <option value="SLA">SLA</option>
+                            <option value="SLS">SLS</option>
+                            <option value="SPOCC 1">SPOCC 1</option>
+                            <option value="SPOCC 2">SPOCC 2</option>
+                            <option value="SPOCC 3">SPOCC 3</option>
+                            <option value="SCET">SCET</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-xs text-secondary mb-1">
+                            Signataire final prévu
+                          </label>
+                          <input
+                            type="text"
+                            value={selectedCommande.donnees?.signataireFinal || ''}
+                            onChange={e => {
+                              const updated = commandes.map(c =>
+                                c.id === selectedCommande.id
+                                  ? {
+                                      ...c,
+                                      donnees: { ...c.donnees, signataireFinal: e.target.value },
+                                    }
+                                  : c
+                              );
+                              setCommandes(updated);
+                              setSelectedCommande(updated.find(c => c.id === selectedCommande.id));
+                            }}
+                            className="w-full px-2 py-1 text-sm bg-input border border-std rounded"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-secondary mb-1">
+                            Marché Cadre N°
+                          </label>
+                          <input
+                            type="text"
+                            value={selectedCommande.donnees?.numeroMarche || ''}
+                            onChange={e => {
+                              const updated = commandes.map(c =>
+                                c.id === selectedCommande.id
+                                  ? {
+                                      ...c,
+                                      donnees: { ...c.donnees, numeroMarche: e.target.value },
+                                    }
+                                  : c
+                              );
+                              setCommandes(updated);
+                              setSelectedCommande(updated.find(c => c.id === selectedCommande.id));
+                            }}
+                            className="w-full px-2 py-1 text-sm bg-input border border-std rounded"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-4">
+                        <h4 className="text-xs font-medium text-secondary uppercase border-b border-std pb-1">
+                          Affaire
+                        </h4>
+                        <div>
+                          <label className="block text-xs text-secondary mb-1">Nom du projet</label>
+                          <input
+                            type="text"
+                            value={selectedCommande.donnees?.nomProjet || ''}
+                            onChange={e => {
+                              const updated = commandes.map(c =>
+                                c.id === selectedCommande.id
+                                  ? { ...c, donnees: { ...c.donnees, nomProjet: e.target.value } }
+                                  : c
+                              );
+                              setCommandes(updated);
+                              setSelectedCommande(updated.find(c => c.id === selectedCommande.id));
+                            }}
+                            className="w-full px-2 py-1 text-sm bg-input border border-std rounded"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-secondary mb-1">
+                            Détail commande
+                          </label>
+                          <textarea
+                            value={selectedCommande.donnees?.detailCommande || ''}
+                            onChange={e => {
+                              const updated = commandes.map(c =>
+                                c.id === selectedCommande.id
+                                  ? {
+                                      ...c,
+                                      donnees: { ...c.donnees, detailCommande: e.target.value },
+                                    }
+                                  : c
+                              );
+                              setCommandes(updated);
+                              setSelectedCommande(updated.find(c => c.id === selectedCommande.id));
+                            }}
+                            rows={3}
+                            className="w-full px-2 py-1 text-sm bg-input border border-std rounded"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="space-y-4">
+                        <h4 className="text-xs font-medium text-secondary uppercase border-b border-std pb-1">
+                          Entreprise
+                        </h4>
+                        <div>
+                          <label className="block text-xs text-secondary mb-1">
+                            Nom de l'entreprise
+                          </label>
+                          <input
+                            type="text"
+                            value={selectedCommande.donnees?.nomEntreprise || ''}
+                            onChange={e => {
+                              const updated = commandes.map(c =>
+                                c.id === selectedCommande.id
+                                  ? {
+                                      ...c,
+                                      donnees: { ...c.donnees, nomEntreprise: e.target.value },
+                                    }
+                                  : c
+                              );
+                              setCommandes(updated);
+                              setSelectedCommande(updated.find(c => c.id === selectedCommande.id));
+                            }}
+                            className="w-full px-2 py-1 text-sm bg-input border border-std rounded"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-secondary mb-1">SIRET</label>
+                          <input
+                            type="text"
+                            value={selectedCommande.donnees?.siret || ''}
+                            onChange={e => {
+                              const updated = commandes.map(c =>
+                                c.id === selectedCommande.id
+                                  ? { ...c, donnees: { ...c.donnees, siret: e.target.value } }
+                                  : c
+                              );
+                              setCommandes(updated);
+                              setSelectedCommande(updated.find(c => c.id === selectedCommande.id));
+                            }}
+                            className="w-full px-2 py-1 text-sm bg-input border border-std rounded"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-secondary mb-1">Adresse</label>
+                          <textarea
+                            value={selectedCommande.donnees?.adresseEntreprise || ''}
+                            onChange={e => {
+                              const updated = commandes.map(c =>
+                                c.id === selectedCommande.id
+                                  ? {
+                                      ...c,
+                                      donnees: { ...c.donnees, adresseEntreprise: e.target.value },
+                                    }
+                                  : c
+                              );
+                              setCommandes(updated);
+                              setSelectedCommande(updated.find(c => c.id === selectedCommande.id));
+                            }}
+                            rows={3}
+                            className="w-full px-2 py-1 text-sm bg-input border border-std rounded"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="flex items-center justify-center h-full text-muted">
@@ -1122,14 +1255,7 @@ function Board() {
         </div>
       )}
 
-      {activeTab === 'echanges' && (
-        <div className="flex-1 flex items-center justify-center text-secondary">
-          <div className="text-center">
-            <MessageSquare size={48} className="mx-auto mb-4 text-muted" />
-            <p>Page Échanges à développer</p>
-          </div>
-        </div>
-      )}
+      {activeTab === 'echanges' && currentBoard && <Exchange boardId={currentBoard.id} />}
 
       {activeTab === 'informations' && (
         <div className="flex-1 overflow-y-auto">

@@ -209,44 +209,7 @@ function Column({ column, index }) {
         </div>
       </div>
 
-      <div
-        className="flex-1 flex flex-col min-h-0"
-        onDragOver={e => {
-          if (window.__isLibraryDrag) {
-            e.preventDefault();
-            e.dataTransfer.dropEffect = 'copy';
-          }
-        }}
-        onDrop={e => {
-          if (!window.__isLibraryDrag) return;
-          e.preventDefault();
-          console.log('[Column] Native drop detected', { columnId: column.id });
-          const data = e.dataTransfer.getData('application/json');
-          if (data) {
-            console.log('[Column] Native drop data:', data);
-            const event = new CustomEvent('library-drop', {
-              detail: {
-                columnId: column.id,
-                boardId: column.board_id,
-                data: JSON.parse(data),
-              },
-            });
-            window.dispatchEvent(event);
-          } else if (window.__libraryDragData) {
-            console.log('[Column] Using stored drag data');
-            const event = new CustomEvent('library-drop', {
-              detail: {
-                columnId: column.id,
-                boardId: column.board_id,
-                data: window.__libraryDragData,
-              },
-            });
-            window.dispatchEvent(event);
-            window.__libraryDragData = null;
-          }
-          window.__isLibraryDrag = false;
-        }}
-      >
+      <div className="flex-1 flex flex-col min-h-0">
         <Droppable droppableId={String(column.id)} type="card" isDropDisabled={false}>
           {(provided, snapshot) => (
             <div
@@ -255,6 +218,41 @@ function Column({ column, index }) {
                 droppableRef.current = node;
               }}
               {...provided.droppableProps}
+              onDragOver={e => {
+                if (window.__isLibraryDrag) {
+                  e.preventDefault();
+                  e.dataTransfer.dropEffect = 'copy';
+                }
+              }}
+              onDrop={e => {
+                if (!window.__isLibraryDrag) return;
+                e.preventDefault();
+                console.log('[Column] Native drop detected', { columnId: column.id });
+                const data = e.dataTransfer.getData('application/json');
+                if (data) {
+                  console.log('[Column] Native drop data:', data);
+                  const event = new CustomEvent('library-drop', {
+                    detail: {
+                      columnId: column.id,
+                      boardId: column.board_id,
+                      data: JSON.parse(data),
+                    },
+                  });
+                  window.dispatchEvent(event);
+                } else if (window.__libraryDragData) {
+                  console.log('[Column] Using stored drag data');
+                  const event = new CustomEvent('library-drop', {
+                    detail: {
+                      columnId: column.id,
+                      boardId: column.board_id,
+                      data: window.__libraryDragData,
+                    },
+                  });
+                  window.dispatchEvent(event);
+                  window.__libraryDragData = null;
+                }
+                window.__isLibraryDrag = false;
+              }}
               className={`flex-1 overflow-y-auto px-2 pb-2 scrollbar-thin ${
                 snapshot.isDraggingOver ? 'bg-card/50' : ''
               }`}

@@ -4,6 +4,38 @@ const STORAGE_KEY = 'mytrello_db';
 
 const AppContext = createContext();
 
+function addWorkingDays(startDate, days) {
+  if (!startDate || days <= 0) return startDate;
+  const result = new Date(startDate);
+  let remaining = days;
+
+  while (remaining > 0) {
+    result.setDate(result.getDate() + 1);
+    const dayOfWeek = result.getDay();
+    if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+      remaining--;
+    }
+  }
+  return result.toISOString().split('T')[0];
+}
+
+function getWorkingDaysBetween(startDate, endDate) {
+  if (!startDate || !endDate) return 0;
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  let count = 0;
+
+  const current = new Date(start);
+  while (current < end) {
+    const dayOfWeek = current.getDay();
+    if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+      count++;
+    }
+    current.setDate(current.getDate() + 1);
+  }
+  return count;
+}
+
 function loadFromStorage() {
   const data = localStorage.getItem(STORAGE_KEY);
   if (data) {
@@ -16,7 +48,16 @@ function loadFromStorage() {
     categories: [],
     subcategories: [],
     libraryItems: [],
-    nextIds: { board: 1, column: 1, card: 1, category: 1, subcategory: 1, libraryItem: 1 },
+    messages: [],
+    nextIds: {
+      board: 1,
+      column: 1,
+      card: 1,
+      category: 1,
+      subcategory: 1,
+      libraryItem: 1,
+      message: 1,
+    },
   };
 }
 
@@ -42,6 +83,206 @@ function initDefaultData() {
   } else if (!data.nextIds.order) {
     data.nextIds.order = 1;
   }
+  if (data.libraryItems.length === 0) {
+    const libraryItemsData = [
+      {
+        id: 1,
+        title: 'Projet Simple - Sans DUP',
+        type: 'card',
+        tags: 'projet,etudes',
+        content_json: JSON.stringify({
+          card: {
+            title: 'Projet Simple - Sans DUP',
+            description: 'Projet ne nécessitant pas de DUP',
+            priority: 'normal',
+          },
+          categories: [
+            {
+              title: 'Rédaction note information synthétique',
+              description: '',
+              priority: 'normal',
+            },
+          ],
+        }),
+      },
+      {
+        id: 2,
+        title: 'Projet LA < 1km',
+        type: 'card',
+        tags: 'projet,travaux',
+        content_json: JSON.stringify({
+          card: {
+            title: 'Projet LA < 1km',
+            description: 'Ligne Aérienne moins de 1km',
+            priority: 'normal',
+          },
+          categories: [
+            { title: 'Déclaration urbanisme', description: '', priority: 'normal' },
+            { title: 'Permis construire', description: '', priority: 'normal' },
+          ],
+        }),
+      },
+      {
+        id: 3,
+        title: 'Projet LS < 3km',
+        type: 'card',
+        tags: 'projet,travaux',
+        content_json: JSON.stringify({
+          card: {
+            title: 'Projet LS < 3km',
+            description: 'Ligne Souterraine moins de 3km',
+            priority: 'normal',
+          },
+          categories: [
+            { title: 'Déclaration urbanisme', description: '', priority: 'normal' },
+            { title: 'Permis construire', description: '', priority: 'normal' },
+          ],
+        }),
+      },
+      {
+        id: 4,
+        title: 'Projet avec DUP',
+        type: 'card',
+        tags: 'projet,procedures',
+        content_json: JSON.stringify({
+          card: {
+            title: 'Projet avec DUP',
+            description: "Projet nécessitant une Déclaration d'Utilité Publique",
+            priority: 'normal',
+          },
+          categories: [
+            {
+              title: 'Rédaction note information synthétique',
+              description: '',
+              priority: 'normal',
+            },
+            { title: 'Rédaction dossier enquête publique', description: '', priority: 'normal' },
+          ],
+        }),
+      },
+      {
+        id: 5,
+        title: 'Déclaration urbanisme',
+        type: 'category',
+        tags: 'procedures,travaux',
+        content_json: JSON.stringify({
+          category: { title: 'Déclaration urbanisme', description: '', priority: 'normal' },
+        }),
+      },
+      {
+        id: 6,
+        title: 'Permis construire',
+        type: 'category',
+        tags: 'procedures,travaux',
+        content_json: JSON.stringify({
+          category: { title: 'Permis construire', description: '', priority: 'normal' },
+        }),
+      },
+      {
+        id: 7,
+        title: 'Rédaction note information synthétique',
+        type: 'subcategory',
+        tags: 'etudes,procedures',
+        content_json: JSON.stringify({
+          subcategory: {
+            title: 'Rédaction note information synthétique',
+            description: '',
+            priority: 'normal',
+          },
+        }),
+      },
+      {
+        id: 8,
+        title: 'Rédaction dossier enquête publique',
+        type: 'subcategory',
+        tags: 'procedures',
+        content_json: JSON.stringify({
+          subcategory: {
+            title: 'Rédaction dossier enquête publique',
+            description: '',
+            priority: 'normal',
+          },
+        }),
+      },
+      {
+        id: 9,
+        title: 'Concertation Ferracci',
+        type: 'card',
+        tags: 'projet,travaux',
+        content_json: JSON.stringify({
+          card: {
+            title: 'Concertation Ferracci',
+            description: 'Concertation avec les riverains',
+            priority: 'normal',
+          },
+          categories: [
+            { title: 'Projet simple (pas de DUP)', description: '', priority: 'normal' },
+            { title: 'LA < 1km', description: '', priority: 'normal' },
+            { title: 'LS < 3km', description: '', priority: 'normal' },
+            { title: 'DUP', description: '', priority: 'normal' },
+          ],
+        }),
+      },
+      {
+        id: 10,
+        title: 'Concertation Ligne',
+        type: 'card',
+        tags: 'projet,etudes',
+        content_json: JSON.stringify({
+          card: {
+            title: 'Concertation Ligne',
+            description: 'Concertation pour projet de ligne',
+            priority: 'normal',
+          },
+          categories: [
+            { title: 'Projet simple (pas de DUP)', description: '', priority: 'normal' },
+            { title: 'LA < 1km', description: '', priority: 'normal' },
+            { title: 'LS < 3km', description: '', priority: 'normal' },
+            { title: 'DUP', description: '', priority: 'normal' },
+          ],
+        }),
+      },
+    ];
+    data.libraryItems = libraryItemsData;
+  }
+  if (data.boards.length === 0) {
+    const boardId = 1;
+    data.boards.push({
+      id: boardId,
+      title: 'Mon Premier Projet',
+      description: 'Projet par défaut',
+      created_at: new Date().toISOString(),
+      is_archived: 0,
+    });
+    data.columns = [
+      { id: 1, board_id: boardId, title: 'À faire', position: 0, color: '#4A90D9' },
+      { id: 2, board_id: boardId, title: 'En cours', position: 1, color: '#F5A623' },
+      { id: 3, board_id: boardId, title: 'En attente', position: 2, color: '#9CA3AF' },
+      { id: 4, board_id: boardId, title: 'Terminée', position: 3, color: '#7ED321' },
+      { id: 5, board_id: boardId, title: 'Archiver', position: 4, color: '#475569' },
+    ];
+    data.nextIds = {
+      board: 2,
+      column: 6,
+      card: 1,
+      category: 1,
+      subcategory: 1,
+      libraryItem: 1,
+      message: 1,
+      order: 1,
+    };
+  }
+  if (data.boards.length > 0 && data.columns.length === 0) {
+    const boardId = data.boards[0].id;
+    data.columns = [
+      { id: 1, board_id: boardId, title: 'À faire', position: 0, color: '#4A90D9' },
+      { id: 2, board_id: boardId, title: 'En cours', position: 1, color: '#F5A623' },
+      { id: 3, board_id: boardId, title: 'En attente', position: 2, color: '#9CA3AF' },
+      { id: 4, board_id: boardId, title: 'Terminée', position: 3, color: '#7ED321' },
+      { id: 5, board_id: boardId, title: 'Archiver', position: 4, color: '#475569' },
+    ];
+  }
+  saveToStorage(data);
   if (data.boards.length === 0) {
     const boardId = 1;
     data.boards.push({
@@ -65,6 +306,7 @@ function initDefaultData() {
       category: 1,
       subcategory: 1,
       libraryItem: 1,
+      message: 1,
       order: 1,
     };
     saveToStorage(data);
@@ -81,6 +323,10 @@ export function AppProvider({ children }) {
   const [categories, setCategories] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
   const [libraryItems, setLibraryItems] = useState([]);
+  const [messages, setMessages] = useState([]);
+  const [currentUsername, setCurrentUsername] = useState(
+    () => localStorage.getItem('mytrello-username') || ''
+  );
   const [loading, setLoading] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [libraryOpen, setLibraryOpen] = useState(false);
@@ -88,6 +334,7 @@ export function AppProvider({ children }) {
   const [selectedCard, setSelectedCard] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState(null);
+  const [unreadMentions, setUnreadMentions] = useState({});
   const [cardColors, setCardColors] = useState({
     etudes: { gradient: ['#6366f1', '#3b82f6'], keywords: ['études', 'etudes'] },
     enCours: { gradient: ['#f59e0b', '#fbbf24'], keywords: ['cours', 'en cours'] },
@@ -595,7 +842,11 @@ export function AppProvider({ children }) {
     description = '',
     priority = 'normal',
     dueDate = null,
-    assignee = ''
+    assignee = '',
+    startDate = null,
+    durationDays = 1,
+    parentId = null,
+    predecessorId = null
   ) => {
     const maxPos = db.cards
       .filter(c => Number(c.column_id) === Number(columnId))
@@ -611,6 +862,10 @@ export function AppProvider({ children }) {
       assignee,
       position: maxPos + 1,
       is_archived: 0,
+      start_date: startDate,
+      duration_days: durationDays,
+      parent_id: parentId,
+      predecessor_id: predecessorId,
       created_at: new Date().toISOString(),
     };
     const newDb = { ...db, cards: [...db.cards, newCard], nextIds: { ...db.nextIds } };
@@ -995,6 +1250,98 @@ export function AppProvider({ children }) {
     return db.boards.filter(b => b.is_archived);
   };
 
+  const getMessages = useCallback(
+    boardId => {
+      return (db.messages || []).filter(m => Number(m.board_id) === Number(boardId));
+    },
+    [db.messages]
+  );
+
+  const addMessage = useCallback(
+    (boardId, content, attachments = []) => {
+      const mentions = content.match(/@(\w+)/g)?.map(m => m.slice(1)) || [];
+      const newMessage = {
+        id: db.nextIds.message++,
+        board_id: boardId,
+        author: currentUsername,
+        content,
+        mentions,
+        attachments: attachments.map(att => ({
+          name: att.name,
+          type: att.type,
+          data: att.data,
+          size: att.size,
+        })),
+        created_at: new Date().toISOString(),
+        read_by: [currentUsername],
+      };
+      const newDb = {
+        ...db,
+        messages: [...(db.messages || []), newMessage],
+      };
+      saveDb(newDb);
+      setMessages(newDb.messages);
+
+      if (mentions.length > 0) {
+        const newUnread = { ...unreadMentions };
+        mentions.forEach(user => {
+          if (user !== currentUsername) {
+            if (!newUnread[user]) newUnread[user] = [];
+            newUnread[user].push(newMessage.id);
+          }
+        });
+        setUnreadMentions(newUnread);
+      }
+      return newMessage;
+    },
+    [db, currentUsername, saveDb, unreadMentions]
+  );
+
+  const markMessagesAsRead = useCallback(
+    boardId => {
+      const boardMessages = (db.messages || []).filter(m => Number(m.board_id) === Number(boardId));
+      const updatedMessages = boardMessages.map(msg => {
+        if (!msg.read_by.includes(currentUsername)) {
+          return { ...msg, read_by: [...msg.read_by, currentUsername] };
+        }
+        return msg;
+      });
+
+      const newDb = {
+        ...db,
+        messages: (db.messages || []).map(msg => {
+          const updated = updatedMessages.find(u => u.id === msg.id);
+          return updated || msg;
+        }),
+      };
+      saveDb(newDb);
+      setMessages(newDb.messages);
+
+      if (unreadMentions[currentUsername]) {
+        const newUnread = { ...unreadMentions };
+        delete newUnread[currentUsername];
+        setUnreadMentions(newUnread);
+      }
+    },
+    [db, currentUsername, saveDb, unreadMentions]
+  );
+
+  const getUnreadCount = useCallback(
+    boardId => {
+      if (!currentUsername) return 0;
+      const boardMessages = (db.messages || []).filter(m => Number(m.board_id) === Number(boardId));
+      return boardMessages.filter(
+        msg => !msg.read_by.includes(currentUsername) && msg.author !== currentUsername
+      ).length;
+    },
+    [db.messages, currentUsername]
+  );
+
+  const setUsername = useCallback(name => {
+    setCurrentUsername(name);
+    localStorage.setItem('mytrello-username', name);
+  }, []);
+
   const addComment = (refType, refId, content) => {
     return true;
   };
@@ -1013,6 +1360,13 @@ export function AppProvider({ children }) {
     categories,
     subcategories,
     libraryItems,
+    messages,
+    currentUsername,
+    setUsername,
+    addMessage,
+    getMessages,
+    markMessagesAsRead,
+    getUnreadCount,
     loading,
     sidebarOpen,
     libraryOpen,
@@ -1074,6 +1428,8 @@ export function AppProvider({ children }) {
     cardColors,
     updateCardColors,
     resetCardColors,
+    addWorkingDays,
+    getWorkingDaysBetween,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

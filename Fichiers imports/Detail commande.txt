@@ -1,0 +1,62 @@
+{
+  "commande": {
+    "type_commande": "NOUVELLE COMMANDE",
+    "date": "10/03/2026",
+    "statut": "INITIALE",
+    "informations_generales": {
+      "zone_formule": "Utiliser cette zone pour indiquer : nouvelle cde / avenant / modèle",
+      "modele_execution": null
+    }
+  },
+
+  "demandeur": {
+    "nom_redacteur": "Eric DURAND",
+    "responsable_projet": "David BONNAUD",
+    "affaire": "Projet CERDA3 Téléopération",
+    "postes_concernes": "Poste de L'HOSPITALET et de LATOUR DE CAROL",
+    "service": "SLA",
+    "telephone": "0665402310"
+  },
+
+  "entreprise": {
+    "nom": "GEIE INEQOS ENERGIE - INABENSA",
+    "siret": "8222647840015",
+    "adresse": "TECHNO PARC DU GRIFFON BAT 12A, 511 ROUTE DE LA SEDS, 13127 VITROLLES"
+  },
+
+  "marche_cadre": {
+    "numero": "CXR21C5008",
+    "type": null,
+    "commentaire": "Merci de préciser le type de marché cadre ou fournir le modèle d'exécution."
+  },
+
+  "postes": [
+    {
+      "code": "010",
+      "designation": "Etudes et travaux LATOUR DE CAROL",
+      "date_reception": "31/12/2026",
+      "quantite": 1,
+      "montant_unitaire_ht": null,
+      "otp": "SI/TCERDA.3/OLI1/SSIR/I1"
+    },
+    {
+      "code": "020",
+      "designation": "Etudes et travaux L'HOSPITALET",
+      "date_reception": "31/12/2026",
+      "quantite": 1,
+      "montant_unitaire_ht": null,
+      "otp": "SI/TCERDA.3/OLI1/SSIR/I1"
+    }
+  ],
+
+  "objet": "Téléopération, suppression du circuit bouchon",
+
+  "groupes_marchandises": {
+    "etudes": ["ETUDE TECHNIQUE - POSTE"],
+    "travaux": ["MONTAGE, INSTALLATION DES APPAREILLAGES HTB", "TRAVAUX POSTES"],
+    "fourniture_materiel": [],
+    "prestations": [],
+    "maintenance": [],
+    "autres": []
+  }
+}

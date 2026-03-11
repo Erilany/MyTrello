@@ -36,6 +36,11 @@ function Library() {
   };
 
   const handleUseTemplate = item => {
+    if (!item.content_json) {
+      alert('Cet élément ne peut pas être utilisé');
+      return;
+    }
+
     try {
       const content = JSON.parse(item.content_json);
       const boardColumns = columns.filter(c => c.board_id === currentBoard?.id);

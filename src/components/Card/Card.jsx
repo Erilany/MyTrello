@@ -161,7 +161,7 @@ function Card({ card, isDragging, columnColor, columnTitle }) {
                   </span>
                 )}
                 <h4
-                  className="font-display text-sm font-semibold text-primary truncate"
+                  className={`font-display text-sm font-semibold text-primary truncate ${card.parent_id ? 'ml-4' : ''}`}
                   style={{ letterSpacing: '-0.1px' }}
                 >
                   {card.title}
@@ -175,6 +175,22 @@ function Card({ card, isDragging, columnColor, columnTitle }) {
 
                 {dateInfo && (
                   <span className={`badge ${dateInfo.badgeClass}`}>📅 {dateInfo.text}</span>
+                )}
+
+                {card.start_date && (
+                  <span className="badge badge-date">
+                    ▶ {new Date(card.start_date).toLocaleDateString('fr-FR')}
+                  </span>
+                )}
+
+                {card.duration_days > 0 && (
+                  <span className="badge bg-blue-500/20 text-blue-400">
+                    ⏱ {card.duration_days}j
+                  </span>
+                )}
+
+                {card.parent_id && (
+                  <span className="badge bg-purple-500/20 text-purple-400">↳ Sous-tâche</span>
                 )}
 
                 {cardCategories.length > 0 && (

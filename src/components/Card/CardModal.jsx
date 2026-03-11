@@ -12,6 +12,7 @@ function CardModal({ card, onClose }) {
     deleteComment,
     saveToLibrary,
     createCategory,
+    cards,
   } = useApp();
 
   const [title, setTitle] = useState(card.title);
@@ -23,6 +24,12 @@ function CardModal({ card, onClose }) {
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState('');
   const [newCategoryTitle, setNewCategoryTitle] = useState('');
+
+  // MS Project fields
+  const [startDate, setStartDate] = useState(card.start_date || '');
+  const [durationDays, setDurationDays] = useState(card.duration_days || 1);
+  const [parentId, setParentId] = useState(card.parent_id || null);
+  const [predecessorId, setPredecessorId] = useState(card.predecessor_id || null);
 
   useEffect(() => {
     loadComments();
@@ -41,6 +48,10 @@ function CardModal({ card, onClose }) {
       due_date: dueDate || null,
       assignee,
       color,
+      start_date: startDate || null,
+      duration_days: durationDays || 1,
+      parent_id: parentId || null,
+      predecessor_id: predecessorId || null,
     });
     onClose();
   };
@@ -192,6 +203,80 @@ function CardModal({ card, onClose }) {
                   style={{ backgroundColor: c }}
                 />
               ))}
+            </div>
+          </div>
+
+          <div className="pt-4 border-t border-std">
+            <h4 className="text-sm font-medium text-secondary mb-3 flex items-center">
+              <Calendar size={14} className="inline mr-1" />
+              Planning MS Project
+            </h4>
+
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div>
+                <label className="block text-xs font-medium text-secondary mb-1">
+                  Date de début
+                </label>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={e => setStartDate(e.target.value)}
+                  className="w-full px-3 py-2 bg-input border border-std rounded-lg text-primary focus:outline-none focus:border-accent text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-secondary mb-1">
+                  Durée (jours ouvrés)
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  value={durationDays}
+                  onChange={e => setDurationDays(parseInt(e.target.value) || 1)}
+                  className="w-full px-3 py-2 bg-input border border-std rounded-lg text-primary focus:outline-none focus:border-accent text-sm"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-medium text-secondary mb-1">
+                  Tâche parente (indentation)
+                </label>
+                <select
+                  value={parentId || ''}
+                  onChange={e => setParentId(e.target.value ? parseInt(e.target.value) : null)}
+                  className="w-full px-3 py-2 bg-input border border-std rounded-lg text-primary focus:outline-none focus:border-accent text-sm"
+                >
+                  <option value="">Aucune (tâche principale)</option>
+                  {cards
+                    .filter(c => c.id !== card.id && !c.parent_id)
+                    .map(c => (
+                      <option key={c.id} value={c.id}>
+                        {c.title.substring(0, 30)}
+                      </option>
+                    ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-secondary mb-1">
+                  Prédécesseur (dépendance)
+                </label>
+                <select
+                  value={predecessorId || ''}
+                  onChange={e => setPredecessorId(e.target.value ? parseInt(e.target.value) : null)}
+                  className="w-full px-3 py-2 bg-input border border-std rounded-lg text-primary focus:outline-none focus:border-accent text-sm"
+                >
+                  <option value="">Aucune</option>
+                  {cards
+                    .filter(c => c.id !== card.id)
+                    .map(c => (
+                      <option key={c.id} value={c.id}>
+                        {c.title.substring(0, 30)}
+                      </option>
+                    ))}
+                </select>
+              </div>
             </div>
           </div>
 

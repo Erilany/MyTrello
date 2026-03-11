@@ -149,6 +149,11 @@ function LibraryPanel() {
       return;
     }
 
+    if (!selectedItem.content_json) {
+      alert('Cet élément ne peut pas être utilisé');
+      return;
+    }
+
     try {
       const content = JSON.parse(selectedItem.content_json);
       const boardId = parseInt(selectedBoardId);
@@ -372,8 +377,9 @@ function LibraryPanel() {
                 <div
                   key={item.id}
                   className="bg-card rounded-lg border border-std p-3 hover:border-strong transition-std cursor-grab"
-                  draggable
+                  draggable={!!item.content_json}
                   onDragStart={e => {
+                    if (!item.content_json) return;
                     console.log('[LibraryPanel] Drag start', {
                       itemType: item.type,
                       title: item.title,

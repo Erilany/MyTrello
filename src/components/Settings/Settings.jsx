@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
-import { Save, Info, Palette, RotateCcw, Download, Upload } from 'lucide-react';
+import { Save, Info, Palette, RotateCcw, Download, Upload, User } from 'lucide-react';
 
 function Settings() {
   const {
@@ -12,11 +12,14 @@ function Settings() {
     resetCardColors,
     exportData,
     importData,
+    currentUsername,
+    setUsername,
   } = useApp();
   const [boardTitle, setBoardTitle] = useState('');
   const [boardDescription, setBoardDescription] = useState('');
   const [saved, setSaved] = useState(false);
   const [localColors, setLocalColors] = useState(cardColors);
+  const [username, setUsernameLocal] = useState(currentUsername || '');
 
   useEffect(() => {
     setLocalColors(cardColors);
@@ -112,6 +115,36 @@ function Settings() {
   return (
     <div className="p-6 max-w-2xl">
       <h1 className="text-2xl font-bold text-primary mb-6">Paramètres utilisateurs</h1>
+
+      <div className="bg-card rounded-lg border border-std p-6 mb-6">
+        <h2 className="text-lg font-semibold text-primary mb-4 flex items-center">
+          <User size={20} className="mr-2" />
+          Profil
+        </h2>
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-secondary mb-2">
+            Votre nom (pour les échanges)
+          </label>
+          <input
+            type="text"
+            value={username}
+            onChange={e => setUsernameLocal(e.target.value)}
+            placeholder="Entrez votre nom"
+            className="w-full px-4 py-2 bg-input border border-std rounded-lg text-primary placeholder-muted focus:outline-none focus:border-accent"
+          />
+        </div>
+        <button
+          onClick={() => {
+            setUsername(username);
+            setSaved(true);
+            setTimeout(() => setSaved(false), 2000);
+          }}
+          className="flex items-center px-4 py-2 text-sm bg-accent text-white rounded hover:opacity-90"
+        >
+          <Save size={14} className="mr-2" />
+          Enregistrer
+        </button>
+      </div>
 
       <div className="bg-card rounded-lg border border-std p-6 mb-6">
         <div className="flex items-center justify-between mb-4">
