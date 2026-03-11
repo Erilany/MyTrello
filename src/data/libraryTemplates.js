@@ -3,7 +3,7 @@ export const libraryTemplates = [
     id: 1,
     title: 'Jalons SIEPR',
     type: 'card',
-    tags: 'projet',
+    tags: 'jalons',
     duration: 10955,
     content_json: JSON.stringify({
       card: {
@@ -22,120 +22,82 @@ export const libraryTemplates = [
   },
   {
     id: 2,
-    title: 'Processus décisionnels',
+    title: 'Processus DO',
     type: 'card',
-    tags: 'projet,processus',
-    duration: 5474,
+    tags: 'processus,decisionnel',
+    duration: 35,
     content_json: JSON.stringify({
       card: {
-        title: 'Processus décisionnels',
-        description: 'Processus décisionnels',
+        title: 'Processus DO',
+        description: 'Processus de décision obras',
         priority: 'normal',
-        duration_days: 5474,
+        duration_days: 35,
       },
       categories: [
-        { title: 'Processus DO', description: '', priority: 'normal', duration_days: 35 },
-        { title: 'Processus DCT', description: '', priority: 'normal', duration_days: 1022 },
-        { title: 'Processus DI', description: '', priority: 'normal', duration_days: 1414 },
+        { title: 'DO - Validation et signature de la DO', description: '', priority: 'normal' },
+        { title: 'Nomination du manager de projet', description: '', priority: 'normal' },
       ],
     }),
   },
   {
     id: 3,
-    title: 'Procédures administratives',
-    type: 'card',
-    tags: 'procedures',
-    duration: 5999,
-    content_json: JSON.stringify({
-      card: {
-        title: 'Procédures administratives',
-        description: 'Procédures administratives',
-        priority: 'normal',
-        duration_days: 5999,
-      },
-      categories: [
-        {
-          title: 'Rédaction Note Organisation Stratégique',
-          description: '',
-          priority: 'normal',
-          duration_days: 280,
-        },
-        {
-          title: 'Concertation FERRACCI',
-          description: '',
-          priority: 'normal',
-          duration_days: 1309,
-        },
-        { title: 'DUP et AE', description: '', priority: 'normal', duration_days: 3164 },
-        { title: 'Conventionnement LS', description: '', priority: 'normal', duration_days: 1169 },
-        { title: 'Conventionnement LA', description: '', priority: 'normal', duration_days: 1540 },
-      ],
-    }),
-  },
-  {
-    id: 4,
-    title: 'Études',
-    type: 'card',
-    tags: 'etudes',
-    duration: 4025,
-    content_json: JSON.stringify({
-      card: { title: 'Études', description: 'Études', priority: 'normal', duration_days: 4025 },
-      categories: [
-        { title: 'Études préliminaires', description: '', priority: 'normal', duration_days: 280 },
-        { title: 'Études détaillées', description: '', priority: 'normal', duration_days: 3003 },
-      ],
-    }),
-  },
-  {
-    id: 5,
-    title: 'Travaux',
-    type: 'card',
-    tags: 'travaux',
-    duration: 0,
-    content_json: JSON.stringify({
-      card: { title: 'Travaux', description: 'Travaux', priority: 'normal', duration_days: 0 },
-    }),
-  },
-  {
-    id: 6,
-    title: 'Risques',
-    type: 'card',
-    tags: 'risques',
-    duration: 0,
-    content_json: JSON.stringify({
-      card: { title: 'Risques', description: 'Risques', priority: 'normal', duration_days: 0 },
-    }),
-  },
-  {
-    id: 7,
-    title: 'Processus DO - Validation et signature',
-    type: 'category',
-    tags: 'processus,projet',
-    duration: 0,
-    content_json: JSON.stringify({
-      category: {
-        title: 'DO - Validation et signature de la DO',
-        description: '',
-        priority: 'normal',
-        duration_days: 0,
-      },
-    }),
-  },
-  {
-    id: 8,
     title: 'Processus DCT',
-    type: 'category',
-    tags: 'processus',
+    type: 'card',
+    tags: 'processus,decisionnel',
     duration: 1022,
     content_json: JSON.stringify({
-      category: {
-        title: 'Processus DCT (Supprimer les lignes non nécessaires)',
-        description: '',
+      card: {
+        title: 'Processus DCT',
+        description: 'Processus DCT',
         priority: 'normal',
         duration_days: 1022,
       },
-      subcategories: [
-        { title: 'Réalisation CTF', description: '', priority: 'normal', duration_days: 700 },
+      categories: [
+        {
+          title: 'Réalisation CTF',
+          description: '',
+          priority: 'normal',
+          duration_days: 700,
+          subcategories: [
+            {
+              title: 'Mise à jour du CCF',
+              description: '',
+              priority: 'normal',
+              duration_days: 140,
+            },
+            { title: 'CTF partie Postes', description: '', priority: 'normal', duration_days: 280 },
+            {
+              title: 'CTF partie BT / telecom Postes et encadrants',
+              description: '',
+              priority: 'normal',
+              duration_days: 280,
+            },
+            {
+              title: 'CTF partie Liaisons aériennes',
+              description: '',
+              priority: 'normal',
+              duration_days: 280,
+            },
+            {
+              title: 'CTF partie Liaisons souterraines',
+              description: '',
+              priority: 'normal',
+              duration_days: 280,
+            },
+            {
+              title: 'CTF partie Concertation/autorisation',
+              description: '',
+              priority: 'normal',
+              duration_days: 280,
+            },
+            {
+              title: 'Finalisation CTF de synthèse',
+              description: '',
+              priority: 'normal',
+              duration_days: 140,
+            },
+          ],
+        },
         {
           title: 'Projet < 10 M€ (Facultative)',
           description: '',
@@ -144,58 +106,70 @@ export const libraryTemplates = [
         },
         { title: 'Projet < 20 M€', description: '', priority: 'normal', duration_days: 252 },
         { title: 'Projet > 20 M€', description: '', priority: 'normal', duration_days: 322 },
+        { title: 'DCT - Validation et signature de la DCT', description: '', priority: 'normal' },
       ],
     }),
   },
   {
-    id: 9,
+    id: 4,
     title: 'Processus DI',
-    type: 'category',
-    tags: 'processus',
+    type: 'card',
+    tags: 'processus,decisionnel',
     duration: 1414,
     content_json: JSON.stringify({
-      category: {
-        title: 'Processus DI (Supprimer les lignes non nécessaires)',
-        description: '',
+      card: {
+        title: 'Processus DI',
+        description: 'Processus DI',
         priority: 'normal',
         duration_days: 1414,
       },
-      subcategories: [
+      categories: [
         { title: 'APD', description: '', priority: 'normal', duration_days: 175 },
         { title: 'Projet < 10 M€', description: '', priority: 'normal', duration_days: 105 },
         { title: 'Projet < 20 M€', description: '', priority: 'normal', duration_days: 392 },
         { title: 'Projet > 20 M€', description: '', priority: 'normal', duration_days: 462 },
         { title: 'Projet > 30 M€', description: '', priority: 'normal', duration_days: 462 },
         { title: 'Projet > 50 M€', description: '', priority: 'normal', duration_days: 924 },
+        { title: 'DI - Validation et signature de la DI', description: '', priority: 'normal' },
       ],
     }),
   },
   {
-    id: 10,
+    id: 5,
+    title: 'Rédaction NOS',
+    type: 'card',
+    tags: 'procedures,etudes',
+    duration: 280,
+    content_json: JSON.stringify({
+      card: {
+        title: 'Rédaction Note Organisation Stratégique',
+        description: '',
+        priority: 'normal',
+        duration_days: 280,
+      },
+    }),
+  },
+  {
+    id: 6,
     title: 'Concertation FERRACCI',
-    type: 'category',
+    type: 'card',
     tags: 'procedures,concertation',
     duration: 1309,
     content_json: JSON.stringify({
-      category: {
+      card: {
         title: 'Concertation FERRACCI',
         description: '',
         priority: 'normal',
         duration_days: 1309,
       },
-      subcategories: [
+      categories: [
         {
           title: 'Projet simple (pas de DUP, LA<1km, LS<3km)',
           description: '',
           priority: 'normal',
           duration_days: 455,
         },
-        {
-          title: 'Projet intermédiaire (S3rENR, raccordement, LS>3km, LA>1km ou avec DUP)',
-          description: '',
-          priority: 'normal',
-          duration_days: 805,
-        },
+        { title: 'Projet intermédiaire', description: '', priority: 'normal', duration_days: 805 },
         {
           title: 'Projet important (400 kV, offshore, intercos)',
           description: '',
@@ -206,19 +180,19 @@ export const libraryTemplates = [
     }),
   },
   {
-    id: 11,
+    id: 7,
     title: 'DUP et AE',
-    type: 'category',
+    type: 'card',
     tags: 'procedures,dup',
     duration: 3164,
     content_json: JSON.stringify({
-      category: {
-        title: 'DUP (Déclaration Utilité Publique) et AE (Autorisation Environnementale)',
-        description: '',
+      card: {
+        title: 'DUP et AE',
+        description: 'Déclaration Utilité Publique et Autorisation Environnementale',
         priority: 'normal',
         duration_days: 3164,
       },
-      subcategories: [
+      categories: [
         { title: 'Examen au cas par cas', description: '', priority: 'normal', duration_days: 840 },
         {
           title: 'DUP et AE synchronisé sans Etude Impact',
@@ -245,72 +219,30 @@ export const libraryTemplates = [
           duration_days: 3164,
         },
         {
-          title: 'AE puis DUP désynchronisé sans Etude impact',
+          title: 'AE puis DUP désynchronisé sans Etude Impact',
           description: '',
           priority: 'normal',
           duration_days: 693,
         },
         {
-          title: 'AE puis DUP désynchronisé avec Etude impact',
+          title: 'AE puis DUP désynchronisé avec Etude Impact',
           description: '',
           priority: 'normal',
           duration_days: 3164,
         },
+        { title: 'Obtention DUP', description: '', priority: 'normal' },
+        { title: 'Obtention AE', description: '', priority: 'normal' },
       ],
     }),
   },
   {
-    id: 12,
-    title: 'Études préliminaires',
-    type: 'category',
-    tags: 'etudes',
-    duration: 280,
-    content_json: JSON.stringify({
-      category: {
-        title: 'Études préliminaires',
-        description: '',
-        priority: 'normal',
-        duration_days: 280,
-      },
-      subcategories: [
-        {
-          title: 'Rédaction Note Organisation Projet et stratégie achats',
-          description: '',
-          priority: 'normal',
-          duration_days: 280,
-        },
-        {
-          title: 'Études sur la consistance de la solution retenue',
-          description: '',
-          priority: 'normal',
-          duration_days: 280,
-        },
-      ],
-    }),
-  },
-  {
-    id: 13,
-    title: 'Études détaillées',
-    type: 'category',
-    tags: 'etudes',
-    duration: 3003,
-    content_json: JSON.stringify({
-      category: {
-        title: 'Études détaillées',
-        description: '',
-        priority: 'normal',
-        duration_days: 3003,
-      },
-    }),
-  },
-  {
-    id: 14,
+    id: 8,
     title: 'Conventionnement LS',
-    type: 'category',
+    type: 'card',
     tags: 'procedures,ls',
     duration: 1169,
     content_json: JSON.stringify({
-      category: {
+      card: {
         title: 'Conventionnement LS',
         description: '',
         priority: 'normal',
@@ -319,13 +251,13 @@ export const libraryTemplates = [
     }),
   },
   {
-    id: 15,
+    id: 9,
     title: 'Conventionnement LA',
-    type: 'category',
+    type: 'card',
     tags: 'procedures,la',
     duration: 1540,
     content_json: JSON.stringify({
-      category: {
+      card: {
         title: 'Conventionnement LA',
         description: '',
         priority: 'normal',
@@ -334,43 +266,13 @@ export const libraryTemplates = [
     }),
   },
   {
-    id: 16,
-    title: 'PC (Permis de Construire) Postes',
-    type: 'category',
-    tags: 'procedures,poste',
-    duration: 735,
-    content_json: JSON.stringify({
-      category: {
-        title: 'PC (Permis de Construire) (Postes)',
-        description: '',
-        priority: 'normal',
-        duration_days: 735,
-      },
-    }),
-  },
-  {
-    id: 17,
-    title: 'APO (Autorisation Projet Ouvrage) LA',
-    type: 'category',
-    tags: 'procedures,la',
-    duration: 665,
-    content_json: JSON.stringify({
-      category: {
-        title: 'APO (Autorisation du Projet Ouvrage) (LA uniquement)',
-        description: '',
-        priority: 'normal',
-        duration_days: 665,
-      },
-    }),
-  },
-  {
-    id: 18,
+    id: 10,
     title: 'Mise en servitude',
-    type: 'category',
+    type: 'card',
     tags: 'risques,servitude',
     duration: 504,
     content_json: JSON.stringify({
-      category: {
+      card: {
         title: 'RISQUE - mise en servitude',
         description: '',
         priority: 'normal',
@@ -378,17 +280,100 @@ export const libraryTemplates = [
       },
     }),
   },
+  {
+    id: 11,
+    title: 'APO LA',
+    type: 'card',
+    tags: 'procedures,la,apo',
+    duration: 665,
+    content_json: JSON.stringify({
+      card: {
+        title: 'APO (Autorisation Projet Ouvrage) LA',
+        description: '',
+        priority: 'normal',
+        duration_days: 665,
+      },
+    }),
+  },
+  {
+    id: 12,
+    title: 'Consultation des maire',
+    type: 'card',
+    tags: 'procedures',
+    duration: 630,
+    content_json: JSON.stringify({
+      card: {
+        title: 'Consultation des maire',
+        description: 'Consultation des maire et gestionnaires',
+        priority: 'normal',
+        duration_days: 630,
+      },
+    }),
+  },
+  {
+    id: 13,
+    title: 'Permis de Construire',
+    type: 'card',
+    tags: 'procedures,poste',
+    duration: 735,
+    content_json: JSON.stringify({
+      card: {
+        title: 'PC (Permis de Construire) Postes',
+        description: '',
+        priority: 'normal',
+        duration_days: 735,
+      },
+    }),
+  },
+  {
+    id: 14,
+    title: 'Études préliminaires',
+    type: 'card',
+    tags: 'etudes',
+    duration: 280,
+    content_json: JSON.stringify({
+      card: {
+        title: 'Études préliminaires',
+        description: '',
+        priority: 'normal',
+        duration_days: 280,
+      },
+    }),
+  },
+  {
+    id: 15,
+    title: 'Études détaillées',
+    type: 'card',
+    tags: 'etudes',
+    duration: 3003,
+    content_json: JSON.stringify({
+      card: {
+        title: 'Études détaillées',
+        description: '',
+        priority: 'normal',
+        duration_days: 3003,
+      },
+    }),
+  },
 ];
 
 export const thematicTags = [
-  { id: 1, name: 'projet', label: 'Projet', color: '#3B82F6' },
+  { id: 1, name: 'jalons', label: 'Jalons', color: '#3B82F6' },
   { id: 2, name: 'processus', label: 'Processus Décisionnel', color: '#8B5CF6' },
-  { id: 3, name: 'procedures', label: 'Procédures Administratives', color: '#F59E0B' },
-  { id: 4, name: 'etudes', label: 'Études', color: '#10B981' },
-  { id: 5, name: 'achats', label: 'Achats', color: '#EC4899' },
-  { id: 6, name: 'consignations', label: 'Consignations', color: '#6366F1' },
-  { id: 7, name: 'travaux', label: 'Travaux', color: '#EF4444' },
-  { id: 8, name: 'risques', label: 'Risques', color: '#F97316' },
+  { id: 3, name: 'decisionnel', label: 'Décisionnel', color: '#8B5CF6' },
+  { id: 4, name: 'procedures', label: 'Procédures Administratives', color: '#F59E0B' },
+  { id: 5, name: 'concertation', label: 'Concertation', color: '#F59E0B' },
+  { id: 6, name: 'dup', label: 'DUP', color: '#F59E0B' },
+  { id: 7, name: 'etudes', label: 'Études', color: '#10B981' },
+  { id: 8, name: 'achats', label: 'Achats', color: '#EC4899' },
+  { id: 9, name: 'travaux', label: 'Travaux', color: '#EF4444' },
+  { id: 10, name: 'risques', label: 'Risques', color: '#F97316' },
+  { id: 11, name: 'poste', label: 'Poste', color: '#6366F1' },
+  { id: 12, name: 'la', label: 'Ligne Aérienne', color: '#6366F1' },
+  { id: 13, name: 'ls', label: 'Ligne Souterraine', color: '#6366F1' },
+  { id: 14, name: 'bt', label: 'BT', color: '#6366F1' },
+  { id: 15, name: 'apo', label: 'APO', color: '#6366F1' },
+  { id: 16, name: 'servitude', label: 'Servitude', color: '#F97316' },
 ];
 
 export default libraryTemplates;

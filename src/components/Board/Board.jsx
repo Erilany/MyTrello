@@ -476,86 +476,88 @@ function Board() {
       </div>
 
       {activeTab === 'taches' && (
-        <DragDropContext onDragEnd={handleDragEnd}>
-          <Droppable droppableId="board" type="column" direction="horizontal">
-            {provided => (
-              <div
-                {...provided.droppableProps}
-                ref={provided.innerRef}
-                className="flex h-full min-h-[calc(100vh-180px)] space-x-[14px] pb-4 pt-1"
-              >
-                {orderedColumns.map((column, index) => (
-                  <Draggable key={column.id} draggableId={String(column.id)} index={index}>
-                    {(provided, snapshot) => (
-                      <div
-                        ref={provided.innerRef}
-                        {...provided.draggableProps}
-                        className="flex-shrink-0 relative group"
-                      >
+        <div className="flex-1 overflow-x-auto">
+          <DragDropContext onDragEnd={handleDragEnd}>
+            <Droppable droppableId="board" type="column" direction="horizontal">
+              {provided => (
+                <div
+                  {...provided.droppableProps}
+                  ref={provided.innerRef}
+                  className="flex h-full min-h-[calc(100vh-180px)] space-x-[14px] pb-4 pt-1"
+                >
+                  {orderedColumns.map((column, index) => (
+                    <Draggable key={column.id} draggableId={String(column.id)} index={index}>
+                      {(provided, snapshot) => (
                         <div
-                          {...provided.dragHandleProps}
-                          className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 w-6 h-6 cursor-grab z-10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-muted hover:text-secondary"
-                          title="Déplacer la colonne"
+                          ref={provided.innerRef}
+                          {...provided.draggableProps}
+                          className="flex-shrink-0 relative group"
                         >
-                          <GripVertical size={16} />
+                          <div
+                            {...provided.dragHandleProps}
+                            className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 w-6 h-6 cursor-grab z-10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-muted hover:text-secondary"
+                            title="Déplacer la colonne"
+                          >
+                            <GripVertical size={16} />
+                          </div>
+                          <Column column={column} index={index} />
                         </div>
-                        <Column column={column} index={index} />
-                      </div>
-                    )}
-                  </Draggable>
-                ))}
-                {provided.placeholder}
+                      )}
+                    </Draggable>
+                  ))}
+                  {provided.placeholder}
 
-                <div className="flex-shrink-0 w-[310px]">
-                  {showNewColumn ? (
-                    <form
-                      onSubmit={handleCreateColumn}
-                      className="bg-column rounded-lg border border-std p-3"
-                    >
-                      <input
-                        type="text"
-                        value={newColumnTitle}
-                        onChange={e => setNewColumnTitle(e.target.value)}
-                        placeholder="Nom de la colonne..."
-                        className="w-full px-3 py-2 text-sm bg-input border border-std rounded-md text-primary placeholder-muted focus:outline-none focus:border-accent"
-                        autoFocus
-                        onBlur={() => {
-                          if (!newColumnTitle.trim()) setShowNewColumn(false);
-                        }}
-                      />
-                      <div className="flex items-center mt-2 space-x-2">
-                        <button
-                          type="submit"
-                          className="px-3 py-1.5 text-sm font-medium bg-accent text-white rounded-md hover:opacity-90 transition-std"
-                        >
-                          Ajouter
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setNewColumnTitle('');
-                            setShowNewColumn(false);
+                  <div className="flex-shrink-0 w-[310px]">
+                    {showNewColumn ? (
+                      <form
+                        onSubmit={handleCreateColumn}
+                        className="bg-column rounded-lg border border-std p-3"
+                      >
+                        <input
+                          type="text"
+                          value={newColumnTitle}
+                          onChange={e => setNewColumnTitle(e.target.value)}
+                          placeholder="Nom de la colonne..."
+                          className="w-full px-3 py-2 text-sm bg-input border border-std rounded-md text-primary placeholder-muted focus:outline-none focus:border-accent"
+                          autoFocus
+                          onBlur={() => {
+                            if (!newColumnTitle.trim()) setShowNewColumn(false);
                           }}
-                          className="px-3 py-1.5 text-sm text-secondary hover:text-primary"
-                        >
-                          Annuler
-                        </button>
-                      </div>
-                    </form>
-                  ) : (
-                    <button
-                      onClick={() => setShowNewColumn(true)}
-                      className="w-full h-12 flex items-center justify-center bg-card/30 hover:bg-card rounded-lg border-2 border-dashed border-std text-secondary hover:text-primary transition-std"
-                    >
-                      <Plus size={20} className="mr-2" />
-                      Ajouter une colonne
-                    </button>
-                  )}
+                        />
+                        <div className="flex items-center mt-2 space-x-2">
+                          <button
+                            type="submit"
+                            className="px-3 py-1.5 text-sm font-medium bg-accent text-white rounded-md hover:opacity-90 transition-std"
+                          >
+                            Ajouter
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setNewColumnTitle('');
+                              setShowNewColumn(false);
+                            }}
+                            className="px-3 py-1.5 text-sm text-secondary hover:text-primary"
+                          >
+                            Annuler
+                          </button>
+                        </div>
+                      </form>
+                    ) : (
+                      <button
+                        onClick={() => setShowNewColumn(true)}
+                        className="w-full h-12 flex items-center justify-center bg-card/30 hover:bg-card rounded-lg border-2 border-dashed border-std text-secondary hover:text-primary transition-std"
+                      >
+                        <Plus size={20} className="mr-2" />
+                        Ajouter une colonne
+                      </button>
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
-          </Droppable>
-        </DragDropContext>
+              )}
+            </Droppable>
+          </DragDropContext>
+        </div>
       )}
 
       {activeTab === 'commandes' && (

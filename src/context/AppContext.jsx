@@ -84,7 +84,10 @@ function initDefaultData() {
   } else if (!data.nextIds.order) {
     data.nextIds.order = 1;
   }
-  if (data.libraryItems.length === 0) {
+
+  // Ensure libraryItems has data
+  if (!data.libraryItems || data.libraryItems.length === 0) {
+    console.log('[AppContext] Loading library templates');
     data.libraryItems = libraryTemplates;
   }
   if (data.boards.length === 0) {
@@ -293,6 +296,39 @@ export function AppProvider({ children }) {
       }
       return currentDb;
     });
+  }, []);
+
+  // Ensure libraryItems has data - force reload templates if empty
+  const forceLibraryItems = () => {
+    if (!db.libraryItems || db.libraryItems.length === 0) {
+      console.log(
+        '[AppContext] Force loading library templates, count:',
+        libraryTemplates.length,
+        'first:',
+        libraryTemplates[0]?.title
+      );
+      const newDb = { ...db, libraryItems: libraryTemplates };
+      setDb(newDb);
+      setLibraryItems(libraryTemplates);
+      saveToStorage(newDb);
+      return true;
+    }
+    console.log(
+      '[AppContext] db.libraryItems exists, count:',
+      db.libraryItems.length,
+      'first:',
+      db.libraryItems[0]?.title
+    );
+    return false;
+  };
+
+  // Check and load library on mount
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    const loaded = forceLibraryItems();
+    if (!loaded) {
+      setLibraryItems(db.libraryItems || []);
+    }
   }, []);
 
   const loadBoards = useCallback(() => {
@@ -1217,6 +1253,7 @@ export function AppProvider({ children }) {
     subcategories,
     libraryItems,
     messages,
+    db,
     currentUsername,
     setUsername,
     addMessage,

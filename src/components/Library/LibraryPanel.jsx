@@ -66,6 +66,7 @@ function LibraryPanel() {
     createCard,
     createCategory,
     createSubcategory,
+    db,
   } = useApp();
 
   const [filter, setFilter] = useState('all');
@@ -79,36 +80,19 @@ function LibraryPanel() {
   const [editingTags, setEditingTags] = useState(null);
   const [tagsInput, setTagsInput] = useState('');
   const [isDragOver, setIsDragOver] = useState(false);
+  const [selectedCard, setSelectedCard] = useState(null);
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [viewMode, setViewMode] = useState('cards');
 
-  useEffect(() => {
-    if (libraryOpen) {
-      loadLibrary();
-    }
-  }, [libraryOpen]);
-
-  useEffect(() => {
-    console.log(
-      'Library items updated:',
-      libraryItems.map(i => ({ id: i.id, title: i.title, tags: i.tags }))
-    );
-  }, [libraryItems]);
-
-  useEffect(() => {
-    if (selectedBoardId) {
-      loadBoard(parseInt(selectedBoardId));
-    }
-  }, [selectedBoardId]);
-
-  const handleSaveTags = itemId => {
-    console.log('Saving tags:', tagsInput, 'for item:', itemId);
-    setEditingTags(null);
-    console.log('Tags saved for item:', itemId);
-  };
-
-  const handleEditTags = item => {
-    setEditingTags(item.id);
-    setTagsInput(item.tags || '');
-  };
+  const cardItems = libraryItems.filter(item => item.type === 'card');
+  console.log(
+    '[LibraryPanel] All items:',
+    libraryItems.length,
+    'Card items:',
+    cardItems.length,
+    'Types:',
+    [...new Set(libraryItems.map(i => i.type))]
+  );
 
   const filteredItems = libraryItems.filter(item => {
     const matchesFilter = filter === 'all' || item.type === filter;
@@ -144,22 +128,31 @@ function LibraryPanel() {
   };
 
   const handleConfirmUse = () => {
+    console.log('[LibraryPanel] handleConfirmUse called', {
+      selectedItem: selectedItem?.title,
+      selectedBoardId,
+      selectedColumnId,
+    });
+
     if (!selectedItem || !selectedBoardId || !selectedColumnId) {
       alert('Veuillez sélectionner un projet et une colonne');
       return;
     }
 
     if (!selectedItem.content_json) {
+      console.error('[LibraryPanel] No content_json in selectedItem');
       alert('Cet élément ne peut pas être utilisé');
       return;
     }
 
     try {
       const content = JSON.parse(selectedItem.content_json);
+      console.log('[LibraryPanel] Parsed content for use:', content);
       const boardId = parseInt(selectedBoardId);
       const columnId = parseInt(selectedColumnId);
 
       if (selectedItem.type === 'card' && content.card) {
+        console.log('[LibraryPanel] Creating card:', content.card.title);
         createCard(
           columnId,
           content.card.title,
@@ -167,57 +160,60 @@ function LibraryPanel() {
           content.card.priority || 'normal',
           content.card.due_date || null,
           content.card.assignee || ''
-        ).then(cardId => {
-          if (cardId && content.categories) {
-            content.categories.forEach((cat, catIndex) => {
-              createCategory(
-                cardId,
-                cat.title,
-                cat.description || '',
-                cat.priority || 'normal',
-                cat.due_date || null,
-                cat.assignee || ''
-              ).then(categoryId => {
-                if (categoryId && cat.subcategories) {
-                  cat.subcategories.forEach((subcat, subIndex) => {
-                    createSubcategory(
-                      categoryId,
-                      subcat.title,
-                      subcat.description || '',
-                      subcat.priority || 'normal',
-                      subcat.due_date || null,
-                      subcat.assignee || ''
-                    );
-                  });
-                }
+        );
+        console.log('[LibraryPanel] Card created with ID:', cardId);
+        if (content.categories) {
+          console.log('[LibraryPanel] Creating categories, count:', content.categories.length);
+          content.categories.forEach(cat => {
+            console.log('[LibraryPanel] Creating category:', cat.title);
+            const categoryId = createCategory(
+              cardId,
+              cat.title,
+              cat.description || '',
+              cat.priority || 'normal',
+              cat.due_date || null,
+              cat.assignee || ''
+            );
+            console.log('[LibraryPanel] Category created with ID:', categoryId);
+            if (cat.subcategories) {
+              cat.subcategories.forEach(subcat => {
+                console.log('[LibraryPanel] Creating subcategory:', subcat.title);
+                createSubcategory(
+                  categoryId,
+                  subcat.title,
+                  subcat.description || '',
+                  subcat.priority || 'normal',
+                  subcat.due_date || null,
+                  subcat.assignee || ''
+                );
               });
-            });
-          }
-          loadBoard(boardId);
-        });
+            }
+          });
+        }
+        console.log('[LibraryPanel] Loading board');
+        loadBoard(boardId);
       } else if (selectedItem.type === 'category' && content.category) {
-        createCard(
+        const cardId2 = createCard(
           columnId,
           content.category.title,
           content.category.description || '',
           content.category.priority || 'normal',
           content.category.due_date || null,
           content.category.assignee || ''
-        ).then(cardId => {
-          if (cardId && content.subcategories) {
-            content.subcategories.forEach((subcat, subIndex) => {
-              createSubcategory(
-                cardId,
-                subcat.title,
-                subcat.description || '',
-                subcat.priority || 'normal',
-                subcat.due_date || null,
-                subcat.assignee || ''
-              );
-            });
-          }
-          loadBoard(boardId);
-        });
+        );
+        if (content.subcategories) {
+          content.subcategories.forEach(subcat => {
+            createSubcategory(
+              cardId2,
+              subcat.title,
+              subcat.description || '',
+              subcat.priority || 'normal',
+              subcat.due_date || null,
+              subcat.assignee || ''
+            );
+          });
+        }
+        loadBoard(boardId);
       } else if (selectedItem.type === 'subcategory' && content.subcategory) {
         const columnCards = [];
         columns.forEach(col => {
@@ -289,24 +285,12 @@ function LibraryPanel() {
 
           <div className="flex gap-2">
             <select
-              value={filter}
-              onChange={e => setFilter(e.target.value)}
-              className="flex-1 px-3 py-1.5 text-sm bg-input border border-std rounded-lg text-primary focus:outline-none focus:border-accent"
-            >
-              <option value="all">Tous</option>
-              <option value="card">Cartes</option>
-              <option value="category">Catégories</option>
-              <option value="subcategory">Sous-catégories</option>
-            </select>
-
-            <select
               value={sortBy}
               onChange={e => setSortBy(e.target.value)}
               className="flex-1 px-3 py-1.5 text-sm bg-input border border-std rounded-lg text-primary focus:outline-none focus:border-accent"
             >
               <option value="date">Date</option>
               <option value="name">Nom</option>
-              <option value="usage">Utilisation</option>
             </select>
           </div>
 
@@ -364,84 +348,142 @@ function LibraryPanel() {
             }
           }}
         >
-          {sortedItems.length === 0 ? (
-            <div className="text-center text-secondary py-8">
-              <p>Aucun modèle trouvé</p>
-              <p className="text-sm text-muted mt-1">
-                Sauvegardez des cartes, catégories ou sous-catégories pour les retrouver ici
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {sortedItems.map(item => (
-                <div
-                  key={item.id}
-                  className="bg-card rounded-lg border border-std p-3 hover:border-strong transition-std cursor-grab"
-                  draggable={!!item.content_json}
-                  onDragStart={e => {
-                    if (!item.content_json) return;
-                    console.log('[LibraryPanel] Drag start', {
-                      itemType: item.type,
-                      title: item.title,
-                    });
-                    window.__isLibraryDrag = true;
-                    const dragData = {
-                      itemType: item.type,
-                      content: item.content_json,
-                      title: item.title,
-                    };
-                    window.__libraryDragData = dragData;
-                    e.dataTransfer.setData('application/json', JSON.stringify(dragData));
-                  }}
-                  onDragEnd={() => {
-                    setTimeout(() => {
-                      window.__isLibraryDrag = false;
-                    }, 100);
-                  }}
-                >
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span
-                          className={`badge ${typeColors[item.type] || 'bg-card-hover text-secondary'}`}
-                        >
-                          {item.type}
-                        </span>
-                        {item.usage_count > 0 && (
-                          <span className="badge badge-category">×{item.usage_count}</span>
-                        )}
-                      </div>
-                      <h3 className="font-medium text-primary text-sm truncate">{item.title}</h3>
-                      {item.tags && (
-                        <div className="flex flex-wrap gap-1 mt-1">
-                          {item.tags.split(',').map((tag, i) => (
-                            <span key={i} className="text-xs text-muted">
-                              #{tag.trim()}
-                            </span>
-                          ))}
+          {viewMode === 'cards' && (
+            <>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-semibold text-primary">Cartes ({cardItems.length})</h3>
+              </div>
+              {cardItems.length === 0 ? (
+                <p className="text-sm text-muted">Aucune carte</p>
+              ) : (
+                <div className="space-y-2">
+                  {cardItems.map(item => (
+                    <div
+                      key={item.id}
+                      className="bg-card rounded-lg border border-std p-3 hover:border-strong transition-std cursor-pointer cursor-grab"
+                      draggable={!!item.content_json}
+                      onDragStart={e => {
+                        console.log('[LibraryPanel] Drag start', {
+                          itemType: item.type,
+                          title: item.title,
+                        });
+                        window.__isLibraryDrag = true;
+                        const dragData = {
+                          itemType: item.type,
+                          content: item.content_json,
+                          title: item.title,
+                        };
+                        window.__libraryDragData = dragData;
+                        e.dataTransfer.setData('application/json', JSON.stringify(dragData));
+                      }}
+                      onDragEnd={() => {
+                        console.log('[LibraryPanel] Drag end');
+                        setTimeout(() => {
+                          window.__isLibraryDrag = false;
+                        }, 100);
+                      }}
+                      onClick={() => handleCardClick(item)}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-medium text-primary text-sm truncate">
+                            {item.title}
+                          </h4>
+                          {item.tags && (
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {item.tags.split(',').map((tag, i) => (
+                                <span key={i} className="text-xs text-muted">
+                                  #{tag.trim()}
+                                </span>
+                              ))}
+                            </div>
+                          )}
                         </div>
-                      )}
+                        <span className="text-accent text-sm">→</span>
+                      </div>
                     </div>
-                    <div className="flex gap-1">
-                      <button
-                        onClick={() => handleUseClick(item)}
-                        className="icon-btn !w-6 !h-6"
-                        title="Utiliser"
-                      >
-                        <Copy size={14} />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(item.id)}
-                        className="icon-btn !w-6 !h-6 text-urgent"
-                        title="Supprimer"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+              )}
+            </>
+          )}
+
+          {viewMode === 'categories' && selectedCard && (
+            <>
+              <button
+                onClick={handleBackToCards}
+                className="text-sm text-accent hover:underline mb-3"
+              >
+                ← Retour aux cartes
+              </button>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-semibold text-primary truncate">{selectedCard.title}</h3>
+                <span className="text-xs text-muted">Catégories</span>
+              </div>
+              {selectedCard &&
+                (() => {
+                  const categories = getCardCategories(selectedCard);
+                  return categories.length === 0 ? (
+                    <p className="text-sm text-muted">Aucune catégorie</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {categories.map((cat, idx) => (
+                        <div
+                          key={idx}
+                          className="bg-card rounded-lg border border-std p-3 hover:border-strong transition-std cursor-pointer"
+                          onClick={() => handleCategoryClick(cat)}
+                        >
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-medium text-primary text-sm truncate">
+                                {cat.title}
+                              </h4>
+                            </div>
+                            <span className="text-accent text-sm">→</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
+              <div className="mt-4 pt-4 border-t border-std">
+                <button
+                  onClick={() => handleUseClick(selectedCard)}
+                  className="w-full py-2 bg-accent text-white rounded-lg hover:opacity-90 transition-std text-sm"
+                >
+                  Utiliser cette carte
+                </button>
+              </div>
+            </>
+          )}
+
+          {viewMode === 'subcategories' && selectedCategory && (
+            <>
+              <button
+                onClick={handleBackToCategories}
+                className="text-sm text-accent hover:underline mb-3"
+              >
+                ← Retour aux catégories
+              </button>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-semibold text-primary truncate">{selectedCategory.title}</h3>
+                <span className="text-xs text-muted">Sous-catégories</span>
+              </div>
+              {(() => {
+                const subcategories = getCategorySubcategories(selectedCategory);
+                return subcategories.length === 0 ? (
+                  <p className="text-sm text-muted">Aucune sous-catégorie</p>
+                ) : (
+                  <div className="space-y-2">
+                    {subcategories.map((subcat, idx) => (
+                      <div key={idx} className="bg-card rounded-lg border border-std p-3">
+                        <h4 className="font-medium text-primary text-sm">{subcat.title}</h4>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+            </>
           )}
         </div>
 

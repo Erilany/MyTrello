@@ -26,6 +26,7 @@ function Sidebar() {
     sidebarOpen,
     setSidebarOpen,
     generateTestData,
+    setLibraryOpen,
   } = useApp();
   const [showBoards, setShowBoards] = useState(true);
   const [newBoardTitle, setNewBoardTitle] = useState('');
@@ -102,15 +103,13 @@ function Sidebar() {
             </div>
           </div>
 
-          <NavLink
-            to="/library"
-            className={({ isActive }) =>
-              `icon-btn ${isActive ? 'text-accent' : 'text-secondary hover:text-primary'}`
-            }
+          <button
+            onClick={() => setLibraryOpen(true)}
+            className="icon-btn text-secondary hover:text-primary"
             title="Bibliothèque"
           >
             <BookOpen size={20} />
-          </NavLink>
+          </button>
 
           <NavLink
             to="/archives"

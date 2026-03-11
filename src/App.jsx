@@ -1,11 +1,10 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { AppProvider, useApp } from './context/AppContext';
 import Board from './components/Board/Board';
 import Settings from './components/Settings/Settings';
 import SystemSettings from './components/Settings/SystemSettings';
 import Archives from './components/Archives/Archives';
-import Library from './components/Library/Library';
 import LibraryPanel from './components/Library/LibraryPanel';
 import Sidebar from './components/Sidebar/Sidebar';
 import Header from './components/Header/Header';
@@ -41,7 +40,8 @@ function Modals() {
 }
 
 function AppContent() {
-  const { theme, boards, loadBoard, currentBoard } = useApp();
+  const { theme, boards, loadBoard, currentBoard, libraryOpen, setLibraryOpen } = useApp();
+  const location = useLocation();
 
   React.useEffect(() => {
     if (!currentBoard && boards.length > 0) {
@@ -49,23 +49,33 @@ function AppContent() {
     }
   }, [boards, currentBoard, loadBoard]);
 
+  // Set libraryOpen to true when accessing /library route
+  React.useEffect(() => {
+    if (location.pathname === '/library') {
+      setLibraryOpen(true);
+    }
+  }, [location.pathname, setLibraryOpen]);
+
   return (
     <div className={`flex h-screen bg-app ${theme}`}>
       <Sidebar />
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header />
         <main className="flex-1 overflow-auto p-4 bg-app">
-          <Routes>
-            <Route path="/" element={<Board />} />
-            <Route path="/board/:boardId" element={<Board />} />
-            <Route path="/library" element={<Library />} />
-            <Route path="/archives" element={<Archives />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/system-settings" element={<SystemSettings />} />
-          </Routes>
+          {libraryOpen ? (
+            <LibraryPanel />
+          ) : (
+            <Routes>
+              <Route path="/" element={<Board />} />
+              <Route path="/board/:boardId" element={<Board />} />
+              <Route path="/library" element={<LibraryPanel />} />
+              <Route path="/archives" element={<Archives />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/system-settings" element={<SystemSettings />} />
+            </Routes>
+          )}
         </main>
       </div>
-      <LibraryPanel />
       <Modals />
     </div>
   );
