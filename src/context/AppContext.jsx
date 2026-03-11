@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { libraryTemplates } from '../data/libraryTemplates';
+import { libraryTemplates } from '../data/libraryData';
 
 const STORAGE_KEY = 'mytrello_db';
 
@@ -175,6 +175,7 @@ export function AppProvider({ children }) {
   const [loading, setLoading] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [libraryOpen, setLibraryOpen] = useState(false);
+  const [libraryViewMode, setLibraryViewMode] = useState('panel');
   const [theme, setTheme] = useState('dark');
   const [selectedCard, setSelectedCard] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState(null);
@@ -724,7 +725,8 @@ export function AppProvider({ children }) {
     startDate = null,
     durationDays = 1,
     parentId = null,
-    predecessorId = null
+    predecessorId = null,
+    reloadBoardId = null
   ) => {
     const maxPos = db.cards
       .filter(c => Number(c.column_id) === Number(columnId))
@@ -748,7 +750,11 @@ export function AppProvider({ children }) {
     };
     const newDb = { ...db, cards: [...db.cards, newCard], nextIds: { ...db.nextIds } };
     saveDb(newDb);
-    if (currentBoard) loadBoard(currentBoard.id);
+    if (reloadBoardId) {
+      loadBoard(reloadBoardId);
+    } else if (currentBoard) {
+      loadBoard(currentBoard.id);
+    }
     return cardId;
   };
 
@@ -883,7 +889,8 @@ export function AppProvider({ children }) {
     priority = 'normal',
     dueDate = null,
     assignee = '',
-    parentId = null
+    parentId = null,
+    reloadBoardId = null
   ) => {
     let filter;
     if (parentId) {
@@ -915,7 +922,11 @@ export function AppProvider({ children }) {
       nextIds: { ...db.nextIds },
     };
     saveDb(newDb);
-    if (currentBoard) loadBoard(currentBoard.id);
+    if (reloadBoardId) {
+      loadBoard(reloadBoardId);
+    } else if (currentBoard) {
+      loadBoard(currentBoard.id);
+    }
     return catId;
   };
 
@@ -990,7 +1001,8 @@ export function AppProvider({ children }) {
     dueDate = null,
     assignee = '',
     startDate = null,
-    durationDays = 1
+    durationDays = 1,
+    reloadBoardId = null
   ) => {
     const maxPos = db.subcategories
       .filter(s => Number(s.category_id) === Number(categoryId))
@@ -1015,7 +1027,11 @@ export function AppProvider({ children }) {
       nextIds: { ...db.nextIds },
     };
     saveDb(newDb);
-    if (currentBoard) loadBoard(currentBoard.id);
+    if (reloadBoardId) {
+      loadBoard(reloadBoardId);
+    } else if (currentBoard) {
+      loadBoard(currentBoard.id);
+    }
     return subcatId;
   };
 
@@ -1263,8 +1279,10 @@ export function AppProvider({ children }) {
     loading,
     sidebarOpen,
     libraryOpen,
+    libraryViewMode,
     setSidebarOpen,
     setLibraryOpen,
+    setLibraryViewMode,
     theme,
     toggleTheme,
     selectedCard,

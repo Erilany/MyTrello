@@ -27,6 +27,7 @@ function Sidebar() {
     setSidebarOpen,
     generateTestData,
     setLibraryOpen,
+    setLibraryViewMode,
   } = useApp();
   const [showBoards, setShowBoards] = useState(true);
   const [newBoardTitle, setNewBoardTitle] = useState('');
@@ -104,7 +105,10 @@ function Sidebar() {
           </div>
 
           <button
-            onClick={() => setLibraryOpen(true)}
+            onClick={() => {
+              setLibraryViewMode('main');
+              navigate('/library');
+            }}
             className="icon-btn text-secondary hover:text-primary"
             title="Bibliothèque"
           >

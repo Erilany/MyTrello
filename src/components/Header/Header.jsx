@@ -3,7 +3,24 @@ import { useApp } from '../../context/AppContext';
 import { Library, Search, Bell, Sun, Moon } from 'lucide-react';
 
 function Header() {
-  const { currentBoard, setLibraryOpen, libraryOpen, theme, toggleTheme } = useApp();
+  const {
+    currentBoard,
+    setLibraryOpen,
+    libraryOpen,
+    libraryViewMode,
+    setLibraryViewMode,
+    theme,
+    toggleTheme,
+  } = useApp();
+
+  const handleLibraryClick = () => {
+    if (libraryOpen && libraryViewMode === 'panel') {
+      setLibraryOpen(false);
+    } else {
+      setLibraryOpen(true);
+      setLibraryViewMode('panel');
+    }
+  };
 
   return (
     <header
@@ -34,8 +51,8 @@ function Header() {
         </div>
 
         <button
-          onClick={() => setLibraryOpen(!libraryOpen)}
-          className={`icon-btn ${libraryOpen ? 'active' : ''}`}
+          onClick={handleLibraryClick}
+          className={`icon-btn ${libraryOpen && libraryViewMode === 'panel' ? 'active' : ''}`}
           title="Bibliothèque"
         >
           <Library size={18} />

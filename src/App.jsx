@@ -40,7 +40,16 @@ function Modals() {
 }
 
 function AppContent() {
-  const { theme, boards, loadBoard, currentBoard, libraryOpen, setLibraryOpen } = useApp();
+  const {
+    theme,
+    boards,
+    loadBoard,
+    currentBoard,
+    libraryOpen,
+    setLibraryOpen,
+    libraryViewMode,
+    setLibraryViewMode,
+  } = useApp();
   const location = useLocation();
 
   React.useEffect(() => {
@@ -49,12 +58,18 @@ function AppContent() {
     }
   }, [boards, currentBoard, loadBoard]);
 
-  // Set libraryOpen to true when accessing /library route
   React.useEffect(() => {
     if (location.pathname === '/library') {
       setLibraryOpen(true);
+      setLibraryViewMode('main');
+    } else {
+      setLibraryOpen(false);
+      setLibraryViewMode('panel');
     }
-  }, [location.pathname, setLibraryOpen]);
+  }, [location.pathname, setLibraryOpen, setLibraryViewMode]);
+
+  const showMainLibrary =
+    libraryOpen && libraryViewMode === 'main' && location.pathname === '/library';
 
   return (
     <div className={`flex h-screen bg-app ${theme}`}>
@@ -62,7 +77,7 @@ function AppContent() {
       <div className="flex-1 flex flex-col overflow-hidden">
         <Header />
         <main className="flex-1 overflow-auto p-4 bg-app">
-          {libraryOpen ? (
+          {showMainLibrary ? (
             <LibraryPanel />
           ) : (
             <Routes>

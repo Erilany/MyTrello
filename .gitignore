@@ -4,6 +4,10 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+# Portable Node.js
+node-portable/
+node.zip
+
 # Environment
 .env
 .env.local
