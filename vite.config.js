@@ -6,7 +6,10 @@ export default defineConfig({
   plugins: [react()],
   base: './',
   optimizeDeps: {
-    exclude: ['@hello-pangea/dnd', 'react-redux', 'redux', 'redux-thunk'],
+    include: ['react-redux', 'redux', 'scheduler'],
+    esbuildOptions: {
+      resolveExtensions: ['.mjs', '.js', '.mts', '.ts', '.jsx', '.tsx'],
+    },
   },
   build: {
     outDir: 'dist',
