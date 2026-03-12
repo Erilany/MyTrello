@@ -6,10 +6,7 @@ export default defineConfig({
   plugins: [react()],
   base: './',
   optimizeDeps: {
-    include: ['react-redux', 'redux', 'scheduler'],
-    esbuildOptions: {
-      resolveExtensions: ['.mjs', '.js', '.mts', '.ts', '.jsx', '.tsx'],
-    },
+    include: [],
   },
   build: {
     outDir: 'dist',
