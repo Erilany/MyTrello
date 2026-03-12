@@ -32,12 +32,17 @@ function Sidebar() {
     setLibraryViewMode,
   } = useApp();
   const [showBoards, setShowBoards] = useState(true);
+  const [showBoards2, setShowBoards2] = useState(true);
   const [newBoardTitle, setNewBoardTitle] = useState('');
+  const [newBoardTitle2, setNewBoardTitle2] = useState('');
   const [showNewBoard, setShowNewBoard] = useState(false);
+  const [showNewBoard2, setShowNewBoard2] = useState(false);
   const [menuOpenId, setMenuOpenId] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
 
-  const isOnBoardPage = location.pathname === '/board' || location.pathname.startsWith('/board/');
+  const isOnBoard1Page = location.pathname === '/board' || location.pathname.startsWith('/board/');
+  const isOnBoard2Page =
+    location.pathname === '/board2' || location.pathname.startsWith('/board2/');
 
   const handleDeleteBoard = async id => {
     if (window.confirm('Voulez-vous vraiment supprimer ce projet ?')) {
@@ -100,7 +105,7 @@ function Sidebar() {
                       navigate('/board');
                     }}
                     className={`flex items-center w-full px-3 py-1.5 text-sm text-left hover:bg-card-hover ${
-                      isOnBoardPage && Number(currentBoard?.id) === Number(board.id)
+                      isOnBoard1Page && Number(currentBoard?.id) === Number(board.id)
                         ? 'text-accent'
                         : 'text-primary'
                     }`}
@@ -201,7 +206,7 @@ function Sidebar() {
                 <div
                   key={board.id}
                   className={`group flex items-center justify-between px-2 py-1.5 rounded cursor-pointer transition-std ${
-                    isOnBoardPage && Number(currentBoard?.id) === Number(board.id)
+                    isOnBoard1Page && Number(currentBoard?.id) === Number(board.id)
                       ? 'bg-accent-soft border-l-[3px] border-l-accent'
                       : 'hover:bg-card'
                   }`}
@@ -299,6 +304,130 @@ function Sidebar() {
               ) : (
                 <button
                   onClick={() => setShowNewBoard(true)}
+                  className="flex items-center w-full px-2 py-1.5 mt-1 text-sm text-secondary hover:text-primary transition-std"
+                >
+                  <Plus size={14} className="mr-1" />
+                  Nouveau projet
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className="px-2 mt-4">
+          <button
+            onClick={() => setShowBoards2(!showBoards2)}
+            className="flex items-center w-full px-2 py-1 text-xs font-semibold uppercase tracking-widest text-muted hover:text-secondary"
+            style={{ letterSpacing: '1.2px' }}
+          >
+            {showBoards2 ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+            <span className="ml-1">Projets 2</span>
+          </button>
+
+          {showBoards2 && (
+            <div className="ml-2 mt-1">
+              {boards.map(board => (
+                <div
+                  key={board.id}
+                  className={`group flex items-center justify-between px-2 py-1.5 rounded cursor-pointer transition-std ${
+                    isOnBoard2Page && Number(currentBoard?.id) === Number(board.id)
+                      ? 'bg-accent-soft border-l-[3px] border-l-accent'
+                      : 'hover:bg-card'
+                  }`}
+                  onClick={() => {
+                    loadBoard(board.id);
+                    navigate('/board2');
+                  }}
+                >
+                  <span className="truncate text-sm font-body">{board.title}</span>
+                  <div className="relative">
+                    <button
+                      onClick={e => {
+                        e.stopPropagation();
+                        setMenuOpenId(menuOpenId === board.id ? null : board.id);
+                      }}
+                      className="p-1 opacity-0 group-hover:opacity-100 icon-btn"
+                    >
+                      <MoreHorizontal size={14} />
+                    </button>
+                    {menuOpenId === board.id && (
+                      <div className="absolute right-0 top-6 bg-card rounded-lg shadow-card z-10 py-1 w-36 border border-std">
+                        <button
+                          onClick={e => {
+                            e.stopPropagation();
+                            handleDeleteBoard(board.id);
+                          }}
+                          className="flex items-center w-full px-3 py-1.5 text-sm text-urgent hover:bg-card-hover"
+                        >
+                          <Trash2 size={12} className="mr-2" />
+                          Supprimer
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+
+              {showNewBoard2 ? (
+                <div className="mt-1">
+                  <input
+                    type="text"
+                    value={newBoardTitle2}
+                    onChange={e => setNewBoardTitle2(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (newBoardTitle2.trim()) {
+                          const boardId = createBoard(newBoardTitle2.trim());
+                          if (boardId) {
+                            loadBoard(boardId);
+                          }
+                          setNewBoardTitle2('');
+                          setShowNewBoard2(false);
+                        }
+                      }
+                      if (e.key === 'Escape') {
+                        setNewBoardTitle2('');
+                        setShowNewBoard2(false);
+                      }
+                    }}
+                    placeholder="Nom du projet..."
+                    className="w-full px-3 py-2 text-sm bg-input border border-std rounded-md text-primary focus:outline-none focus:border-accent"
+                    autoFocus
+                    onBlur={() => {
+                      if (!newBoardTitle2.trim()) setShowNewBoard2(false);
+                    }}
+                  />
+                  <div className="flex gap-2 mt-2">
+                    <button
+                      onClick={() => {
+                        if (newBoardTitle2.trim()) {
+                          const boardId = createBoard(newBoardTitle2.trim());
+                          if (boardId) {
+                            loadBoard(boardId);
+                          }
+                          setNewBoardTitle2('');
+                          setShowNewBoard2(false);
+                        }
+                      }}
+                      className="px-3 py-1.5 text-xs font-medium bg-accent text-white rounded-md hover:opacity-90 transition-std"
+                    >
+                      Ajouter
+                    </button>
+                    <button
+                      onClick={() => {
+                        setNewBoardTitle2('');
+                        setShowNewBoard2(false);
+                      }}
+                      className="px-3 py-1.5 text-xs text-secondary hover:text-primary"
+                    >
+                      Annuler
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setShowNewBoard2(true)}
                   className="flex items-center w-full px-2 py-1.5 mt-1 text-sm text-secondary hover:text-primary transition-std"
                 >
                   <Plus size={14} className="mr-1" />
