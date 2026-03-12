@@ -26,41 +26,11 @@ if %errorlevel%==0 (
     goto :install_deps
 )
 
-REM ===== Telechargement de Node.js portable =====
-echo [%YELLOW%INFO%RESET%] Telechargement de Node.js portable...
-if exist "%NODE_DIR%\node.exe" (
-    echo [%GREEN%OK%RESET%] Node.js deja present
-    goto :setup_node_path
-)
-
-echo [%YELLOW%INFO%RESET%] Cette operation peut prendre quelques minutes...
-powershell -Command "Invoke-WebRequest -Uri 'https://nodejs.org/dist/%NODE_VERSION%/node-%NODE_VERSION%-%NODE_ARCH%.zip' -OutFile '%PROJECT_DIR%node.zip'"
-
-if not exist "%PROJECT_DIR%node.zip" (
-    echo [%RED%ERREUR%RESET%] Echec du telechargement de Node.js
-    echo Verifiez votre connexion internet
-    pause
-    exit /b 1
-)
-
-echo [%GREEN%OK%RESET%] Extraction de Node.js...
-powershell -Command "Expand-Archive -Path '%PROJECT_DIR%node.zip' -DestinationPath '%PROJECT_DIR%' -Force"
-
-REM Rename folder
-if exist "%PROJECT_DIR%node-%NODE_VERSION%-%NODE_ARCH%" (
-    move /y "%PROJECT_DIR%node-%NODE_VERSION%-%NODE_ARCH%" "%NODE_DIR%" >nul 2>nul
-)
-
-del /f /q "%PROJECT_DIR%node.zip" 2>nul
-
-if not exist "%NODE_DIR%\node.exe" (
-    echo [%RED%ERREUR%RESET%] Echec de l'installation de Node.js
-    pause
-    exit /b 1
-)
-
-:setup_node_path
-set "PATH=%NODE_DIR%;%NODE_DIR%\node_modules\npm\bin;%PATH%"
+REM ===== Node.js non trouve ======
+echo [%RED%ERREUR%RESET%] Node.js n'est pas installe
+echo Veuillez installer Node.js depuis https://nodejs.org
+pause
+exit /b 1
 
 :install_deps
 echo.
@@ -71,10 +41,15 @@ echo.
 
 cd /d "%PROJECT_DIR%"
 
-set "PATH=%NODE_DIR%;%NODE_DIR%\node_modules\npm\bin;%PATH%"
+where npm >nul 2>nul
+if %errorlevel% neq 0 (
+    echo [%RED%ERREUR%RESET%] npm non trouve
+    pause
+    exit /b 1
+)
 
 echo [%YELLOW%INFO%RESET%] Installation de npm...
-call "%NODE_DIR%\npm.cmd" install --legacy-peer-deps
+call npm install --legacy-peer-deps
 
 if %errorlevel% neq 0 (
     echo [%RED%ERREUR%RESET%] Echec de l'installation des dependances
@@ -91,6 +66,6 @@ echo L'application va demarrer dans votre navigateur
 echo Appuyez sur Ctrl+C pour arreter
 echo.
 
-call "%NODE_DIR%\npm.cmd" run dev
+call npm run dev
 
 pause
