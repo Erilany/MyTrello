@@ -7,6 +7,7 @@ import SystemSettings from './components/Settings/SystemSettings';
 import Archives from './components/Archives/Archives';
 import LibraryPanel from './components/Library/LibraryPanel';
 import Sidebar from './components/Sidebar/Sidebar';
+import Dashboard from './components/Dashboard/Dashboard';
 import Header from './components/Header/Header';
 import VoiceControl from './components/VoiceControl/VoiceControl';
 import CardModal from './components/Card/CardModal';
@@ -81,8 +82,9 @@ function AppContent() {
             <LibraryPanel />
           ) : (
             <Routes>
-              <Route path="/" element={<Board />} />
+              <Route path="/" element={<Dashboard />} />
               <Route path="/board/:boardId" element={<Board />} />
+              <Route path="/board" element={<Board />} />
               <Route path="/library" element={<LibraryPanel />} />
               <Route path="/archives" element={<Archives />} />
               <Route path="/settings" element={<Settings />} />

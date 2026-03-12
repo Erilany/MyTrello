@@ -533,6 +533,52 @@ function LibraryPanel() {
     }, 100);
   };
 
+  const toggleAllSubcategories = () => {
+    if (!selectedLibraryCategory || !selectedLibraryCard) return;
+
+    const currentSubcategories = getCategorySubcategories(selectedLibraryCategory);
+
+    const allSelected = currentSubcategories.every(subcat =>
+      isSubcategorySelected(subcat, selectedLibraryCategory.title, selectedLibraryCard.title)
+    );
+
+    if (allSelected) {
+      setSelectedSubcategories(prev =>
+        prev.filter(
+          s =>
+            !(
+              s.categoryTitle === selectedLibraryCategory.title &&
+              s.cardTitle === selectedLibraryCard.title
+            )
+        )
+      );
+    } else {
+      const newSubcats = currentSubcategories.map(subcat => ({
+        ...subcat,
+        categoryTitle: selectedLibraryCategory.title,
+        cardTitle: selectedLibraryCard.title,
+      }));
+      setSelectedSubcategories(prev => {
+        const existing = prev.filter(
+          s =>
+            !(
+              s.categoryTitle === selectedLibraryCategory.title &&
+              s.cardTitle === selectedLibraryCard.title
+            )
+        );
+        return [...existing, ...newSubcats];
+      });
+    }
+  };
+
+  const allSubcategoriesSelected =
+    selectedLibraryCategory &&
+    selectedLibraryCard &&
+    getCategorySubcategories(selectedLibraryCategory).length > 0 &&
+    getCategorySubcategories(selectedLibraryCategory).every(subcat =>
+      isSubcategorySelected(subcat, selectedLibraryCategory.title, selectedLibraryCard.title)
+    );
+
   const sortedItems = [...filteredItems].sort((a, b) => {
     if (sortBy === 'name') return a.title.localeCompare(b.title);
     if (sortBy === 'usage') return (b.usage_count || 0) - (a.usage_count || 0);
@@ -729,19 +775,31 @@ function LibraryPanel() {
                 <h3 className="font-semibold text-primary">
                   {selectedLibraryCategory ? selectedLibraryCategory.title : 'Sous-catégories'}
                 </h3>
-                {selectedLibraryCategory && selectedLibraryCard && (
-                  <button
-                    onClick={() => {
-                      setShowAddForm(true);
-                      setNewItemType('subcategory');
-                      setNewItemParentCard(selectedLibraryCard.id.toString());
-                      setNewItemParentCategory(selectedLibraryCategory.title);
-                    }}
-                    className="px-2 py-1 bg-waiting text-white text-xs rounded hover:opacity-90"
-                  >
-                    +
-                  </button>
-                )}
+                <div className="flex gap-2">
+                  {selectedLibraryCategory &&
+                    selectedLibraryCard &&
+                    getCategorySubcategories(selectedLibraryCategory).length > 0 && (
+                      <button
+                        onClick={toggleAllSubcategories}
+                        className="px-2 py-1 text-xs bg-card-hover text-secondary rounded hover:bg-std transition-std"
+                      >
+                        {allSubcategoriesSelected ? 'Tout désélectionner' : 'Tout sélectionner'}
+                      </button>
+                    )}
+                  {selectedLibraryCategory && selectedLibraryCard && (
+                    <button
+                      onClick={() => {
+                        setShowAddForm(true);
+                        setNewItemType('subcategory');
+                        setNewItemParentCard(selectedLibraryCard.id.toString());
+                        setNewItemParentCategory(selectedLibraryCategory.title);
+                      }}
+                      className="px-2 py-1 bg-waiting text-white text-xs rounded hover:opacity-90"
+                    >
+                      +
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
             <div className="flex-1 overflow-y-auto p-4">

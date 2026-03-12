@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import {
   Layout,
@@ -13,10 +13,12 @@ import {
   MoreHorizontal,
   Wand2,
   LayoutGrid,
+  Home,
 } from 'lucide-react';
 
 function Sidebar() {
   const navigate = useNavigate();
+  const location = useLocation();
   const {
     boards,
     currentBoard,
@@ -34,6 +36,8 @@ function Sidebar() {
   const [showNewBoard, setShowNewBoard] = useState(false);
   const [menuOpenId, setMenuOpenId] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
+
+  const isOnBoardPage = location.pathname === '/board' || location.pathname.startsWith('/board/');
 
   const handleDeleteBoard = async id => {
     if (window.confirm('Voulez-vous vraiment supprimer ce projet ?')) {
@@ -69,6 +73,16 @@ function Sidebar() {
         </button>
 
         <div className="border-t border-b border-std py-3 flex flex-col gap-2">
+          <NavLink
+            to="/"
+            className={({ isActive }) =>
+              `icon-btn ${isActive ? 'text-accent' : 'text-secondary hover:text-primary'}`
+            }
+            title="Dashboard"
+          >
+            <Home size={20} />
+          </NavLink>
+
           <div className="group relative">
             <button className="icon-btn text-secondary hover:text-primary" title="Projets">
               <LayoutGrid size={20} />
@@ -83,10 +97,12 @@ function Sidebar() {
                     key={board.id}
                     onClick={() => {
                       loadBoard(board.id);
-                      navigate('/');
+                      navigate('/board');
                     }}
                     className={`flex items-center w-full px-3 py-1.5 text-sm text-left hover:bg-card-hover ${
-                      Number(currentBoard?.id) === Number(board.id) ? 'text-accent' : 'text-primary'
+                      isOnBoardPage && Number(currentBoard?.id) === Number(board.id)
+                        ? 'text-accent'
+                        : 'text-primary'
                     }`}
                   >
                     <span className="truncate">{board.title}</span>
@@ -158,6 +174,18 @@ function Sidebar() {
 
       <nav className="flex-1 min-h-0 overflow-y-auto scrollbar-thin">
         <div className="px-2 pt-4">
+          <NavLink
+            to="/"
+            className={({ isActive }) =>
+              `flex items-center px-2 py-1.5 rounded transition-std ${
+                isActive ? 'bg-accent-soft border-l-[3px] border-l-accent' : 'hover:bg-card'
+              }`
+            }
+          >
+            <Home size={16} className="mr-2 text-secondary" />
+            <span className="text-sm">Dashboard</span>
+          </NavLink>
+
           <button
             onClick={() => setShowBoards(!showBoards)}
             className="flex items-center w-full px-2 py-1 text-xs font-semibold uppercase tracking-widest text-muted hover:text-secondary"
@@ -173,13 +201,13 @@ function Sidebar() {
                 <div
                   key={board.id}
                   className={`group flex items-center justify-between px-2 py-1.5 rounded cursor-pointer transition-std ${
-                    Number(currentBoard?.id) === Number(board.id)
+                    isOnBoardPage && Number(currentBoard?.id) === Number(board.id)
                       ? 'bg-accent-soft border-l-[3px] border-l-accent'
                       : 'hover:bg-card'
                   }`}
                   onClick={() => {
                     loadBoard(board.id);
-                    navigate('/');
+                    navigate('/board');
                   }}
                 >
                   <span className="truncate text-sm font-body">{board.title}</span>
