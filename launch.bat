@@ -48,6 +48,11 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
+echo [%YELLOW%INFO%RESET%] Nettoyage du cache Vite...
+if exist "%PROJECT_DIR%node_modules\.vite" (
+    rmdir /s /q "%PROJECT_DIR%node_modules\.vite" 2>nul
+)
+
 echo [%YELLOW%INFO%RESET%] Installation de npm...
 call npm install --legacy-peer-deps
 

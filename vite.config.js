@@ -5,6 +5,9 @@ import path from 'path';
 export default defineConfig({
   plugins: [react()],
   base: './',
+  optimizeDeps: {
+    exclude: ['@hello-pangea/dnd', 'react-redux', 'redux', 'redux-thunk'],
+  },
   build: {
     outDir: 'dist',
     emptyOutDir: true,
