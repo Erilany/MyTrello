@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { AppProvider, useApp } from './context/AppContext';
 import Board from './components/Board/Board';
+import Board2 from './components/Board/Board2';
 import Settings from './components/Settings/Settings';
 import SystemSettings from './components/Settings/SystemSettings';
 import Archives from './components/Archives/Archives';
@@ -85,6 +86,8 @@ function AppContent() {
               <Route path="/" element={<Dashboard />} />
               <Route path="/board/:boardId" element={<Board />} />
               <Route path="/board" element={<Board />} />
+              <Route path="/board2/:boardId" element={<Board2 />} />
+              <Route path="/board2" element={<Board2 />} />
               <Route path="/library" element={<LibraryPanel />} />
               <Route path="/archives" element={<Archives />} />
               <Route path="/settings" element={<Settings />} />
