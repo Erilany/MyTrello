@@ -41,6 +41,14 @@ echo.
 
 cd /d "%PROJECT_DIR%"
 
+echo [%YELLOW%INFO%RESET%] Nettoyage des processus node...
+taskkill /F /IM node.exe 2>nul
+
+echo [%YELLOW%INFO%RESET%] Nettoyage du cache Vite...
+if exist "%PROJECT_DIR%node_modules\.vite" (
+    rmdir /s /q "%PROJECT_DIR%node_modules\.vite"
+)
+
 where npm >nul 2>nul
 if %errorlevel% neq 0 (
     echo [%RED%ERREUR%RESET%] npm non trouve

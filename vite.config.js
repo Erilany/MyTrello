@@ -5,6 +5,9 @@ import path from 'path';
 export default defineConfig({
   plugins: [react()],
   base: './',
+  optimizeDeps: {
+    include: [],
+  },
   build: {
     outDir: 'dist',
     emptyOutDir: true,
