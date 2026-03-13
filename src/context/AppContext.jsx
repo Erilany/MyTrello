@@ -3,6 +3,96 @@ import { libraryTemplates } from '../data/libraryData';
 
 const STORAGE_KEY = 'mytrello_db';
 
+function formatDuration(days) {
+  const hours = days * 24;
+  return `PT${hours}H0M0S`;
+}
+
+function convertTreeToLibraryItems(treeData) {
+  const libraryItems = [];
+  const cardMap = new Map();
+  let itemId = 1;
+
+  const processNode = (node, chapitre = '', carte = '', categorie = '') => {
+    let currentChapitre = chapitre;
+    let currentCarte = carte;
+    let currentCategorie = categorie;
+
+    if (node.type === 'chapitre') {
+      currentChapitre = node.data.chapitre || node.titre;
+    } else if (node.type === 'carte') {
+      currentCarte = node.data.carte || node.titre;
+    } else if (node.type === 'categorie') {
+      currentCategorie = node.data.categorie || node.titre;
+    }
+
+    if (node.type === 'carte' || node.type === 'categorie' || node.type === 'souscategorie') {
+      const tags = [node.data.categorieTag || '', node.data.domaineTag || '']
+        .filter(Boolean)
+        .join(',');
+
+      let cardItem = cardMap.get(currentCarte);
+      if (!cardItem) {
+        cardItem = {
+          id: itemId++,
+          title: currentCarte,
+          type: 'card',
+          tags: tags,
+          duration: node.data.temps || 0,
+          content_json: JSON.stringify({
+            card: {
+              title: currentCarte,
+              description: '',
+              priority: 'normal',
+              duration_days: node.data.temps || 0,
+            },
+            categories: [],
+          }),
+        };
+        cardMap.set(currentCarte, cardItem);
+        libraryItems.push(cardItem);
+      }
+
+      if (node.type === 'categorie' || node.type === 'souscategorie') {
+        const content = JSON.parse(cardItem.content_json);
+        let category = content.categories.find(c => c.title === currentCategorie);
+        if (!category) {
+          category = {
+            title: currentCategorie,
+            description: '',
+            priority: 'normal',
+            duration_days: node.data.temps || 0,
+            subcategories: [],
+          };
+          content.categories.push(category);
+        }
+
+        if (node.type === 'souscategorie' && node.data.sousCat1) {
+          if (!category.subcategories.find(s => s.title === node.data.sousCat1)) {
+            category.subcategories.push({
+              title: node.data.sousCat1,
+              description: '',
+              priority: 'normal',
+              duration_days: node.data.temps || 0,
+            });
+          }
+        }
+
+        cardItem.content_json = JSON.stringify(content);
+      }
+    }
+
+    if (node.children) {
+      node.children.forEach(child =>
+        processNode(child, currentChapitre, currentCarte, currentCategorie)
+      );
+    }
+  };
+
+  treeData.forEach(node => processNode(node));
+  return libraryItems;
+}
+
 const AppContext = createContext();
 
 function addWorkingDays(startDate, days) {
@@ -40,8 +130,11 @@ function getWorkingDaysBetween(startDate, endDate) {
 function loadFromStorage() {
   const data = localStorage.getItem(STORAGE_KEY);
   if (data) {
-    return JSON.parse(data);
+    const parsed = JSON.parse(data);
+    console.log('[loadFromStorage] Loaded, cards:', parsed.cards?.length || 0);
+    return parsed;
   }
+  console.log('[loadFromStorage] No data found');
   return {
     boards: [],
     columns: [],
@@ -63,7 +156,12 @@ function loadFromStorage() {
 }
 
 function saveToStorage(data) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    console.log('[saveToStorage] Saved, cards:', data.cards?.length || 0);
+  } catch (e) {
+    console.error('[saveToStorage] Error:', e);
+  }
 }
 
 function initDefaultData() {
@@ -88,7 +186,20 @@ function initDefaultData() {
   // Ensure libraryItems has data
   if (!data.libraryItems || data.libraryItems.length === 0) {
     console.log('[AppContext] Loading library templates');
-    data.libraryItems = libraryTemplates;
+    // Check if custom library data exists in LibraryEditor storage
+    const customLibrary = localStorage.getItem('mytrello_library_editor');
+    if (customLibrary) {
+      try {
+        const treeData = JSON.parse(customLibrary);
+        data.libraryItems = convertTreeToLibraryItems(treeData);
+        console.log('[AppContext] Loaded custom library from editor');
+      } catch (e) {
+        console.error('[AppContext] Error loading custom library:', e);
+        data.libraryItems = libraryTemplates;
+      }
+    } else {
+      data.libraryItems = libraryTemplates;
+    }
   }
   if (data.boards.length === 0) {
     const boardId = 1;
@@ -262,55 +373,75 @@ export function AppProvider({ children }) {
   }, []);
 
   const loadBoard = useCallback(boardId => {
-    setDb(currentDb => {
-      const board = currentDb.boards.find(b => Number(b.id) === Number(boardId));
-      if (board) {
-        setCurrentBoard(board);
-        setColumns(
-          currentDb.columns
-            .filter(c => Number(c.board_id) === Number(boardId))
-            .sort((a, b) => a.position - b.position)
-        );
-        const boardColumns = currentDb.columns.filter(c => Number(c.board_id) === Number(boardId));
-        const columnIds = boardColumns.map(c => Number(c.id));
-        setCards(
-          currentDb.cards
-            .filter(c => columnIds.includes(Number(c.column_id)) && !c.is_archived)
-            .sort((a, b) => a.position - b.position)
-        );
-        const cardIds = currentDb.cards
-          .filter(c => columnIds.includes(Number(c.column_id)))
-          .map(c => Number(c.id));
-        setCategories(
-          currentDb.categories
-            .filter(c => cardIds.includes(Number(c.card_id)))
-            .sort((a, b) => a.position - b.position)
-        );
-        const catIds = currentDb.categories
+    console.log('[loadBoard] Called with boardId:', boardId);
+    const storageData = loadFromStorage();
+    const board = storageData.boards.find(b => Number(b.id) === Number(boardId));
+    if (board) {
+      console.log('[loadBoard] Board found, cards in storage:', storageData.cards.length);
+      setCurrentBoard(board);
+      const boardColumns = storageData.columns.filter(c => Number(c.board_id) === Number(boardId));
+      const columnIds = boardColumns.map(c => Number(c.id));
+      console.log(
+        '[loadBoard] Board columns:',
+        boardColumns.map(c => c.id),
+        'columnIds:',
+        columnIds
+      );
+      const filteredCards = storageData.cards.filter(
+        c => columnIds.includes(Number(c.column_id)) && !c.is_archived
+      );
+      console.log(
+        '[loadBoard] Filtered cards:',
+        filteredCards.length,
+        'card column_ids:',
+        filteredCards.map(c => c.column_id)
+      );
+      setColumns(boardColumns.sort((a, b) => a.position - b.position));
+      setCards(filteredCards.sort((a, b) => a.position - b.position));
+      const cardIds = filteredCards.map(c => Number(c.id));
+      setCategories(
+        storageData.categories
           .filter(c => cardIds.includes(Number(c.card_id)))
-          .map(c => Number(c.id));
-        setSubcategories(
-          currentDb.subcategories
-            .filter(s => catIds.includes(Number(s.category_id)))
-            .sort((a, b) => a.position - b.position)
-        );
-      }
-      return currentDb;
-    });
+          .sort((a, b) => a.position - b.position)
+      );
+      const catIds = storageData.categories
+        .filter(c => cardIds.includes(Number(c.card_id)))
+        .map(c => Number(c.id));
+      setSubcategories(
+        storageData.subcategories
+          .filter(s => catIds.includes(Number(s.category_id)))
+          .sort((a, b) => a.position - b.position)
+      );
+    }
   }, []);
 
   // Ensure libraryItems has data - force reload templates if empty
   const forceLibraryItems = () => {
     if (!db.libraryItems || db.libraryItems.length === 0) {
-      console.log(
-        '[AppContext] Force loading library templates, count:',
-        libraryTemplates.length,
-        'first:',
-        libraryTemplates[0]?.title
-      );
-      const newDb = { ...db, libraryItems: libraryTemplates };
+      // Check if custom library data exists in LibraryEditor storage
+      const customLibrary = localStorage.getItem('mytrello_library_editor');
+      let itemsToUse = libraryTemplates;
+
+      if (customLibrary) {
+        try {
+          const treeData = JSON.parse(customLibrary);
+          itemsToUse = convertTreeToLibraryItems(treeData);
+          console.log('[AppContext] Force loading custom library from editor');
+        } catch (e) {
+          console.error('[AppContext] Error loading custom library:', e);
+        }
+      } else {
+        console.log(
+          '[AppContext] Force loading library templates, count:',
+          libraryTemplates.length,
+          'first:',
+          libraryTemplates[0]?.title
+        );
+      }
+
+      const newDb = { ...db, libraryItems: itemsToUse };
       setDb(newDb);
-      setLibraryItems(libraryTemplates);
+      setLibraryItems(itemsToUse);
       saveToStorage(newDb);
       return true;
     }
@@ -330,6 +461,25 @@ export function AppProvider({ children }) {
     if (!loaded) {
       setLibraryItems(db.libraryItems || []);
     }
+  }, []);
+
+  // Listen for library updates from LibraryEditor
+  useEffect(() => {
+    const handleLibraryUpdate = () => {
+      const mainDb = localStorage.getItem('mytrello_db');
+      if (mainDb) {
+        try {
+          const updatedDb = JSON.parse(mainDb);
+          setDb(updatedDb);
+          setLibraryItems(updatedDb.libraryItems || []);
+        } catch (e) {
+          console.error('[AppContext] Error reloading library:', e);
+        }
+      }
+    };
+
+    window.addEventListener('library-updated', handleLibraryUpdate);
+    return () => window.removeEventListener('library-updated', handleLibraryUpdate);
   }, []);
 
   const loadBoards = useCallback(() => {
@@ -728,34 +878,61 @@ export function AppProvider({ children }) {
     predecessorId = null,
     reloadBoardId = null
   ) => {
-    const maxPos = db.cards
-      .filter(c => Number(c.column_id) === Number(columnId))
-      .reduce((max, c) => Math.max(max, c.position), -1);
-    const cardId = db.nextIds.card++;
-    const newCard = {
-      id: cardId,
-      column_id: Number(columnId),
-      title,
-      description,
-      priority,
-      due_date: dueDate,
-      assignee,
-      position: maxPos + 1,
-      is_archived: 0,
-      start_date: startDate,
-      duration_days: durationDays,
-      parent_id: parentId,
-      predecessor_id: predecessorId,
-      created_at: new Date().toISOString(),
-    };
-    const newDb = { ...db, cards: [...db.cards, newCard], nextIds: { ...db.nextIds } };
-    saveDb(newDb);
-    if (reloadBoardId) {
-      loadBoard(reloadBoardId);
-    } else if (currentBoard) {
-      loadBoard(currentBoard.id);
-    }
-    return cardId;
+    console.log('[createCard] Called with columnId:', columnId, 'title:', title);
+    return new Promise(resolve => {
+      let cardId;
+
+      setDb(currentDb => {
+        cardId = currentDb.nextIds.card;
+        const newCard = {
+          id: cardId,
+          column_id: Number(columnId),
+          title,
+          description,
+          priority,
+          due_date: dueDate,
+          assignee,
+          position: 0,
+          is_archived: 0,
+          start_date: startDate,
+          duration_days: durationDays,
+          parent_id: parentId,
+          predecessor_id: predecessorId,
+          created_at: new Date().toISOString(),
+        };
+
+        const maxPos = currentDb.cards
+          .filter(c => Number(c.column_id) === Number(columnId))
+          .reduce((max, c) => Math.max(max, c.position), -1);
+        newCard.position = maxPos + 1;
+
+        const newDb = {
+          ...currentDb,
+          cards: [...currentDb.cards, newCard],
+          nextIds: { ...currentDb.nextIds, card: cardId + 1 },
+        };
+        saveToStorage(newDb);
+        console.log(
+          '[createCard] Card saved, id:',
+          cardId,
+          'column_id:',
+          newCard.column_id,
+          'total cards:',
+          newDb.cards.length
+        );
+        return newDb;
+      });
+
+      // Wait longer and verify state update
+      setTimeout(() => {
+        // Force a re-render by reading db
+        setDb(currentDb => {
+          console.log('[createCard] After wait, cards in db:', currentDb.cards.length);
+          return currentDb;
+        });
+        resolve(cardId);
+      }, 200);
+    });
   };
 
   const updateCard = (id, updates) => {
@@ -890,44 +1067,52 @@ export function AppProvider({ children }) {
     dueDate = null,
     assignee = '',
     parentId = null,
+    durationDays = 1,
     reloadBoardId = null
   ) => {
-    let filter;
-    if (parentId) {
-      filter = db.categories.filter(c => Number(c.parent_id) === Number(parentId));
-    } else if (cardId) {
-      filter = db.categories.filter(c => Number(c.card_id) === Number(cardId) && !c.parent_id);
-    } else {
-      filter = [];
-    }
-    const maxPos = filter.reduce((max, c) => Math.max(max, c.position), -1);
-    const catId = db.nextIds.category++;
-    const newCategory = {
-      id: catId,
-      card_id: cardId ? Number(cardId) : null,
-      parent_id: parentId || null,
-      title,
-      description,
-      priority,
-      due_date: dueDate,
-      assignee,
-      position: maxPos + 1,
-      start_date: null,
-      duration_days: 1,
-      created_at: new Date().toISOString(),
-    };
-    const newDb = {
-      ...db,
-      categories: [...db.categories, newCategory],
-      nextIds: { ...db.nextIds },
-    };
-    saveDb(newDb);
-    if (reloadBoardId) {
-      loadBoard(reloadBoardId);
-    } else if (currentBoard) {
-      loadBoard(currentBoard.id);
-    }
-    return catId;
+    console.log('[createCategory] Called with cardId:', cardId, 'title:', title);
+    return new Promise(resolve => {
+      let catId;
+      setDb(currentDb => {
+        let filter;
+        if (parentId) {
+          filter = currentDb.categories.filter(c => Number(c.parent_id) === Number(parentId));
+        } else if (cardId) {
+          filter = currentDb.categories.filter(
+            c => Number(c.card_id) === Number(cardId) && !c.parent_id
+          );
+        } else {
+          filter = [];
+        }
+        const maxPos = filter.reduce((max, c) => Math.max(max, c.position), -1);
+        catId = currentDb.nextIds.category;
+        const newCategory = {
+          id: catId,
+          card_id: cardId ? Number(cardId) : null,
+          parent_id: parentId || null,
+          title,
+          description,
+          priority,
+          due_date: dueDate,
+          assignee,
+          position: maxPos + 1,
+          start_date: null,
+          duration_days: durationDays,
+          created_at: new Date().toISOString(),
+        };
+        const newDb = {
+          ...currentDb,
+          categories: [...currentDb.categories, newCategory],
+          nextIds: { ...currentDb.nextIds, category: catId + 1 },
+        };
+        saveToStorage(newDb);
+        return newDb;
+      });
+
+      setTimeout(() => {
+        resolve(catId);
+      }, 200);
+    });
   };
 
   const updateCategory = (id, updates) => {
@@ -952,12 +1137,19 @@ export function AppProvider({ children }) {
   };
 
   const moveCategory = (categoryId, newCardId, newPosition) => {
+    console.log('[moveCategory] Called with:', { categoryId, newCardId, newPosition });
     const category = db.categories.find(c => Number(c.id) === Number(categoryId));
-    if (!category) return;
+    if (!category) {
+      console.log('[moveCategory] Category not found:', categoryId);
+      return;
+    }
+    console.log('[moveCategory] Found category:', category);
 
     const oldCardId = Number(category.card_id);
     const oldPosition = category.position;
     const destCardId = Number(newCardId);
+
+    console.log('[moveCategory] oldCardId:', oldCardId, 'destCardId:', destCardId);
 
     let newCategories = db.categories.map(c => {
       const cId = Number(c.id);
@@ -1004,35 +1196,39 @@ export function AppProvider({ children }) {
     durationDays = 1,
     reloadBoardId = null
   ) => {
-    const maxPos = db.subcategories
-      .filter(s => Number(s.category_id) === Number(categoryId))
-      .reduce((max, s) => Math.max(max, s.position), -1);
-    const subcatId = db.nextIds.subcategory++;
-    const newSubcategory = {
-      id: subcatId,
-      category_id: Number(categoryId),
-      title,
-      description,
-      priority,
-      due_date: dueDate,
-      assignee,
-      position: maxPos + 1,
-      start_date: startDate,
-      duration_days: durationDays,
-      created_at: new Date().toISOString(),
-    };
-    const newDb = {
-      ...db,
-      subcategories: [...db.subcategories, newSubcategory],
-      nextIds: { ...db.nextIds },
-    };
-    saveDb(newDb);
-    if (reloadBoardId) {
-      loadBoard(reloadBoardId);
-    } else if (currentBoard) {
-      loadBoard(currentBoard.id);
-    }
-    return subcatId;
+    return new Promise(resolve => {
+      let subcatId;
+      setDb(currentDb => {
+        const maxPos = currentDb.subcategories
+          .filter(s => Number(s.category_id) === Number(categoryId))
+          .reduce((max, s) => Math.max(max, s.position), -1);
+        subcatId = currentDb.nextIds.subcategory;
+        const newSubcategory = {
+          id: subcatId,
+          category_id: Number(categoryId),
+          title,
+          description,
+          priority,
+          due_date: dueDate,
+          assignee,
+          position: maxPos + 1,
+          start_date: startDate,
+          duration_days: durationDays,
+          created_at: new Date().toISOString(),
+        };
+        const newDb = {
+          ...currentDb,
+          subcategories: [...currentDb.subcategories, newSubcategory],
+          nextIds: { ...currentDb.nextIds, subcategory: subcatId + 1 },
+        };
+        saveToStorage(newDb);
+        return newDb;
+      });
+
+      setTimeout(() => {
+        resolve(subcatId);
+      }, 200);
+    });
   };
 
   const updateSubcategory = (id, updates) => {

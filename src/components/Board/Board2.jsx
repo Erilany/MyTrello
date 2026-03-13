@@ -1,19 +1,25 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import Exchange from '../Exchange/Exchange';
 import {
+  Plus,
   Archive,
   ListTodo,
   Calendar,
   MessageSquare,
   ShoppingCart,
   Info,
+  Trash2,
+  Edit2,
+  Check,
+  X,
+  ChevronDown,
+  ChevronRight,
   ExternalLink,
   FolderOpen,
-  Trash2,
+  PlusCircle,
   User,
   Building,
-  PlusCircle,
 } from 'lucide-react';
 
 function Board2() {
@@ -28,25 +34,26 @@ function Board2() {
     { id: 'echanges', label: 'Échanges', icon: MessageSquare },
   ];
 
-  const [links, setLinks] = useState([
-    { id: 1, title: 'Site Web', url: '', type: 'web', color: '#3B82F6' },
-    { id: 2, title: 'Dossier Projet', url: '', type: 'folder', color: '#F59E0B' },
-  ]);
+  const [board2Data, setBoard2Data] = useState({
+    cards: [],
+  });
+
+  const [newCardTitle, setNewCardTitle] = useState('');
+  const [showAddCard, setShowAddCard] = useState(false);
+  const [editingCardId, setEditingCardId] = useState(null);
+  const [editingCardTitle, setEditingCardTitle] = useState('');
+  const [expandedCards, setExpandedCards] = useState({});
+  const [newCategoryTitle, setNewCategoryTitle] = useState('');
+  const [showAddCategory, setShowAddCategory] = useState(null);
+  const [newSubcategoryTitle, setNewSubcategoryTitle] = useState('');
+  const [showAddSubcategory, setShowAddSubcategory] = useState(null);
+
+  const [links, setLinks] = useState([]);
   const [showAddLink, setShowAddLink] = useState(false);
   const [newLink, setNewLink] = useState({ title: '', url: '', type: 'web', color: '#22C55E' });
 
-  const [eotpLines, setEotpLines] = useState([{ id: 1, numero: '', ruo: '', libelle: '' }]);
-  const [internalContacts, setInternalContacts] = useState([
-    { id: 1, title: 'Manager de projets' },
-    { id: 2, title: 'Chargé(e) de Concertation' },
-    { id: 3, title: "Chargé(e) d'Etudes LA" },
-    { id: 4, title: "Chargé(e) d'Etudes LS" },
-    { id: 5, title: "Chargé(e) d'Etudes Poste HT" },
-    { id: 6, title: "Chargé(e) d'Etudes Poste BT et CC" },
-    { id: 7, title: "Chargé(e) d'Etudes SPC" },
-    { id: 8, title: 'Contrôleur Travaux' },
-    { id: 9, title: 'Assistant(e) Etudes' },
-  ]);
+  const [eotpLines, setEotpLines] = useState([]);
+  const [internalContacts, setInternalContacts] = useState([]);
   const [showAddInternal, setShowAddInternal] = useState(false);
   const [newInternalTitle, setNewInternalTitle] = useState('');
   const [externalContacts, setExternalContacts] = useState([]);
@@ -56,7 +63,195 @@ function Board2() {
   const [selectedAvenant, setSelectedAvenant] = useState(null);
   const [showAddCommande, setShowAddCommande] = useState(false);
   const [newCommandeTitle, setNewCommandeTitle] = useState('');
-  const [activeTabCommande, setActiveTabCommande] = useState('commande');
+  const [activeTabCommande, setActiveTabCommande] = useState('affectation');
+
+  useEffect(() => {
+    if (currentBoard) {
+      const savedLinks = localStorage.getItem(`board-${currentBoard.id}-links`);
+      if (savedLinks) {
+        setLinks(JSON.parse(savedLinks));
+      }
+      const savedCommandes = localStorage.getItem(`board-${currentBoard.id}-commandes`);
+      if (savedCommandes) {
+        setCommandes(JSON.parse(savedCommandes));
+      }
+      const savedEotp = localStorage.getItem(`board-${currentBoard.id}-eotp`);
+      if (savedEotp) {
+        setEotpLines(JSON.parse(savedEotp));
+      }
+      const savedInternal = localStorage.getItem(`board-${currentBoard.id}-internalContacts`);
+      if (savedInternal) {
+        setInternalContacts(JSON.parse(savedInternal));
+      }
+      const savedExternal = localStorage.getItem(`board-${currentBoard.id}-externalContacts`);
+      if (savedExternal) {
+        setExternalContacts(JSON.parse(savedExternal));
+      }
+    }
+  }, [currentBoard]);
+
+  useEffect(() => {
+    if (currentBoard && links.length > 0) {
+      localStorage.setItem(`board-${currentBoard.id}-links`, JSON.stringify(links));
+    }
+  }, [links, currentBoard]);
+
+  useEffect(() => {
+    if (currentBoard && commandes.length > 0) {
+      localStorage.setItem(`board-${currentBoard.id}-commandes`, JSON.stringify(commandes));
+    }
+  }, [commandes, currentBoard]);
+
+  useEffect(() => {
+    if (currentBoard && eotpLines.length > 0) {
+      localStorage.setItem(`board-${currentBoard.id}-eotp`, JSON.stringify(eotpLines));
+    }
+  }, [eotpLines, currentBoard]);
+
+  useEffect(() => {
+    if (currentBoard && internalContacts.length > 0) {
+      localStorage.setItem(
+        `board-${currentBoard.id}-internalContacts`,
+        JSON.stringify(internalContacts)
+      );
+    }
+  }, [internalContacts, currentBoard]);
+
+  useEffect(() => {
+    if (currentBoard && externalContacts.length > 0) {
+      localStorage.setItem(
+        `board-${currentBoard.id}-externalContacts`,
+        JSON.stringify(externalContacts)
+      );
+    }
+  }, [externalContacts, currentBoard]);
+
+  const toggleCardExpanded = cardId => {
+    setExpandedCards(prev => ({ ...prev, [cardId]: !prev[cardId] }));
+  };
+
+  const addCardToBoard2 = cardTitle => {
+    const newCard = {
+      id: `card-${Date.now()}`,
+      title: cardTitle,
+      categories: [],
+    };
+    setBoard2Data(prev => ({
+      ...prev,
+      cards: [...prev.cards, newCard],
+    }));
+    setNewCardTitle('');
+    setShowAddCard(false);
+  };
+
+  const handleAddCard = () => {
+    if (newCardTitle.trim()) {
+      addCardToBoard2(newCardTitle.trim());
+    }
+  };
+
+  const handleDeleteCard = cardId => {
+    setBoard2Data(prev => ({
+      ...prev,
+      cards: prev.cards.filter(c => c.id !== cardId),
+    }));
+  };
+
+  const handleRenameCard = (cardId, newTitle) => {
+    setBoard2Data(prev => ({
+      ...prev,
+      cards: prev.cards.map(c => (c.id === cardId ? { ...c, title: newTitle } : c)),
+    }));
+    setEditingCardId(null);
+  };
+
+  const handleAddCategory = cardId => {
+    if (!newCategoryTitle.trim()) return;
+    setBoard2Data(prev => ({
+      ...prev,
+      cards: prev.cards.map(c => {
+        if (c.id === cardId) {
+          return {
+            ...c,
+            categories: [
+              ...(c.categories || []),
+              { id: `cat-${Date.now()}`, title: newCategoryTitle.trim(), subcategories: [] },
+            ],
+          };
+        }
+        return c;
+      }),
+    }));
+    setNewCategoryTitle('');
+    setShowAddCategory(null);
+  };
+
+  const handleDeleteCategory = (cardId, categoryId) => {
+    setBoard2Data(prev => ({
+      ...prev,
+      cards: prev.cards.map(c => {
+        if (c.id === cardId) {
+          return {
+            ...c,
+            categories: (c.categories || []).filter(cat => cat.id !== categoryId),
+          };
+        }
+        return c;
+      }),
+    }));
+  };
+
+  const handleAddSubcategory = (cardId, categoryId) => {
+    if (!newSubcategoryTitle.trim()) return;
+    setBoard2Data(prev => ({
+      ...prev,
+      cards: prev.cards.map(c => {
+        if (c.id === cardId) {
+          return {
+            ...c,
+            categories: (c.categories || []).map(cat => {
+              if (cat.id === categoryId) {
+                return {
+                  ...cat,
+                  subcategories: [
+                    ...(cat.subcategories || []),
+                    { id: `subcat-${Date.now()}`, title: newSubcategoryTitle.trim() },
+                  ],
+                };
+              }
+              return cat;
+            }),
+          };
+        }
+        return c;
+      }),
+    }));
+    setNewSubcategoryTitle('');
+    setShowAddSubcategory(null);
+  };
+
+  const handleDeleteSubcategory = (cardId, categoryId, subcategoryId) => {
+    setBoard2Data(prev => ({
+      ...prev,
+      cards: prev.cards.map(c => {
+        if (c.id === cardId) {
+          return {
+            ...c,
+            categories: (c.categories || []).map(cat => {
+              if (cat.id === categoryId) {
+                return {
+                  ...cat,
+                  subcategories: (cat.subcategories || []).filter(sub => sub.id !== subcategoryId),
+                };
+              }
+              return cat;
+            }),
+          };
+        }
+        return c;
+      }),
+    }));
+  };
 
   const handleArchiveBoard = () => {
     const { canArchive, reason } = canArchiveBoard(currentBoard.id);
@@ -69,14 +264,6 @@ function Board2() {
     }
   };
 
-  if (!currentBoard) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <p className="text-secondary">Sélectionnez un projet</p>
-      </div>
-    );
-  }
-
   return (
     <div className="h-full flex flex-col overflow-hidden">
       <div className="flex items-center justify-between mb-4">
@@ -88,7 +275,6 @@ function Board2() {
         <button
           onClick={handleArchiveBoard}
           className="flex items-center px-3 py-1.5 text-sm bg-card hover:bg-card-hover border border-std rounded transition-std text-secondary"
-          title="Archiver le projet (toutes les cartes doivent être dans la colonne Archiver)"
         >
           <Archive size={14} className="mr-2" />
           Archiver
@@ -123,10 +309,212 @@ function Board2() {
       </div>
 
       {activeTab === 'taches' && (
-        <div className="flex-1 flex items-center justify-center text-secondary">
-          <div className="text-center">
-            <ListTodo size={48} className="mx-auto mb-4 text-muted" />
-            <p>Page Tâches à développer</p>
+        <div className="flex-1 overflow-auto p-6">
+          <div className="max-w-4xl mx-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-primary">Tâches</h2>
+              <button
+                onClick={() => setShowAddCard(true)}
+                className="flex items-center px-4 py-2 bg-accent text-white rounded-lg hover:opacity-90"
+              >
+                <Plus size={18} className="mr-2" />
+                Nouvelle tâche
+              </button>
+            </div>
+
+            {showAddCard && (
+              <div className="mb-6 bg-card rounded-lg border border-std p-4">
+                <input
+                  type="text"
+                  placeholder="Titre de la tâche..."
+                  value={newCardTitle}
+                  onChange={e => setNewCardTitle(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') handleAddCard();
+                    if (e.key === 'Escape') setShowAddCard(false);
+                  }}
+                  className="w-full px-3 py-2 bg-input border border-std rounded-lg text-primary mb-3"
+                  autoFocus
+                />
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleAddCard}
+                    className="px-4 py-2 bg-accent text-white rounded-lg hover:opacity-90"
+                  >
+                    Ajouter
+                  </button>
+                  <button
+                    onClick={() => setShowAddCard(false)}
+                    className="px-4 py-2 text-secondary hover:text-primary"
+                  >
+                    Annuler
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {board2Data.cards.length === 0 ? (
+              <div className="text-center py-12 text-secondary">
+                <ListTodo size={48} className="mx-auto mb-4 text-muted" />
+                <p>Aucune tâche. Cliquez sur &quot;Nouvelle tâche&quot; pour commencer.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {board2Data.cards.map(card => (
+                  <div key={card.id} className="bg-card rounded-lg border border-std p-4">
+                    {editingCardId === card.id ? (
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={editingCardTitle}
+                          onChange={e => setEditingCardTitle(e.target.value)}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter') handleRenameCard(card.id, editingCardTitle);
+                            if (e.key === 'Escape') setEditingCardId(null);
+                          }}
+                          className="flex-1 px-3 py-2 bg-input border border-std rounded-lg text-primary"
+                          autoFocus
+                        />
+                        <button
+                          onClick={() => handleRenameCard(card.id, editingCardTitle)}
+                          className="p-2 text-accent"
+                        >
+                          <Check size={18} />
+                        </button>
+                        <button onClick={() => setEditingCardId(null)} className="p-2 text-muted">
+                          <X size={18} />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-3">
+                          <button
+                            onClick={() => toggleCardExpanded(card.id)}
+                            className="text-secondary hover:text-primary"
+                          >
+                            {expandedCards[card.id] ? (
+                              <ChevronDown size={20} />
+                            ) : (
+                              <ChevronRight size={20} />
+                            )}
+                          </button>
+                          <h3 className="font-semibold text-primary">{card.title}</h3>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => {
+                              setEditingCardId(card.id);
+                              setEditingCardTitle(card.title);
+                            }}
+                            className="p-1.5 text-muted hover:text-primary rounded"
+                          >
+                            <Edit2 size={16} />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteCard(card.id)}
+                            className="p-1.5 text-muted hover:text-urgent rounded"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
+                    {expandedCards[card.id] && (
+                      <div className="ml-8 mt-4 space-y-3">
+                        {(card.categories || []).map(cat => (
+                          <div key={cat.id} className="bg-card-hover rounded-lg p-3">
+                            <div className="flex items-center justify-between mb-2">
+                              <h4 className="font-medium text-primary">{cat.title}</h4>
+                              <button
+                                onClick={() => handleDeleteCategory(card.id, cat.id)}
+                                className="p-1 text-muted hover:text-urgent rounded"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
+                            <div className="space-y-1 ml-2">
+                              {(cat.subcategories || []).map(sub => (
+                                <div
+                                  key={sub.id}
+                                  className="flex items-center justify-between text-sm text-secondary"
+                                >
+                                  <span>{sub.title}</span>
+                                  <button
+                                    onClick={() => handleDeleteSubcategory(card.id, cat.id, sub.id)}
+                                    className="p-1 text-muted hover:text-urgent rounded"
+                                  >
+                                    <Trash2 size={12} />
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                            {showAddSubcategory === cat.id ? (
+                              <div className="mt-2 flex gap-2">
+                                <input
+                                  type="text"
+                                  placeholder="Nouvelle sous-tâche..."
+                                  value={newSubcategoryTitle}
+                                  onChange={e => setNewSubcategoryTitle(e.target.value)}
+                                  onKeyDown={e => {
+                                    if (e.key === 'Enter') handleAddSubcategory(card.id, cat.id);
+                                    if (e.key === 'Escape') setShowAddSubcategory(null);
+                                  }}
+                                  className="flex-1 px-2 py-1 text-sm bg-input border border-std rounded text-primary"
+                                  autoFocus
+                                />
+                                <button
+                                  onClick={() => handleAddSubcategory(card.id, cat.id)}
+                                  className="px-2 py-1 text-sm bg-accent text-white rounded"
+                                >
+                                  +
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => setShowAddSubcategory(cat.id)}
+                                className="text-xs text-accent hover:underline mt-2"
+                              >
+                                + Sous-tâche
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                        {showAddCategory === card.id ? (
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              placeholder="Nouvelle catégorie..."
+                              value={newCategoryTitle}
+                              onChange={e => setNewCategoryTitle(e.target.value)}
+                              onKeyDown={e => {
+                                if (e.key === 'Enter') handleAddCategory(card.id);
+                                if (e.key === 'Escape') setShowAddCategory(null);
+                              }}
+                              className="flex-1 px-2 py-1 text-sm bg-input border border-std rounded text-primary"
+                              autoFocus
+                            />
+                            <button
+                              onClick={() => handleAddCategory(card.id)}
+                              className="px-2 py-1 text-sm bg-accent text-white rounded"
+                            >
+                              +
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => setShowAddCategory(card.id)}
+                            className="text-xs text-accent hover:underline mt-2"
+                          >
+                            + Catégorie
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -229,7 +617,7 @@ function Board2() {
                           id: Date.now(),
                           title: `Avenant ${avenantNumber}`,
                           numero: avenantNumber,
-                          donnees: { ...cmd.donnees },
+                          donnees: { numero: '', date: '', objet: '', estimation: '' },
                         };
                         const updatedCommandes = commandes.map(c =>
                           c.id === cmd.id
@@ -328,37 +716,6 @@ function Board2() {
                   </div>
                 </div>
 
-                {activeTabCommande === 'commande' && (
-                  <div className="p-4 bg-card rounded-lg border border-std">
-                    <h3 className="text-sm font-semibold text-primary mb-4">Données commandes</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      <div className="space-y-4">
-                        <h4 className="text-xs font-medium text-secondary uppercase border-b border-std pb-1">
-                          Demandeur
-                        </h4>
-                        <div>
-                          <label className="block text-xs text-secondary mb-1">
-                            Nom rédacteur / Interlocuteur
-                          </label>
-                          <input
-                            type="text"
-                            className="w-full px-2 py-1 text-sm bg-input border border-std rounded"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs text-secondary mb-1">
-                            Responsable Projet
-                          </label>
-                          <input
-                            type="text"
-                            className="w-full px-2 py-1 text-sm bg-input border border-std rounded"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
                 {activeTabCommande === 'affectation' && (
                   <div className="space-y-6">
                     <div className="p-4 bg-card rounded-lg border border-std">
@@ -380,6 +737,126 @@ function Board2() {
                             className="w-full px-2 py-1 text-sm bg-input border border-std rounded"
                           />
                         </div>
+                        <div>
+                          <label className="block text-xs text-secondary mb-1">Date limite</label>
+                          <input
+                            type="date"
+                            className="w-full px-2 py-1 text-sm bg-input border border-std rounded"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-secondary mb-1">Interlocuteur</label>
+                          <input
+                            type="text"
+                            className="w-full px-2 py-1 text-sm bg-input border border-std rounded"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="p-4 bg-card rounded-lg border border-std">
+                      <h3 className="text-sm font-semibold text-primary mb-4">
+                        GÉNÉRALITÉS SUR L'OUVRAGE
+                      </h3>
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-xs text-secondary mb-1">Désignation</label>
+                          <textarea
+                            rows={2}
+                            className="w-full px-2 py-1 text-sm bg-input border border-std rounded"
+                          ></textarea>
+                        </div>
+                        <div>
+                          <label className="block text-xs text-secondary mb-1">Localisation</label>
+                          <input
+                            type="text"
+                            className="w-full px-2 py-1 text-sm bg-input border border-std rounded"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-secondary mb-1">
+                            Maître d'ouvrage
+                          </label>
+                          <input
+                            type="text"
+                            className="w-full px-2 py-1 text-sm bg-input border border-std rounded"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="p-4 bg-card rounded-lg border border-std">
+                      <h3 className="text-sm font-semibold text-primary mb-4">
+                        TYPOLOGIE ET DÉTAILS DE CONSISTANCE
+                      </h3>
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-xs text-secondary mb-1">
+                            Type d'intervention
+                          </label>
+                          <input
+                            type="text"
+                            className="w-full px-2 py-1 text-sm bg-input border border-std rounded"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-secondary mb-1">
+                            Description sommaire
+                          </label>
+                          <textarea
+                            rows={3}
+                            className="w-full px-2 py-1 text-sm bg-input border border-std rounded"
+                          ></textarea>
+                        </div>
+                        <div>
+                          <label className="block text-xs text-secondary mb-1">
+                            Surface / Volume
+                          </label>
+                          <input
+                            type="text"
+                            className="w-full px-2 py-1 text-sm bg-input border border-std rounded"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {activeTabCommande === 'commande' && (
+                  <div className="space-y-6">
+                    <div className="p-4 bg-card rounded-lg border border-std">
+                      <h3 className="text-sm font-semibold text-primary mb-4">DONNÉES COMMANDE</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs text-secondary mb-1">N° Commande</label>
+                          <input
+                            type="text"
+                            className="w-full px-2 py-1 text-sm bg-input border border-std rounded"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-secondary mb-1">Date</label>
+                          <input
+                            type="date"
+                            className="w-full px-2 py-1 text-sm bg-input border border-std rounded"
+                          />
+                        </div>
+                        <div className="md:col-span-2">
+                          <label className="block text-xs text-secondary mb-1">Objet</label>
+                          <input
+                            type="text"
+                            className="w-full px-2 py-1 text-sm bg-input border border-std rounded"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-secondary mb-1">
+                            Estimation (€)
+                          </label>
+                          <input
+                            type="text"
+                            className="w-full px-2 py-1 text-sm bg-input border border-std rounded"
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -387,7 +864,7 @@ function Board2() {
               </div>
             ) : (
               <div className="flex items-center justify-center h-full text-muted">
-                <p>Sélectionnez ou créez une commande</p>
+                <p>Sélectionnez une commande</p>
               </div>
             )}
           </div>

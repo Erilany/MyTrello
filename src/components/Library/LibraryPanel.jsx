@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
-import { Trash2, Copy, Search, X, GripVertical, Eye } from 'lucide-react';
+import { Trash2, Copy, Search, X, GripVertical, Eye, Star } from 'lucide-react';
 
 function LibraryEventListener() {
   const { saveToLibrary, loadLibrary } = useApp();
@@ -9,7 +9,6 @@ function LibraryEventListener() {
   useEffect(() => {
     const handleLibrarySave = async e => {
       const { itemType, content, title } = e.detail;
-      console.log('[LibraryEventListener] Library save event received:', { itemType, title });
 
       try {
         const parsedContent = JSON.parse(content);
@@ -30,7 +29,6 @@ function LibraryEventListener() {
           dbTitle = parsedContent.subcategory.title || title;
         }
 
-        console.log('[LibraryEventListener] Saving to library:', { dbType, dbTitle });
         await saveToLibrary(dbType, dbTitle, dbContent);
         alert('Élément sauvegardé dans la bibliothèque !');
       } catch (error) {
@@ -40,10 +38,8 @@ function LibraryEventListener() {
     };
 
     window.addEventListener('library-save', handleLibrarySave);
-    console.log('[LibraryEventListener] Event listener attached');
     return () => {
       window.removeEventListener('library-save', handleLibrarySave);
-      console.log('[LibraryEventListener] Event listener removed');
     };
   }, [saveToLibrary, loadLibrary]);
 
@@ -94,29 +90,89 @@ function LibraryPanel() {
   const [showUseForm, setShowUseForm] = useState(false);
   const [useFormBoardId, setUseFormBoardId] = useState('');
   const [useFormColumnId, setUseFormColumnId] = useState('');
+  const [useFormDestination, setUseFormDestination] = useState('board');
   const [showAddForm, setShowAddForm] = useState(false);
   const [newItemTitle, setNewItemTitle] = useState('');
   const [newItemType, setNewItemType] = useState('card');
   const [newItemParentCard, setNewItemParentCard] = useState('');
   const [newItemParentCategory, setNewItemParentCategory] = useState('');
+  const [favorites, setFavorites] = useState({ cards: [], categories: [], subcategories: [] });
+
+  useEffect(() => {
+    const stored = localStorage.getItem('mytrello_library_favorites');
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        // Handle old format (array) - migrate to new format (object)
+        if (Array.isArray(parsed)) {
+          setFavorites({ cards: parsed, categories: [], subcategories: [] });
+        } else {
+          setFavorites(parsed);
+        }
+      } catch (e) {
+        console.error('Error loading favorites:', e);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    const handleFavoritesUpdate = () => {
+      const stored = localStorage.getItem('mytrello_library_favorites');
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed)) {
+            setFavorites({ cards: parsed, categories: [], subcategories: [] });
+          } else {
+            setFavorites(parsed);
+          }
+        } catch (e) {
+          console.error('Error reloading favorites:', e);
+        }
+      }
+    };
+    window.addEventListener('library-favorites-updated', handleFavoritesUpdate);
+    return () => window.removeEventListener('library-favorites-updated', handleFavoritesUpdate);
+  }, []);
+
+  const isCardFavorite = cardId => {
+    // Handle both string and number comparison
+    return favorites.cards.some(id => String(id) === String(cardId));
+  };
+
+  const isCategoryFavorite = (cardId, categoryTitle) => {
+    return favorites.categories.some(
+      c => String(c.cardId) === String(cardId) && c.title === categoryTitle
+    );
+  };
+
+  const isSubcategoryFavorite = (cardId, categoryTitle, subcategoryTitle) => {
+    return favorites.subcategories.some(
+      s =>
+        String(s.cardId) === String(cardId) &&
+        s.categoryTitle === categoryTitle &&
+        s.title === subcategoryTitle
+    );
+  };
 
   const cardItems = libraryItems.filter(item => item.type === 'card');
-  console.log(
-    '[LibraryPanel] All items:',
-    libraryItems.length,
-    'Card items:',
-    cardItems.length,
-    'Types:',
-    [...new Set(libraryItems.map(i => i.type))]
-  );
 
   const filteredItems = libraryItems.filter(item => {
-    const matchesFilter = filter === 'all' || item.type === filter;
+    if (filter === 'favorites') {
+      const isFav =
+        favorites.cards.some(id => String(id) === String(item.id)) ||
+        favorites.categories.some(c => String(c.cardId) === String(item.id)) ||
+        favorites.subcategories.some(s => String(s.cardId) === String(item.id));
+
+      if (!isFav) return false;
+    } else if (filter !== 'all') {
+      if (item.type !== filter) return false;
+    }
     const itemTags = item.tags || '';
     const matchesSearch =
       item.title.toLowerCase().includes(search.toLowerCase()) ||
       itemTags.toLowerCase().includes(search.toLowerCase());
-    return matchesFilter && matchesSearch;
+    return matchesSearch;
   });
 
   const allTags = [
@@ -345,9 +401,25 @@ function LibraryPanel() {
       setSelectedSubcategories([]);
       setUseFormBoardId('');
       setUseFormColumnId('');
-      loadBoard(boardId);
-      setLibraryOpen(false);
-      navigate('/');
+
+      if (useFormDestination === 'board2') {
+        window.dispatchEvent(
+          new CustomEvent('board2-import', {
+            detail: {
+              cards: selectedCards,
+              categories: selectedCategories,
+              subcategories: selectedSubcategories,
+            },
+          })
+        );
+        loadBoard(boardId);
+        setLibraryOpen(false);
+        navigate('/board2');
+      } else {
+        loadBoard(boardId);
+        setLibraryOpen(false);
+        navigate('/board');
+      }
       alert('Éléments ajoutés au projet avec succès !');
     }, 100);
   };
@@ -409,7 +481,11 @@ function LibraryPanel() {
     setSelectedBoardId(currentBoard?.id?.toString() || '');
   };
 
-  const handleMainViewConfirmUse = () => {
+  const handleMainViewConfirmUse = async () => {
+    console.log('[LibraryPanel] handleMainViewConfirmUse called');
+    console.log('[LibraryPanel] selectedCards:', selectedCards);
+    console.log('[LibraryPanel] selectedCategories:', selectedCategories);
+    console.log('[LibraryPanel] selectedSubcategories:', selectedSubcategories);
     if (!useFormBoardId || !useFormColumnId) {
       alert('Veuillez sélectionner un projet et une colonne');
       return;
@@ -418,10 +494,11 @@ function LibraryPanel() {
     const columnId = parseInt(useFormColumnId);
     const boardId = parseInt(useFormBoardId);
 
-    selectedCards.forEach(card => {
+    for (const card of selectedCards) {
       try {
         const content = JSON.parse(card.content_json);
-        const cardId = createCard(
+        const cardDuration = content.card?.duration_days ?? card.duration ?? 1;
+        const cardId = await createCard(
           columnId,
           content.card?.title || card.title,
           content.card?.description || '',
@@ -429,19 +506,21 @@ function LibraryPanel() {
           content.card?.due_date || null,
           content.card?.assignee || '',
           null,
-          1,
+          cardDuration,
           null,
           null,
-          boardId
+          null
         );
 
         const cardCategories = content.categories || [];
-        cardCategories.forEach(cat => {
+        const cardTitleForCompare = content.card?.title || card.title;
+        for (const cat of cardCategories) {
           const isCatSelected = selectedCategories.some(
-            sc => sc.title === cat.title && sc.cardTitle === card.title
+            sc => sc.title === cat.title && sc.cardTitle === cardTitleForCompare
           );
           if (isCatSelected) {
-            const categoryId = createCategory(
+            const categoryDuration = cat.duration_days ?? 1;
+            const categoryId = await createCategory(
               cardId,
               cat.title,
               cat.description || '',
@@ -449,19 +528,45 @@ function LibraryPanel() {
               cat.due_date || null,
               cat.assignee || '',
               null,
-              boardId
+              categoryDuration,
+              null
             );
 
             const catSubcategories = cat.subcategories || [];
-            catSubcategories.forEach(subcat => {
+            console.log(
+              '[LibraryPanel] Checking subcats for card:',
+              cardTitleForCompare,
+              'category:',
+              cat.title
+            );
+            console.log(
+              '[LibraryPanel] subcats in content:',
+              catSubcategories.map(s => s.title)
+            );
+            console.log(
+              '[LibraryPanel] selectedSubcategories:',
+              selectedSubcategories.map(s => ({
+                title: s.title,
+                categoryTitle: s.categoryTitle,
+                cardTitle: s.cardTitle,
+              }))
+            );
+            for (const subcat of catSubcategories) {
               const isSubcatSelected = selectedSubcategories.some(
                 ss =>
                   ss.title === subcat.title &&
                   ss.categoryTitle === cat.title &&
-                  ss.cardTitle === card.title
+                  ss.cardTitle === cardTitleForCompare
+              );
+              console.log(
+                '[LibraryPanel] Checking subcat:',
+                subcat.title,
+                'isSubcatSelected:',
+                isSubcatSelected
               );
               if (isSubcatSelected) {
-                createSubcategory(
+                const subcatDuration = subcat.duration_days ?? 1;
+                await createSubcategory(
                   categoryId,
                   subcat.title,
                   subcat.description || '',
@@ -469,68 +574,71 @@ function LibraryPanel() {
                   subcat.due_date || null,
                   subcat.assignee || '',
                   null,
-                  1,
-                  boardId
+                  subcatDuration,
+                  null
                 );
               }
-            });
+            }
           }
-        });
+        }
       } catch (e) {
         console.error('Error creating card:', e);
       }
-    });
+    }
 
-    selectedCategories
-      .filter(cat => !selectedCards.some(sc => sc.title === cat.cardTitle))
-      .forEach(cat => {
-        try {
-          const cardId = createCard(
-            columnId,
-            cat.title,
-            cat.description || '',
-            cat.priority || 'normal',
-            cat.due_date || null,
-            cat.assignee || '',
+    for (const cat of selectedCategories.filter(
+      cat =>
+        !selectedCards.some(
+          sc =>
+            sc.title === cat.cardTitle ||
+            (sc.content_json && JSON.parse(sc.content_json).card?.title === cat.cardTitle)
+        )
+    )) {
+      try {
+        const categoryDuration = cat.duration_days ?? 1;
+        const categoryId = await createCategory(
+          null,
+          cat.title,
+          cat.description || '',
+          cat.priority || 'normal',
+          cat.due_date || null,
+          cat.assignee || '',
+          null,
+          categoryDuration,
+          null
+        );
+
+        const catSubcategories = selectedSubcategories.filter(
+          ss => ss.categoryTitle === cat.title && !ss.cardTitle
+        );
+        for (const subcat of catSubcategories) {
+          const subcatDuration = subcat.duration_days ?? 1;
+          await createSubcategory(
+            categoryId,
+            subcat.title,
+            subcat.description || '',
+            subcat.priority || 'normal',
+            subcat.due_date || null,
+            subcat.assignee || '',
             null,
-            1,
-            null,
-            null,
-            boardId
+            subcatDuration,
+            null
           );
-
-          selectedSubcategories
-            .filter(sub => sub.categoryTitle === cat.title && sub.cardTitle === cat.cardTitle)
-            .forEach(subcat => {
-              createSubcategory(
-                cardId,
-                subcat.title,
-                subcat.description || '',
-                subcat.priority || 'normal',
-                subcat.due_date || null,
-                subcat.assignee || '',
-                null,
-                1,
-                boardId
-              );
-            });
-        } catch (e) {
-          console.error('Error creating category card:', e);
         }
-      });
+      } catch (e) {
+        console.error('Error creating category:', e);
+      }
+    }
 
+    console.log('[LibraryPanel] Calling loadBoard for:', boardId);
+    loadBoard(boardId);
+
+    // Wait for state to update before navigating
     setTimeout(() => {
-      setShowUseForm(false);
-      setSelectedCards([]);
-      setSelectedCategories([]);
-      setSelectedSubcategories([]);
-      setUseFormBoardId('');
-      setUseFormColumnId('');
-      loadBoard(boardId);
-      setLibraryOpen(false);
-      navigate('/');
+      console.log('[LibraryPanel] Navigating to board:', boardId);
+      navigate(`/board/${boardId}`);
       alert('Éléments ajoutés au projet avec succès !');
-    }, 100);
+    }, 300);
   };
 
   const toggleAllSubcategories = () => {
@@ -595,6 +703,14 @@ function LibraryPanel() {
 
   if (libraryViewMode === 'main') {
     const filteredCards = cardItems.filter(item => {
+      if (filter === 'favorites') {
+        const isFav =
+          favorites.cards.some(id => String(id) === String(item.id)) ||
+          favorites.categories.some(c => String(c.cardId) === String(item.id)) ||
+          favorites.subcategories.some(s => String(s.cardId) === String(item.id));
+
+        if (!isFav) return false;
+      }
       const itemTags = item.tags || '';
       const matchesSearch =
         item.title.toLowerCase().includes(search.toLowerCase()) ||
@@ -602,9 +718,54 @@ function LibraryPanel() {
       return matchesSearch;
     });
 
-    const categories = selectedLibraryCard ? getCardCategories(selectedLibraryCard) : [];
+    console.log(
+      '[LibraryPanel] filter:',
+      filter,
+      'favorites.cards:',
+      favorites.cards,
+      'filteredCards:',
+      filteredCards.length
+    );
+
+    let categories = selectedLibraryCard ? getCardCategories(selectedLibraryCard) : [];
+
+    // Filter categories and subcategories when in favorites mode
+    if (filter === 'favorites' && selectedLibraryCard) {
+      const cardId = selectedLibraryCard.id;
+      categories = categories.filter(cat => {
+        // Show only if category is favorite
+        if (
+          favorites.categories.some(
+            c => String(c.cardId) === String(cardId) && c.title === cat.title
+          )
+        )
+          return true;
+        // Show if any subcategory is favorite
+        if (
+          (cat.subcategories || []).some(sub =>
+            favorites.subcategories.some(
+              s =>
+                String(s.cardId) === String(cardId) &&
+                s.categoryTitle === cat.title &&
+                s.title === sub.title
+            )
+          )
+        )
+          return true;
+        return false;
+      });
+    }
+
     const subcategories = selectedLibraryCategory
-      ? getCategorySubcategories(selectedLibraryCategory)
+      ? getCategorySubcategories(selectedLibraryCategory).filter(sub => {
+          if (filter !== 'favorites') return true;
+          return favorites.subcategories.some(
+            s =>
+              String(s.cardId) === String(selectedLibraryCard?.id) &&
+              s.categoryTitle === selectedLibraryCategory.title &&
+              s.title === sub.title
+          );
+        })
       : [];
 
     return (
@@ -614,6 +775,29 @@ function LibraryPanel() {
           <div className="w-80 flex-shrink-0 bg-panel border-r border-std flex flex-col">
             <div className="p-4 border-b border-std">
               <h2 className="text-lg font-display font-bold text-primary mb-3">Bibliothèque</h2>
+              <div className="flex gap-2 mb-3">
+                <button
+                  onClick={() => setFilter('all')}
+                  className={`flex-1 px-3 py-1.5 text-sm rounded-lg transition-colors ${
+                    filter === 'all'
+                      ? 'bg-accent text-white'
+                      : 'bg-input text-secondary hover:bg-card-hover'
+                  }`}
+                >
+                  Tous
+                </button>
+                <button
+                  onClick={() => setFilter('favorites')}
+                  className={`flex-1 px-3 py-1.5 text-sm rounded-lg transition-colors flex items-center justify-center gap-1 ${
+                    filter === 'favorites'
+                      ? 'bg-accent text-white'
+                      : 'bg-input text-secondary hover:bg-card-hover'
+                  }`}
+                >
+                  <Star size={14} className={filter === 'favorites' ? 'fill-current' : ''} />
+                  Favoris
+                </button>
+              </div>
               <div className="relative">
                 <Search
                   size={16}
@@ -658,7 +842,11 @@ function LibraryPanel() {
                 </div>
               </div>
               {filteredCards.length === 0 ? (
-                <p className="text-sm text-muted">Aucune carte</p>
+                <p className="text-sm text-muted">
+                  {filter === 'favorites'
+                    ? 'Aucun favori. Ajoutez des favoris dans Paramètres > Favoris Bibliothèque'
+                    : 'Aucune carte'}
+                </p>
               ) : (
                 <div className="space-y-2">
                   {filteredCards.map(item => (
@@ -681,7 +869,18 @@ function LibraryPanel() {
                         className="mt-1 w-4 h-4 accent-accent"
                       />
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-medium text-sm truncate text-primary">{item.title}</h4>
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-medium text-sm truncate text-primary">
+                            {item.title}
+                          </h4>
+                          {isCardFavorite(item.id) && (
+                            <Star
+                              size={14}
+                              className="text-yellow-500 flex-shrink-0"
+                              fill="currentColor"
+                            />
+                          )}
+                        </div>
                         {item.tags && (
                           <div className="flex flex-wrap gap-1 mt-1">
                             {item.tags.split(',').map((tag, i) => (
@@ -753,7 +952,17 @@ function LibraryPanel() {
                         onChange={() => {}}
                         className="mt-1 w-4 h-4 accent-done"
                       />
-                      <h4 className="font-medium text-sm text-primary">{cat.title}</h4>
+                      <div className="flex items-center gap-2 flex-1">
+                        <h4 className="font-medium text-sm text-primary">{cat.title}</h4>
+                        {selectedLibraryCard &&
+                          isCategoryFavorite(selectedLibraryCard.id, cat.title) && (
+                            <Star
+                              size={14}
+                              className="text-yellow-500 flex-shrink-0"
+                              fill="currentColor"
+                            />
+                          )}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -839,7 +1048,22 @@ function LibraryPanel() {
                         onChange={() => {}}
                         className="mt-1 w-4 h-4 accent-waiting"
                       />
-                      <h4 className="font-medium text-sm text-primary">{subcat.title}</h4>
+                      <div className="flex items-center gap-2 flex-1">
+                        <h4 className="font-medium text-sm text-primary">{subcat.title}</h4>
+                        {selectedLibraryCard &&
+                          selectedLibraryCategory &&
+                          isSubcategoryFavorite(
+                            selectedLibraryCard.id,
+                            selectedLibraryCategory.title,
+                            subcat.title
+                          ) && (
+                            <Star
+                              size={14}
+                              className="text-yellow-500 flex-shrink-0"
+                              fill="currentColor"
+                            />
+                          )}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -875,7 +1099,40 @@ function LibraryPanel() {
                   </select>
                 </div>
 
-                {useFormBoardId && (
+                <div>
+                  <label className="block text-sm font-medium text-secondary mb-1">
+                    Destination
+                  </label>
+                  <select
+                    value={useFormDestination}
+                    onChange={e => {
+                      setUseFormDestination(e.target.value);
+                      setUseFormColumnId('');
+                    }}
+                    className="w-full px-3 py-2 bg-input border border-std rounded-lg text-primary focus:outline-none focus:border-accent"
+                  >
+                    <option value="board">Projets (Kanban)</option>
+                    <option value="board2">Projets 2 (Tableau Blanc)</option>
+                  </select>
+                </div>
+
+                {useFormBoardId && useFormDestination === 'board2' && (
+                  <div>
+                    <label className="block text-sm font-medium text-secondary mb-1">Colonne</label>
+                    <select
+                      value={useFormColumnId}
+                      onChange={e => setUseFormColumnId(e.target.value)}
+                      className="w-full px-3 py-2 bg-input border border-std rounded-lg text-primary focus:outline-none focus:border-accent"
+                    >
+                      <option value="">Sélectionner une colonne...</option>
+                      <option value="col-1">À faire</option>
+                      <option value="col-2">En cours</option>
+                      <option value="col-3">Terminé</option>
+                    </select>
+                  </div>
+                )}
+
+                {useFormBoardId && useFormDestination === 'board' && (
                   <div>
                     <label className="block text-sm font-medium text-secondary mb-1">Colonne</label>
                     <select
@@ -1235,7 +1492,35 @@ function LibraryPanel() {
               </div>
               {panelSelectedCard &&
                 (() => {
-                  const categories = getPanelCardCategories(panelSelectedCard);
+                  let categories = getPanelCardCategories(panelSelectedCard);
+
+                  // Filter categories when in favorites mode
+                  if (filter === 'favorites') {
+                    const cardId = panelSelectedCard.id;
+                    categories = categories.filter(cat => {
+                      // Show only if category is favorite
+                      if (
+                        favorites.categories.some(
+                          c => String(c.cardId) === String(cardId) && c.title === cat.title
+                        )
+                      )
+                        return true;
+                      // Show if any subcategory is favorite
+                      if (
+                        (cat.subcategories || []).some(sub =>
+                          favorites.subcategories.some(
+                            s =>
+                              String(s.cardId) === String(cardId) &&
+                              s.categoryTitle === cat.title &&
+                              s.title === sub.title
+                          )
+                        )
+                      )
+                        return true;
+                      return false;
+                    });
+                  }
+
                   return categories.length === 0 ? (
                     <p className="text-sm text-muted">Aucune catégorie</p>
                   ) : (
@@ -1247,10 +1532,18 @@ function LibraryPanel() {
                           onClick={() => handlePanelCategoryClick(cat)}
                         >
                           <div className="flex items-start justify-between">
-                            <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-1 min-w-0">
                               <h4 className="font-medium text-primary text-sm truncate">
                                 {cat.title}
                               </h4>
+                              {panelSelectedCard &&
+                                isCategoryFavorite(panelSelectedCard.id, cat.title) && (
+                                  <Star
+                                    size={14}
+                                    className="text-yellow-500 flex-shrink-0"
+                                    fill="currentColor"
+                                  />
+                                )}
                             </div>
                             <span className="text-accent text-sm">→</span>
                           </div>
@@ -1285,14 +1578,42 @@ function LibraryPanel() {
                 <span className="text-xs text-muted">Sous-catégories</span>
               </div>
               {(() => {
-                const subcategories = getPanelCategorySubcategories(panelSelectedCategory);
+                let subcategories = getPanelCategorySubcategories(panelSelectedCategory);
+
+                // Filter subcategories when in favorites mode
+                if (filter === 'favorites') {
+                  subcategories = subcategories.filter(sub =>
+                    favorites.subcategories.some(
+                      s =>
+                        String(s.cardId) === String(panelSelectedCard?.id) &&
+                        s.categoryTitle === panelSelectedCategory.title &&
+                        s.title === sub.title
+                    )
+                  );
+                }
+
                 return subcategories.length === 0 ? (
                   <p className="text-sm text-muted">Aucune sous-catégorie</p>
                 ) : (
                   <div className="space-y-2">
                     {subcategories.map((subcat, idx) => (
                       <div key={idx} className="bg-card rounded-lg border border-std p-3">
-                        <h4 className="font-medium text-primary text-sm">{subcat.title}</h4>
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-medium text-primary text-sm">{subcat.title}</h4>
+                          {panelSelectedCard &&
+                            panelSelectedCategory &&
+                            isSubcategoryFavorite(
+                              panelSelectedCard.id,
+                              panelSelectedCategory.title,
+                              subcat.title
+                            ) && (
+                              <Star
+                                size={14}
+                                className="text-yellow-500 flex-shrink-0"
+                                fill="currentColor"
+                              />
+                            )}
+                        </div>
                       </div>
                     ))}
                   </div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Droppable, Draggable } from '@hello-pangea/dnd';
+import { Draggable } from '@hello-pangea/dnd';
 import { useApp } from '../../context/AppContext';
 import SubCategory from '../SubCategory/SubCategory';
 import CategoryModal from './CategoryModal';
@@ -14,6 +14,8 @@ function Category({ category, isDragging = false, dragHandleProps, depth = 0 }) 
     saveToLibrary,
     setSelectedCategory,
     createCategory,
+    moveCategory,
+    moveSubcategory,
   } = useApp();
 
   const [showMenu, setShowMenu] = useState(false);
@@ -293,57 +295,71 @@ function Category({ category, isDragging = false, dragHandleProps, depth = 0 }) 
         </div>
 
         {!category.collapsed && hasChildren && (
-          <Droppable droppableId={`category-${category.id}`} type="subcategory">
-            {(provided, snapshot) => (
-              <div
-                ref={provided.innerRef}
-                {...provided.droppableProps}
-                className="px-2 pb-2 overflow-visible subcategories-container"
-                style={{ marginLeft: `${depth * 16}px` }}
+          <div
+            className="px-2 pb-2 overflow-visible subcategories-container"
+            style={{ marginLeft: `${depth * 16}px` }}
+            onDragOver={e => {
+              e.preventDefault();
+              e.dataTransfer.dropEffect = 'move';
+            }}
+            onDrop={e => {
+              e.preventDefault();
+              try {
+                const data = JSON.parse(e.dataTransfer.getData('application/json'));
+                console.log('[Category] Drop received:', data);
+                if (data.type === 'subcategory') {
+                  const maxPos = Math.max(...categorySubcategories.map(s => s.position), -1);
+                  moveSubcategory(data.subcategoryId, category.id, maxPos + 1);
+                }
+              } catch (err) {
+                console.error('[Category] Drop error:', err);
+              }
+            }}
+          >
+            {childCategories.map((childCat, index) => (
+              <Draggable
+                key={childCat.id}
+                draggableId={`category-${childCat.id}`}
+                index={index}
+                type="category"
               >
-                {childCategories.map((childCat, index) => (
-                  <Draggable
-                    key={childCat.id}
-                    draggableId={`category-${childCat.id}`}
-                    index={index}
+                {(provided, snapshot) => (
+                  <div
+                    ref={provided.innerRef}
+                    {...provided.draggableProps}
+                    {...provided.dragHandleProps}
                   >
-                    {(provided, snapshot) => (
-                      <div
-                        ref={provided.innerRef}
-                        {...provided.draggableProps}
-                        {...provided.dragHandleProps}
-                      >
-                        <Category
-                          category={childCat}
-                          isDragging={snapshot.isDragging}
-                          depth={depth + 1}
-                        />
-                      </div>
-                    )}
-                  </Draggable>
-                ))}
-                {categorySubcategories.map((subcategory, index) => (
-                  <Draggable
-                    key={subcategory.id}
-                    draggableId={`subcategory-${subcategory.id}`}
-                    index={childCategories.length + index}
-                  >
-                    {(provided, snapshot) => (
-                      <div
-                        ref={provided.innerRef}
-                        {...provided.draggableProps}
-                        {...provided.dragHandleProps}
-                        style={{ marginLeft: `${(depth + 1) * 16}px` }}
-                      >
-                        <SubCategory subcategory={subcategory} isDragging={snapshot.isDragging} />
-                      </div>
-                    )}
-                  </Draggable>
-                ))}
-                {provided.placeholder}
+                    <Category
+                      category={childCat}
+                      isDragging={snapshot.isDragging}
+                      depth={depth + 1}
+                    />
+                  </div>
+                )}
+              </Draggable>
+            ))}
+            {categorySubcategories.map((subcategory, index) => (
+              <div
+                key={subcategory.id}
+                draggable
+                onDragStart={e => {
+                  e.dataTransfer.setData(
+                    'application/json',
+                    JSON.stringify({
+                      type: 'subcategory',
+                      subcategoryId: subcategory.id,
+                      sourceCategoryId: category.id,
+                    })
+                  );
+                  e.dataTransfer.effectAllowed = 'move';
+                }}
+                className="cursor-grab active:cursor-grabbing"
+                style={{ marginLeft: `${(depth + 1) * 16}px` }}
+              >
+                <SubCategory subcategory={subcategory} />
               </div>
-            )}
-          </Droppable>
+            ))}
+          </div>
         )}
 
         {!category.collapsed && (

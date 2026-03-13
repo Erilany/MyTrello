@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useLocation, useParams } from 'react-router-dom';
 import { AppProvider, useApp } from './context/AppContext';
 import Board from './components/Board/Board';
 import Board2 from './components/Board/Board2';
@@ -55,10 +55,10 @@ function AppContent() {
   const location = useLocation();
 
   React.useEffect(() => {
-    if (!currentBoard && boards.length > 0) {
+    if (!currentBoard && boards.length > 0 && location.pathname === '/') {
       loadBoard(boards[0].id);
     }
-  }, [boards, currentBoard, loadBoard]);
+  }, [boards, currentBoard, loadBoard, location.pathname]);
 
   React.useEffect(() => {
     if (location.pathname === '/library') {
@@ -84,10 +84,10 @@ function AppContent() {
           ) : (
             <Routes>
               <Route path="/" element={<Dashboard />} />
-              <Route path="/board/:boardId" element={<Board />} />
               <Route path="/board" element={<Board />} />
-              <Route path="/board2/:boardId" element={<Board2 />} />
+              <Route path="/board/:boardId" element={<Board />} />
               <Route path="/board2" element={<Board2 />} />
+              <Route path="/board2/:boardId" element={<Board2 />} />
               <Route path="/library" element={<LibraryPanel />} />
               <Route path="/archives" element={<Archives />} />
               <Route path="/settings" element={<Settings />} />

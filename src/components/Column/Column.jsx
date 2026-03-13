@@ -120,7 +120,7 @@ function Column({ column, index }) {
 
   return (
     <div
-      className={`flex-shrink-0 w-[310px] bg-column rounded-lg flex flex-col h-[calc(100vh-180px)] border border-std ${getAnimationClass()}`}
+      className={`flex-shrink-0 w-[310px] bg-column rounded-lg flex flex-col h-full border border-std ${getAnimationClass()}`}
     >
       <div className="p-3 flex items-center justify-between flex-shrink-0 bg-column relative sticky top-0 z-20">
         {isEditing ? (
@@ -253,22 +253,20 @@ function Column({ column, index }) {
                 }
                 window.__isLibraryDrag = false;
               }}
-              className={`flex-1 overflow-y-auto px-2 pb-2 scrollbar-thin ${
+              className={`flex-1 overflow-y-auto px-2 pb-2 scrollbar-thin min-h-0 ${
                 snapshot.isDraggingOver ? 'bg-card/50' : ''
               }`}
             >
               {columnCards.map((card, idx) => (
-                <Draggable key={card.id} draggableId={String(card.id)} index={idx}>
+                <Draggable key={card.id} draggableId={'card-' + card.id} index={idx}>
                   {(provided, snapshot) => (
                     <div
                       ref={provided.innerRef}
                       {...provided.draggableProps}
                       {...provided.dragHandleProps}
-                      onClick={e => {
-                        if (snapshot.isDragging) {
-                          e.preventDefault();
-                          e.stopPropagation();
-                        }
+                      className="cursor-grab active:cursor-grabbing"
+                      onMouseDown={e => {
+                        console.log('[Column] Card mouse down, isDragging:', snapshot.isDragging);
                       }}
                     >
                       <Card

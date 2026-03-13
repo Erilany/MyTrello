@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import { useApp } from '../../context/AppContext';
 import Column from '../Column/Column';
@@ -23,6 +24,7 @@ import {
 } from 'lucide-react';
 
 function Board() {
+  const { boardId } = useParams();
   const {
     currentBoard,
     columns,
@@ -54,6 +56,12 @@ function Board() {
   const [showNewColumn, setShowNewColumn] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [activeTab, setActiveTab] = useState('taches');
+
+  useEffect(() => {
+    if (boardId) {
+      loadBoard(parseInt(boardId));
+    }
+  }, [boardId, loadBoard]);
 
   const tabs = [
     { id: 'informations', label: 'Informations', icon: Info },
@@ -344,7 +352,11 @@ function Board() {
     };
 
     window.addEventListener('library-drop', handleLibraryDrop);
-    return () => window.removeEventListener('library-drop', handleLibraryDrop);
+    console.log('[Board] Library drop handler registered');
+    return () => {
+      console.log('[Board] Library drop handler removed');
+      window.removeEventListener('library-drop', handleLibraryDrop);
+    };
   }, [createCard, createCategory, createSubcategory, loadBoard, cards]);
 
   const handleCreateColumn = async e => {
@@ -358,30 +370,38 @@ function Board() {
   };
 
   const handleDragEnd = result => {
+    console.log('[Board] Drag end:', result);
     if (!result.destination) {
+      console.log('[Board] No destination, returning');
       return;
     }
 
     const { source, destination, draggableId, type } = result;
+    console.log('[Board] Source:', source, 'Destination:', destination, 'Type:', type);
 
     if (source.droppableId === destination.droppableId && source.index === destination.index) {
+      console.log('[Board] Same source and destination, returning');
       return;
     }
 
-    if (type === 'column') {
-      moveColumn(Number(draggableId), destination.index);
+    if (type === 'column' || draggableId.startsWith('column-')) {
+      console.log('[Board] Moving column:', draggableId);
+      const columnId = Number(draggableId.replace('column-', ''));
+      moveColumn(columnId, destination.index);
       return;
     }
 
-    if (type === 'card') {
-      const cardId = Number(draggableId);
+    if (type === 'card' || draggableId.startsWith('card-')) {
+      console.log('[Board] Moving card:', draggableId);
+      const cardId = Number(draggableId.replace('card-', ''));
       const newColumnId = Number(destination.droppableId);
       const newPosition = destination.index;
       moveCard(cardId, newColumnId, newPosition);
       return;
     }
 
-    if (type === 'category') {
+    if (type === 'category' || draggableId.startsWith('category-')) {
+      console.log('[Board] Moving category:', draggableId, 'to card:', destination.droppableId);
       const categoryId = Number(draggableId.replace('category-', ''));
       const newCardId = Number(destination.droppableId.replace('card-', ''));
       const newPosition = destination.index;
@@ -389,7 +409,13 @@ function Board() {
       return;
     }
 
-    if (type === 'subcategory') {
+    if (type === 'subcategory' || draggableId.startsWith('subcategory-')) {
+      console.log(
+        '[Board] Moving subcategory:',
+        draggableId,
+        'to category:',
+        destination.droppableId
+      );
       const subcategoryId = Number(draggableId.replace('subcategory-', ''));
       const newCategoryId = Number(destination.droppableId.replace('category-', ''));
       const newPosition = destination.index;
@@ -478,7 +504,7 @@ function Board() {
       {activeTab === 'taches' && (
         <div className="flex-1 overflow-x-auto">
           <DragDropContext onDragEnd={handleDragEnd}>
-            <Droppable droppableId="board" type="column" direction="horizontal">
+            <Droppable droppableId="board" direction="horizontal">
               {provided => (
                 <div
                   {...provided.droppableProps}
@@ -486,7 +512,7 @@ function Board() {
                   className="flex h-full min-h-[calc(100vh-180px)] space-x-[14px] pb-4 pt-1"
                 >
                   {orderedColumns.map((column, index) => (
-                    <Draggable key={column.id} draggableId={String(column.id)} index={index}>
+                    <Draggable key={column.id} draggableId={'column-' + column.id} index={index}>
                       {(provided, snapshot) => (
                         <div
                           ref={provided.innerRef}
@@ -553,6 +579,28 @@ function Board() {
                       </button>
                     )}
                   </div>
+                  <Droppable droppableId="all-cards" type="category" direction="vertical">
+                    {provided => (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.droppableProps}
+                        className="hidden"
+                      />
+                    )}
+                  </Droppable>
+                  <Droppable
+                    droppableId="all-subcategories"
+                    type="subcategory"
+                    direction="vertical"
+                  >
+                    {provided => (
+                      <div
+                        ref={provided.innerRef}
+                        {...provided.droppableProps}
+                        className="hidden"
+                      />
+                    )}
+                  </Droppable>
                 </div>
               )}
             </Droppable>

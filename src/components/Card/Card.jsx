@@ -23,6 +23,8 @@ function Card({ card, isDragging, columnColor, columnTitle }) {
     setSelectedCard,
     selectedCard,
     cardColors,
+    moveCategory,
+    moveSubcategory,
   } = useApp();
 
   const [showMenu, setShowMenu] = useState(false);
@@ -270,36 +272,48 @@ function Card({ card, isDragging, columnColor, columnTitle }) {
           </div>
 
           {!card.collapsed && cardCategories.length > 0 && (
-            <Droppable droppableId={`card-${card.id}`} type="category" isDropDisabled={false}>
-              {(provided, snapshot) => (
-                <div
-                  ref={provided.innerRef}
-                  {...provided.droppableProps}
-                  className={`flex-1 overflow-y-auto px-2 pb-2 scrollbar-thin mt-2 pt-2 border-t border-std ${
-                    snapshot.isDraggingOver ? 'bg-card-hover' : ''
-                  }`}
-                >
-                  {cardCategories.map((category, index) => (
-                    <Draggable
+            <div
+              className="flex-1 px-2 pb-2 mt-2 pt-2 border-t border-std"
+              onDragOver={e => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+              }}
+              onDrop={e => {
+                e.preventDefault();
+                try {
+                  const data = JSON.parse(e.dataTransfer.getData('application/json'));
+                  console.log('[Card] Drop received:', data);
+                  if (data.type === 'category') {
+                    const maxPos = Math.max(...cardCategories.map(c => c.position), -1);
+                    moveCategory(data.categoryId, card.id, maxPos + 1);
+                  }
+                } catch (err) {
+                  console.error('[Card] Drop error:', err);
+                }
+              }}
+            >
+              {cardCategories.map((category, index) => (
+                    <div
                       key={category.id}
-                      draggableId={`category-${category.id}`}
-                      index={index}
+                      draggable
+                      onDragStart={e => {
+                        e.dataTransfer.setData(
+                          'application/json',
+                          JSON.stringify({
+                            type: 'category',
+                            categoryId: category.id,
+                            sourceCardId: card.id,
+                          })
+                        );
+                        e.dataTransfer.effectAllowed = 'move';
+                      }}
+                      className="cursor-grab active:cursor-grabbing"
                     >
-                      {(provided, snapshot) => (
-                        <div
-                          ref={provided.innerRef}
-                          {...provided.draggableProps}
-                          {...provided.dragHandleProps}
-                        >
-                          <Category category={category} isDragging={snapshot.isDragging} />
-                        </div>
-                      )}
-                    </Draggable>
+                      <Category category={category} />
+                    </div>
                   ))}
-                  {provided.placeholder}
                 </div>
               )}
-            </Droppable>
           )}
         </div>
       </div>

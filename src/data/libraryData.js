@@ -7,7 +7,7 @@ function parsePTDuration(ptStr) {
   return days;
 }
 
-const csvData = `N°;Niveau 1;Niveau 2;Niveau 3;Niveau 4;Niveau 5;Niveau 6;Durée;Catégorie;Domaine
+const csvData = `N°;Niveau 1;Niveau 2;Niveau 3;Niveau 4;Niveau 5;Niveau 6;Durée;Tags 1;Tags 2
 5;Jalons;Jalons SIEPR;;;;;PT10955H0M0S;;
 6;Jalons;Jalons SIEPR;Jalons projet;;;;PT10955H0M0S;;
 7;Jalons;Jalons SIEPR;Jalons projet;Signature de la DO;;;PT0H0M0S;Projet;Projet
@@ -50,109 +50,109 @@ const csvData = `N°;Niveau 1;Niveau 2;Niveau 3;Niveau 4;Niveau 5;Niveau 6;Duré
 44;Processus décisionnels;Processus DO;;;;;PT35H0M0S;Processus Décisionnel;
 45;Processus décisionnels;Processus DO;DO - Validation et signature de la DO (dir D&I);;;;PT0H0M0S;Processus Décisionnel;Projet
 46;Processus décisionnels;Processus DO;Nomination du manager de projet;;;;PT0H0M0S;;
-47;Processus décisionnels;Processus DCT;;;;;PT1022H0M0S;Processus Décisionnel;
-48;Processus décisionnels;Processus DCT;Réalisation CTF;;;;PT700H0M0S;Etudes;
-49;Processus décisionnels;Processus DCT;Réalisation CTF;Mise à jour du CCF;;;PT140H0M0S;Etudes;Projet
-50;Processus décisionnels;Processus DCT;Réalisation CTF;CTF partie Postes;;;PT280H0M0S;Etudes;Poste
-51;Processus décisionnels;Processus DCT;Réalisation CTF;CTF partie BT / telecom Postes et encadrants;;;PT280H0M0S;Etudes;BT
-52;Processus décisionnels;Processus DCT;Réalisation CTF;CTF partie Liaisons aériennes;;;PT280H0M0S;Etudes;LA
-53;Processus décisionnels;Processus DCT;Réalisation CTF;CTF partie Liaisons souterraines;;;PT280H0M0S;Etudes;LS
-54;Processus décisionnels;Processus DCT;Réalisation CTF;CTF partie Concertation/autorisation;;;PT280H0M0S;Etudes;Projet
-55;Processus décisionnels;Processus DCT;Réalisation CTF;Finalisation CTF de synthèse;;;PT140H0M0S;Etudes;Projet
-56;Processus décisionnels;Processus DCT;Projet < 10 M€ (Facultative);;;;PT35H0M0S;Processus Décisionnel;
-57;Processus décisionnels;Processus DCT;Projet < 10 M€ (Facultative);DCT - RRR/CRP (Revue des Référents Régionaux / Comité Régional des Projets);;;PT35H0M0S;Processus Décisionnel;Projet
-58;Processus décisionnels;Processus DCT;Projet < 20 M€;;;;PT252H0M0S;Processus Décisionnel;
-59;Processus décisionnels;Processus DCT;Projet < 20 M€;DCT - RRR (Revue des Référents Régionaux);;;PT35H0M0S;Processus Décisionnel;Projet
-60;Processus décisionnels;Processus DCT;Projet < 20 M€;DCT - Mise à jour des documents pour le CCE;;;PT70H0M0S;Processus Décisionnel;Projet
-61;Processus décisionnels;Processus DCT;Projet < 20 M€;DCT - Dépôt du dossier CCE;;;PT0H0M0S;Processus Décisionnel;Projet
-62;Processus décisionnels;Processus DCT;Projet < 20 M€;DCT - CCE - Remarques et questions;;;PT35H0M0S;Processus Décisionnel;Projet
-63;Processus décisionnels;Processus DCT;Projet < 20 M€;DCT - CCE - Réponses et amendements;;;PT35H0M0S;Processus Décisionnel;Projet
-64;Processus décisionnels;Processus DCT;Projet < 20 M€;DCT - CCE - Avis;;;PT14H0M0S;Processus Décisionnel;Projet
-65;Processus décisionnels;Processus DCT;Projet < 20 M€;DCT - CCE - Séance plénière;;;PT7H0M0S;Processus Décisionnel;Projet
-66;Processus décisionnels;Processus DCT;Projet < 20 M€;DCT - CRP (Comité Régional des Projets);;;PT35H0M0S;Processus Décisionnel;Projet
-67;Processus décisionnels;Processus DCT;Projet < 20 M€;DCT - Validation directeur D&I;;;PT35H0M0S;Processus Décisionnel;Projet
-68;Processus décisionnels;Processus DCT;Projet > 20 M€;;;;PT322H0M0S;Processus Décisionnel;
-69;Processus décisionnels;Processus DCT;Projet > 20 M€;DCT - RRR (Revue des Référents Régionaux);;;PT35H0M0S;Processus Décisionnel;Projet
-70;Processus décisionnels;Processus DCT;Projet > 20 M€;DCT - Point d'arrêt SPC;;;PT0H0M0S;Processus Décisionnel;Projet
-71;Processus décisionnels;Processus DCT;Projet > 20 M€;DCT - Mise à jour des documents pour le CCE;;;PT70H0M0S;Processus Décisionnel;Projet
-72;Processus décisionnels;Processus DCT;Projet > 20 M€;DCT - Dépôt du dossier CCE;;;PT0H0M0S;Processus Décisionnel;Projet
-73;Processus décisionnels;Processus DCT;Projet > 20 M€;DCT - CCE - Remarques et questions;;;PT35H0M0S;Processus Décisionnel;Projet
-74;Processus décisionnels;Processus DCT;Projet > 20 M€;DCT - CCE - Réponses et amendements;;;PT35H0M0S;Processus Décisionnel;Projet
-75;Processus décisionnels;Processus DCT;Projet > 20 M€;DCT - CCE - Avis;;;PT14H0M0S;Processus Décisionnel;Projet
-76;Processus décisionnels;Processus DCT;Projet > 20 M€;DCT - CCE - Séance plénière;;;PT7H0M0S;Processus Décisionnel;Projet
-77;Processus décisionnels;Processus DCT;Projet > 20 M€;DCT - CRP Paris;;;PT35H0M0S;Processus Décisionnel;Projet
-78;Processus décisionnels;Processus DCT;Projet > 20 M€;DCT - CNI (Comité National d'Investissement);;;PT35H0M0S;Processus Décisionnel;Projet
-79;Processus décisionnels;Processus DCT;Projet > 20 M€;DCT - Présentation en directoire;;;PT35H0M0S;Processus Décisionnel;Projet
-80;Processus décisionnels;Processus DCT;Projet > 20 M€;DCT - Délibération directoire;;;PT35H0M0S;Processus Décisionnel;Projet
-81;Processus décisionnels;Processus DCT;DCT - Validation et signature de la DCT;;;;PT0H0M0S;Processus Décisionnel;Projet
-82;Processus décisionnels;Processus DI;;;;;PT1414H0M0S;Processus Décisionnel;
-83;Processus décisionnels;Processus DI;APD;;;;PT175H0M0S;Etudes;Projet
-84;Processus décisionnels;Processus DI;APD;APD - Finalisation du dossier;;;PT70H0M0S;Etudes;Projet
-85;Processus décisionnels;Processus DI;APD;APD - Envoi dossier;;;PT0H0M0S;Etudes;Projet
-86;Processus décisionnels;Processus DI;APD;APD - Avis;;;PT105H0M0S;Etudes;Projet
-87;Processus décisionnels;Processus DI;APD;APD - Validation du dossier;;;PT0H0M0S;Etudes;Projet
-88;Processus décisionnels;Processus DI;Projet < 10 M€;;;;PT105H0M0S;Processus Décisionnel;
-89;Processus décisionnels;Processus DI;Projet < 10 M€;DI - Finalisation du dossier;;;PT70H0M0S;Processus Décisionnel;Projet
-90;Processus décisionnels;Processus DI;Projet < 10 M€;DI - RRR/CRP (Revue des Référents Régionaux / Comité Régional des Projets);;;PT35H0M0S;Processus Décisionnel;Projet
-91;Processus décisionnels;Processus DI;Projet < 20 M€;;;;PT392H0M0S;Processus Décisionnel;
-92;Processus décisionnels;Processus DI;Projet < 20 M€;DI - Finalisation du dossier;;;PT140H0M0S;Processus Décisionnel;Projet
-93;Processus décisionnels;Processus DI;Projet < 20 M€;DI - RRR (Revue des Référents Régionaux);;;PT35H0M0S;Processus Décisionnel;Projet
-94;Processus décisionnels;Processus DI;Projet < 20 M€;DI - Point d'arrêt SPC;;;PT0H0M0S;Processus Décisionnel;Projet
-95;Processus décisionnels;Processus DI;Projet < 20 M€;DCT - Mise à jour des documents pour le CCE;;;PT70H0M0S;Processus Décisionnel;Projet
-96;Processus décisionnels;Processus DI;Projet < 20 M€;DCT - Dépôt du dossier CCE;;;PT0H0M0S;Processus Décisionnel;Projet
-97;Processus décisionnels;Processus DI;Projet < 20 M€;DCT - CCE - Remarques et questions;;;PT35H0M0S;Processus Décisionnel;Projet
-98;Processus décisionnels;Processus DI;Projet < 20 M€;DCT - CCE - Réponses et amendements;;;PT35H0M0S;Processus Décisionnel;Projet
-99;Processus décisionnels;Processus DI;Projet < 20 M€;DCT - CCE - Avis;;;PT14H0M0S;Processus Décisionnel;Projet
-100;Processus décisionnels;Processus DI;Projet < 20 M€;DCT - CCE - Séance plénière;;;PT7H0M0S;Processus Décisionnel;Projet
-101;Processus décisionnels;Processus DI;Projet < 20 M€;DI - CRP (Comité Régional des Projets) Paris;;;PT35H0M0S;Processus Décisionnel;Projet
-102;Processus décisionnels;Processus DI;Projet < 20 M€;DI - Validation directeur D&I;;;PT35H0M0S;Processus Décisionnel;Projet
-103;Processus décisionnels;Processus DI;Projet > 20 M€;;;;PT462H0M0S;Processus Décisionnel;
-104;Processus décisionnels;Processus DI;Projet > 20 M€;DI - Finalisation du dossier;;;PT140H0M0S;Processus Décisionnel;Projet
-105;Processus décisionnels;Processus DI;Projet > 20 M€;DI - RRR (Revue des Référents Régionaux);;;PT35H0M0S;Processus Décisionnel;Projet
-106;Processus décisionnels;Processus DI;Projet > 20 M€;DI - Point d'arrêt SPC;;;PT0H0M0S;Processus Décisionnel;Projet
-107;Processus décisionnels;Processus DI;Projet > 20 M€;DCT - Mise à jour des documents pour le CCE;;;PT70H0M0S;Processus Décisionnel;Projet
-108;Processus décisionnels;Processus DI;Projet > 20 M€;DCT - Dépôt du dossier CCE;;;PT0H0M0S;Processus Décisionnel;Projet
-109;Processus décisionnels;Processus DI;Projet > 20 M€;DCT - CCE - Remarques et questions;;;PT35H0M0S;Processus Décisionnel;Projet
-110;Processus décisionnels;Processus DI;Projet > 20 M€;DCT - CCE - Réponses et amendements;;;PT35H0M0S;Processus Décisionnel;Projet
-111;Processus décisionnels;Processus DI;Projet > 20 M€;DCT - CCE - Avis;;;PT14H0M0S;Processus Décisionnel;Projet
-112;Processus décisionnels;Processus DI;Projet > 20 M€;DCT - CCE - Séance plénière;;;PT7H0M0S;Processus Décisionnel;Projet
-113;Processus décisionnels;Processus DI;Projet > 20 M€;DI - CRP Paris;;;PT35H0M0S;Processus Décisionnel;Projet
-114;Processus décisionnels;Processus DI;Projet > 20 M€;DI - CNI (Comité National d'Investissement);;;PT35H0M0S;Processus Décisionnel;Projet
-115;Processus décisionnels;Processus DI;Projet > 20 M€;DI - Présentation en directoire;;;PT35H0M0S;Processus Décisionnel;Projet
-116;Processus décisionnels;Processus DI;Projet > 20 M€;DI - Délibération directoire;;;PT35H0M0S;Processus Décisionnel;Projet
-117;Processus décisionnels;Processus DI;Projet > 30 M€;;;;PT462H0M0S;Processus Décisionnel;
-118;Processus décisionnels;Processus DI;Projet > 30 M€;DI - Finalisation du dossier;;;PT140H0M0S;Processus Décisionnel;Projet
-119;Processus décisionnels;Processus DI;Projet > 30 M€;DI - RRR/CRP (Revue des Référents Régionaux / Comité Régional des Projets);;;PT35H0M0S;Processus Décisionnel;Projet
-120;Processus décisionnels;Processus DI;Projet > 30 M€;DI - Point d'arrêt SPC;;;PT0H0M0S;Processus Décisionnel;Projet
-121;Processus décisionnels;Processus DI;Projet > 30 M€;DI - Mise à jour des documents pour le CCE;;;PT70H0M0S;Processus Décisionnel;Projet
-122;Processus décisionnels;Processus DI;Projet > 30 M€;DI - Dépôt du dossier CCE;;;PT0H0M0S;Processus Décisionnel;Projet
-123;Processus décisionnels;Processus DI;Projet > 30 M€;DI - CCE - Remarques et questions;;;PT35H0M0S;Processus Décisionnel;Projet
-124;Processus décisionnels;Processus DI;Projet > 30 M€;DI - CCE - Réponses et amendements;;;PT35H0M0S;Processus Décisionnel;Projet
-125;Processus décisionnels;Processus DI;Projet > 30 M€;DI - CCE - Avis;;;PT14H0M0S;Processus Décisionnel;Projet
-126;Processus décisionnels;Processus DI;Projet > 30 M€;DI - CCE - Séance plénière;;;PT7H0M0S;Processus Décisionnel;Projet
-127;Processus décisionnels;Processus DI;Projet > 30 M€;DI - CRP Paris;;;PT35H0M0S;Processus Décisionnel;Projet
-128;Processus décisionnels;Processus DI;Projet > 30 M€;DI - CNI (Comité National d'Investissement);;;PT35H0M0S;Processus Décisionnel;Projet
-129;Processus décisionnels;Processus DI;Projet > 30 M€;DI - Présentation en directoire;;;PT35H0M0S;Processus Décisionnel;Projet
-130;Processus décisionnels;Processus DI;Projet > 30 M€;DI - Délibération directoire;;;PT35H0M0S;Processus Décisionnel;Projet
-131;Processus décisionnels;Processus DI;Projet > 50 M€;;;;PT924H0M0S;Processus Décisionnel;
-132;Processus décisionnels;Processus DI;Projet > 50 M€;DI - Finalisation du dossier;;;PT140H0M0S;Processus Décisionnel;Projet
-133;Processus décisionnels;Processus DI;Projet > 50 M€;DI - RRR/CRP (Revue des Référents Régionaux / Comité Régional des Projets);;;PT35H0M0S;Processus Décisionnel;Projet
-134;Processus décisionnels;Processus DI;Projet > 50 M€;DI - Point d'arrêt SPC;;;PT0H0M0S;Processus Décisionnel;Projet
-135;Processus décisionnels;Processus DI;Projet > 50 M€;DI - Mise à jour des documents pour le CCE;;;PT70H0M0S;Processus Décisionnel;Projet
-136;Processus décisionnels;Processus DI;Projet > 50 M€;DI - Dépôt du dossier CCE;;;PT0H0M0S;Processus Décisionnel;Projet
-137;Processus décisionnels;Processus DI;Projet > 50 M€;DI - CCE - Remarques et questions;;;PT35H0M0S;Processus Décisionnel;Projet
-138;Processus décisionnels;Processus DI;Projet > 50 M€;DI - CCE - Réponses et amendements;;;PT35H0M0S;Processus Décisionnel;Projet
-139;Processus décisionnels;Processus DI;Projet > 50 M€;DI - CCE - Avis;;;PT14H0M0S;Processus Décisionnel;Projet
-140;Processus décisionnels;Processus DI;Projet > 50 M€;DI - CCE - Séance plénière;;;PT7H0M0S;Processus Décisionnel;Projet
-141;Processus décisionnels;Processus DI;Projet > 50 M€;DI - CRP Paris;;;PT35H0M0S;Processus Décisionnel;Projet
-142;Processus décisionnels;Processus DI;Projet > 50 M€;DI - CNI (Comité National d'Investissement);;;PT35H0M0S;Processus Décisionnel;Projet
-143;Processus décisionnels;Processus DI;Projet > 50 M€;DI - Audit CRE;;;PT462H0M0S;Processus Décisionnel;Projet
-144;Processus décisionnels;Processus DI;Projet > 50 M€;DI - Présentation en directoire;;;PT35H0M0S;Processus Décisionnel;Projet
-145;Processus décisionnels;Processus DI;Projet > 50 M€;DI - Délibération directoire;;;PT35H0M0S;Processus Décisionnel;Projet
-146;Processus décisionnels;Processus DI;DI - Validation et signature de la DI;;;;PT0H0M0S;Processus Décisionnel;Projet
+47;Processus décisionnels;Processus DCT (Supprimer les lignes non nécessaires);;;;;PT1022H0M0S;Processus Décisionnel;
+48;Processus décisionnels;Processus DCT (Supprimer les lignes non nécessaires);Réalisation CTF;;;;PT700H0M0S;Etudes;
+49;Processus décisionnels;Processus DCT (Supprimer les lignes non nécessaires);Réalisation CTF;Mise à jour du CCF;;;PT140H0M0S;Etudes;Projet
+50;Processus décisionnels;Processus DCT (Supprimer les lignes non nécessaires);Réalisation CTF;CTF partie Postes;;;PT280H0M0S;Etudes;Poste
+51;Processus décisionnels;Processus DCT (Supprimer les lignes non nécessaires);Réalisation CTF;CTF partie BT / telecom Postes et encadrants;;;PT280H0M0S;Etudes;BT
+52;Processus décisionnels;Processus DCT (Supprimer les lignes non nécessaires);Réalisation CTF;CTF partie Liaisons aériennes;;;PT280H0M0S;Etudes;LA
+53;Processus décisionnels;Processus DCT (Supprimer les lignes non nécessaires);Réalisation CTF;CTF partie Liaisons souterraines;;;PT280H0M0S;Etudes;LS
+54;Processus décisionnels;Processus DCT (Supprimer les lignes non nécessaires);Réalisation CTF;CTF partie Concertation/autorisation;;;PT280H0M0S;Etudes;Projet
+55;Processus décisionnels;Processus DCT (Supprimer les lignes non nécessaires);Réalisation CTF;Finalisation CTF de synthèse;;;PT140H0M0S;Etudes;Projet
+56;Processus décisionnels;Processus DCT (Supprimer les lignes non nécessaires);Projet < 10 M€ (Facultative);;;;PT35H0M0S;Processus Décisionnel;
+57;Processus décisionnels;Processus DCT (Supprimer les lignes non nécessaires);Projet < 10 M€ (Facultative);DCT - RRR/CRP (Revue des Référents Régionaux / Comité Régional des Projets);;;PT35H0M0S;Processus Décisionnel;Projet
+58;Processus décisionnels;Processus DCT (Supprimer les lignes non nécessaires);Projet < 20 M€;;;;PT252H0M0S;Processus Décisionnel;
+59;Processus décisionnels;Processus DCT (Supprimer les lignes non nécessaires);Projet < 20 M€;DCT - RRR (Revue des Référents Régionaux);;;PT35H0M0S;Processus Décisionnel;Projet
+60;Processus décisionnels;Processus DCT (Supprimer les lignes non nécessaires);Projet < 20 M€;DCT - Mise à jour des documents pour le CCE;;;PT70H0M0S;Processus Décisionnel;Projet
+61;Processus décisionnels;Processus DCT (Supprimer les lignes non nécessaires);Projet < 20 M€;DCT - Dépôt du dossier CCE;;;PT0H0M0S;Processus Décisionnel;Projet
+62;Processus décisionnels;Processus DCT (Supprimer les lignes non nécessaires);Projet < 20 M€;DCT - CCE - Remarques et questions;;;PT35H0M0S;Processus Décisionnel;Projet
+63;Processus décisionnels;Processus DCT (Supprimer les lignes non nécessaires);Projet < 20 M€;DCT - CCE - Réponses et amendements;;;PT35H0M0S;Processus Décisionnel;Projet
+64;Processus décisionnels;Processus DCT (Supprimer les lignes non nécessaires);Projet < 20 M€;DCT - CCE - Avis;;;PT14H0M0S;Processus Décisionnel;Projet
+65;Processus décisionnels;Processus DCT (Supprimer les lignes non nécessaires);Projet < 20 M€;DCT - CCE - Séance plénière;;;PT7H0M0S;Processus Décisionnel;Projet
+66;Processus décisionnels;Processus DCT (Supprimer les lignes non nécessaires);Projet < 20 M€;DCT - CRP (Comité Régional des Projets);;;PT35H0M0S;Processus Décisionnel;Projet
+67;Processus décisionnels;Processus DCT (Supprimer les lignes non nécessaires);Projet < 20 M€;DCT - Validation directeur D&I;;;PT35H0M0S;Processus Décisionnel;Projet
+68;Processus décisionnels;Processus DCT (Supprimer les lignes non nécessaires);Projet > 20 M€;;;;PT322H0M0S;Processus Décisionnel;
+69;Processus décisionnels;Processus DCT (Supprimer les lignes non nécessaires);Projet > 20 M€;DCT - RRR (Revue des Référents Régionaux);;;PT35H0M0S;Processus Décisionnel;Projet
+70;Processus décisionnels;Processus DCT (Supprimer les lignes non nécessaires);Projet > 20 M€;DCT - Point d'arrêt SPC;;;PT0H0M0S;Processus Décisionnel;Projet
+71;Processus décisionnels;Processus DCT (Supprimer les lignes non nécessaires);Projet > 20 M€;DCT - Mise à jour des documents pour le CCE;;;PT70H0M0S;Processus Décisionnel;Projet
+72;Processus décisionnels;Processus DCT (Supprimer les lignes non nécessaires);Projet > 20 M€;DCT - Dépôt du dossier CCE;;;PT0H0M0S;Processus Décisionnel;Projet
+73;Processus décisionnels;Processus DCT (Supprimer les lignes non nécessaires);Projet > 20 M€;DCT - CCE - Remarques et questions;;;PT35H0M0S;Processus Décisionnel;Projet
+74;Processus décisionnels;Processus DCT (Supprimer les lignes non nécessaires);Projet > 20 M€;DCT - CCE - Réponses et amendements;;;PT35H0M0S;Processus Décisionnel;Projet
+75;Processus décisionnels;Processus DCT (Supprimer les lignes non nécessaires);Projet > 20 M€;DCT - CCE - Avis;;;PT14H0M0S;Processus Décisionnel;Projet
+76;Processus décisionnels;Processus DCT (Supprimer les lignes non nécessaires);Projet > 20 M€;DCT - CCE - Séance plénière;;;PT7H0M0S;Processus Décisionnel;Projet
+77;Processus décisionnels;Processus DCT (Supprimer les lignes non nécessaires);Projet > 20 M€;DCT - CRP Paris;;;PT35H0M0S;Processus Décisionnel;Projet
+78;Processus décisionnels;Processus DCT (Supprimer les lignes non nécessaires);Projet > 20 M€;DCT - CNI (Comité National d'Investissement);;;PT35H0M0S;Processus Décisionnel;Projet
+79;Processus décisionnels;Processus DCT (Supprimer les lignes non nécessaires);Projet > 20 M€;DCT - Présentation en directoire (si montant engagé entre DCT et DI > 20 M€);;;PT35H0M0S;Processus Décisionnel;Projet
+80;Processus décisionnels;Processus DCT (Supprimer les lignes non nécessaires);Projet > 20 M€;DCT - Délibération directoire (si montant engagé entre DCT et DI > 20 M€);;;PT35H0M0S;Processus Décisionnel;Projet
+81;Processus décisionnels;Processus DCT (Supprimer les lignes non nécessaires);DCT - Validation et signature de la DCT;;;;PT0H0M0S;Processus Décisionnel;Projet
+82;Processus décisionnels;Processus DI (Supprimer les lignes non nécessaires);;;;;PT1414H0M0S;Processus Décisionnel;
+83;Processus décisionnels;Processus DI (Supprimer les lignes non nécessaires);APD;;;;PT175H0M0S;Etudes;Projet
+84;Processus décisionnels;Processus DI (Supprimer les lignes non nécessaires);APD;APD - Finalisation du dossier;;;PT70H0M0S;Etudes;Projet
+85;Processus décisionnels;Processus DI (Supprimer les lignes non nécessaires);APD;APD - Envoi dossier;;;PT0H0M0S;Etudes;Projet
+86;Processus décisionnels;Processus DI (Supprimer les lignes non nécessaires);APD;APD - Avis;;;PT105H0M0S;Etudes;Projet
+87;Processus décisionnels;Processus DI (Supprimer les lignes non nécessaires);APD;APD - Validation du dossier;;;PT0H0M0S;Etudes;Projet
+88;Processus décisionnels;Processus DI (Supprimer les lignes non nécessaires);Projet < 10 M€;;;;PT105H0M0S;Processus Décisionnel;
+89;Processus décisionnels;Processus DI (Supprimer les lignes non nécessaires);Projet < 10 M€;DI - Finalisation du dossier;;;PT70H0M0S;Processus Décisionnel;Projet
+90;Processus décisionnels;Processus DI (Supprimer les lignes non nécessaires);Projet < 10 M€;DI - RRR/CRP (Revue des Référents Régionaux / Comité Régional des Projets);;;PT35H0M0S;Processus Décisionnel;Projet
+91;Processus décisionnels;Processus DI (Supprimer les lignes non nécessaires);Projet < 20 M€;;;;PT392H0M0S;Processus Décisionnel;
+92;Processus décisionnels;Processus DI (Supprimer les lignes non nécessaires);Projet < 20 M€;DI - Finalisation du dossier;;;PT140H0M0S;Processus Décisionnel;Projet
+93;Processus décisionnels;Processus DI (Supprimer les lignes non nécessaires);Projet < 20 M€;DI - RRR (Revue des Référents Régionaux);;;PT35H0M0S;Processus Décisionnel;Projet
+94;Processus décisionnels;Processus DI (Supprimer les lignes non nécessaires);Projet < 20 M€;DI - Point d'arrêt SPC;;;PT0H0M0S;Processus Décisionnel;Projet
+95;Processus décisionnels;Processus DI (Supprimer les lignes non nécessaires);Projet < 20 M€;DCT - Mise à jour des documents pour le CCE;;;PT70H0M0S;Processus Décisionnel;Projet
+96;Processus décisionnels;Processus DI (Supprimer les lignes non nécessaires);Projet < 20 M€;DCT - Dépôt du dossier CCE;;;PT0H0M0S;Processus Décisionnel;Projet
+97;Processus décisionnels;Processus DI (Supprimer les lignes non nécessaires);Projet < 20 M€;DCT - CCE - Remarques et questions;;;PT35H0M0S;Processus Décisionnel;Projet
+98;Processus décisionnels;Processus DI (Supprimer les lignes non nécessaires);Projet < 20 M€;DCT - CCE - Réponses et amendements;;;PT35H0M0S;Processus Décisionnel;Projet
+99;Processus décisionnels;Processus DI (Supprimer les lignes non nécessaires);Projet < 20 M€;DCT - CCE - Avis;;;PT14H0M0S;Processus Décisionnel;Projet
+100;Processus décisionnels;Processus DI (Supprimer les lignes non nécessaires);Projet < 20 M€;DCT - CCE - Séance plénière;;;PT7H0M0S;Processus Décisionnel;Projet
+101;Processus décisionnels;Processus DI (Supprimer les lignes non nécessaires);Projet < 20 M€;DI - CRP (Comité Régional des Projets) Paris;;;PT35H0M0S;Processus Décisionnel;Projet
+102;Processus décisionnels;Processus DI (Supprimer les lignes non nécessaires);Projet < 20 M€;DI - Validation directeur D&I;;;PT35H0M0S;Processus Décisionnel;Projet
+103;Processus décisionnels;Processus DI (Supprimer les lignes non nécessaires);Projet > 20 M€;;;;PT462H0M0S;Processus Décisionnel;
+104;Processus décisionnels;Processus DI (Supprimer les lignes non nécessaires);Projet > 20 M€;DI - Finalisation du dossier;;;PT140H0M0S;Processus Décisionnel;Projet
+105;Processus décisionnels;Processus DI (Supprimer les lignes non nécessaires);Projet > 20 M€;DI - RRR (Revue des Référents Régionaux);;;PT35H0M0S;Processus Décisionnel;Projet
+106;Processus décisionnels;Processus DI (Supprimer les lignes non nécessaires);Projet > 20 M€;DI - Point d'arrêt SPC;;;PT0H0M0S;Processus Décisionnel;Projet
+107;Processus décisionnels;Processus DI (Supprimer les lignes non nécessaires);Projet > 20 M€;DCT - Mise à jour des documents pour le CCE;;;PT70H0M0S;Processus Décisionnel;Projet
+108;Processus décisionnels;Processus DI (Supprimer les lignes non nécessaires);Projet > 20 M€;DCT - Dépôt du dossier CCE;;;PT0H0M0S;Processus Décisionnel;Projet
+109;Processus décisionnels;Processus DI (Supprimer les lignes non nécessaires);Projet > 20 M€;DCT - CCE - Remarques et questions;;;PT35H0M0S;Processus Décisionnel;Projet
+110;Processus décisionnels;Processus DI (Supprimer les lignes non nécessaires);Projet > 20 M€;DCT - CCE - Réponses et amendements;;;PT35H0M0S;Processus Décisionnel;Projet
+111;Processus décisionnels;Processus DI (Supprimer les lignes non nécessaires);Projet > 20 M€;DCT - CCE - Avis;;;PT14H0M0S;Processus Décisionnel;Projet
+112;Processus décisionnels;Processus DI (Supprimer les lignes non nécessaires);Projet > 20 M€;DCT - CCE - Séance plénière;;;PT7H0M0S;Processus Décisionnel;Projet
+113;Processus décisionnels;Processus DI (Supprimer les lignes non nécessaires);Projet > 20 M€;DI - CRP Paris;;;PT35H0M0S;Processus Décisionnel;Projet
+114;Processus décisionnels;Processus DI (Supprimer les lignes non nécessaires);Projet > 20 M€;DI - CNI (Comité National d'Investissement);;;PT35H0M0S;Processus Décisionnel;Projet
+115;Processus décisionnels;Processus DI (Supprimer les lignes non nécessaires);Projet > 20 M€;DI - Présentation en directoire;;;PT35H0M0S;Processus Décisionnel;Projet
+116;Processus décisionnels;Processus DI (Supprimer les lignes non nécessaires);Projet > 20 M€;DI - Délibération directoire;;;PT35H0M0S;Processus Décisionnel;Projet
+117;Processus décisionnels;Processus DI (Supprimer les lignes non nécessaires);Projet > 30 M€;;;;PT462H0M0S;Processus Décisionnel;
+118;Processus décisionnels;Processus DI (Supprimer les lignes non nécessaires);Projet > 30 M€;DI - Finalisation du dossier;;;PT140H0M0S;Processus Décisionnel;Projet
+119;Processus décisionnels;Processus DI (Supprimer les lignes non nécessaires);Projet > 30 M€;DI - RRR/CRP (Revue des Référents Régionaux / Comité Régional des Projets);;;PT35H0M0S;Processus Décisionnel;Projet
+120;Processus décisionnels;Processus DI (Supprimer les lignes non nécessaires);Projet > 30 M€;DI - Point d'arrêt SPC;;;PT0H0M0S;Processus Décisionnel;Projet
+121;Processus décisionnels;Processus DI (Supprimer les lignes non nécessaires);Projet > 30 M€;DI - Mise à jour des documents pour le CCE;;;PT70H0M0S;Processus Décisionnel;Projet
+122;Processus décisionnels;Processus DI (Supprimer les lignes non nécessaires);Projet > 30 M€;DI - Dépôt du dossier CCE;;;PT0H0M0S;Processus Décisionnel;Projet
+123;Processus décisionnels;Processus DI (Supprimer les lignes non nécessaires);Projet > 30 M€;DI - CCE - Remarques et questions;;;PT35H0M0S;Processus Décisionnel;Projet
+124;Processus décisionnels;Processus DI (Supprimer les lignes non nécessaires);Projet > 30 M€;DI - CCE - Réponses et amendements;;;PT35H0M0S;Processus Décisionnel;Projet
+125;Processus décisionnels;Processus DI (Supprimer les lignes non nécessaires);Projet > 30 M€;DI - CCE - Avis;;;PT14H0M0S;Processus Décisionnel;Projet
+126;Processus décisionnels;Processus DI (Supprimer les lignes non nécessaires);Projet > 30 M€;DI - CCE - Séance plénière;;;PT7H0M0S;Processus Décisionnel;Projet
+127;Processus décisionnels;Processus DI (Supprimer les lignes non nécessaires);Projet > 30 M€;DI - CRP Paris;;;PT35H0M0S;Processus Décisionnel;Projet
+128;Processus décisionnels;Processus DI (Supprimer les lignes non nécessaires);Projet > 30 M€;DI - CNI (Comité National d'Investissement);;;PT35H0M0S;Processus Décisionnel;Projet
+129;Processus décisionnels;Processus DI (Supprimer les lignes non nécessaires);Projet > 30 M€;DI - Présentation en directoire;;;PT35H0M0S;Processus Décisionnel;Projet
+130;Processus décisionnels;Processus DI (Supprimer les lignes non nécessaires);Projet > 30 M€;DI - Délibération directoire;;;PT35H0M0S;Processus Décisionnel;Projet
+131;Processus décisionnels;Processus DI (Supprimer les lignes non nécessaires);Projet > 50 M€;;;;PT924H0M0S;Processus Décisionnel;
+132;Processus décisionnels;Processus DI (Supprimer les lignes non nécessaires);Projet > 50 M€;DI - Finalisation du dossier;;;PT140H0M0S;Processus Décisionnel;Projet
+133;Processus décisionnels;Processus DI (Supprimer les lignes non nécessaires);Projet > 50 M€;DI - RRR/CRP (Revue des Référents Régionaux / Comité Régional des Projets);;;PT35H0M0S;Processus Décisionnel;Projet
+134;Processus décisionnels;Processus DI (Supprimer les lignes non nécessaires);Projet > 50 M€;DI - Point d'arrêt SPC;;;PT0H0M0S;Processus Décisionnel;Projet
+135;Processus décisionnels;Processus DI (Supprimer les lignes non nécessaires);Projet > 50 M€;DI - Mise à jour des documents pour le CCE;;;PT70H0M0S;Processus Décisionnel;Projet
+136;Processus décisionnels;Processus DI (Supprimer les lignes non nécessaires);Projet > 50 M€;DI - Dépôt du dossier CCE;;;PT0H0M0S;Processus Décisionnel;Projet
+137;Processus décisionnels;Processus DI (Supprimer les lignes non nécessaires);Projet > 50 M€;DI - CCE - Remarques et questions;;;PT35H0M0S;Processus Décisionnel;Projet
+138;Processus décisionnels;Processus DI (Supprimer les lignes non nécessaires);Projet > 50 M€;DI - CCE - Réponses et amendements;;;PT35H0M0S;Processus Décisionnel;Projet
+139;Processus décisionnels;Processus DI (Supprimer les lignes non nécessaires);Projet > 50 M€;DI - CCE - Avis;;;PT14H0M0S;Processus Décisionnel;Projet
+140;Processus décisionnels;Processus DI (Supprimer les lignes non nécessaires);Projet > 50 M€;DI - CCE - Séance plénière;;;PT7H0M0S;Processus Décisionnel;Projet
+141;Processus décisionnels;Processus DI (Supprimer les lignes non nécessaires);Projet > 50 M€;DI - CRP Paris;;;PT35H0M0S;Processus Décisionnel;Projet
+142;Processus décisionnels;Processus DI (Supprimer les lignes non nécessaires);Projet > 50 M€;DI - CNI (Comité National d'Investissement);;;PT35H0M0S;Processus Décisionnel;Projet
+143;Processus décisionnels;Processus DI (Supprimer les lignes non nécessaires);Projet > 50 M€;DI - Audit CRE;;;PT462H0M0S;Processus Décisionnel;Projet
+144;Processus décisionnels;Processus DI (Supprimer les lignes non nécessaires);Projet > 50 M€;DI - Présentation en directoire;;;PT35H0M0S;Processus Décisionnel;Projet
+145;Processus décisionnels;Processus DI (Supprimer les lignes non nécessaires);Projet > 50 M€;DI - Délibération directoire;;;PT35H0M0S;Processus Décisionnel;Projet
+146;Processus décisionnels;Processus DI (Supprimer les lignes non nécessaires);DI - Validation et signature de la DI;;;;PT0H0M0S;Processus Décisionnel;Projet
 147;Procédures administratives;;;;;;PT5999H0M0S;Procédures Administratives;
 148;Procédures administratives;Rédaction Note d'Organisation Stratégique pour la Concertation;;;;;PT280H0M0S;Etudes;Projet
-149;Procédures administratives;Lag - Validation de la NOS pour sortie à l'extérieur;;;;;PT140H0M0S;Etudes;
+149;Procédures administratives;Lag - Validation de la NOS pour sortie à l'externe;;;;;PT140H0M0S;Etudes;
 150;Procédures administratives;Autorisation de sortie à l'externe (si lancement concertation avant DCT);;;;;PT0H0M0S;Etudes;
 151;Procédures administratives;Concertation FERRACCI;;;;;PT1309H0M0S;Procédures Administratives;
 152;Procédures administratives;Concertation FERRACCI;Projet simple (pas de DUP, LA<1 km, LS<3km);;;;PT455H0M0S;Procédures Administratives;
@@ -166,17 +166,17 @@ const csvData = `N°;Niveau 1;Niveau 2;Niveau 3;Niveau 4;Niveau 5;Niveau 6;Duré
 160;Procédures administratives;Concertation FERRACCI;Projet simple (pas de DUP, LA<1 km, LS<3km);RISQUE : Remise en cause du DPP;;;PT0H0M0S;Risques;
 161;Procédures administratives;Concertation FERRACCI;Projet simple (pas de DUP, LA<1 km, LS<3km);Information des parties prenantes;;;PT105H0M0S;Procédures Administratives;
 162;Procédures administratives;Concertation FERRACCI;Projet simple (pas de DUP, LA<1 km, LS<3km);Information par RTE du FMI/EMI retenu à la DREAL;;;PT0H0M0S;Procédures Administratives;
-163;Procédures administratives;Concertation FERRACCI;Projet intermédiaire;;;;PT805H0M0S;Procédures Administratives;
-164;Procédures administratives;Concertation FERRACCI;Projet intermédiaire;Rédaction note d'information synthétique;;;PT35H0M0S;Procédures Administratives;
-165;Procédures administratives;Concertation FERRACCI;Projet intermédiaire;Envoi note d'information à la DREAL;;;PT0H0M0S;Procédures Administratives;
-166;Procédures administratives;Concertation FERRACCI;Projet intermédiaire;Information du préfet par la DREAL;;;PT35H0M0S;Procédures Administratives;
-167;Procédures administratives;Concertation FERRACCI;Projet intermédiaire;Rencontre des parties prenantes + synthèse avis (durée variable);;;PT140H0M0S;Procédures Administratives;
-168;Procédures administratives;Concertation FERRACCI;Projet intermédiaire;Elaboratoin DPP (Dossier de Présentation du Projet) V1;;;PT140H0M0S;Procédures Administratives;
-169;Procédures administratives;Concertation FERRACCI;Projet intermédiaire;Envoi du DPP V1;;;PT0H0M0S;Procédures Administratives;
-170;Procédures administratives;Concertation FERRACCI;Projet intermédiaire;lag - Validation dossier par le préfet;;;PT140H0M0S;Procédures Administratives;
-171;Procédures administratives;Concertation FERRACCI;Projet intermédiaire;Concertation ou consultation;;;PT280H0M0S;Procédures Administratives;
-172;Procédures administratives;Concertation FERRACCI;Projet intermédiaire;Validation du FMI/EMI;;;PT0H0M0S;Procédures Administratives;
-173;Procédures administratives;Concertation FERRACCI;Projet intermédiaire;"Signature du FMI/EMI par le préfet ""dans les meilleurs délais""";;;PT35H0M0S;Procédures Administratives;
+163;Procédures administratives;Concertation FERRACCI;Projet intermédiaire (S3rENR, raccordement, LS>3km, LA>1km ou avec DUP);;;;PT805H0M0S;Procédures Administratives;
+164;Procédures administratives;Concertation FERRACCI;Projet intermédiaire (S3rENR, raccordement, LS>3km, LA>1km ou avec DUP);Rédaction note d'information synthétique;;;PT35H0M0S;Procédures Administratives;
+165;Procédures administratives;Concertation FERRACCI;Projet intermédiaire (S3rENR, raccordement, LS>3km, LA>1km ou avec DUP);Envoi note d'information à la DREAL;;;PT0H0M0S;Procédures Administratives;
+166;Procédures administratives;Concertation FERRACCI;Projet intermédiaire (S3rENR, raccordement, LS>3km, LA>1km ou avec DUP);Information du préfet par la DREAL;;;PT35H0M0S;Procédures Administratives;
+167;Procédures administratives;Concertation FERRACCI;Projet intermédiaire (S3rENR, raccordement, LS>3km, LA>1km ou avec DUP);Rencontre des parties prenantes + synthèse avis (durée variable);;;PT140H0M0S;Procédures Administratives;
+168;Procédures administratives;Concertation FERRACCI;Projet intermédiaire (S3rENR, raccordement, LS>3km, LA>1km ou avec DUP);Elaboratoin DPP (Dossier de Présentation du Projet) V1;;;PT140H0M0S;Procédures Administratives;
+169;Procédures administratives;Concertation FERRACCI;Projet intermédiaire (S3rENR, raccordement, LS>3km, LA>1km ou avec DUP);Envoi du DPP V1;;;PT0H0M0S;Procédures Administratives;
+170;Procédures administratives;Concertation FERRACCI;Projet intermédiaire (S3rENR, raccordement, LS>3km, LA>1km ou avec DUP);lag - Validation dossier par le préfet;;;PT140H0M0S;Procédures Administratives;
+171;Procédures administratives;Concertation FERRACCI;Projet intermédiaire (S3rENR, raccordement, LS>3km, LA>1km ou avec DUP);Concertation ou consultation;;;PT280H0M0S;Procédures Administratives;
+172;Procédures administratives;Concertation FERRACCI;Projet intermédiaire (S3rENR, raccordement, LS>3km, LA>1km ou avec DUP);Validation du FMI/EMI;;;PT0H0M0S;Procédures Administratives;
+173;Procédures administratives;Concertation FERRACCI;Projet intermédiaire (S3rENR, raccordement, LS>3km, LA>1km ou avec DUP);"Signature du FMI/EMI par le préfet ""dans les meilleurs délais""";;;PT35H0M0S;Procédures Administratives;
 174;Procédures administratives;Concertation FERRACCI;Projet important (400 kV, offshore, intercos);;;;PT1309H0M0S;Procédures Administratives;
 175;Procédures administratives;Concertation FERRACCI;Projet important (400 kV, offshore, intercos);Rédaction note d'information synthétique;;;PT35H0M0S;Procédures Administratives;
 176;Procédures administratives;Concertation FERRACCI;Projet important (400 kV, offshore, intercos);Envoi note d'information à la DGEC;;;PT0H0M0S;Procédures Administratives;
@@ -196,63 +196,63 @@ const csvData = `N°;Niveau 1;Niveau 2;Niveau 3;Niveau 4;Niveau 5;Niveau 6;Duré
 190;Procédures administratives;Concertation FERRACCI;Projet important (400 kV, offshore, intercos);Validation du FMI/EMI par le ministre;;;PT70H0M0S;Procédures Administratives;
 191;Procédures administratives;Concertation FERRACCI;Validation du FMI/EMI;;;;PT0H0M0S;Procédures Administratives;
 192;Procédures administratives;DUP (Déclaration d'Utilité Publique) et AE (Autorisation Environnementale);;;;;PT3164H0M0S;Procédures Administratives;
-193;Procédures administratives;DUP et AE;Examen au cas par cas;;;;PT840H0M0S;Procédures Administratives;
-194;Procédures administratives;DUP et AE;Examen au cas par cas;Cas par cas - Etudes et préparation;;;PT560H0M0S;Procédures Administratives;
-195;Procédures administratives;DUP et AE;Examen au cas par cas;Cas par cas - Soumission du formulaire;;;PT0H0M0S;Procédures Administratives;
-196;Procédures administratives;DUP et AE;Examen au cas par cas;Cas par cas - Réponse de l'autorité environnementale;;;PT280H0M0S;Procédures Administratives;
-197;Procédures administratives;DUP et AE;DUP et AE synchronisé sans Etude d'Impact;;;;PT588H0M0S;Procédures Administratives;
-198;Procédures administratives;DUP et AE;DUP et AE synchronisé sans Etude d'Impact;Etude d'incidence environnementale;;;PT147H0M0S;Procédures Administratives;
-199;Procédures administratives;DUP et AE;DUP et AE synchronisé sans Etude d'Impact;Dépôt du dossier de DUP+AE;;;PT0H0M0S;Procédures Administratives;
-200;Procédures administratives;DUP et AE;DUP et AE synchronisé sans Etude d'Impact;Consultation art. L.181-10-1;;;PT441H0M0S;Procédures Administratives;
-201;Procédures administratives;DUP et AE;DUP et AE synchronisé avec Etude d'Impact;;;;PT2429H0M0S;Procédures Administratives;
-202;Procédures administratives;DUP et AE;DUP et AE synchronisé avec Etude d'Impact;Etude 4 saisons;;;PT1400H0M0S;Procédures Administratives;
-203;Procédures administratives;DUP et AE;DUP et AE synchronisé avec Etude d'Impact;Etude d'impact;;;PT588H0M0S;Procédures Administratives;
-204;Procédures administratives;DUP et AE;DUP et AE synchronisé avec Etude d'Impact;Dépôt du dossier de DUP+AE;;;PT0H0M0S;Procédures Administratives;
-205;Procédures administratives;DUP et AE;DUP et AE synchronisé avec Etude d'Impact;Avis de l'Autorité environnementale;;;PT294H0M0S;Procédures Administratives;
-206;Procédures administratives;DUP et AE;DUP et AE synchronisé avec Etude d'Impact;Enquête publique unique art. L123-6;;;PT147H0M0S;Procédures Administratives;
-207;Procédures administratives;DUP et AE;DUP puis AE désynchronisé sans Etude d'Impact;;;;PT588H0M0S;Procédures Administratives;
-208;Procédures administratives;DUP et AE;DUP puis AE désynchronisé sans Etude d'Impact;Dépôt du dossier de DUP;;;PT0H0M0S;Procédures Administratives;
-209;Procédures administratives;DUP et AE;DUP puis AE désynchronisé sans Etude d'Impact;Consultation du public en mairie art. L.323-3 Ou Enquête public art. L.110-1 si expro;;;PT105H0M0S;Procédures Administratives;
-210;Procédures administratives;DUP et AE;DUP puis AE désynchronisé sans Etude d'Impact;Etude d'incidence environnementale;;;PT147H0M0S;Procédures Administratives;
-211;Procédures administratives;DUP et AE;DUP puis AE désynchronisé sans Etude d'Impact;Dépôt du dossier d'Autorisation Environnementale;;;PT0H0M0S;Procédures Administratives;
-212;Procédures administratives;DUP et AE;DUP puis AE désynchronisé sans Etude d'Impact;Consultation art. L.181-10-1;;;PT441H0M0S;Procédures Administratives;
-213;Procédures administratives;DUP et AE;DUP puis AE désynchronisé avec Etude d'Impact;;;;PT3164H0M0S;Procédures Administratives;
-214;Procédures administratives;DUP et AE;DUP puis AE désynchronisé avec Etude d'Impact;Etude 4 saisons;;;PT1400H0M0S;Procédures Administratives;
-215;Procédures administratives;DUP et AE;DUP puis AE désynchronisé avec Etude d'Impact;Etude d'impact;;;PT588H0M0S;Procédures Administratives;
-216;Procédures administratives;DUP et AE;DUP puis AE désynchronisé avec Etude d'Impact;Dépôt du dossier de DUP;;;PT0H0M0S;Procédures Administratives;
-217;Procédures administratives;DUP et AE;DUP puis AE désynchronisé avec Etude d'Impact;Avis de l'Autorité environnementale;;;PT294H0M0S;Procédures Administratives;
-218;Procédures administratives;DUP et AE;DUP puis AE désynchronisé avec Etude d'Impact;Enquête publique unique art. L123-2;;;PT147H0M0S;Procédures Administratives;
-219;Procédures administratives;DUP et AE;DUP puis AE désynchronisé avec Etude d'Impact;Si actualisation de l'Etude d'Impact;;;PT735H0M0S;Procédures Administratives;
-220;Procédures administratives;DUP et AE;DUP puis AE désynchronisé avec Etude d'Impact;Si actualisation de l'Etude d'Impact;Actualisation de l'Etude d'Impact;;PT294H0M0S;Procédures Administratives;
-221;Procédures administratives;DUP et AE;DUP puis AE désynchronisé avec Etude d'Impact;Si actualisation de l'Etude d'Impact;Dépôt du dossier d'Autorisation Environnementale;;PT0H0M0S;Procédures Administratives;
-222;Procédures administratives;DUP et AE;DUP puis AE désynchronisé avec Etude d'Impact;Si actualisation de l'Etude d'Impact;Nouvel avis de l'Autorité Environnementale;;PT294H0M0S;Procédures Administratives;
-223;Procédures administratives;DUP et AE;DUP puis AE désynchronisé avec Etude d'Impact;Si actualisation de l'Etude d'Impact;PPVE art. L.123-19;;PT147H0M0S;Procédures Administratives;
-224;Procédures administratives;DUP et AE;DUP puis AE désynchronisé avec Etude d'Impact;Si pas d'actualisation de l'Étude d'impact;;;PT441H0M0S;Procédures Administratives;
-225;Procédures administratives;DUP et AE;DUP puis AE désynchronisé avec Etude d'Impact;Si pas d'actualisation de l'Étude d'impact;Dépôt du dossier d'Autorisation Environnementale;;PT0H0M0S;Procédures Administratives;
-226;Procédures administratives;DUP et AE;DUP puis AE désynchronisé avec Etude d'Impact;Si pas d'actualisation de l'Étude d'impact;Consultation art. L.181-10-1;;PT441H0M0S;Procédures Administratives;
-227;Procédures administratives;DUP et AE;AE puis DUP désynchronisé sans Etude d'impact;;;;PT693H0M0S;Procédures Administratives;
-228;Procédures administratives;DUP et AE;AE puis DUP désynchronisé sans Etude d'impact;Etude d'incidence environnementale;;;PT147H0M0S;Procédures Administratives;
-229;Procédures administratives;DUP et AE;AE puis DUP désynchronisé sans Etude d'impact;Dépôt du dossier d'Autorisation Environnementale;;;PT0H0M0S;Procédures Administratives;
-230;Procédures administratives;DUP et AE;AE puis DUP désynchronisé sans Etude d'impact;Consultation art. L.181-10-1;;;PT441H0M0S;Procédures Administratives;
-231;Procédures administratives;DUP et AE;AE puis DUP désynchronisé sans Etude d'impact;Dépôt du dossier de DUP;;;PT0H0M0S;Procédures Administratives;
-232;Procédures administratives;DUP et AE;AE puis DUP désynchronisé sans Etude d'impact;Consultation du public en mairie art. L.323-3 Ou Enquête public art. L.110-1 si expro;;;PT105H0M0S;Procédures Administratives;
-233;Procédures administratives;DUP et AE;AE puis DUP désynchronisé avec Etude d'impact;;;;PT3164H0M0S;Procédures Administratives;
-234;Procédures administratives;DUP et AE;AE puis DUP désynchronisé avec Etude d'impact;Etude 4 saisons;;;PT1400H0M0S;Procédures Administratives;
-235;Procédures administratives;DUP et AE;AE puis DUP désynchronisé avec Etude d'impact;Etude d'impact;;;PT588H0M0S;Procédures Administratives;
-236;Procédures administratives;DUP et AE;AE puis DUP désynchronisé avec Etude d'impact;Dépôt du dossier d'Autorisation Environnementale;;;PT0H0M0S;Procédures Administratives;
-237;Procédures administratives;DUP et AE;AE puis DUP désynchronisé avec Etude d'impact;Consultation art. L.181-10-1 (+Avis AE);;;PT441H0M0S;Procédures Administratives;
-238;Procédures administratives;DUP et AE;AE puis DUP désynchronisé avec Etude d'impact;Si actualisation de l'Etude d'Impact;;;PT735H0M0S;Procédures Administratives;
-239;Procédures administratives;DUP et AE;AE puis DUP désynchronisé avec Etude d'impact;Si actualisation de l'Etude d'Impact;Actualisation de l'Etude d'Impact;;PT294H0M0S;Procédures Administratives;
-240;Procédures administratives;DUP et AE;AE puis DUP désynchronisé avec Etude d'impact;Si actualisation de l'Etude d'Impact;Dépôt du dossier de DUP;;PT0H0M0S;Procédures Administratives;
-241;Procédures administratives;DUP et AE;AE puis DUP désynchronisé avec Etude d'impact;Si actualisation de l'Etude d'Impact;Nouvel avis de l'Autorité Environnementale;;PT294H0M0S;Procédures Administratives;
-242;Procédures administratives;DUP et AE;AE puis DUP désynchronisé avec Etude d'impact;Si actualisation de l'Etude d'Impact;PPVE art. L.123-19;;PT147H0M0S;Procédures Administratives;
-243;Procédures administratives;DUP et AE;AE puis DUP désynchronisé avec Etude d'impact;Si pas d'actualisation de l'Étude d'impact;;;PT441H0M0S;Procédures Administratives;
-244;Procédures administratives;DUP et AE;AE puis DUP désynchronisé avec Etude d'impact;Si pas d'actualisation de l'Étude d'impact;Dépôt du dossier de DUP;;PT0H0M0S;Procédures Administratives;
-245;Procédures administratives;DUP et AE;AE puis DUP désynchronisé avec Etude d'impact;Si pas d'actualisation de l'Étude d'impact;Consultation du public en mairie art. L.323-3;;PT441H0M0S;Procédures Administratives;
-246;Procédures administratives;DUP et AE;Obtention DUP;;;;PT0H0M0S;Procédures Administratives;
-247;Procédures administratives;DUP et AE;Obtention AE;;;;PT0H0M0S;Procédures Administratives;
+193;Procédures administratives;DUP (Déclaration d'Utilité Publique) et AE (Autorisation Environnementale);Examen au cas par cas (LA<15km ou <90kV, et postes) (!! Peut déboucher sur une demande d'AE);;;;PT840H0M0S;Procédures Administratives;
+194;Procédures administratives;DUP (Déclaration d'Utilité Publique) et AE (Autorisation Environnementale);Examen au cas par cas (LA<15km ou <90kV, et postes) (!! Peut déboucher sur une demande d'AE);Cas par cas - Etudes et préparation;;;PT560H0M0S;Procédures Administratives;
+195;Procédures administratives;DUP (Déclaration d'Utilité Publique) et AE (Autorisation Environnementale);Examen au cas par cas (LA<15km ou <90kV, et postes) (!! Peut déboucher sur une demande d'AE);Cas par cas - Soumission du formulaire;;;PT0H0M0S;Procédures Administratives;
+196;Procédures administratives;DUP (Déclaration d'Utilité Publique) et AE (Autorisation Environnementale);Examen au cas par cas (LA<15km ou <90kV, et postes) (!! Peut déboucher sur une demande d'AE);Cas par cas - Réponse de l'autorité environnementale (!! Peut déboucher sur une demande d'AE);;;PT280H0M0S;Procédures Administratives;
+197;Procédures administratives;DUP (Déclaration d'Utilité Publique) et AE (Autorisation Environnementale);DUP et AE synchronisé sans Etude d'Impact;;;;PT588H0M0S;Procédures Administratives;
+198;Procédures administratives;DUP (Déclaration d'Utilité Publique) et AE (Autorisation Environnementale);DUP et AE synchronisé sans Etude d'Impact;Etude d'incidence environnementale;;;PT147H0M0S;Procédures Administratives;
+199;Procédures administratives;DUP (Déclaration d'Utilité Publique) et AE (Autorisation Environnementale);DUP et AE synchronisé sans Etude d'Impact;Dépôt du dossier de DUP+AE;;;PT0H0M0S;Procédures Administratives;
+200;Procédures administratives;DUP (Déclaration d'Utilité Publique) et AE (Autorisation Environnementale);DUP et AE synchronisé sans Etude d'Impact;Consultation art. L.181-10-1;;;PT441H0M0S;Procédures Administratives;
+201;Procédures administratives;DUP (Déclaration d'Utilité Publique) et AE (Autorisation Environnementale);DUP et AE synchronisé avec Etude d'Impact;;;;PT2429H0M0S;Procédures Administratives;
+202;Procédures administratives;DUP (Déclaration d'Utilité Publique) et AE (Autorisation Environnementale);DUP et AE synchronisé avec Etude d'Impact;Etude 4 saisons;;;PT1400H0M0S;Procédures Administratives;
+203;Procédures administratives;DUP (Déclaration d'Utilité Publique) et AE (Autorisation Environnementale);DUP et AE synchronisé avec Etude d'Impact;Etude d'impact;;;PT588H0M0S;Procédures Administratives;
+204;Procédures administratives;DUP (Déclaration d'Utilité Publique) et AE (Autorisation Environnementale);DUP et AE synchronisé avec Etude d'Impact;Dépôt du dossier de DUP+AE;;;PT0H0M0S;Procédures Administratives;
+205;Procédures administratives;DUP (Déclaration d'Utilité Publique) et AE (Autorisation Environnementale);DUP et AE synchronisé avec Etude d'Impact;Avis de l'Autorité environnementale;;;PT294H0M0S;Procédures Administratives;
+206;Procédures administratives;DUP (Déclaration d'Utilité Publique) et AE (Autorisation Environnementale);DUP et AE synchronisé avec Etude d'Impact;Enquête publique unique art. L123-6;;;PT147H0M0S;Procédures Administratives;
+207;Procédures administratives;DUP (Déclaration d'Utilité Publique) et AE (Autorisation Environnementale);DUP puis AE désynchronisé sans Etude d'Impact;;;;PT588H0M0S;Procédures Administratives;
+208;Procédures administratives;DUP (Déclaration d'Utilité Publique) et AE (Autorisation Environnementale);DUP puis AE désynchronisé sans Etude d'Impact;Dépôt du dossier de DUP;;;PT0H0M0S;Procédures Administratives;
+209;Procédures administratives;DUP (Déclaration d'Utilité Publique) et AE (Autorisation Environnementale);DUP puis AE désynchronisé sans Etude d'Impact;Consultation du public en mairie art. L.323-3 Ou Enquête public art. L.110-1 si expro;;;PT105H0M0S;Procédures Administratives;
+210;Procédures administratives;DUP (Déclaration d'Utilité Publique) et AE (Autorisation Environnementale);DUP puis AE désynchronisé sans Etude d'Impact;Etude d'incidence environnementale;;;PT147H0M0S;Procédures Administratives;
+211;Procédures administratives;DUP (Déclaration d'Utilité Publique) et AE (Autorisation Environnementale);DUP puis AE désynchronisé sans Etude d'Impact;Dépôt du dossier d'Autorisation Environnementale;;;PT0H0M0S;Procédures Administratives;
+212;Procédures administratives;DUP (Déclaration d'Utilité Publique) et AE (Autorisation Environnementale);DUP puis AE désynchronisé sans Etude d'Impact;Consultation art. L.181-10-1;;;PT441H0M0S;Procédures Administratives;
+213;Procédures administratives;DUP (Déclaration d'Utilité Publique) et AE (Autorisation Environnementale);DUP puis AE désynchronisé avec Etude d'Impact;;;;PT3164H0M0S;Procédures Administratives;
+214;Procédures administratives;DUP (Déclaration d'Utilité Publique) et AE (Autorisation Environnementale);DUP puis AE désynchronisé avec Etude d'Impact;Etude 4 saisons;;;PT1400H0M0S;Procédures Administratives;
+215;Procédures administratives;DUP (Déclaration d'Utilité Publique) et AE (Autorisation Environnementale);DUP puis AE désynchronisé avec Etude d'Impact;Etude d'impact;;;PT588H0M0S;Procédures Administratives;
+216;Procédures administratives;DUP (Déclaration d'Utilité Publique) et AE (Autorisation Environnementale);DUP puis AE désynchronisé avec Etude d'Impact;Dépôt du dossier de DUP;;;PT0H0M0S;Procédures Administratives;
+217;Procédures administratives;DUP (Déclaration d'Utilité Publique) et AE (Autorisation Environnementale);DUP puis AE désynchronisé avec Etude d'Impact;Avis de l'Autorité environnementale;;;PT294H0M0S;Procédures Administratives;
+218;Procédures administratives;DUP (Déclaration d'Utilité Publique) et AE (Autorisation Environnementale);DUP puis AE désynchronisé avec Etude d'Impact;Enquête publique unique art. L123-2;;;PT147H0M0S;Procédures Administratives;
+219;Procédures administratives;DUP (Déclaration d'Utilité Publique) et AE (Autorisation Environnementale);DUP puis AE désynchronisé avec Etude d'Impact;Si actualisation de l'Etude d'Impact;;;PT735H0M0S;Procédures Administratives;
+220;Procédures administratives;DUP (Déclaration d'Utilité Publique) et AE (Autorisation Environnementale);DUP puis AE désynchronisé avec Etude d'Impact;Si actualisation de l'Etude d'Impact;Actualisation de l'Etude d'Impact;;PT294H0M0S;Procédures Administratives;
+221;Procédures administratives;DUP (Déclaration d'Utilité Publique) et AE (Autorisation Environnementale);DUP puis AE désynchronisé avec Etude d'Impact;Si actualisation de l'Etude d'Impact;Dépôt du dossier d'Autorisation Environnementale;;PT0H0M0S;Procédures Administratives;
+222;Procédures administratives;DUP (Déclaration d'Utilité Publique) et AE (Autorisation Environnementale);DUP puis AE désynchronisé avec Etude d'Impact;Si actualisation de l'Etude d'Impact;Nouvel avis de l'Autorité Environnementale;;PT294H0M0S;Procédures Administratives;
+223;Procédures administratives;DUP (Déclaration d'Utilité Publique) et AE (Autorisation Environnementale);DUP puis AE désynchronisé avec Etude d'Impact;Si actualisation de l'Etude d'Impact;PPVE art. L.123-19;;PT147H0M0S;Procédures Administratives;
+224;Procédures administratives;DUP (Déclaration d'Utilité Publique) et AE (Autorisation Environnementale);DUP puis AE désynchronisé avec Etude d'Impact;Si pas d'actualisation de l'Étude d'impact;;;PT441H0M0S;Procédures Administratives;
+225;Procédures administratives;DUP (Déclaration d'Utilité Publique) et AE (Autorisation Environnementale);DUP puis AE désynchronisé avec Etude d'Impact;Si pas d'actualisation de l'Étude d'impact;Dépôt du dossier d'Autorisation Environnementale;;PT0H0M0S;Procédures Administratives;
+226;Procédures administratives;DUP (Déclaration d'Utilité Publique) et AE (Autorisation Environnementale);DUP puis AE désynchronisé avec Etude d'Impact;Si pas d'actualisation de l'Étude d'impact;Consultation art. L.181-10-1;;PT441H0M0S;Procédures Administratives;
+227;Procédures administratives;DUP (Déclaration d'Utilité Publique) et AE (Autorisation Environnementale);AE puis DUP désynchronisé sans Etude d'impact;;;;PT693H0M0S;Procédures Administratives;
+228;Procédures administratives;DUP (Déclaration d'Utilité Publique) et AE (Autorisation Environnementale);AE puis DUP désynchronisé sans Etude d'impact;Etude d'incidence environnementale;;;PT147H0M0S;Procédures Administratives;
+229;Procédures administratives;DUP (Déclaration d'Utilité Publique) et AE (Autorisation Environnementale);AE puis DUP désynchronisé sans Etude d'impact;Dépôt du dossier d'Autorisation Environnementale;;;PT0H0M0S;Procédures Administratives;
+230;Procédures administratives;DUP (Déclaration d'Utilité Publique) et AE (Autorisation Environnementale);AE puis DUP désynchronisé sans Etude d'impact;Consultation art. L.181-10-1;;;PT441H0M0S;Procédures Administratives;
+231;Procédures administratives;DUP (Déclaration d'Utilité Publique) et AE (Autorisation Environnementale);AE puis DUP désynchronisé sans Etude d'impact;Dépôt du dossier de DUP;;;PT0H0M0S;Procédures Administratives;
+232;Procédures administratives;DUP (Déclaration d'Utilité Publique) et AE (Autorisation Environnementale);AE puis DUP désynchronisé sans Etude d'impact;Consultation du public en mairie art. L.323-3 Ou Enquête public art. L.110-1 si expro;;;PT105H0M0S;Procédures Administratives;
+233;Procédures administratives;DUP (Déclaration d'Utilité Publique) et AE (Autorisation Environnementale);AE puis DUP désynchronisé avec Etude d'impact;;;;PT3164H0M0S;Procédures Administratives;
+234;Procédures administratives;DUP (Déclaration d'Utilité Publique) et AE (Autorisation Environnementale);AE puis DUP désynchronisé avec Etude d'impact;Etude 4 saisons;;;PT1400H0M0S;Procédures Administratives;
+235;Procédures administratives;DUP (Déclaration d'Utilité Publique) et AE (Autorisation Environnementale);AE puis DUP désynchronisé avec Etude d'impact;Etude d'impact;;;PT588H0M0S;Procédures Administratives;
+236;Procédures administratives;DUP (Déclaration d'Utilité Publique) et AE (Autorisation Environnementale);AE puis DUP désynchronisé avec Etude d'impact;Dépôt du dossier d'Autorisation Environnementale;;;PT0H0M0S;Procédures Administratives;
+237;Procédures administratives;DUP (Déclaration d'Utilité Publique) et AE (Autorisation Environnementale);AE puis DUP désynchronisé avec Etude d'impact;Consultation art. L.181-10-1 (+Avis AE);;;PT441H0M0S;Procédures Administratives;
+238;Procédures administratives;DUP (Déclaration d'Utilité Publique) et AE (Autorisation Environnementale);AE puis DUP désynchronisé avec Etude d'impact;Si actualisation de l'Etude d'Impact;;;PT735H0M0S;Procédures Administratives;
+239;Procédures administratives;DUP (Déclaration d'Utilité Publique) et AE (Autorisation Environnementale);AE puis DUP désynchronisé avec Etude d'impact;Si actualisation de l'Etude d'Impact;Actualisation de l'Etude d'Impact;;PT294H0M0S;Procédures Administratives;
+240;Procédures administratives;DUP (Déclaration d'Utilité Publique) et AE (Autorisation Environnementale);AE puis DUP désynchronisé avec Etude d'impact;Si actualisation de l'Etude d'Impact;Dépôt du dossier de DUP;;PT0H0M0S;Procédures Administratives;
+241;Procédures administratives;DUP (Déclaration d'Utilité Publique) et AE (Autorisation Environnementale);AE puis DUP désynchronisé avec Etude d'impact;Si actualisation de l'Etude d'Impact;Nouvel avis de l'Autorité Environnementale;;PT294H0M0S;Procédures Administratives;
+242;Procédures administratives;DUP (Déclaration d'Utilité Publique) et AE (Autorisation Environnementale);AE puis DUP désynchronisé avec Etude d'impact;Si actualisation de l'Etude d'Impact;PPVE art. L.123-19;;PT147H0M0S;Procédures Administratives;
+243;Procédures administratives;DUP (Déclaration d'Utilité Publique) et AE (Autorisation Environnementale);AE puis DUP désynchronisé avec Etude d'impact;Si pas d'actualisation de l'Étude d'impact;;;PT441H0M0S;Procédures Administratives;
+244;Procédures administratives;DUP (Déclaration d'Utilité Publique) et AE (Autorisation Environnementale);AE puis DUP désynchronisé avec Etude d'impact;Si pas d'actualisation de l'Étude d'impact;Dépôt du dossier de DUP;;PT0H0M0S;Procédures Administratives;
+245;Procédures administratives;DUP (Déclaration d'Utilité Publique) et AE (Autorisation Environnementale);AE puis DUP désynchronisé avec Etude d'impact;Si pas d'actualisation de l'Étude d'impact;Consultation du public en mairie art. L.323-3;;PT441H0M0S;Procédures Administratives;
+246;Procédures administratives;DUP (Déclaration d'Utilité Publique) et AE (Autorisation Environnementale);Obtention DUP;;;;PT0H0M0S;Procédures Administratives;
+247;Procédures administratives;DUP (Déclaration d'Utilité Publique) et AE (Autorisation Environnementale);Obtention AE;;;;PT0H0M0S;Procédures Administratives;
 248;Procédures administratives;Conventionnement LS;;;;;PT1169H0M0S;Procédures Administratives;
-249;Procédures administratives;Conventionnement LS;Conventionnement LS - Sollicitation de l'entreprise titulaire du marché "études liaisons";;;;PT210H0M0S;Procédures Administratives;
+249;Procédures administratives;Conventionnement LS;"Conventionnement LS - Sollicitation de l'entreprise titulaire du marché ""études liaisons""";;;;PT210H0M0S;Procédures Administratives;
 250;Procédures administratives;Conventionnement LS;Conventionnement LS - Tracé de détail et identification des propriétaires;;;;PT70H0M0S;Procédures Administratives;
 251;Procédures administratives;Conventionnement LS;Conventionnement LS - Recensement et identification des propriétaires;;;;PT0H0M0S;Procédures Administratives;
 252;Procédures administratives;Conventionnement LS;Conventionnement LS - Recherche via infoter;;;;PT49H0M0S;Procédures Administratives;
@@ -266,38 +266,38 @@ const csvData = `N°;Niveau 1;Niveau 2;Niveau 3;Niveau 4;Niveau 5;Niveau 6;Duré
 260;Procédures administratives;Conventionnement LA;Conventionnement LA - Conventionnement;;;;PT700H0M0S;Procédures Administratives;
 261;Procédures administratives;RISQUE - Mise en servitude;;;;;PT504H0M0S;Procédures Administratives;
 262;Procédures administratives;RISQUE - Mise en servitude;MeServitude - Dépôt de la requête (si désaccord);;;;PT0H0M0S;Procédures Administratives;
-263;Procédures administratives;RISQUE - Mise en servitude;MeServitude - Prescription enquête et designación commissaire enquêteur;;;;PT105H0M0S;Procédures Administratives;
+263;Procédures administratives;RISQUE - Mise en servitude;MeServitude - Prescription enquête et désigné Commissaire enquêteur;;;;PT105H0M0S;Procédures Administratives;
 264;Procédures administratives;RISQUE - Mise en servitude;MeServitude - Notification de l'arrêté et transmission aux maires;;;;PT105H0M0S;Procédures Administratives;
 265;Procédures administratives;RISQUE - Mise en servitude;MeServitude - Annonce de l'ouverture de l'enquête (affichage);;;;PT21H0M0S;Procédures Administratives;
 266;Procédures administratives;RISQUE - Mise en servitude;MeServitude - Enquête parcellaire;;;;PT56H0M0S;Procédures Administratives;
-267;Procédures administratives;RISQUE - Mise en servitude;MeServitude - Clôture, signature registre (maires) et transmission au CE;;;PT7H0M0S;Procédures Administratives;
-268;Procédures administratives;RISQUE - Mise en servitude;MeServitude - Avis CE, procès verbal et transmission au préfet;;;PT21H0M0S;Procédures Administratives;
-269;Procédures administratives;RISQUE - Mise en servitude;MeServitude - Transmission du préfet vers le pétionnaire;;;;PT35H0M0S;Procédures Administratives;
+267;Procédures administratives;RISQUE - Mise en servitude;MeServitude - Clôture, signature registre (maires) et transmission au CE;;;;PT7H0M0S;Procédures Administratives;
+268;Procédures administratives;RISQUE - Mise en servitude;MeServitude - Avis CE, procès verbal et transmission au préfet;;;;PT21H0M0S;Procédures Administratives;
+269;Procédures administratives;RISQUE - Mise en servitude;MeServitude - Transmission du préfet vers le pétitionnaire;;;;PT35H0M0S;Procédures Administratives;
 270;Procédures administratives;RISQUE - Mise en servitude;MeServitude - Observation RTE et modification possible du projet;;;;PT49H0M0S;Procédures Administratives;
 271;Procédures administratives;RISQUE - Mise en servitude;MeServitude - Etablissement des servitudes et notifications;;;;PT105H0M0S;Procédures Administratives;
 272;Procédures administratives;RISQUE - Mise en servitude;MeServitude - Arrêté de servitude (a relier au début des travaux concernés par la DUP);;;;PT0H0M0S;Procédures Administratives;
 273;Procédures administratives;APO (Autorisation du Projet d'Ouvrage) (LA uniquement);;;;;PT665H0M0S;Procédures Administratives;
-274;Procédures administratives;APO;APO - Disponibilité des études de détail LA;;;;PT0H0M0S;Procédures Administratives;
-275;Procédures administratives;APO;APO - Dossier de demande d'APO;;;;PT280H0M0S;Procédures Administratives;
-276;Procédures administratives;APO;APO - Envoi du dossier à la DREAL;;;;PT0H0M0S;Procédures Administratives;
-277;Procédures administratives;APO;APO - Consultation des maires et gestionnaires de DP;;;;PT70H0M0S;Procédures Administratives;
-278;Procédures administratives;APO;APO - Avis des maireset gestionnaires;;;;PT140H0M0S;Procédures Administratives;
-279;Procédures administratives;APO;APO - Réponse RTE aux avis;;;;PT140H0M0S;Procédures Administratives;
-280;Procédures administratives;APO;APO - Transmission au préfet;;;;PT35H0M0S;Procédures Administratives;
-281;Procédures administratives;APO;APO - Délivrance de l'APO;;;;PT0H0M0S;Procédures Administratives;
-282;Procédures administratives;Consultation des maireset gestionnaires par RTE (LS et Postes);;;;;PT630H0M0S;Procédures Administratives;
-283;Procédures administratives;Consultation des maireset gestionnaires par RTE (LS et Postes);CMG - Disponibilité des études de détail LS et Postes;;;;PT0H0M0S;Procédures Administratives;
-284;Procédures administratives;Consultation des maireset gestionnaires par RTE (LS et Postes);CMG - Dossier de CMG directe par RTE;;;;PT280H0M0S;Procédures Administratives;
-285;Procédures administratives;Consultation des maireset gestionnaires par RTE (LS et Postes);CMG - CMG des maireset gestionnaires de DP et services publics;;;;PT70H0M0S;Procédures Administratives;
-286;Procédures administratives;Consultation des maireset gestionnaires par RTE (LS et Postes);CMG - Avis des maireset gestionnaires de DP et services publics;;;;PT140H0M0S;Procédures Administratives;
-287;Procédures administratives;Consultation des maireset gestionnaires par RTE (LS et Postes);CMG - Réponse de RTE aux avis;;;;PT140H0M0S;Procédures Administratives;
+274;Procédures administratives;APO (Autorisation du Projet d'Ouvrage) (LA uniquement);APO - Disponibilité des études de détail LA;;;;PT0H0M0S;Procédures Administratives;
+275;Procédures administratives;APO (Autorisation du Projet d'Ouvrage) (LA uniquement);APO - Dossier de demande d'APO;;;;PT280H0M0S;Procédures Administratives;
+276;Procédures administratives;APO (Autorisation du Projet d'Ouvrage) (LA uniquement);APO - Envoi du dossier à la DREAL;;;;PT0H0M0S;Procédures Administratives;
+277;Procédures administratives;APO (Autorisation du Projet d'Ouvrage) (LA uniquement);APO - Consultation des maires et gestionnaires de DP;;;;PT70H0M0S;Procédures Administratives;
+278;Procédures administratives;APO (Autorisation du Projet d'Ouvrage) (LA uniquement);APO - Avis des maires et gestionnaires;;;;PT140H0M0S;Procédures Administratives;
+279;Procédures administratives;APO (Autorisation du Projet d'Ouvrage) (LA uniquement);APO - Réponse RTE aux avis;;;;PT140H0M0S;Procédures Administratives;
+280;Procédures administratives;APO (Autorisation du Projet d'Ouvrage) (LA uniquement);APO - Transmission au préfet;;;;PT35H0M0S;Procédures Administratives;
+281;Procédures administratives;APO (Autorisation du Projet d'Ouvrage) (LA uniquement);APO - Délivrance de l'APO;;;;PT0H0M0S;Procédures Administratives;
+282;Procédures administratives;Consultation des maires et gestionnaires par RTE (LS et Postes);;;;;PT630H0M0S;Procédures Administratives;
+283;Procédures administratives;Consultation des maires et gestionnaires par RTE (LS et Postes);CMG - Disponibilité des études de détail LS et Postes;;;;PT0H0M0S;Procédures Administratives;
+284;Procédures administratives;Consultation des maire et gestionnaires par RTE (LS et Postes);CMG - Dossier de CMG directe par RTE;;;;PT280H0M0S;Procédures Administratives;
+285;Procédures administratives;Consultation des maire et gestionnaires par RTE (LS et Postes);CMG - CMG des maire et gestionnaires de DP et services publics;;;;PT70H0M0S;Procédures Administratives;
+286;Procédures administratives;Consultation des maire et gestionnaires par RTE (LS et Postes);CMG - Avis des maire et gestionnaires de DP et services publics;;;;PT140H0M0S;Procédures Administratives;
+287;Procédures administratives;Consultation des maire et gestionnaires par RTE (LS et Postes);CMG - Réponse de RTE aux avis;;;;PT140H0M0S;Procédures Administratives;
 288;Procédures administratives;PC (Permis de Construire) (Postes);;;;;PT735H0M0S;Procédures Administratives;
 289;Procédures administratives;PC (Permis de Construire) (Postes);PC - Disponibilité des études de détail Postes;;;;PT0H0M0S;Procédures Administratives;
 290;Procédures administratives;PC (Permis de Construire) (Postes);PC - Dossier de demande de PC;;;;PT280H0M0S;Procédures Administratives;
 291;Procédures administratives;PC (Permis de Construire) (Postes);PC - Dépôt du dossier;;;;PT0H0M0S;Procédures Administratives;
 292;Procédures administratives;PC (Permis de Construire) (Postes);PC - Instruction par la DDT;;;;PT140H0M0S;Procédures Administratives;
-293;Procédures administratives;PC (Permis de Construire) (Postes);PC - Consultation des maireset autres;;;;PT140H0M0S;Procédures Administratives;
-294;Procédures administratives;PC (Permis de Construire) (Postes);PC - Avis des maireset autres;;;;PT140H0M0S;Procédures Administratives;
+293;Procédures administratives;PC (Permis de Construire) (Postes);PC - Consultation des maire et autres;;;;PT140H0M0S;Procédures Administratives;
+294;Procédures administratives;PC (Permis de Construire) (Postes);PC - Avis des maire et autres;;;;PT140H0M0S;Procédures Administratives;
 295;Procédures administratives;PC (Permis de Construire) (Postes);PC - Transmission du PC au préfet (DDT);;;;PT35H0M0S;Procédures Administratives;
 296;Procédures administratives;PC (Permis de Construire) (Postes);PC - Délivrance du permis de construire;;;;PT0H0M0S;Procédures Administratives;
 297;Etudes;;;;;;PT4025H0M0S;Etudes;
@@ -309,7 +309,300 @@ const csvData = `N°;Niveau 1;Niveau 2;Niveau 3;Niveau 4;Niveau 5;Niveau 6;Duré
 303;Etudes;Etudes préliminaires;Etudes sur la consistance de la solution retenue;Etudes préliminaires LA;;;PT280H0M0S;Etudes;LA
 304;Etudes;Etudes préliminaires;Etudes sur la consistance de la solution retenue;Etudes préliminaires LS;;;PT280H0M0S;Etudes;LS
 305;Etudes;Etudes détaillées;;;;;PT3003H0M0S;Etudes;
-306;Etudes;Etudes détaillées;Etudes Postes;;;;PT2765H0M0S;Etudes;`;
+306;Etudes;Etudes détaillées;Etudes Postes;;;;PT2765H0M0S;Etudes;
+307;Etudes;Etudes détaillées;Etudes Postes;Etudes Hors Marché Cadre (a duppliquer pour chaque étude);;;PT364H0M0S;Etudes;
+308;Etudes;Etudes détaillées;Etudes Postes;Etudes Hors Marché Cadre (a duppliquer pour chaque étude);Etude HMC - CCTP;;PT70H0M0S;Etudes;Poste
+309;Etudes;Etudes détaillées;Etudes Postes;Etudes Hors Marché Cadre (a duppliquer pour chaque étude);Etude HMC - Consultation;;PT14H0M0S;Achats;Poste
+310;Etudes;Etudes détaillées;Etudes Postes;Etudes Hors Marché Cadre (a duppliquer pour chaque étude);Etude HMC - Commande;;PT0H0M0S;Achats;Poste
+311;Etudes;Etudes détaillées;Etudes Postes;Etudes Hors Marché Cadre (a duppliquer pour chaque étude);Etude HMC - Livrable étude (détailler les livrables attendus et relier au successeur);;PT280H0M0S;Etudes;Poste
+312;Etudes;Etudes détaillées;Etudes Postes;Etudes de sol;;;PT2597H0M0S;Etudes;
+313;Etudes;Etudes détaillées;Etudes Postes;Etudes de sol;BE sol - CCTP;;PT70H0M0S;Etudes;Poste
+314;Etudes;Etudes détaillées;Etudes Postes;Etudes de sol;BE Sol - Processus achat;;PT70H0M0S;Etudes;
+315;Etudes;Etudes détaillées;Etudes Postes;Etudes de sol;BE Sol - Processus achat;BE sol - Consultation;PT70H0M0S;Achats;Poste
+316;Etudes;Etudes détaillées;Etudes Postes;Etudes de sol;BE Sol - Processus achat;BE sol - Commande;PT0H0M0S;Achats;Poste
+317;Etudes;Etudes détaillées;Etudes Postes;Etudes de sol;BE Sol - Etudes;;PT2457H0M0S;Etudes;
+318;Etudes;Etudes détaillées;Etudes Postes;Etudes de sol;BE Sol - Etudes;BE sol - Intervention sur site;PT315H0M0S;Etudes;Poste
+319;Etudes;Etudes détaillées;Etudes Postes;Etudes de sol;BE Sol - Etudes;BE sol - Livrables études hydro-géotechniques;PT140H0M0S;Etudes;Poste
+320;Etudes;Etudes détaillées;Etudes Postes;Etudes de sol;BE Sol - Etudes;BE sol - Livrable études G1-G2AVP;PT420H0M0S;Etudes;Poste
+321;Etudes;Etudes détaillées;Etudes Postes;Etudes de sol;BE Sol - Etudes;BE sol - Livrable études DCE;PT140H0M0S;Etudes;Poste
+322;Etudes;Etudes détaillées;Etudes Postes;Etudes de sol;BE Sol - Etudes;BE sol - Livrable études G4 (MCPO);PT70H0M0S;Etudes;Poste
+323;Etudes;Etudes détaillées;Etudes Postes;Marché PSEM;;;PT2058H0M0S;Etudes;Poste
+324;Etudes;Etudes détaillées;Etudes Postes;Marché PSEM;PSEM - Demande de réalisation du Marché;;PT7H0M0S;Etudes;Poste
+325;Etudes;Etudes détaillées;Etudes Postes;Marché PSEM;PSEM - Envoi du CDP au CNER;;PT140H0M0S;Etudes;Poste
+326;Etudes;Etudes détaillées;Etudes Postes;Marché PSEM;PSEM - Validation du CDP par CNER;;PT70H0M0S;Etudes;Poste
+327;Etudes;Etudes détaillées;Etudes Postes;Marché PSEM;PSEM - Processus achat;;PT483H0M0S;Achats;Poste
+328;Etudes;Etudes détaillées;Etudes Postes;Marché PSEM;PSEM - Processus achat;PSEM - Rédaction et validation de la NSPA stratégie;PT98H0M0S;Achats;Poste
+329;Etudes;Etudes détaillées;Etudes Postes;Marché PSEM;PSEM - Processus achat;PSEM - Consultation;PT147H0M0S;Achats;Poste
+330;Etudes;Etudes détaillées;Etudes Postes;Marché PSEM;PSEM - Processus achat;PSEM - Négociation;PT147H0M0S;Achats;Poste
+331;Etudes;Etudes détaillées;Etudes Postes;Marché PSEM;PSEM - Processus achat;PSEM - Rédaction et validation de la NSPA attribution;PT49H0M0S;Achats;Poste
+332;Etudes;Etudes détaillées;Etudes Postes;Marché PSEM;PSEM - Processus achat;PSEM - Envoi de la commande d'études au fournisseur;PT42H0M0S;Achats;Poste
+333;Etudes;Etudes détaillées;Etudes Postes;Marché PSEM;PSEM - Etudes;;PT1358H0M0S;Etudes;Poste
+334;Etudes;Etudes détaillées;Etudes Postes;Marché PSEM;PSEM - Etudes;PSEM - Réalisation plan guide GC;PT280H0M0S;Etudes;Poste
+335;Etudes;Etudes détaillées;Etudes Postes;Marché PSEM;PSEM - Etudes;PSEM - Réalisation des études;PT980H0M0S;Etudes;Poste
+336;Etudes;Etudes détaillées;Etudes Postes;Marché PSEM;PSEM - Etudes;PSEM - Valildation des études;PT98H0M0S;Etudes;Poste
+337;Etudes;Etudes détaillées;Etudes Postes;Etudes MOE (architecte);;;PT1785H0M0S;Etudes;
+338;Etudes;Etudes détaillées;Etudes Postes;Etudes MOE (architecte);MOE - CCTP;;PT140H0M0S;Etudes;Poste
+339;Etudes;Etudes détaillées;Etudes Postes;Etudes MOE (architecte);MOE - Processus achat;;PT385H0M0S;Etudes;
+340;Etudes;Etudes détaillées;Etudes Postes;Etudes MOE (architecte);MOE - Processus achat;MOE - Consultation;PT280H0M0S;Achats;Poste
+341;Etudes;Etudes détaillées;Etudes Postes;Etudes MOE (architecte);MOE - Processus achat;MOE - Attribution;PT105H0M0S;Achats;Poste
+342;Etudes;Etudes détaillées;Etudes Postes;Etudes MOE (architecte);MOE - Etudes;;PT1260H0M0S;Etudes;
+343;Etudes;Etudes détaillées;Etudes Postes;Etudes MOE (architecte);MOE - Etudes;MOE - Livrable APS;PT420H0M0S;Etudes;Poste
+344;Etudes;Etudes détaillées;Etudes Postes;Etudes MOE (architecte);MOE - Etudes;MOE - Livrable APD;PT630H0M0S;Etudes;Poste
+345;Etudes;Etudes détaillées;Etudes Postes;Etudes MOE (architecte);MOE - Etudes;MOE - Livrable DCE;PT210H0M0S;Etudes;Poste
+346;Etudes;Etudes détaillées;Etudes Postes;MCPO;;;PT2597H0M0S;Etudes;
+347;Etudes;Etudes détaillées;Etudes Postes;MCPO;MCPO - CCTP;;PT280H0M0S;Etudes;Poste
+348;Etudes;Etudes détaillées;Etudes Postes;MCPO;MCPO - Processus achat;;PT630H0M0S;Achats;Poste
+349;Etudes;Etudes détaillées;Etudes Postes;MCPO;MCPO - Processus achat;MCPO - Demande attribution entreprise;PT35H0M0S;Achats;Poste
+350;Etudes;Etudes détaillées;Etudes Postes;MCPO;MCPO - Processus achat;MCPO - Remise du CCTP au GIE + visite terrain;PT140H0M0S;Achats;Poste
+351;Etudes;Etudes détaillées;Etudes Postes;MCPO;MCPO - Processus achat;MCPO - Chiffrage marché poste;PT105H0M0S;Achats;Poste
+352;Etudes;Etudes détaillées;Etudes Postes;MCPO;MCPO - Processus achat;MCPO - Remise des prix et négociation;PT70H0M0S;Achats;Poste
+353;Etudes;Etudes détaillées;Etudes Postes;MCPO;MCPO - Processus achat;MCPO - Commande marche MCPO + commande travaux sous condition CR;PT35H0M0S;Achats;Poste
+354;Etudes;Etudes détaillées;Etudes Postes;MCPO;MCPO - Etudes;;PT1967H0M0S;Etudes;
+355;Etudes;Etudes détaillées;Etudes Postes;MCPO;MCPO - Etudes;lag MCPO - Délai entre signature de la commande et réunion de lancement;PT70H0M0S;;
+356;Etudes;Etudes détaillées;Etudes Postes;MCPO;MCPO - Etudes;MCPO - Réunion de lancement des études;PT7H0M0S;Etudes;Poste
+357;Etudes;Etudes détaillées;Etudes Postes;MCPO;MCPO - Etudes;MCPO - livrable V1;PT840H0M0S;Etudes;Poste
+358;Etudes;Etudes détaillées;Etudes Postes;MCPO;MCPO - Etudes;MCPO - livrable V2;PT700H0M0S;Etudes;Poste
+359;Etudes;Etudes détaillées;Etudes Postes;MCPO;MCPO - Etudes;MCPO - livraison DTT;PT70H0M0S;Achats;Poste
+360;Etudes;Etudes détaillées;Etudes LA;;;;PT3003H0M0S;Etudes;
+361;Etudes;Etudes détaillées;Etudes LA;MCEL LA;;;PT3003H0M0S;Etudes;
+362;Etudes;Etudes détaillées;Etudes LA;MCEL LA;MCEL LA - Rédaction du CCTP;;PT140H0M0S;Etudes;LA
+363;Etudes;Etudes détaillées;Etudes LA;MCEL LA;MCEL LA - Procédure achat;;PT1666H0M0S;Achats;
+364;Etudes;Etudes détaillées;Etudes LA;MCEL LA;MCEL LA - Procédure achat;MCEL LA - Fiche attribution;PT7H0M0S;Etudes;
+365;Etudes;Etudes détaillées;Etudes LA;MCEL LA;MCEL LA - Procédure achat;MCEL LA - Envoi consultation;PT7H0M0S;Achats;
+366;Etudes;Etudes détaillées;Etudes LA;MCEL LA;MCEL LA - Procédure achat;MCEL LA - Remise de l'offre;PT140H0M0S;Achats;LA
+367;Etudes;Etudes détaillées;Etudes LA;MCEL LA;MCEL LA - Procédure achat;MCEL LA - Négociation;PT70H0M0S;Achats;
+368;Etudes;Etudes détaillées;Etudes LA;MCEL LA;MCEL LA - Procédure achat;MCEL LA - Signature de la NAC et de la commande;PT0H0M0S;Achats;LA
+369;Etudes;Etudes détaillées;Etudes LA;MCEL LA;MCEL LA - Etudes;;PT1337H0M0S;Etudes;
+370;Etudes;Etudes détaillées;Etudes LA;MCEL LA;MCEL LA - Etudes;lag MCEL LA - Délai entre signature commande et réunion de lancement;PT70H0M0S;;
+371;Etudes;Etudes détaillées;Etudes LA;MCEL LA;MCEL LA - Etudes;MCEL LA - Réunion de lancement des études;PT7H0M0S;Etudes;LS
+372;Etudes;Etudes détaillées;Etudes LA;MCEL LA;MCEL LA - Etudes;MCEL LA - Etudes V1;PT560H0M0S;Etudes;LA
+373;Etudes;Etudes détaillées;Etudes LA;MCEL LA;MCEL LA - Etudes;MCEL LA - Etudes V2;PT700H0M0S;Etudes;LA
+374;Etudes;Etudes détaillées;Etudes LS;;;;PT2793H0M0S;Etudes;
+375;Etudes;Etudes détaillées;Etudes LS;MCEL LS;;;PT2758H0M0S;Etudes;
+376;Etudes;Etudes détaillées;Etudes LS;MCEL LS;MCEL LS - Rédaction du CCTP;;PT140H0M0S;Etudes;LS
+377;Etudes;Etudes détaillées;Etudes LS;MCEL LS;MCEL LS - Processus achat;;PT1701H0M0S;Achats;LS
+378;Etudes;Etudes détaillées;Etudes LS;MCEL LS;MCEL LS - Processus achat;MCEL LS - Demande d'attribution fournisseur;PT0H0M0S;Achats;LS
+379;Etudes;Etudes détaillées;Etudes LS;MCEL LS;MCEL LS - Processus achat;MCEL LS - Consultation;PT175H0M0S;Achats;LS
+380;Etudes;Etudes détaillées;Etudes LS;MCEL LS;MCEL LS - Processus achat;MCEL LS - Ouverture offre;PT7H0M0S;Achats;LS
+381;Etudes;Etudes détaillées;Etudes LS;MCEL LS;MCEL LS - Processus achat;MCEL LS - Négociation offre BE;PT35H0M0S;Achats;LS
+382;Etudes;Etudes détaillées;Etudes LS;MCEL LS;MCEL LS - Processus achat;MCEL LS - NAC, MAJ CCTP, Escorte, prépa commande étude;PT35H0M0S;Achats;LS
+383;Etudes;Etudes détaillées;Etudes LS;MCEL LS;MCEL LS - Processus achat;MCEL LS - Signature de la commande;PT0H0M0S;Achats;LS
+384;Etudes;Etudes détaillées;Etudes LS;MCEL LS;MCEL LS - Etudes;;PT1057H0M0S;Etudes;LS
+385;Etudes;Etudes détaillées;Etudes LS;MCEL LS;MCEL LS - Etudes;lag MCEL LS - Délai entre signature commande et réunion de lancement;PT70H0M0S;;
+386;Etudes;Etudes détaillées;Etudes LS;MCEL LS;MCEL LS - Etudes;MCEL LS - Réunion de lancement des études;PT7H0M0S;Etudes;LS
+387;Etudes;Etudes détaillées;Etudes LS;MCEL LS;MCEL LS - Etudes;MCEL LS - Réalisation études DTV1;PT560H0M0S;Etudes;LS
+388;Etudes;Etudes détaillées;Etudes LS;MCEL LS;MCEL LS - Etudes;MCEL LS - Réalisation études DTV2;PT420H0M0S;Etudes;LS
+389;Etudes;Etudes détaillées;Etudes LS;Etudes PSO;;;PT1484H0M0S;Etudes;LS
+390;Etudes;Etudes détaillées;Etudes LS;Etudes PSO;PSO - Rédaction du CCTP;;PT154H0M0S;Etudes;LS
+391;Etudes;Etudes détaillées;Etudes LS;Etudes PSO;PSO - Processus achat;;PT203H0M0S;Achats;LS
+392;Etudes;Etudes détaillées;Etudes LS;Etudes PSO;PSO - Processus achat;PSO - Consultation;PT98H0M0S;Achats;LS
+393;Etudes;Etudes détaillées;Etudes LS;Etudes PSO;PSO - Processus achat;PSO - Analyse et contractualisation;PT105H0M0S;Achats;LS
+394;Etudes;Etudes détaillées;Etudes LS;Etudes PSO;PSO - Etudes;;PT1127H0M0S;Etudes;LS
+395;Etudes;Etudes détaillées;Etudes LS;Etudes PSO;PSO - Etudes;lag PSO - Délai entre signature et réunion de lancement;PT140H0M0S;;
+396;Etudes;Etudes détaillées;Etudes LS;Etudes PSO;PSO - Etudes;PSO - Réunion de lancement des études;PT0H0M0S;Etudes;LS
+397;Etudes;Etudes détaillées;Etudes LS;Etudes PSO;PSO - Etudes;PSO - Etudes préliminaires G1;PT280H0M0S;Etudes;LS
+398;Etudes;Etudes détaillées;Etudes LS;Etudes PSO;PSO - Etudes;PSO - Etudes avant-projet G2;PT175H0M0S;Etudes;LS
+399;Etudes;Etudes détaillées;Etudes LS;Etudes PSO;PSO - Etudes;PSO - Etudes projet;PT280H0M0S;Etudes;LS
+400;Achats;;;;;;PT7896H0M0S;Achats;
+401;Achats;Consultations marchés travaux;;;;;PT1925H0M0S;Achats;
+402;Achats;Consultations marchés travaux;Consultations Poste;;;;PT1820H0M0S;Achats;
+403;Achats;Consultations marchés travaux;Consultations Poste;Plateforme;;;PT1820H0M0S;Achats;
+404;Achats;Consultations marchés travaux;Consultations Poste;Plateforme;Plateforme - CCTP;;PT70H0M0S;Achats;Poste
+405;Achats;Consultations marchés travaux;Consultations Poste;Plateforme;Plateforme - Consultation;;PT280H0M0S;Achats;Poste
+406;Achats;Consultations marchés travaux;Consultations Poste;Plateforme;Plateforme - Négociation;;PT140H0M0S;Achats;Poste
+407;Achats;Consultations marchés travaux;Consultations Poste;Plateforme;Plateforme - Commande;;PT0H0M0S;Achats;Poste
+408;Achats;Consultations marchés travaux;Consultations Poste;Bâtiment;;;PT1652H0M0S;Achats;
+409;Achats;Consultations marchés travaux;Consultations Poste;Bâtiment;Bâtiment - CCTP;;PT70H0M0S;Achats;Poste
+410;Achats;Consultations marchés travaux;Consultations Poste;Bâtiment;Bâtiment - Consultation;;PT280H0M0S;Achats;Poste
+411;Achats;Consultations marchés travaux;Consultations Poste;Bâtiment;Bâtiment - Négociation;;PT140H0M0S;Achats;Poste
+412;Achats;Consultations marchés travaux;Consultations Poste;Bâtiment;Bâtiment - Commande;;PT0H0M0S;Achats;Poste
+413;Achats;Consultations marchés travaux;Consultation LA;;;;PT1414H0M0S;Achats;
+414;Achats;Consultations marchés travaux;Consultation LA;MCFS;;;PT1414H0M0S;Achats;
+415;Achats;Consultations marchés travaux;Consultation LA;MCFS;MCFS - CCTP;;PT70H0M0S;Achats;LA
+416;Achats;Consultations marchés travaux;Consultation LA;MCFS;MCFS - Consultation;;PT280H0M0S;Achats;LA
+417;Achats;Consultations marchés travaux;Consultation LA;MCFS;MCFS - Négociations;;PT140H0M0S;Achats;LA
+418;Achats;Consultations marchés travaux;Consultation LA;MCFS;MCFS - Commande;;PT0H0M0S;Achats;LA
+419;Achats;Consultations marchés travaux;Consultation LA;MCLA;;;PT1414H0M0S;Achats;
+420;Achats;Consultations marchés travaux;Consultation LA;MCLA;MCLA - CCTP;;PT70H0M0S;Achats;LA
+421;Achats;Consultations marchés travaux;Consultation LA;MCLA;MCLA - Consultation;;PT280H0M0S;Achats;LA
+422;Achats;Consultations marchés travaux;Consultation LA;MCLA;MCLA - Négociation;;PT140H0M0S;Achats;LA
+423;Achats;Consultations marchés travaux;Consultation LA;MCLA;MCLA - Commande;;PT0H0M0S;Achats;LA
+424;Achats;Consultations marchés travaux;Consultations LS;;;;PT1764H0M0S;Achats;
+425;Achats;Consultations marchés travaux;Consultations LS;MCLS;;;PT1659H0M0S;Achats;
+426;Achats;Consultations marchés travaux;Consultations LS;MCLS;MCLS - CCTP;;PT70H0M0S;Achats;LS
+427;Achats;Consultations marchés travaux;Consultations LS;MCLS;MCLS - Consultation;;PT280H0M0S;Achats;LS
+428;Achats;Consultations marchés travaux;Consultations LS;MCLS;MCLS - Négociation;;PT140H0M0S;Achats;LS
+429;Achats;Consultations marchés travaux;Consultations LS;MCLS;MCLS - Commande;;PT0H0M0S;Achats;LS
+430;Achats;Consultations marchés travaux;Consultations LS;FMLS;;;PT1764H0M0S;Achats;
+431;Achats;Consultations marchés travaux;Consultations LS;FMLS;FMLS - CCTP;;PT105H0M0S;Achats;
+432;Achats;Consultations marchés travaux;Consultations LS;FMLS;FMLS - consultation;;PT105H0M0S;Achats;
+433;Achats;Consultations marchés travaux;Consultations LS;FMLS;FMLS - négociation;;PT7H0M0S;Achats;
+434;Achats;Consultations marchés travaux;Consultations LS;FMLS;FMLS - Rédaction commande + signature;;PT105H0M0S;Achats;
+435;Achats;Consultations marchés travaux;Consultations LS;Marché PSO;;;PT1694H0M0S;Achats;
+436;Achats;Consultations marchés travaux;Consultations LS;Marché PSO;PSO - CCTP;;PT35H0M0S;Achats;LS
+437;Achats;Consultations marchés travaux;Consultations LS;Marché PSO;PSO - Consultation;;PT175H0M0S;Achats;LS
+438;Achats;Consultations marchés travaux;Consultations LS;Marché PSO;PSO - Négociation;;PT35H0M0S;Achats;LS
+439;Achats;Consultations marchés travaux;Consultations LS;Marché PSO;PSO - Rédaction commande travaux + signature;;PT70H0M0S;Achats;LS
+440;Achats;Consultations marchés travaux;Ensemble des BPU disponibles;;;;PT0H0M0S;Achats;Projet
+441;Achats;Commandes fournitures;;;;;PT7896H0M0S;Achats;
+442;Achats;Commandes fournitures;Fournitures Poste;;;;PT7896H0M0S;Achats;
+443;Achats;Commandes fournitures;Fournitures Poste;Poste - Transformateur;;;PT7336H0M0S;Achats;
+444;Achats;Commandes fournitures;Fournitures Poste;Poste - Transformateur;Poste - Transformateur - Formalisation besoin ATP;;PT0H0M0S;Achats;Poste
+445;Achats;Commandes fournitures;Fournitures Poste;Poste - Transformateur;Lag - Délai entre formalisation ATP et MADU;;PT7056H0M0S;;
+446;Achats;Commandes fournitures;Fournitures Poste;Poste - Transformateur;Poste - Transformateur - Engagement fournisseur (Besoin mandat!);;PT0H0M0S;Achats;Poste
+447;Achats;Commandes fournitures;Fournitures Poste;Poste - Transformateur;Lag - Délai entre engagement fournisseur et MADU;;PT6174H0M0S;;
+448;Achats;Commandes fournitures;Fournitures Poste;Poste - Transformateur;Poste - Transformateur - EB;;PT0H0M0S;Achats;Poste
+449;Achats;Commandes fournitures;Fournitures Poste;Poste - Transformateur;Lag - Délai de service;;PT5586H0M0S;;
+450;Achats;Commandes fournitures;Fournitures Poste;Poste - Transformateur;Poste - Transformateur - MADU;;PT0H0M0S;Achats;Poste
+451;Achats;Commandes fournitures;Fournitures Poste;Poste - Transformateur;Lag - Délai de livraison;;PT280H0M0S;;
+452;Achats;Commandes fournitures;Fournitures Poste;Poste - Transformateur;Poste - Transformateur - Livraison (relier avec installation lien DF);;PT0H0M0S;Achats;Poste
+453;Achats;Commandes fournitures;Fournitures Poste;Poste - BIS huile;;;PT7196H0M0S;Achats;
+454;Achats;Commandes fournitures;Fournitures Poste;Poste - BIS huile;Poste - BIS huile - Formalisation besoin ATP;;PT0H0M0S;Achats;Poste
+455;Achats;Commandes fournitures;Fournitures Poste;Poste - BIS huile;Lag - Délai entre formalisation ATP et MADU;;PT7056H0M0S;;
+456;Achats;Commandes fournitures;Fournitures Poste;Poste - BIS huile;Poste - BIS huile - Engagement fournisseur (Besoin mandat!);;PT0H0M0S;Achats;Poste
+457;Achats;Commandes fournitures;Fournitures Poste;Poste - BIS huile;Lag - Délai entre engagement fournisseur et MADU;;PT6174H0M0S;;
+458;Achats;Commandes fournitures;Fournitures Poste;Poste - BIS huile;Poste - BIS huile - EB;;PT0H0M0S;Achats;Poste
+459;Achats;Commandes fournitures;Fournitures Poste;Poste - BIS huile;Lag - Délai de service;;PT5586H0M0S;;
+460;Achats;Commandes fournitures;Fournitures Poste;Poste - BIS huile;Poste - BIS huile - MADU;;PT0H0M0S;Achats;Poste
+461;Achats;Commandes fournitures;Fournitures Poste;Poste - BIS huile;Lag - Délai de livraison;;PT140H0M0S;;
+462;Achats;Commandes fournitures;Fournitures Poste;Poste - BIS huile;Poste - BIS huile - Livraison (relier avec installation lien DF);;PT0H0M0S;Achats;Poste
+463;Achats;Commandes fournitures;Fournitures Poste;Poste - BIS sèche;;;PT7196H0M0S;Achats;
+464;Achats;Commandes fournitures;Fournitures Poste;Poste - BIS sèche;Poste - BIS sèche - Formalisation besoin ATP;;PT0H0M0S;Achats;Poste
+465;Achats;Commandes fournitures;Fournitures Poste;Poste - BIS sèche;Lag - Délai entre formalisation ATP et MADU;;PT7056H0M0S;;
+466;Achats;Commandes fournitures;Fournitures Poste;Poste - BIS sèche;Poste - BIS sèche - Engagement fournisseur (Besoin mandat!);;PT0H0M0S;Achats;Poste
+467;Achats;Commandes fournitures;Fournitures Poste;Poste - BIS sèche;Lag - Délai entre engagement fournisseur et MADU;;PT6174H0M0S;;
+468;Achats;Commandes fournitures;Fournitures Poste;Poste - BIS sèche;Poste - BIS sèche - EB;;PT0H0M0S;Achats;Poste
+469;Achats;Commandes fournitures;Fournitures Poste;Poste - BIS sèche;Lag - Délai de service;;PT5880H0M0S;;
+470;Achats;Commandes fournitures;Fournitures Poste;Poste - BIS sèche;Poste - BIS sèche - MADU;;PT0H0M0S;Achats;Poste
+471;Achats;Commandes fournitures;Fournitures Poste;Poste - BIS sèche;Lag - Délai de livraison;;PT140H0M0S;;
+472;Achats;Commandes fournitures;Fournitures Poste;Poste - BIS sèche;Poste - BIS sèche - Livraison (relier avec installation lien DF);;PT0H0M0S;Achats;Poste
+473;Achats;Commandes fournitures;Fournitures Poste;Poste - Disjoncteur 400;;;PT3668H0M0S;Achats;
+474;Achats;Commandes fournitures;Fournitures Poste;Poste - Disjoncteur 400;Poste - Disjoncteur 400 - Formalisation besoin ATP;;PT0H0M0S;Achats;Poste
+475;Achats;Commandes fournitures;Fournitures Poste;Poste - Disjoncteur 400;Lag - Délai entre formalisation ATP et MADU;;PT3528H0M0S;;
+476;Achats;Commandes fournitures;Fournitures Poste;Poste - Disjoncteur 400;Poste - Disjoncteur 400 - Engagement fournisseur;;PT0H0M0S;Achats;Poste
+477;Achats;Commandes fournitures;Fournitures Poste;Poste - Disjoncteur 400;Lag - Délai entre engagement fournisseur et MADU;;PT2646H0M0S;;
+478;Achats;Commandes fournitures;Fournitures Poste;Poste - Disjoncteur 400;Poste - Disjoncteur 400 - EB;;PT0H0M0S;Achats;Poste
+479;Achats;Commandes fournitures;Fournitures Poste;Poste - Disjoncteur 400;Lag - Délai de service;;PT1764H0M0S;;
+480;Achats;Commandes fournitures;Fournitures Poste;Poste - Disjoncteur 400;Poste - Disjoncteur 400 - MADU;;PT0H0M0S;Achats;Poste
+481;Achats;Commandes fournitures;Fournitures Poste;Poste - Disjoncteur 400;Lag - Délai de livraison;;PT140H0M0S;;
+482;Achats;Commandes fournitures;Fournitures Poste;Poste - Disjoncteur 400;Poste - Disjoncteur 400 - Livraison (relier avec installation lien DF);;PT0H0M0S;Achats;Poste
+483;Achats;Commandes fournitures;Fournitures Poste;Poste - Disjoncteur 245;;;PT3598H0M0S;Achats;
+484;Achats;Commandes fournitures;Fournitures Poste;Poste - Disjoncteur 245;Poste - Disjoncteur 245 - Formalisation besoin ATP;;PT0H0M0S;Achats;Poste
+485;Achats;Commandes fournitures;Fournitures Poste;Poste - Disjoncteur 245;Lag - Délai entre formalisation ATP et MADU;;PT3528H0M0S;;
+486;Achats;Commandes fournitures;Fournitures Poste;Poste - Disjoncteur 245;Poste - Disjoncteur 245 - Engagement fournisseur;;PT0H0M0S;Achats;Poste
+487;Achats;Commandes fournitures;Fournitures Poste;Poste - Disjoncteur 245;Lag - Délai entre engagement fournisseur et MADU;;PT2940H0M0S;;
+488;Achats;Commandes fournitures;Fournitures Poste;Poste - Disjoncteur 245;Poste - Disjoncteur 245 - EB;;PT0H0M0S;Achats;Poste
+489;Achats;Commandes fournitures;Fournitures Poste;Poste - Disjoncteur 245;Lag - Délai de service;;PT1764H0M0S;;
+490;Achats;Commandes fournitures;Fournitures Poste;Poste - Disjoncteur 245;Poste - Disjoncteur 245 - MADU;;PT0H0M0S;Achats;Poste
+491;Achats;Commandes fournitures;Fournitures Poste;Poste - Disjoncteur 245;Lag - Délai de livraison;;PT70H0M0S;;
+492;Achats;Commandes fournitures;Fournitures Poste;Poste - Disjoncteur 245;Poste - Disjoncteur 245 - Livraison (relier avec installation lien DF);;PT0H0M0S;Achats;Poste
+493;Achats;Commandes fournitures;Fournitures Poste;Poste - Disjoncteur HTB1;;;PT3598H0M0S;Achats;
+494;Achats;Commandes fournitures;Fournitures Poste;Poste - Disjoncteur HTB1;Poste - Disjoncteur HTB1 - Formalisation besoin ATP;;PT0H0M0S;Achats;Poste
+495;Achats;Commandes fournitures;Fournitures Poste;Poste - Disjoncteur HTB1;Lag - Délai entre formalisation ATP et MADU;;PT3528H0M0S;;
+496;Achats;Commandes fournitures;Fournitures Poste;Poste - Disjoncteur HTB1;Poste - Disjoncteur HTB1 - Engagement fournisseur;;PT0H0M0S;Achats;Poste
+497;Achats;Commandes fournitures;Fournitures Poste;Poste - Disjoncteur HTB1;Lag - Délai entre engagement fournisseur et MADU;;PT1764H0M0S;;
+498;Achats;Commandes fournitures;Fournitures Poste;Poste - Disjoncteur HTB1;Poste - Disjoncteur HTB1 - EB;;PT0H0M0S;Achats;Poste
+499;Achats;Commandes fournitures;Fournitures Poste;Poste - Disjoncteur HTB1;Lag - Délai de service;;PT1470H0M0S;;
+500;Achats;Commandes fournitures;Fournitures Poste;Poste - Disjoncteur HTB1;Poste - Disjoncteur HTB1 - MADU;;PT0H0M0S;Achats;Poste
+501;Achats;Commandes fournitures;Fournitures Poste;Poste - Disjoncteur HTB1;Lag - Délai de livraison;;PT70H0M0S;;
+502;Achats;Commandes fournitures;Fournitures Poste;Poste - Disjoncteur HTB1;Poste - Disjoncteur HTB1 - Livraison (relier avec installation lien DF);;PT0H0M0S;Achats;Poste
+503;Achats;Commandes fournitures;Fournitures Poste;Poste - Câbles BT;;;PT2716H0M0S;Achats;
+504;Achats;Commandes fournitures;Fournitures Poste;Poste - Câbles BT;Poste - Câbles BT - Formalisation besoin ATP;;PT0H0M0S;Achats;Poste
+505;Achats;Commandes fournitures;Fournitures Poste;Poste - Câbles BT;Lag - Délai entre formalisation ATP et MADU;;PT2646H0M0S;;
+506;Achats;Commandes fournitures;Fournitures Poste;Poste - Câbles BT;Poste - Câbles BT - Engagement fournisseur;;PT0H0M0S;Achats;Poste
+507;Achats;Commandes fournitures;Fournitures Poste;Poste - Câbles BT;Lag - Délai entre engagement fournisseur et MADU;;PT1764H0M0S;;
+508;Achats;Commandes fournitures;Fournitures Poste;Poste - Câbles BT;Poste - Câbles BT - EB;;PT0H0M0S;Achats;Poste
+509;Achats;Commandes fournitures;Fournitures Poste;Poste - Câbles BT;Lag - Délai de service;;PT735H0M0S;;
+510;Achats;Commandes fournitures;Fournitures Poste;Poste - Câbles BT;Poste - Câbles BT - MADU;;PT0H0M0S;Achats;Poste
+511;Achats;Commandes fournitures;Fournitures Poste;Poste - Câbles BT;Lag - Délai de livraison;;PT70H0M0S;;
+512;Achats;Commandes fournitures;Fournitures Poste;Poste - Câbles BT;Poste - Câbles BT - Livraison;;PT0H0M0S;Achats;Poste
+513;Achats;Commandes fournitures;Fournitures LA;;;;PT7238H0M0S;Achats;
+514;Achats;Commandes fournitures;Fournitures LA;LA - Pylônes;;;PT3668H0M0S;Achats;
+515;Achats;Commandes fournitures;Fournitures LA;LA - Pylônes;LA - Pylônes - Formalisation besoin ATP;;PT0H0M0S;Achats;LA
+516;Achats;Commandes fournitures;Fournitures LA;LA - Pylônes;Lag - Délai entre formalisation ATP et MADU;;PT3528H0M0S;;
+517;Achats;Commandes fournitures;Fournitures LA;LA - Pylônes;LA - Pylônes - Engagement fournisseur;;PT0H0M0S;Achats;LA
+518;Achats;Commandes fournitures;Fournitures LA;LA - Pylônes;Lag - Délai entre engagement fournisseur et MADU;;PT2646H0M0S;;
+519;Achats;Commandes fournitures;Fournitures LA;LA - Pylônes;LA - Pylônes - EB;;PT0H0M0S;Achats;LA
+520;Achats;Commandes fournitures;Fournitures LA;LA - Pylônes;Lag - Délai de service;;PT1176H0M0S;;
+521;Achats;Commandes fournitures;Fournitures LA;LA - Pylônes;LA - Pylônes - MADU;;PT0H0M0S;Achats;LA
+522;Achats;Commandes fournitures;Fournitures LA;LA - Pylônes;Lag - Délai de livraison;;PT140H0M0S;;
+523;Achats;Commandes fournitures;Fournitures LA;LA - Pylônes;LA - Pylônes - Livraison;;PT0H0M0S;Achats;LA
+524;Achats;Commandes fournitures;Fournitures LA;LA - Câbles conducteurs et câbles de garde;;;PT2716H0M0S;Achats;
+525;Achats;Commandes fournitures;Fournitures LA;LA - Câbles conducteurs et câbles de garde;LA - Câbles - Formalisation besoin ATP;;PT0H0M0S;Achats;LA
+526;Achats;Commandes fournitures;Fournitures LA;LA - Câbles conducteurs et câbles de garde;Lag - Délai entre formalisation ATP et MADU;;PT2646H0M0S;;
+527;Achats;Commandes fournitures;Fournitures LA;LA - Câbles conducteurs et câbles de garde;LA - Câbles - Engagement fournisseur;;PT0H0M0S;Achats;LA
+528;Achats;Commandes fournitures;Fournitures LA;LA - Câbles conductors et câbles de garde;Lag - Délai entre engagement fournisseur et MADU;;PT1764H0M0S;;
+529;Achats;Commandes fournitures;Fournitures LA;LA - Câbles conducteurs et câbles de garde;LA - Câbles - EB;;PT0H0M0S;Achats;LA
+530;Achats;Commandes fournitures;Fournitures LA;LA - Câbles conductors et câbles de garde;Lag - Délai de service;;PT1470H0M0S;;
+531;Achats;Commandes fournitures;Fournitures LA;LA - Câbles conductors et câbles de garde;LA - Câbles - MADU;;PT0H0M0S;Achats;LA
+532;Achats;Commandes fournitures;Fournitures LA;LA - Câbles conductors et câbles de garde;Lag - Délai de livraison;;PT70H0M0S;;
+533;Achats;Commandes fournitures;Fournitures LA;LA - Câbles conductors et câbles de garde;LA - Câbles - Livraison;;PT0H0M0S;Achats;LA
+534;Achats;Commandes fournitures;Fournitures LS;;;;PT3598H0M0S;Achats;
+535;Achats;Commandes fournitures;Fournitures LS;LS - Câbles de puissance;;;PT3598H0M0S;Achats;
+536;Achats;Commandes fournitures;Fournitures LS;LS - Câbles de puissance;LS - Câbles - Engagement trimestrielle engageante pour besoins MADU;;PT0H0M0S;Achats;LS
+537;Achats;Commandes fournitures;Fournitures LS;LS - Câbles de puissance;Lag - Délai entre enquête trimestrielle et MADU;;PT3528H0M0S;;
+538;Achats;Commandes fournitures;Fournitures LS;LS - Câbles de puissance;LS - Métrage du câble par FMLS;;PT210H0M0S;Achats;
+539;Achats;Commandes fournitures;Fournitures LS;LS - Câbles de puissance;LS - Câbles - EB;;PT0H0M0S;Achats;LS
+540;Achats;Commandes fournitures;Fournitures LS;LS - Câbles de puissance;Lag - Délai de service;;PT1323H0M0S;;
+541;Achats;Commandes fournitures;Fournitures LS;LS - Câbles de puissance;LS - Câbles - MADU;;PT0H0M0S;Achats;LS
+542;Achats;Commandes fournitures;Fournitures LS;LS - Câbles de puissance;Lag - Délai de livraison;;PT70H0M0S;;
+543;Achats;Commandes fournitures;Fournitures LS;LS - Câbles de puissance;LS - Câbles - Livraison;;PT0H0M0S;Achats;LS
+544;Consignations;;;;;;PT0H0M0S;Consignations;
+545;Consignations;Consignation liaison XX-YY / poste;;;;;PT0H0M0S;Consignations;
+546;Consignations;Consignation liaison XX-YY / poste;Début de consignation (lier en DD avec tâches sous consignation, jusqu'à validation par planif long terme);;;;PT0H0M0S;Consignations;
+547;Consignations;Consignation liaison XX-YY / poste;Fin de consignation;;;;PT0H0M0S;Consignations;
+548;Travaux;;;;;;PT5481H0M0S;Travaux;
+549;Travaux;Travaux Poste (ex nouveau poste aérienne);;;;;PT4900H0M0S;Travaux;
+550;Travaux;Travaux Poste (ex nouveau poste aérienne);Ouverture de chantier;;;;PT0H0M0S;Travaux;Poste
+551;Travaux;Travaux Poste (ex nouveau poste aérienne);Poste - PLATEFORME;;;;PT1960H0M0S;Travaux;
+552;Travaux;Travaux Poste (ex nouveau poste aérienne);Poste - BI/BR;;;;PT560H0M0S;Travaux;
+553;Travaux;Travaux Poste (ex nouveau poste aérienne);Poste - BI/BR;Poste - BI/BR - Réalisation du BI;;;PT560H0M0S;Travaux;Poste
+554;Travaux;Travaux Poste (ex nouveau poste aérienne);Poste - BI/BR;Poste - BI/BR - Réalisation du bâtiment UA;;;PT420H0M0S;Travaux;Poste
+555;Travaux;Travaux Poste (ex nouveau poste aérienne);Poste - BI/BR;Poste - BI/BR - Réalisation des 4 BR;;;PT420H0M0S;Travaux;Poste
+556;Travaux;Travaux Poste (ex nouveau poste aérienne);Poste - MCPO;;;;PT2940H0M0S;Travaux;
+557;Travaux;Travaux Poste (ex nouveau poste aérienne);Poste - MCPO;Poste - MCPO - TX COMMUN;;;PT2380H0M0S;Travaux;
+558;Travaux;Travaux Poste (ex nouveau poste aérienne);Poste - MCPO;Poste - MCPO - TX COMMUN;Poste - MCPO - TX COMMUN - Cloture;;PT420H0M0S;Travaux;Poste
+559;Travaux;Travaux Poste (ex nouveau poste aérienne);Poste - MCPO;Poste - MCPO - TX COMMUN;Poste - MCPO - TX COMMUN - Bassin de rétention et drainage;;PT280H0M0S;Travaux;Poste
+560;Travaux;Travaux Poste (ex nouveau poste aérienne);Poste - MCPO;Poste - MCPO - TX COMMUN;Poste - MCPO - TX COMMUN - Réalisation des fondations spéciales;;PT560H0M0S;Travaux;Poste
+561;Travaux;Travaux Poste (ex nouveau poste aérienne);Poste - MCPO;Poste - MCPO - TX COMMUN;Poste - MCPO - TX COMMUN - RGT;;PT280H0M0S;Travaux;Poste
+562;Travaux;Travaux Poste (ex nouveau poste aérienne);Poste - MCPO;Poste - MCPO - TX COMMUN;Poste - MCPO - TX COMMUN - Réalisation des caniveaux BT;;PT560H0M0S;Travaux;Poste
+563;Travaux;Travaux Poste (ex nouveau poste aérienne);Poste - MCPO;Poste - MCPO - TX BT;;;PT1260H0M0S;Travaux;
+564;Travaux;Travaux Poste (ex nouveau poste aérienne);Poste - MCPO;Poste - MCPO - TX BT;Poste - MCPO - TX BT - Equipement BI;;PT140H0M0S;Travaux;Poste
+565;Travaux;Travaux Poste (ex nouveau poste aérienne);Poste - MCPO;Poste - MCPO - TX BT;Poste - MCPO - TX BT - Installation et raccordement des équipements UA;;PT280H0M0S;Travaux;Poste
+566;Travaux;Travaux Poste (ex nouveau poste aérienne);Poste - MCPO;Poste - MCPO - TX BT;Poste - MCPO - TX BT - Installation et raccordement des armoires CC;;PT210H0M0S;Travaux;Poste
+567;Travaux;Travaux Poste (ex nouveau poste aérienne);Poste - MCPO;Poste - MCPO - TX BT;Poste - MCPO - TX BT - Différentielle de barres et CC fond de poste;;PT560H0M0S;Travaux;Poste
+568;Travaux;Travaux Poste (ex nouveau poste aérienne);Poste - MCPO;Poste - MCPO - TX BT;Poste - MCPO - TX BT - Tirage câbles;;PT140H0M0S;Travaux;Poste
+569;Travaux;Travaux Poste (ex nouveau poste aérienne);Poste - MCPO;Poste - MCPO - TX BT;Poste - MCPO - TX BT - Equipement Telecom;;PT420H0M0S;Travaux;Poste
+570;Travaux;Travaux Poste (ex nouveau poste aérienne);Poste - MCPO;Poste - MCPO - TX BT;MCPO - TX BT - Equipement des BR et raccordement groupe électrogène;;PT140H0M0S;Travaux;Poste
+571;Travaux;Travaux Poste (ex nouveau poste aérienne);Poste - MCPO;Poste - MCPO - TX HT;;;PT1470H0M0S;Travaux;
+572;Travaux;Travaux Poste (ex nouveau poste aérienne);Poste - MCPO;Poste - MCPO - TX HT;Poste - MCPO - TX HT - Pose des charpentes;;PT280H0M0S;Travaux;Poste
+573;Travaux;Travaux Poste (ex nouveau poste aérienne);Poste - MCPO;Poste - MCPO - TX HT;Poste - MCPO - TX HT - Réalisation du circuit de terre du couplage et câbles de garde;;PT280H0M0S;Travaux;Poste
+574;Travaux;Travaux Poste (ex nouveau poste aérienne);Poste - MCPO;Poste - MCPO - TX HT;Poste - MCPO - TX HT - Montage des équipements HT;;PT280H0M0S;Travaux;Poste
+575;Travaux;Travaux Poste (ex nouveau poste aérienne);Poste - MCPO;Poste - MCPO - TX HT;Poste - MCPO - TX HT - Raccordement HT;;PT280H0M0S;Travaux;Poste
+576;Travaux;Travaux Poste (ex nouveau poste aérienne);Poste - MCPO;Poste - MCPO - TX HT;Poste - MCPO - TX HT - Raccordement BT;;PT280H0M0S;Travaux;Poste
+577;Travaux;Travaux Poste (ex nouveau poste aérienne);Poste - MCPO;Poste - MCPO - TX HT;Poste - MCPO - TX HT - Réglages;;PT70H0M0S;Travaux;Poste
+578;Travaux;Travaux Poste (ex nouveau poste aérienne);Poste - Mise en service du poste;;;;PT0H0M0S;Travaux;Poste
+579;Travaux;Travaux LA;;;;;PT5425H0M0S;Travaux;
+580;Travaux;Travaux LA;Ouvertude de chantier LA;;;;PT0H0M0S;Travaux;LA
+581;Travaux;Travaux LA;LA - Travaux MCFS;;;;PT3430H0M0S;Travaux;
+582;Travaux;Travaux LA;LA - Travaux MCFS;LA - MCFS - Installation base-vie;;;PT70H0M0S;Travaux;LA
+583;Travaux;Travaux LA;LA - Travaux MCFS;LA - MCFS - Aménagement des pistes (150m de pistes et 300 m² Pylône, 2j/pyl);;;PT560H0M0S;Travaux;LA
+584;Travaux;Travaux LA;LA - Travaux MCFS;LA - MCFS - Réalisation des fondations (10j/pyl);;;PT2800H0M0S;Travaux;LA
+585;Travaux;Travaux LA;LA - Travaux MCLA;;;;PT5390H0M0S;Travaux;
+586;Travaux;Travaux LA;LA - Travaux MCLA;LA - MCLA - Installation base-vie;;;PT140H0M0S;Travaux;LA
+587;Travaux;Travaux LA;LA - Travaux MCLA;LA - MCLA - Assemblage des pylônes (4T/j, 50T/pyl = 12,5j/pyl);;;PT3500H0M0S;Travaux;LA
+588;Travaux;Travaux LA;LA - Travaux MCLA;LA - MCLA - Levage des pylônes (10j/pyl);;;PT2800H0M0S;Travaux;LA
+589;Travaux;Travaux LA;LA - Travaux MCLA;LA - MCLA - Déroulage des câbles conducteurs et cdg (20j entre 4 pylônes);;;PT1680H0M0S;Travaux;LA
+590;Travaux;Travaux LA;LA - mise en conduite LA;;;;PT35H0M0S;Travaux;LA
+591;Travaux;Travaux LS;;;;;PT3206H0M0S;Travaux;
+592;Travaux;Travaux LS;Ouverture de chantier LS;;;;PT0H0M0S;Travaux;LS
+593;Travaux;Travaux LS;LS - Installation de base-vie;;;;PT70H0M0S;Travaux;LS
+594;Travaux;Travaux LS;MCLS - Génie civil dont PSO;;;;PT1400H0M0S;Travaux;LS
+595;Travaux;Travaux LS;MCLS/FMLS - Déroulage câbles et montage jonctions;;;;PT1400H0M0S;Travaux;LS
+596;Travaux;Travaux LS;FMLS - Montage extrémités;;;;PT210H0M0S;Travaux;LS
+597;Travaux;Travaux LS;FMLS - Essais;;;;PT70H0M0S;Travaux;LS
+598;Travaux;Travaux LS;DPI travaux - Contrôle avant réception des travaux LS;;;;PT7H0M0S;Travaux;
+599;Travaux;Travaux LS;LS - mise en conduite LS;;;;PT35H0M0S;Travaux;LS`;
 
 function buildLibraryData(csv) {
   const lines = csv.split('\n').filter(line => line.trim());
@@ -338,11 +631,26 @@ function buildLibraryData(csv) {
     const tags = [colB, colI, colJ].filter(t => t).join(',');
 
     let subcategoriesList = [];
-    if (colE) subcategoriesList.push(colE);
-    if (colF)
-      subcategoriesList = subcategoriesList.concat(colF.split(/[\s\/]+/).filter(p => p.trim()));
-    if (colG)
-      subcategoriesList = subcategoriesList.concat(colG.split(/[\s\/]+/).filter(p => p.trim()));
+    if (colD && colE) {
+      if (colF || colG) {
+        subcategoriesList.push(colE);
+        if (colF)
+          subcategoriesList = subcategoriesList.concat(colF.split(/[\s\/]+/).filter(p => p.trim()));
+        if (colG)
+          subcategoriesList = subcategoriesList.concat(colG.split(/[\s\/]+/).filter(p => p.trim()));
+      } else {
+        subcategoriesList.push(colE);
+      }
+    } else if (colD && !colE && colF) {
+      if (colG) {
+        subcategoriesList.push(colF);
+        subcategoriesList = subcategoriesList.concat(colG.split(/[\s\/]+/).filter(p => p.trim()));
+      } else {
+        subcategoriesList.push(colF);
+      }
+    } else if (colD && !colE && !colF && colG) {
+      subcategoriesList.push(colG);
+    }
 
     if (!cardMap.has(colC)) {
       const cardItem = {
@@ -375,6 +683,7 @@ function buildLibraryData(csv) {
           title: colD,
           description: '',
           priority: 'normal',
+          duration_days: duration,
           subcategories: [],
         };
         content.categories.push(category);
@@ -387,6 +696,7 @@ function buildLibraryData(csv) {
               title: subcatTitle,
               description: '',
               priority: 'normal',
+              duration_days: duration,
             });
           }
         });
