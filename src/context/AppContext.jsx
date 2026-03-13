@@ -183,7 +183,7 @@ function initDefaultData() {
     data.nextIds.order = 1;
   }
 
-  // Ensure libraryItems has data
+  // Ensure libraryItems has data - always check library editor first (admin defines the master data)
   if (!data.libraryItems || data.libraryItems.length === 0) {
     console.log('[AppContext] Loading library templates');
     // Check if custom library data exists in LibraryEditor storage
@@ -199,6 +199,19 @@ function initDefaultData() {
       }
     } else {
       data.libraryItems = libraryTemplates;
+    }
+  } else {
+    // Even if libraryItems exists, check if admin has updated the library editor
+    const customLibrary = localStorage.getItem('mytrello_library_editor');
+    if (customLibrary) {
+      try {
+        const treeData = JSON.parse(customLibrary);
+        data.libraryItems = convertTreeToLibraryItems(treeData);
+        console.log('[AppContext] Updated libraryItems from library editor');
+      } catch (e) {
+        console.error('[AppContext] Error loading custom library:', e);
+        // Keep existing data
+      }
     }
   }
   if (data.boards.length === 0) {
@@ -227,6 +240,21 @@ function initDefaultData() {
       message: 1,
       order: 1,
     };
+  } else {
+    const titleCounts = {};
+    data.boards.forEach(b => {
+      titleCounts[b.title] = (titleCounts[b.title] || 0) + 1;
+    });
+    for (const [title, count] of Object.entries(titleCounts)) {
+      if (count > 1) {
+        const duplicates = data.boards.filter(b => b.title === title).sort((a, b) => b.id - a.id);
+        const toKeep = duplicates[0];
+        const toRemoveIds = duplicates.slice(1).map(d => d.id);
+        data.columns = data.columns.filter(c => !toRemoveIds.includes(c.board_id));
+        data.cards = data.cards.filter(c => !toRemoveIds.includes(c.column_id));
+        data.boards = data.boards.filter(b => !toRemoveIds.includes(b.id));
+      }
+    }
   }
   if (data.boards.length > 0 && data.columns.length === 0) {
     const boardId = data.boards[0].id;
@@ -415,65 +443,74 @@ export function AppProvider({ children }) {
     }
   }, []);
 
-  // Ensure libraryItems has data - force reload templates if empty
+  // Ensure libraryItems has data - always check library editor first
   const forceLibraryItems = () => {
-    if (!db.libraryItems || db.libraryItems.length === 0) {
-      // Check if custom library data exists in LibraryEditor storage
-      const customLibrary = localStorage.getItem('mytrello_library_editor');
-      let itemsToUse = libraryTemplates;
+    // Always check if custom library data exists in LibraryEditor storage
+    const customLibrary = localStorage.getItem('mytrello_library_editor');
+    let itemsToUse;
 
-      if (customLibrary) {
-        try {
-          const treeData = JSON.parse(customLibrary);
-          itemsToUse = convertTreeToLibraryItems(treeData);
-          console.log('[AppContext] Force loading custom library from editor');
-        } catch (e) {
-          console.error('[AppContext] Error loading custom library:', e);
-        }
-      } else {
-        console.log(
-          '[AppContext] Force loading library templates, count:',
-          libraryTemplates.length,
-          'first:',
-          libraryTemplates[0]?.title
-        );
+    if (customLibrary) {
+      try {
+        const treeData = JSON.parse(customLibrary);
+        itemsToUse = convertTreeToLibraryItems(treeData);
+        console.log('[AppContext] Loading custom library from editor, count:', itemsToUse.length);
+      } catch (e) {
+        console.error('[AppContext] Error loading custom library:', e);
+        itemsToUse =
+          db.libraryItems && db.libraryItems.length > 0 ? db.libraryItems : libraryTemplates;
       }
-
-      const newDb = { ...db, libraryItems: itemsToUse };
-      setDb(newDb);
-      setLibraryItems(itemsToUse);
-      saveToStorage(newDb);
-      return true;
+    } else if (db.libraryItems && db.libraryItems.length > 0) {
+      itemsToUse = libraryTemplates;
+      console.log('[AppContext] Using libraryTemplates, count:', itemsToUse.length);
+    } else {
+      itemsToUse = libraryTemplates;
+      console.log(
+        '[AppContext] Loading library templates, count:',
+        libraryTemplates.length,
+        'first:',
+        libraryTemplates[0]?.title
+      );
     }
-    console.log(
-      '[AppContext] db.libraryItems exists, count:',
-      db.libraryItems.length,
-      'first:',
-      db.libraryItems[0]?.title
-    );
-    return false;
+
+    const newDb = { ...db, libraryItems: itemsToUse };
+    setDb(newDb);
+    setLibraryItems(itemsToUse);
+    saveToStorage(newDb);
   };
 
   // Check and load library on mount
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
-    const loaded = forceLibraryItems();
-    if (!loaded) {
-      setLibraryItems(db.libraryItems || []);
-    }
+    forceLibraryItems();
   }, []);
 
   // Listen for library updates from LibraryEditor
   useEffect(() => {
     const handleLibraryUpdate = () => {
-      const mainDb = localStorage.getItem('mytrello_db');
-      if (mainDb) {
+      // Always prioritize library editor storage
+      const customLibrary = localStorage.getItem('mytrello_library_editor');
+      if (customLibrary) {
         try {
-          const updatedDb = JSON.parse(mainDb);
-          setDb(updatedDb);
-          setLibraryItems(updatedDb.libraryItems || []);
+          const treeData = JSON.parse(customLibrary);
+          const itemsToUse = convertTreeToLibraryItems(treeData);
+          const newDb = { ...db, libraryItems: itemsToUse };
+          setDb(newDb);
+          setLibraryItems(itemsToUse);
+          console.log('[AppContext] Reloaded library from editor, count:', itemsToUse.length);
         } catch (e) {
-          console.error('[AppContext] Error reloading library:', e);
+          console.error('[AppContext] Error reloading library from editor:', e);
+        }
+      } else {
+        // Fallback to main database
+        const mainDb = localStorage.getItem('mytrello_db');
+        if (mainDb) {
+          try {
+            const updatedDb = JSON.parse(mainDb);
+            setDb(updatedDb);
+            setLibraryItems(updatedDb.libraryItems || []);
+          } catch (e) {
+            console.error('[AppContext] Error reloading library:', e);
+          }
         }
       }
     };
@@ -876,7 +913,8 @@ export function AppProvider({ children }) {
     durationDays = 1,
     parentId = null,
     predecessorId = null,
-    reloadBoardId = null
+    reloadBoardId = null,
+    chapter = null
   ) => {
     console.log('[createCard] Called with columnId:', columnId, 'title:', title);
     return new Promise(resolve => {
@@ -899,6 +937,7 @@ export function AppProvider({ children }) {
           parent_id: parentId,
           predecessor_id: predecessorId,
           created_at: new Date().toISOString(),
+          chapter,
         };
 
         const maxPos = currentDb.cards

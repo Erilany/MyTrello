@@ -51,11 +51,25 @@ function Board() {
     deleteAvenant,
     getOrdersByBoard,
     getUnreadCount,
+    libraryItems,
   } = useApp();
   const [newColumnTitle, setNewColumnTitle] = useState('');
   const [showNewColumn, setShowNewColumn] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [activeTab, setActiveTab] = useState('taches');
+  const [selectedChapter, setSelectedChapter] = useState('all');
+
+  const chapters = React.useMemo(() => {
+    const chapterSet = new Set();
+    libraryItems.forEach(item => {
+      const tagsStr = item.tags || '';
+      const tags = tagsStr.split(',');
+      if (tags[0]) {
+        chapterSet.add(tags[0]);
+      }
+    });
+    return Array.from(chapterSet).sort();
+  }, [libraryItems]);
 
   useEffect(() => {
     if (boardId) {
@@ -502,109 +516,136 @@ function Board() {
       </div>
 
       {activeTab === 'taches' && (
-        <div className="flex-1 overflow-x-auto">
-          <DragDropContext onDragEnd={handleDragEnd}>
-            <Droppable droppableId="board" direction="horizontal">
-              {provided => (
-                <div
-                  {...provided.droppableProps}
-                  ref={provided.innerRef}
-                  className="flex h-full min-h-[calc(100vh-180px)] space-x-[14px] pb-4 pt-1"
-                >
-                  {orderedColumns.map((column, index) => (
-                    <Draggable key={column.id} draggableId={'column-' + column.id} index={index}>
-                      {(provided, snapshot) => (
+        <div>
+          <div className="mb-4 flex flex-wrap gap-2">
+            <button
+              onClick={() => setSelectedChapter('all')}
+              className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
+                selectedChapter === 'all'
+                  ? 'bg-accent text-white'
+                  : 'bg-card border border-std text-secondary hover:bg-card-hover'
+              }`}
+            >
+              Tous
+            </button>
+            {chapters.map(chapter => (
+              <button
+                key={chapter}
+                onClick={() => setSelectedChapter(chapter)}
+                className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
+                  selectedChapter === chapter
+                    ? 'bg-accent text-white'
+                    : 'bg-card border border-std text-secondary hover:bg-card-hover'
+                }`}
+              >
+                {chapter}
+              </button>
+            ))}
+          </div>
+          <div className="flex-1 overflow-x-auto">
+            <DragDropContext onDragEnd={handleDragEnd}>
+              <Droppable droppableId="board" direction="horizontal">
+                {provided => (
+                  <div
+                    {...provided.droppableProps}
+                    ref={provided.innerRef}
+                    className="flex h-full min-h-[calc(100vh-180px)] space-x-[14px] pb-4 pt-1"
+                  >
+                    {orderedColumns.map((column, index) => (
+                      <Draggable key={column.id} draggableId={'column-' + column.id} index={index}>
+                        {(provided, snapshot) => (
+                          <div
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            className="flex-shrink-0 relative group"
+                          >
+                            <div
+                              {...provided.dragHandleProps}
+                              className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 w-6 h-6 cursor-grab z-10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-muted hover:text-secondary"
+                              title="Déplacer la colonne"
+                            >
+                              <GripVertical size={16} />
+                            </div>
+                            <Column column={column} index={index} />
+                          </div>
+                        )}
+                      </Draggable>
+                    ))}
+                    {provided.placeholder}
+
+                    <div className="flex-shrink-0 w-[310px]">
+                      {showNewColumn ? (
+                        <form
+                          onSubmit={handleCreateColumn}
+                          className="bg-column rounded-lg border border-std p-3"
+                        >
+                          <input
+                            type="text"
+                            value={newColumnTitle}
+                            onChange={e => setNewColumnTitle(e.target.value)}
+                            placeholder="Nom de la colonne..."
+                            className="w-full px-3 py-2 text-sm bg-input border border-std rounded-md text-primary placeholder-muted focus:outline-none focus:border-accent"
+                            autoFocus
+                            onBlur={() => {
+                              if (!newColumnTitle.trim()) setShowNewColumn(false);
+                            }}
+                          />
+                          <div className="flex items-center mt-2 space-x-2">
+                            <button
+                              type="submit"
+                              className="px-3 py-1.5 text-sm font-medium bg-accent text-white rounded-md hover:opacity-90 transition-std"
+                            >
+                              Ajouter
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setNewColumnTitle('');
+                                setShowNewColumn(false);
+                              }}
+                              className="px-3 py-1.5 text-sm text-secondary hover:text-primary"
+                            >
+                              Annuler
+                            </button>
+                          </div>
+                        </form>
+                      ) : (
+                        <button
+                          onClick={() => setShowNewColumn(true)}
+                          className="w-full h-12 flex items-center justify-center bg-card/30 hover:bg-card rounded-lg border-2 border-dashed border-std text-secondary hover:text-primary transition-std"
+                        >
+                          <Plus size={20} className="mr-2" />
+                          Ajouter une colonne
+                        </button>
+                      )}
+                    </div>
+                    <Droppable droppableId="all-cards" type="category" direction="vertical">
+                      {provided => (
                         <div
                           ref={provided.innerRef}
-                          {...provided.draggableProps}
-                          className="flex-shrink-0 relative group"
-                        >
-                          <div
-                            {...provided.dragHandleProps}
-                            className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 w-6 h-6 cursor-grab z-10 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-muted hover:text-secondary"
-                            title="Déplacer la colonne"
-                          >
-                            <GripVertical size={16} />
-                          </div>
-                          <Column column={column} index={index} />
-                        </div>
-                      )}
-                    </Draggable>
-                  ))}
-                  {provided.placeholder}
-
-                  <div className="flex-shrink-0 w-[310px]">
-                    {showNewColumn ? (
-                      <form
-                        onSubmit={handleCreateColumn}
-                        className="bg-column rounded-lg border border-std p-3"
-                      >
-                        <input
-                          type="text"
-                          value={newColumnTitle}
-                          onChange={e => setNewColumnTitle(e.target.value)}
-                          placeholder="Nom de la colonne..."
-                          className="w-full px-3 py-2 text-sm bg-input border border-std rounded-md text-primary placeholder-muted focus:outline-none focus:border-accent"
-                          autoFocus
-                          onBlur={() => {
-                            if (!newColumnTitle.trim()) setShowNewColumn(false);
-                          }}
+                          {...provided.droppableProps}
+                          className="hidden"
                         />
-                        <div className="flex items-center mt-2 space-x-2">
-                          <button
-                            type="submit"
-                            className="px-3 py-1.5 text-sm font-medium bg-accent text-white rounded-md hover:opacity-90 transition-std"
-                          >
-                            Ajouter
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setNewColumnTitle('');
-                              setShowNewColumn(false);
-                            }}
-                            className="px-3 py-1.5 text-sm text-secondary hover:text-primary"
-                          >
-                            Annuler
-                          </button>
-                        </div>
-                      </form>
-                    ) : (
-                      <button
-                        onClick={() => setShowNewColumn(true)}
-                        className="w-full h-12 flex items-center justify-center bg-card/30 hover:bg-card rounded-lg border-2 border-dashed border-std text-secondary hover:text-primary transition-std"
-                      >
-                        <Plus size={20} className="mr-2" />
-                        Ajouter une colonne
-                      </button>
-                    )}
+                      )}
+                    </Droppable>
+                    <Droppable
+                      droppableId="all-subcategories"
+                      type="subcategory"
+                      direction="vertical"
+                    >
+                      {provided => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.droppableProps}
+                          className="hidden"
+                        />
+                      )}
+                    </Droppable>
                   </div>
-                  <Droppable droppableId="all-cards" type="category" direction="vertical">
-                    {provided => (
-                      <div
-                        ref={provided.innerRef}
-                        {...provided.droppableProps}
-                        className="hidden"
-                      />
-                    )}
-                  </Droppable>
-                  <Droppable
-                    droppableId="all-subcategories"
-                    type="subcategory"
-                    direction="vertical"
-                  >
-                    {provided => (
-                      <div
-                        ref={provided.innerRef}
-                        {...provided.droppableProps}
-                        className="hidden"
-                      />
-                    )}
-                  </Droppable>
-                </div>
-              )}
-            </Droppable>
-          </DragDropContext>
+                )}
+              </Droppable>
+            </DragDropContext>
+          </div>
         </div>
       )}
 

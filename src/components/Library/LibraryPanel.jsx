@@ -212,37 +212,123 @@ function LibraryPanel() {
     setSelectedLibraryCategory(null);
   };
 
-  const toggleCardSelection = card => {
-    setSelectedCards(prev => {
-      const exists = prev.find(c => c.id === card.id);
-      if (exists) {
-        setSelectedCategories(prevCats => prevCats.filter(c => c.cardTitle !== card.title));
-        setSelectedSubcategories(prevSubcats =>
-          prevSubcats.filter(s => s.cardTitle !== card.title)
-        );
-        return prev.filter(c => c.id !== card.id);
-      }
-      return [...prev, card];
-    });
+  const toggleCardOnly = (card, forceState = null) => {
+    const isSelected = selectedCards.some(c => c.id === card.id);
+    const shouldSelect = forceState !== null ? forceState : !isSelected;
+
+    if (shouldSelect) {
+      setSelectedCards(prev => {
+        if (prev.some(c => c.id === card.id)) return prev;
+        return [...prev, card];
+      });
+    } else {
+      setSelectedCards(prev => prev.filter(c => c.id !== card.id));
+    }
   };
 
-  const toggleCategorySelection = (category, cardTitle) => {
+  const toggleCardWithChildren = (card, forceState = null) => {
+    const cardCategories = getCardCategories(card);
+    const cardTitle = card.title;
+
+    const isSelected = selectedCards.some(c => c.id === card.id);
+    const shouldSelect = forceState !== null ? forceState : !isSelected;
+
+    if (shouldSelect) {
+      setSelectedCards(prev => {
+        if (prev.some(c => c.id === card.id)) return prev;
+        return [...prev, card];
+      });
+
+      cardCategories.forEach(cat => {
+        const catWithCard = { ...cat, cardTitle };
+        setSelectedCategories(prev => {
+          if (prev.some(c => c.title === cat.title && c.cardTitle === cardTitle)) return prev;
+          return [...prev, catWithCard];
+        });
+
+        (cat.subcategories || []).forEach(subcat => {
+          const subcatWithParents = { ...subcat, categoryTitle: cat.title, cardTitle };
+          setSelectedSubcategories(prev => {
+            if (
+              prev.some(
+                s =>
+                  s.title === subcat.title &&
+                  s.categoryTitle === cat.title &&
+                  s.cardTitle === cardTitle
+              )
+            )
+              return prev;
+            return [...prev, subcatWithParents];
+          });
+        });
+      });
+    } else {
+      setSelectedCards(prev => prev.filter(c => c.id !== card.id));
+      setSelectedCategories(prevCats => prevCats.filter(c => c.cardTitle !== cardTitle));
+      setSelectedSubcategories(prevSubcats => prevSubcats.filter(s => s.cardTitle !== cardTitle));
+    }
+  };
+
+  const toggleCategoryOnly = (category, cardTitle, forceState = null) => {
     const categoryWithCard = { ...category, cardTitle };
-    setSelectedCategories(prev => {
-      const exists = prev.find(c => c.title === category.title && c.cardTitle === cardTitle);
-      if (exists) {
-        setSelectedSubcategories(prevSubcats =>
-          prevSubcats.filter(
-            s => !(s.categoryTitle === category.title && s.cardTitle === cardTitle)
-          )
-        );
-        return prev.filter(c => !(c.title === category.title && c.cardTitle === cardTitle));
-      }
-      return [...prev, categoryWithCard];
-    });
+
+    const isSelected = selectedCategories.some(
+      c => c.title === category.title && c.cardTitle === cardTitle
+    );
+    const shouldSelect = forceState !== null ? forceState : !isSelected;
+
+    if (shouldSelect) {
+      setSelectedCategories(prev => {
+        if (prev.some(c => c.title === category.title && c.cardTitle === cardTitle)) return prev;
+        return [...prev, categoryWithCard];
+      });
+    } else {
+      setSelectedCategories(prev =>
+        prev.filter(c => !(c.title === category.title && c.cardTitle === cardTitle))
+      );
+    }
   };
 
-  const toggleSubcategorySelection = (subcategory, categoryTitle, cardTitle) => {
+  const toggleCategoryWithChildren = (category, cardTitle, forceState = null) => {
+    const categoryWithCard = { ...category, cardTitle };
+
+    const isSelected = selectedCategories.some(
+      c => c.title === category.title && c.cardTitle === cardTitle
+    );
+    const shouldSelect = forceState !== null ? forceState : !isSelected;
+
+    if (shouldSelect) {
+      setSelectedCategories(prev => {
+        if (prev.some(c => c.title === category.title && c.cardTitle === cardTitle)) return prev;
+        return [...prev, categoryWithCard];
+      });
+
+      (category.subcategories || []).forEach(subcat => {
+        const subcatWithParents = { ...subcat, categoryTitle: category.title, cardTitle };
+        setSelectedSubcategories(prev => {
+          if (
+            prev.some(
+              s =>
+                s.title === subcat.title &&
+                s.categoryTitle === category.title &&
+                s.cardTitle === cardTitle
+            )
+          )
+            return prev;
+          return [...prev, subcatWithParents];
+        });
+      });
+    } else {
+      setSelectedCategories(prev =>
+        prev.filter(c => !(c.title === category.title && c.cardTitle === cardTitle))
+      );
+      setSelectedSubcategories(prevSubcats =>
+        prevSubcats.filter(s => !(s.categoryTitle === category.title && s.cardTitle === cardTitle))
+      );
+    }
+  };
+
+  const toggleSubcategoryOnly = (subcategory, categoryTitle, cardTitle, forceState = null) => {
     const subcatWithParents = { ...subcategory, categoryTitle, cardTitle };
     setSelectedSubcategories(prev => {
       const exists = prev.find(
@@ -251,7 +337,12 @@ function LibraryPanel() {
           s.categoryTitle === categoryTitle &&
           s.cardTitle === cardTitle
       );
-      if (exists) {
+      const shouldSelect = forceState !== null ? forceState : !exists;
+
+      if (shouldSelect) {
+        if (exists) return prev;
+        return [...prev, subcatWithParents];
+      } else {
         return prev.filter(
           s =>
             !(
@@ -261,7 +352,72 @@ function LibraryPanel() {
             )
         );
       }
-      return [...prev, subcatWithParents];
+    });
+  };
+
+  const toggleCategorySelection = (category, cardTitle, forceState = null) => {
+    const categoryWithCard = { ...category, cardTitle };
+
+    const isSelected = selectedCategories.some(
+      c => c.title === category.title && c.cardTitle === cardTitle
+    );
+    const shouldSelect = forceState !== null ? forceState : !isSelected;
+
+    if (shouldSelect) {
+      setSelectedCategories(prev => {
+        if (prev.some(c => c.title === category.title && c.cardTitle === cardTitle)) return prev;
+        return [...prev, categoryWithCard];
+      });
+
+      (category.subcategories || []).forEach(subcat => {
+        const subcatWithParents = { ...subcat, categoryTitle: category.title, cardTitle };
+        setSelectedSubcategories(prev => {
+          if (
+            prev.some(
+              s =>
+                s.title === subcat.title &&
+                s.categoryTitle === category.title &&
+                s.cardTitle === cardTitle
+            )
+          )
+            return prev;
+          return [...prev, subcatWithParents];
+        });
+      });
+    } else {
+      setSelectedCategories(prev =>
+        prev.filter(c => !(c.title === category.title && c.cardTitle === cardTitle))
+      );
+      setSelectedSubcategories(prevSubcats =>
+        prevSubcats.filter(s => !(s.categoryTitle === category.title && s.cardTitle === cardTitle))
+      );
+    }
+  };
+
+  const toggleSubcategorySelection = (subcategory, categoryTitle, cardTitle, forceState = null) => {
+    const subcatWithParents = { ...subcategory, categoryTitle, cardTitle };
+    setSelectedSubcategories(prev => {
+      const exists = prev.find(
+        s =>
+          s.title === subcategory.title &&
+          s.categoryTitle === categoryTitle &&
+          s.cardTitle === cardTitle
+      );
+      const shouldSelect = forceState !== null ? forceState : !exists;
+
+      if (shouldSelect) {
+        if (exists) return prev;
+        return [...prev, subcatWithParents];
+      } else {
+        return prev.filter(
+          s =>
+            !(
+              s.title === subcategory.title &&
+              s.categoryTitle === categoryTitle &&
+              s.cardTitle === cardTitle
+            )
+        );
+      }
     });
   };
 
@@ -344,24 +500,34 @@ function LibraryPanel() {
   };
 
   const handlePanelConfirmUse = () => {
-    if (!useFormBoardId || !useFormColumnId) {
+    if (!selectedBoardId || (!selectedColumnId && useFormDestination !== 'board2')) {
       alert('Veuillez sélectionner un projet et une colonne');
       return;
     }
 
-    const columnId = parseInt(useFormColumnId);
-    const boardId = parseInt(useFormBoardId);
+    const columnId = useFormDestination === 'board2' ? 1 : parseInt(selectedColumnId);
+    const boardId = parseInt(selectedBoardId);
 
     selectedCards.forEach(card => {
       try {
         const content = JSON.parse(card.content_json);
+        const tagsStr = card.tags || '';
+        const tags = tagsStr.split(',');
+        const chapter = tags[0] || null;
+
         const cardId = createCard(
           columnId,
           content.card?.title || card.title,
           content.card?.description || '',
           content.card?.priority || 'normal',
           content.card?.due_date || null,
-          content.card?.assignee || ''
+          content.card?.assignee || '',
+          null,
+          1,
+          null,
+          null,
+          null,
+          chapter
         );
 
         const selectedCatsForCard = selectedCategories.filter(c => c.cardTitle === card.title);
@@ -486,18 +652,27 @@ function LibraryPanel() {
     console.log('[LibraryPanel] selectedCards:', selectedCards);
     console.log('[LibraryPanel] selectedCategories:', selectedCategories);
     console.log('[LibraryPanel] selectedSubcategories:', selectedSubcategories);
-    if (!useFormBoardId || !useFormColumnId) {
-      alert('Veuillez sélectionner un projet et une colonne');
+    if (!useFormBoardId) {
+      alert('Veuillez sélectionner un projet');
+      return;
+    }
+    if (useFormDestination !== 'board2' && !useFormColumnId) {
+      alert('Veuillez sélectionner une colonne');
       return;
     }
 
-    const columnId = parseInt(useFormColumnId);
+    const columnId = useFormDestination === 'board2' ? 1 : parseInt(useFormColumnId);
     const boardId = parseInt(useFormBoardId);
 
     for (const card of selectedCards) {
       try {
         const content = JSON.parse(card.content_json);
         const cardDuration = content.card?.duration_days ?? card.duration ?? 1;
+
+        const tagsStr = card.tags || '';
+        const tags = tagsStr.split(',');
+        const chapter = tags[0] || null;
+
         const cardId = await createCard(
           columnId,
           content.card?.title || card.title,
@@ -509,7 +684,8 @@ function LibraryPanel() {
           cardDuration,
           null,
           null,
-          null
+          null,
+          chapter
         );
 
         const cardCategories = content.categories || [];
@@ -633,10 +809,16 @@ function LibraryPanel() {
     console.log('[LibraryPanel] Calling loadBoard for:', boardId);
     loadBoard(boardId);
 
-    // Wait for state to update before navigating
     setTimeout(() => {
-      console.log('[LibraryPanel] Navigating to board:', boardId);
-      navigate(`/board/${boardId}`);
+      console.log(
+        '[LibraryPanel] Navigating to:',
+        useFormDestination === 'board2' ? '/board2' : `/board/${boardId}`
+      );
+      if (useFormDestination === 'board2') {
+        navigate('/board2');
+      } else {
+        navigate(`/board/${boardId}`);
+      }
       alert('Éléments ajoutés au projet avec succès !');
     }, 300);
   };
@@ -852,9 +1034,10 @@ function LibraryPanel() {
                   {filteredCards.map(item => (
                     <div
                       key={item.id}
-                      onClick={() => {
+                      onClick={e => {
+                        if (e.target.type === 'checkbox') return;
                         handleCardClick(item);
-                        toggleCardSelection(item);
+                        toggleCardWithChildren(item);
                       }}
                       className={`p-3 rounded-lg border cursor-pointer transition-std flex items-start gap-2 ${
                         isCardSelected(item)
@@ -865,7 +1048,7 @@ function LibraryPanel() {
                       <input
                         type="checkbox"
                         checked={isCardSelected(item)}
-                        onChange={() => {}}
+                        onChange={() => toggleCardOnly(item)}
                         className="mt-1 w-4 h-4 accent-accent"
                       />
                       <div className="flex-1 min-w-0">
@@ -936,9 +1119,10 @@ function LibraryPanel() {
                   {categories.map((cat, idx) => (
                     <div
                       key={idx}
-                      onClick={() => {
+                      onClick={e => {
+                        if (e.target.type === 'checkbox') return;
                         handleCategoryClick(cat);
-                        toggleCategorySelection(cat, selectedLibraryCard.title);
+                        toggleCategoryWithChildren(cat, selectedLibraryCard.title);
                       }}
                       className={`p-3 rounded-lg border cursor-pointer transition-std flex items-start gap-2 ${
                         isCategorySelected(cat, selectedLibraryCard.title)
@@ -949,7 +1133,7 @@ function LibraryPanel() {
                       <input
                         type="checkbox"
                         checked={isCategorySelected(cat, selectedLibraryCard.title)}
-                        onChange={() => {}}
+                        onChange={() => toggleCategoryOnly(cat, selectedLibraryCard.title)}
                         className="mt-1 w-4 h-4 accent-done"
                       />
                       <div className="flex items-center gap-2 flex-1">
@@ -1021,13 +1205,14 @@ function LibraryPanel() {
                   {subcategories.map((subcat, idx) => (
                     <div
                       key={idx}
-                      onClick={() =>
+                      onClick={e => {
+                        if (e.target.type === 'checkbox') return;
                         toggleSubcategorySelection(
                           subcat,
                           selectedLibraryCategory.title,
                           selectedLibraryCard?.title
-                        )
-                      }
+                        );
+                      }}
                       className={`p-3 rounded-lg border cursor-pointer transition-std flex items-start gap-2 ${
                         isSubcategorySelected(
                           subcat,
@@ -1045,7 +1230,14 @@ function LibraryPanel() {
                           selectedLibraryCategory.title,
                           selectedLibraryCard?.title
                         )}
-                        onChange={() => {}}
+                        onChange={e => {
+                          e.stopPropagation();
+                          toggleSubcategorySelection(
+                            subcat,
+                            selectedLibraryCategory.title,
+                            selectedLibraryCard?.title
+                          );
+                        }}
                         className="mt-1 w-4 h-4 accent-waiting"
                       />
                       <div className="flex items-center gap-2 flex-1">
@@ -1081,6 +1273,23 @@ function LibraryPanel() {
 
               <div className="space-y-4">
                 <div>
+                  <label className="block text-sm font-medium text-secondary mb-1">
+                    Destination
+                  </label>
+                  <select
+                    value={useFormDestination}
+                    onChange={e => {
+                      setUseFormDestination(e.target.value);
+                      setUseFormColumnId('');
+                    }}
+                    className="w-full px-3 py-2 bg-input border border-std rounded-lg text-primary focus:outline-none focus:border-accent"
+                  >
+                    <option value="board">Projets (Kanban)</option>
+                    <option value="board2">Projets 2 (Tableau Blanc)</option>
+                  </select>
+                </div>
+
+                <div>
                   <label className="block text-sm font-medium text-secondary mb-1">Projet</label>
                   <select
                     value={useFormBoardId}
@@ -1099,36 +1308,9 @@ function LibraryPanel() {
                   </select>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-secondary mb-1">
-                    Destination
-                  </label>
-                  <select
-                    value={useFormDestination}
-                    onChange={e => {
-                      setUseFormDestination(e.target.value);
-                      setUseFormColumnId('');
-                    }}
-                    className="w-full px-3 py-2 bg-input border border-std rounded-lg text-primary focus:outline-none focus:border-accent"
-                  >
-                    <option value="board">Projets (Kanban)</option>
-                    <option value="board2">Projets 2 (Tableau Blanc)</option>
-                  </select>
-                </div>
-
                 {useFormBoardId && useFormDestination === 'board2' && (
-                  <div>
-                    <label className="block text-sm font-medium text-secondary mb-1">Colonne</label>
-                    <select
-                      value={useFormColumnId}
-                      onChange={e => setUseFormColumnId(e.target.value)}
-                      className="w-full px-3 py-2 bg-input border border-std rounded-lg text-primary focus:outline-none focus:border-accent"
-                    >
-                      <option value="">Sélectionner une colonne...</option>
-                      <option value="col-1">À faire</option>
-                      <option value="col-2">En cours</option>
-                      <option value="col-3">Terminé</option>
-                    </select>
+                  <div className="bg-card-hover rounded-lg p-3 text-sm text-secondary">
+                    Les cartes seront automatiquement affectées à leur chapitre (tag)
                   </div>
                 )}
 
@@ -1642,6 +1824,22 @@ function LibraryPanel() {
               </div>
               <div className="p-4 space-y-4">
                 <div>
+                  <label className="block text-sm font-medium text-secondary mb-1">
+                    Destination
+                  </label>
+                  <select
+                    value={useFormDestination}
+                    onChange={e => {
+                      setUseFormDestination(e.target.value);
+                      setSelectedColumnId('');
+                    }}
+                    className="w-full px-3 py-2 bg-input border border-std rounded-lg text-primary focus:outline-none focus:border-accent"
+                  >
+                    <option value="board">Projets (Kanban)</option>
+                    <option value="board2">Projets 2 (Tableau Blanc)</option>
+                  </select>
+                </div>
+                <div>
                   <label className="block text-sm font-medium text-secondary mb-1">Projet</label>
                   <select
                     value={selectedBoardId}
@@ -1659,7 +1857,12 @@ function LibraryPanel() {
                     ))}
                   </select>
                 </div>
-                {selectedBoardId && (
+                {selectedBoardId && useFormDestination === 'board2' && (
+                  <div className="bg-card-hover rounded-lg p-3 text-sm text-secondary">
+                    Les cartes seront automatiquement affectées à leur chapitre (tag)
+                  </div>
+                )}
+                {selectedBoardId && useFormDestination === 'board' && (
                   <div>
                     <label className="block text-sm font-medium text-secondary mb-1">Colonne</label>
                     <select

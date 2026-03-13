@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import Exchange from '../Exchange/Exchange';
+import { libraryTemplates } from '../../data/libraryData';
 import {
   Plus,
   Archive,
@@ -23,8 +24,19 @@ import {
 } from 'lucide-react';
 
 function Board2() {
-  const { currentBoard, archiveBoard, canArchiveBoard, getUnreadCount } = useApp();
+  const {
+    currentBoard,
+    archiveBoard,
+    canArchiveBoard,
+    getUnreadCount,
+    libraryItems,
+    cards,
+    categories,
+    subcategories,
+    setSelectedCard,
+  } = useApp();
   const [activeTab, setActiveTab] = useState('taches');
+  const [selectedChapter, setSelectedChapter] = useState(null);
 
   const tabs = [
     { id: 'informations', label: 'Informations', icon: Info },
@@ -254,6 +266,7 @@ function Board2() {
   };
 
   const handleArchiveBoard = () => {
+    if (!currentBoard) return;
     const { canArchive, reason } = canArchiveBoard(currentBoard.id);
     if (!canArchive) {
       alert(reason);
@@ -268,17 +281,19 @@ function Board2() {
     <div className="h-full flex flex-col overflow-hidden">
       <div className="flex items-center justify-between mb-4">
         <div>
-          {currentBoard.description && (
+          {currentBoard?.description && (
             <p className="text-sm text-secondary mb-2">{currentBoard.description}</p>
           )}
         </div>
-        <button
-          onClick={handleArchiveBoard}
-          className="flex items-center px-3 py-1.5 text-sm bg-card hover:bg-card-hover border border-std rounded transition-std text-secondary"
-        >
-          <Archive size={14} className="mr-2" />
-          Archiver
-        </button>
+        {currentBoard && (
+          <button
+            onClick={handleArchiveBoard}
+            className="flex items-center px-3 py-1.5 text-sm bg-card hover:bg-card-hover border border-std rounded transition-std text-secondary"
+          >
+            <Archive size={14} className="mr-2" />
+            Archiver
+          </button>
+        )}
       </div>
 
       <div className="flex border-b border-std mb-4">
@@ -310,161 +325,288 @@ function Board2() {
 
       {activeTab === 'taches' && (
         <div className="flex-1 overflow-auto p-6">
-          <div className="max-w-4xl mx-auto">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-primary">Tâches</h2>
-              <button
-                onClick={() => setShowAddCard(true)}
-                className="flex items-center px-4 py-2 bg-accent text-white rounded-lg hover:opacity-90"
-              >
-                <Plus size={18} className="mr-2" />
-                Nouvelle tâche
-              </button>
+          <div className="max-w-full">
+            <div className="mb-4 flex flex-wrap gap-2">
+              {(() => {
+                const chaptersFromTemplates = libraryTemplates
+                  .map(item => {
+                    const tagsStr = item.tags || '';
+                    const tags = tagsStr.split(',');
+                    return tags[0];
+                  })
+                  .filter(Boolean);
+                const chaptersFromCards = cards.map(card => card.chapter).filter(Boolean);
+                const allChapters = [
+                  ...new Set([...chaptersFromTemplates, ...chaptersFromCards]),
+                ].sort();
+                return allChapters.map(chapter => (
+                  <button
+                    key={chapter}
+                    onClick={() => setSelectedChapter(chapter)}
+                    className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
+                      selectedChapter === chapter
+                        ? 'bg-accent text-white'
+                        : 'bg-card border border-std text-secondary hover:bg-card-hover'
+                    }`}
+                  >
+                    {chapter}
+                  </button>
+                ));
+              })()}
             </div>
 
-            {showAddCard && (
-              <div className="mb-6 bg-card rounded-lg border border-std p-4">
-                <input
-                  type="text"
-                  placeholder="Titre de la tâche..."
-                  value={newCardTitle}
-                  onChange={e => setNewCardTitle(e.target.value)}
-                  onKeyDown={e => {
-                    if (e.key === 'Enter') handleAddCard();
-                    if (e.key === 'Escape') setShowAddCard(false);
-                  }}
-                  className="w-full px-3 py-2 bg-input border border-std rounded-lg text-primary mb-3"
-                  autoFocus
-                />
-                <div className="flex gap-2">
+            {selectedChapter ? (
+              <div className="bg-card rounded-lg border border-std p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-bold text-primary">{selectedChapter}</h2>
                   <button
-                    onClick={handleAddCard}
-                    className="px-4 py-2 bg-accent text-white rounded-lg hover:opacity-90"
+                    onClick={() => setSelectedChapter(null)}
+                    className="text-sm text-secondary hover:text-primary"
                   >
-                    Ajouter
-                  </button>
-                  <button
-                    onClick={() => setShowAddCard(false)}
-                    className="px-4 py-2 text-secondary hover:text-primary"
-                  >
-                    Annuler
+                    Fermer
                   </button>
                 </div>
-              </div>
-            )}
-
-            {board2Data.cards.length === 0 ? (
-              <div className="text-center py-12 text-secondary">
-                <ListTodo size={48} className="mx-auto mb-4 text-muted" />
-                <p>Aucune tâche. Cliquez sur &quot;Nouvelle tâche&quot; pour commencer.</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {board2Data.cards.map(card => (
-                  <div key={card.id} className="bg-card rounded-lg border border-std p-4">
-                    {editingCardId === card.id ? (
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="text"
-                          value={editingCardTitle}
-                          onChange={e => setEditingCardTitle(e.target.value)}
-                          onKeyDown={e => {
-                            if (e.key === 'Enter') handleRenameCard(card.id, editingCardTitle);
-                            if (e.key === 'Escape') setEditingCardId(null);
-                          }}
-                          className="flex-1 px-3 py-2 bg-input border border-std rounded-lg text-primary"
-                          autoFocus
-                        />
-                        <button
-                          onClick={() => handleRenameCard(card.id, editingCardTitle)}
-                          className="p-2 text-accent"
-                        >
-                          <Check size={18} />
-                        </button>
-                        <button onClick={() => setEditingCardId(null)} className="p-2 text-muted">
-                          <X size={18} />
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-3">
-                          <button
-                            onClick={() => toggleCardExpanded(card.id)}
-                            className="text-secondary hover:text-primary"
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {cards &&
+                    cards
+                      .filter(card => card.chapter === selectedChapter)
+                      .map(card => {
+                        const cardCategories = categories.filter(c => c.card_id === card.id);
+                        const totalSubcats = cardCategories.reduce(
+                          (acc, cat) =>
+                            acc + subcategories.filter(s => s.category_id === cat.id).length,
+                          0
+                        );
+                        return (
+                          <div
+                            key={card.id}
+                            onClick={() => setSelectedCard(card)}
+                            className="bg-card-hover rounded-lg border-2 border-std p-4 cursor-pointer hover:border-accent hover:ring-2 hover:ring-accent/30 transition-all"
                           >
-                            {expandedCards[card.id] ? (
-                              <ChevronDown size={20} />
-                            ) : (
-                              <ChevronRight size={20} />
-                            )}
-                          </button>
-                          <h3 className="font-semibold text-primary">{card.title}</h3>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => {
-                              setEditingCardId(card.id);
-                              setEditingCardTitle(card.title);
-                            }}
-                            className="p-1.5 text-muted hover:text-primary rounded"
-                          >
-                            <Edit2 size={16} />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteCard(card.id)}
-                            className="p-1.5 text-muted hover:text-urgent rounded"
-                          >
-                            <Trash2 size={16} />
-                          </button>
-                        </div>
-                      </div>
-                    )}
-
-                    {expandedCards[card.id] && (
-                      <div className="ml-8 mt-4 space-y-3">
-                        {(card.categories || []).map(cat => (
-                          <div key={cat.id} className="bg-card-hover rounded-lg p-3">
-                            <div className="flex items-center justify-between mb-2">
-                              <h4 className="font-medium text-primary">{cat.title}</h4>
-                              <button
-                                onClick={() => handleDeleteCategory(card.id, cat.id)}
-                                className="p-1 text-muted hover:text-urgent rounded"
-                              >
-                                <Trash2 size={14} />
-                              </button>
-                            </div>
-                            <div className="space-y-1 ml-2">
-                              {(cat.subcategories || []).map(sub => (
-                                <div
-                                  key={sub.id}
-                                  className="flex items-center justify-between text-sm text-secondary"
-                                >
-                                  <span>{sub.title}</span>
-                                  <button
-                                    onClick={() => handleDeleteSubcategory(card.id, cat.id, sub.id)}
-                                    className="p-1 text-muted hover:text-urgent rounded"
-                                  >
-                                    <Trash2 size={12} />
-                                  </button>
+                            <h3 className="font-semibold text-primary mb-3">{card.title}</h3>
+                            <div className="space-y-2">
+                              {cardCategories.map(cat => (
+                                <div key={cat.id} className="pl-3 border-l-2 border-accent">
+                                  <h4 className="text-sm font-medium text-secondary">
+                                    {cat.title}
+                                  </h4>
                                 </div>
                               ))}
+                              {cardCategories.length === 0 && (
+                                <p className="text-sm text-muted">Aucune action</p>
+                              )}
+                              {totalSubcats > 0 && (
+                                <p className="text-xs text-muted mt-2">
+                                  {totalSubcats} tâche{totalSubcats > 1 ? 's' : ''} détaillée
+                                  {totalSubcats > 1 ? 's' : ''}
+                                </p>
+                              )}
                             </div>
-                            {showAddSubcategory === cat.id ? (
-                              <div className="mt-2 flex gap-2">
+                          </div>
+                        );
+                      })}
+                  {(!cards ||
+                    cards.filter(card => card.chapter === selectedChapter).length === 0) && (
+                    <p className="text-sm text-muted col-span-full">
+                      Aucune carte pour ce chapitre. Utilisez le bouton "Utiliser" dans la
+                      Bibliothèque pour ajouter des cartes.
+                    </p>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="max-w-4xl mx-auto">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-xl font-bold text-primary">Tâches</h2>
+                  <button
+                    onClick={() => setShowAddCard(true)}
+                    className="flex items-center px-4 py-2 bg-accent text-white rounded-lg hover:opacity-90"
+                  >
+                    <Plus size={18} className="mr-2" />
+                    Nouvelle tâche
+                  </button>
+                </div>
+
+                {showAddCard && (
+                  <div className="mb-6 bg-card rounded-lg border border-std p-4">
+                    <input
+                      type="text"
+                      placeholder="Titre de la tâche..."
+                      value={newCardTitle}
+                      onChange={e => setNewCardTitle(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') handleAddCard();
+                        if (e.key === 'Escape') setShowAddCard(false);
+                      }}
+                      className="w-full px-3 py-2 bg-input border border-std rounded-lg text-primary mb-3"
+                      autoFocus
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleAddCard}
+                        className="px-4 py-2 bg-accent text-white rounded-lg hover:opacity-90"
+                      >
+                        Ajouter
+                      </button>
+                      <button
+                        onClick={() => setShowAddCard(false)}
+                        className="px-4 py-2 text-secondary hover:text-primary"
+                      >
+                        Annuler
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {board2Data.cards.length === 0 ? (
+                  <div className="text-center py-12 text-secondary">
+                    <ListTodo size={48} className="mx-auto mb-4 text-muted" />
+                    <p>Aucune tâche. Cliquez sur &quot;Nouvelle tâche&quot; pour commencer.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {board2Data.cards.map(card => (
+                      <div key={card.id} className="bg-card rounded-lg border border-std p-4">
+                        {editingCardId === card.id ? (
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="text"
+                              value={editingCardTitle}
+                              onChange={e => setEditingCardTitle(e.target.value)}
+                              onKeyDown={e => {
+                                if (e.key === 'Enter') handleRenameCard(card.id, editingCardTitle);
+                                if (e.key === 'Escape') setEditingCardId(null);
+                              }}
+                              className="flex-1 px-3 py-2 bg-input border border-std rounded-lg text-primary"
+                              autoFocus
+                            />
+                            <button
+                              onClick={() => handleRenameCard(card.id, editingCardTitle)}
+                              className="p-2 text-accent"
+                            >
+                              <Check size={18} />
+                            </button>
+                            <button
+                              onClick={() => setEditingCardId(null)}
+                              className="p-2 text-muted"
+                            >
+                              <X size={18} />
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex items-start justify-between">
+                            <div className="flex items-center gap-3">
+                              <button
+                                onClick={() => toggleCardExpanded(card.id)}
+                                className="text-secondary hover:text-primary"
+                              >
+                                {expandedCards[card.id] ? (
+                                  <ChevronDown size={20} />
+                                ) : (
+                                  <ChevronRight size={20} />
+                                )}
+                              </button>
+                              <h3 className="font-semibold text-primary">{card.title}</h3>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => {
+                                  setEditingCardId(card.id);
+                                  setEditingCardTitle(card.title);
+                                }}
+                                className="p-1.5 text-muted hover:text-primary rounded"
+                              >
+                                <Edit2 size={16} />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteCard(card.id)}
+                                className="p-1.5 text-muted hover:text-urgent rounded"
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                        {expandedCards[card.id] && (
+                          <div className="ml-8 mt-4 space-y-3">
+                            {(card.categories || []).map(cat => (
+                              <div key={cat.id} className="bg-card-hover rounded-lg p-3">
+                                <div className="flex items-center justify-between mb-2">
+                                  <h4 className="font-medium text-primary">{cat.title}</h4>
+                                  <button
+                                    onClick={() => handleDeleteCategory(card.id, cat.id)}
+                                    className="p-1 text-muted hover:text-urgent rounded"
+                                  >
+                                    <Trash2 size={14} />
+                                  </button>
+                                </div>
+                                <div className="space-y-1 ml-2">
+                                  {(cat.subcategories || []).map(sub => (
+                                    <div
+                                      key={sub.id}
+                                      className="flex items-center justify-between text-sm text-secondary"
+                                    >
+                                      <span>{sub.title}</span>
+                                      <button
+                                        onClick={() =>
+                                          handleDeleteSubcategory(card.id, cat.id, sub.id)
+                                        }
+                                        className="p-1 text-muted hover:text-urgent rounded"
+                                      >
+                                        <Trash2 size={12} />
+                                      </button>
+                                    </div>
+                                  ))}
+                                </div>
+                                {showAddSubcategory === cat.id ? (
+                                  <div className="mt-2 flex gap-2">
+                                    <input
+                                      type="text"
+                                      placeholder="Nouvelle sous-tâche..."
+                                      value={newSubcategoryTitle}
+                                      onChange={e => setNewSubcategoryTitle(e.target.value)}
+                                      onKeyDown={e => {
+                                        if (e.key === 'Enter')
+                                          handleAddSubcategory(card.id, cat.id);
+                                        if (e.key === 'Escape') setShowAddSubcategory(null);
+                                      }}
+                                      className="flex-1 px-2 py-1 text-sm bg-input border border-std rounded text-primary"
+                                      autoFocus
+                                    />
+                                    <button
+                                      onClick={() => handleAddSubcategory(card.id, cat.id)}
+                                      className="px-2 py-1 text-sm bg-accent text-white rounded"
+                                    >
+                                      +
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <button
+                                    onClick={() => setShowAddSubcategory(cat.id)}
+                                    className="text-xs text-accent hover:underline mt-2"
+                                  >
+                                    + Sous-tâche
+                                  </button>
+                                )}
+                              </div>
+                            ))}
+                            {showAddCategory === card.id ? (
+                              <div className="flex gap-2">
                                 <input
                                   type="text"
-                                  placeholder="Nouvelle sous-tâche..."
-                                  value={newSubcategoryTitle}
-                                  onChange={e => setNewSubcategoryTitle(e.target.value)}
+                                  placeholder="Nouvelle catégorie..."
+                                  value={newCategoryTitle}
+                                  onChange={e => setNewCategoryTitle(e.target.value)}
                                   onKeyDown={e => {
-                                    if (e.key === 'Enter') handleAddSubcategory(card.id, cat.id);
-                                    if (e.key === 'Escape') setShowAddSubcategory(null);
+                                    if (e.key === 'Enter') handleAddCategory(card.id);
+                                    if (e.key === 'Escape') setShowAddCategory(null);
                                   }}
                                   className="flex-1 px-2 py-1 text-sm bg-input border border-std rounded text-primary"
                                   autoFocus
                                 />
                                 <button
-                                  onClick={() => handleAddSubcategory(card.id, cat.id)}
+                                  onClick={() => handleAddCategory(card.id)}
                                   className="px-2 py-1 text-sm bg-accent text-white rounded"
                                 >
                                   +
@@ -472,47 +614,18 @@ function Board2() {
                               </div>
                             ) : (
                               <button
-                                onClick={() => setShowAddSubcategory(cat.id)}
+                                onClick={() => setShowAddCategory(card.id)}
                                 className="text-xs text-accent hover:underline mt-2"
                               >
-                                + Sous-tâche
+                                + Catégorie
                               </button>
                             )}
                           </div>
-                        ))}
-                        {showAddCategory === card.id ? (
-                          <div className="flex gap-2">
-                            <input
-                              type="text"
-                              placeholder="Nouvelle catégorie..."
-                              value={newCategoryTitle}
-                              onChange={e => setNewCategoryTitle(e.target.value)}
-                              onKeyDown={e => {
-                                if (e.key === 'Enter') handleAddCategory(card.id);
-                                if (e.key === 'Escape') setShowAddCategory(null);
-                              }}
-                              className="flex-1 px-2 py-1 text-sm bg-input border border-std rounded text-primary"
-                              autoFocus
-                            />
-                            <button
-                              onClick={() => handleAddCategory(card.id)}
-                              className="px-2 py-1 text-sm bg-accent text-white rounded"
-                            >
-                              +
-                            </button>
-                          </div>
-                        ) : (
-                          <button
-                            onClick={() => setShowAddCategory(card.id)}
-                            className="text-xs text-accent hover:underline mt-2"
-                          >
-                            + Catégorie
-                          </button>
                         )}
                       </div>
-                    )}
+                    ))}
                   </div>
-                ))}
+                )}
               </div>
             )}
           </div>

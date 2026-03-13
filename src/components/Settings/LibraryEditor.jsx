@@ -9,7 +9,7 @@ import {
   RotateCcw,
   FolderOpen,
 } from 'lucide-react';
-import libraryTemplates from '../../data/libraryData';
+import { libraryTemplates } from '../../data/libraryData';
 
 const STORAGE_KEY = 'mytrello_library_editor';
 
@@ -742,7 +742,7 @@ function TreeNode({ node, onEdit, onDelete, onAddChild }) {
   return (
     <div className="ml-4">
       <div
-        className={`flex items-center gap-2 py-2 px-2 rounded ${config.bg} hover:bg-[var(--bg-card-hover)] transition-colors`}
+        className={`flex items-center gap-2 py-3 px-3 rounded ${config.bg} hover:bg-[var(--bg-card-hover)] transition-colors`}
       >
         {hasChildren ? (
           <button
