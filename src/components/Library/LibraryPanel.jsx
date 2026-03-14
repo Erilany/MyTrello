@@ -504,6 +504,8 @@ function LibraryPanel() {
   };
 
   const toggleCardOnly = (card, forceState = null) => {
+    const cardCategories = getCardCategories(card);
+    const cardTitle = card.title;
     const isSelected = selectedCards.some(c => c.id === card.id);
     const shouldSelect = forceState !== null ? forceState : !isSelected;
 
@@ -512,8 +514,34 @@ function LibraryPanel() {
         if (prev.some(c => c.id === card.id)) return prev;
         return [...prev, card];
       });
+
+      cardCategories.forEach(cat => {
+        const catWithCard = { ...cat, cardTitle };
+        setSelectedCategories(prev => {
+          if (prev.some(c => c.title === cat.title && c.cardTitle === cardTitle)) return prev;
+          return [...prev, catWithCard];
+        });
+
+        (cat.subcategories || []).forEach(subcat => {
+          const subcatWithParents = { ...subcat, categoryTitle: cat.title, cardTitle };
+          setSelectedSubcategories(prev => {
+            if (
+              prev.some(
+                s =>
+                  s.title === subcat.title &&
+                  s.categoryTitle === cat.title &&
+                  s.cardTitle === cardTitle
+              )
+            )
+              return prev;
+            return [...prev, subcatWithParents];
+          });
+        });
+      });
     } else {
       setSelectedCards(prev => prev.filter(c => c.id !== card.id));
+      setSelectedCategories(prevCats => prevCats.filter(c => c.cardTitle !== cardTitle));
+      setSelectedSubcategories(prevSubcats => prevSubcats.filter(s => s.cardTitle !== cardTitle));
     }
   };
 
@@ -573,9 +601,33 @@ function LibraryPanel() {
         if (prev.some(c => c.title === category.title && c.cardTitle === cardTitle)) return prev;
         return [...prev, categoryWithCard];
       });
+
+      (category.subcategories || []).forEach(subcat => {
+        const subcatWithParents = { ...subcat, categoryTitle: category.title, cardTitle };
+        setSelectedSubcategories(prev => {
+          if (
+            prev.some(
+              s =>
+                s.title === subcat.title &&
+                s.categoryTitle === category.title &&
+                s.cardTitle === cardTitle
+            )
+          )
+            return prev;
+          return [...prev, subcatWithParents];
+        });
+      });
+
+      const card = libraryItems.find(c => c.title === cardTitle && c.type === 'card');
+      if (card && !selectedCards.some(c => c.id === card.id)) {
+        setSelectedCards(prev => [...prev, card]);
+      }
     } else {
       setSelectedCategories(prev =>
         prev.filter(c => !(c.title === category.title && c.cardTitle === cardTitle))
+      );
+      setSelectedSubcategories(prevSubcats =>
+        prevSubcats.filter(s => !(s.categoryTitle === category.title && s.cardTitle === cardTitle))
       );
     }
   };
@@ -609,6 +661,11 @@ function LibraryPanel() {
           return [...prev, subcatWithParents];
         });
       });
+
+      const card = libraryItems.find(c => c.title === cardTitle && c.type === 'card');
+      if (card && !selectedCards.some(c => c.id === card.id)) {
+        setSelectedCards(prev => [...prev, card]);
+      }
     } else {
       setSelectedCategories(prev =>
         prev.filter(c => !(c.title === category.title && c.cardTitle === cardTitle))
@@ -616,6 +673,13 @@ function LibraryPanel() {
       setSelectedSubcategories(prevSubcats =>
         prevSubcats.filter(s => !(s.categoryTitle === category.title && s.cardTitle === cardTitle))
       );
+
+      const remainingCatsForCard = selectedCategories.filter(
+        c => c.cardTitle === cardTitle && c.title !== category.title
+      );
+      if (remainingCatsForCard.length === 0) {
+        setSelectedCards(prev => prev.filter(c => c.title !== cardTitle));
+      }
     }
   };
 
@@ -687,29 +751,80 @@ function LibraryPanel() {
 
   const toggleSubcategorySelection = (subcategory, categoryTitle, cardTitle, forceState = null) => {
     const subcatWithParents = { ...subcategory, categoryTitle, cardTitle };
-    setSelectedSubcategories(prev => {
-      const exists = prev.find(
-        s =>
-          s.title === subcategory.title &&
-          s.categoryTitle === categoryTitle &&
-          s.cardTitle === cardTitle
-      );
-      const shouldSelect = forceState !== null ? forceState : !exists;
 
-      if (shouldSelect) {
-        if (exists) return prev;
+    const exists = selectedSubcategories.find(
+      s =>
+        s.title === subcategory.title &&
+        s.categoryTitle === categoryTitle &&
+        s.cardTitle === cardTitle
+    );
+    const shouldSelect = forceState !== null ? forceState : !exists;
+
+    if (shouldSelect) {
+      setSelectedSubcategories(prev => {
+        if (
+          prev.some(
+            s =>
+              s.title === subcategory.title &&
+              s.categoryTitle === categoryTitle &&
+              s.cardTitle === cardTitle
+          )
+        )
+          return prev;
         return [...prev, subcatWithParents];
-      } else {
-        return prev.filter(
+      });
+
+      const categoryExists = selectedCategories.some(
+        c => c.title === categoryTitle && c.cardTitle === cardTitle
+      );
+      if (!categoryExists) {
+        const card = libraryItems.find(c => c.title === cardTitle && c.type === 'card');
+        const categoryContent = card
+          ? getCardCategories(card).find(cat => cat.title === categoryTitle)
+          : null;
+        if (categoryContent) {
+          setSelectedCategories(prev => [...prev, { ...categoryContent, cardTitle }]);
+        }
+      }
+
+      const cardExists = selectedCards.some(c => c.title === cardTitle);
+      if (!cardExists) {
+        const card = libraryItems.find(c => c.title === cardTitle && c.type === 'card');
+        if (card) {
+          setSelectedCards(prev => [...prev, card]);
+        }
+      }
+    } else {
+      setSelectedSubcategories(prev =>
+        prev.filter(
           s =>
             !(
               s.title === subcategory.title &&
               s.categoryTitle === categoryTitle &&
               s.cardTitle === cardTitle
             )
+        )
+      );
+
+      const remainingSubcatsForCategory = selectedSubcategories.filter(
+        s =>
+          s.categoryTitle === categoryTitle &&
+          s.cardTitle === cardTitle &&
+          s.title !== subcategory.title
+      );
+      if (remainingSubcatsForCategory.length === 0) {
+        setSelectedCategories(prev =>
+          prev.filter(c => !(c.title === categoryTitle && c.cardTitle === cardTitle))
         );
+
+        const remainingCatsForCard = selectedCategories.filter(
+          c => c.cardTitle === cardTitle && c.title !== categoryTitle
+        );
+        if (remainingCatsForCard.length === 0) {
+          setSelectedCards(prev => prev.filter(c => c.title !== cardTitle));
+        }
       }
-    });
+    }
   };
 
   const isCardSelected = card => selectedCards.some(c => c.id === card.id);
@@ -1351,9 +1466,11 @@ function LibraryPanel() {
                         key={item.id}
                         onClick={() => handleCardClick(item)}
                         className={`p-3 rounded-lg border cursor-pointer transition-colors flex items-start gap-2 ${
-                          selectedLibraryCard?.id === item.id
-                            ? 'bg-blue-50 border-blue-300 dark:bg-blue-900/20 dark:border-blue-600'
-                            : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-blue-300'
+                          isSelected
+                            ? 'bg-blue-100 border-blue-500 dark:bg-blue-900/40 dark:border-blue-500'
+                            : selectedLibraryCard?.id === item.id
+                              ? 'bg-blue-50 border-blue-300 dark:bg-blue-900/20 dark:border-blue-600'
+                              : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-blue-300'
                         }`}
                       >
                         <div
@@ -1364,7 +1481,7 @@ function LibraryPanel() {
                           }`}
                           onClick={e => {
                             e.stopPropagation();
-                            toggleCardOnly(item);
+                            toggleCardWithChildren(item);
                           }}
                         >
                           {isSelected && <Check size={12} className="text-white" />}
@@ -1418,9 +1535,11 @@ function LibraryPanel() {
                         key={idx}
                         onClick={() => handleCategoryClick(cat)}
                         className={`p-3 rounded-lg border cursor-pointer transition-colors flex items-start gap-2 ${
-                          selectedLibraryCategory?.title === cat.title
-                            ? 'bg-green-50 border-green-300 dark:bg-green-900/20 dark:border-green-600'
-                            : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-green-300'
+                          isSelected
+                            ? 'bg-green-100 border-green-500 dark:bg-green-900/40 dark:border-green-500'
+                            : selectedLibraryCategory?.title === cat.title
+                              ? 'bg-green-50 border-green-300 dark:bg-green-900/20 dark:border-green-600'
+                              : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-green-300'
                         }`}
                       >
                         <div
@@ -1431,7 +1550,7 @@ function LibraryPanel() {
                           }`}
                           onClick={e => {
                             e.stopPropagation();
-                            toggleCategoryOnly(cat, selectedLibraryCard?.title);
+                            toggleCategoryWithChildren(cat, selectedLibraryCard?.title);
                           }}
                         >
                           {isSelected && <Check size={12} className="text-white" />}
@@ -1484,7 +1603,11 @@ function LibraryPanel() {
                     return (
                       <div
                         key={idx}
-                        className={`p-3 rounded-lg border cursor-pointer transition-colors flex items-start gap-2 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-orange-300`}
+                        className={`p-3 rounded-lg border cursor-pointer transition-colors flex items-start gap-2 ${
+                          isSelected
+                            ? 'bg-orange-100 border-orange-500 dark:bg-orange-900/40 dark:border-orange-500'
+                            : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-orange-300'
+                        }`}
                       >
                         <div
                           className={`mt-1 w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center cursor-pointer ${
