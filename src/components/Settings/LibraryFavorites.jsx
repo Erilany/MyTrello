@@ -5,7 +5,7 @@ import { Star, ChevronRight, ChevronDown, Search, Check } from 'lucide-react';
 const FAVORITES_KEY = 'mytrello_library_favorites';
 
 function LibraryFavorites() {
-  const { libraryItems } = useApp();
+  const { libraryItems, cards, categories, subcategories } = useApp();
   const [favorites, setFavorites] = useState({ cards: [], categories: [], subcategories: [] });
   const [expandedChapters, setExpandedChapters] = useState({});
   const [expandedCards, setExpandedCards] = useState({});

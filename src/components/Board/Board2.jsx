@@ -46,7 +46,10 @@ import {
   PlusCircle,
   User,
   Building,
+  Star,
 } from 'lucide-react';
+
+const FAVORITES_KEY = 'mytrello_library_favorites';
 
 function Board2() {
   const {
@@ -94,12 +97,149 @@ function Board2() {
   const [newSubcategoryTitle, setNewSubcategoryTitle] = useState('');
   const [showAddSubcategory, setShowAddSubcategory] = useState(null);
 
+  const [favorites, setFavorites] = useState({ cards: [], categories: [], subcategories: [] });
+
+  useEffect(() => {
+    const stored = localStorage.getItem(FAVORITES_KEY);
+    if (stored) {
+      try {
+        const parsed = JSON.parse(stored);
+        setFavorites({
+          cards: parsed.cards || [],
+          categories: parsed.categories || [],
+          subcategories: parsed.subcategories || [],
+        });
+      } catch (e) {
+        console.error('Error loading favorites:', e);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    const handleFavoritesUpdate = () => {
+      const stored = localStorage.getItem(FAVORITES_KEY);
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          setFavorites({
+            cards: parsed.cards || [],
+            categories: parsed.categories || [],
+            subcategories: parsed.subcategories || [],
+          });
+        } catch (e) {
+          console.error('Error reloading favorites:', e);
+        }
+      }
+    };
+    window.addEventListener('library-favorites-updated', handleFavoritesUpdate);
+    return () => window.removeEventListener('library-favorites-updated', handleFavoritesUpdate);
+  }, []);
+
+  const saveFavorites = newFavorites => {
+    setFavorites(newFavorites);
+    localStorage.setItem(FAVORITES_KEY, JSON.stringify(newFavorites));
+    window.dispatchEvent(new Event('library-favorites-updated'));
+  };
+
+  const toggleCardFavorite = (e, cardId, cardTitle) => {
+    e.stopPropagation();
+    const newFavorites = { ...favorites };
+    if (newFavorites.cards.includes(cardId)) {
+      newFavorites.cards = newFavorites.cards.filter(id => id !== cardId);
+    } else {
+      newFavorites.cards.push(cardId);
+    }
+    saveFavorites(newFavorites);
+  };
+
+  const toggleCategoryFavorite = (e, categoryId, cardId, categoryTitle) => {
+    e.stopPropagation();
+    const newFavorites = { ...favorites };
+    const existing = newFavorites.categories.find(
+      c => c.cardId === cardId && c.title === categoryTitle
+    );
+    if (existing) {
+      newFavorites.categories = newFavorites.categories.filter(
+        c => !(c.cardId === cardId && c.title === categoryTitle)
+      );
+    } else {
+      const card = cards.find(c => Number(c.id) === Number(cardId));
+      newFavorites.categories.push({ cardId, cardTitle: card?.title || '', title: categoryTitle });
+      if (!newFavorites.cards.includes(cardId)) {
+        newFavorites.cards.push(cardId);
+      }
+    }
+    saveFavorites(newFavorites);
+  };
+
+  const toggleSubcategoryFavorite = (
+    e,
+    subcategoryId,
+    cardId,
+    categoryId,
+    subcategoryTitle,
+    categoryTitle
+  ) => {
+    e.stopPropagation();
+    const newFavorites = { ...favorites };
+    const card = cards.find(c => Number(c.id) === Number(cardId));
+    const existing = newFavorites.subcategories.find(
+      s => s.cardId === cardId && s.categoryTitle === categoryTitle && s.title === subcategoryTitle
+    );
+    if (existing) {
+      newFavorites.subcategories = newFavorites.subcategories.filter(
+        s =>
+          !(
+            s.cardId === cardId &&
+            s.categoryTitle === categoryTitle &&
+            s.title === subcategoryTitle
+          )
+      );
+    } else {
+      newFavorites.subcategories.push({
+        cardId,
+        cardTitle: card?.title || '',
+        categoryTitle,
+        title: subcategoryTitle,
+      });
+      if (!newFavorites.categories.find(c => c.cardId === cardId && c.title === categoryTitle)) {
+        newFavorites.categories.push({
+          cardId,
+          cardTitle: card?.title || '',
+          title: categoryTitle,
+        });
+      }
+      if (!newFavorites.cards.includes(cardId)) {
+        newFavorites.cards.push(cardId);
+      }
+    }
+    saveFavorites(newFavorites);
+  };
+
+  const isCardFavorite = cardId => favorites.cards.includes(cardId);
+  const isCategoryFavorite = (categoryId, cardId, categoryTitle) =>
+    favorites.categories.some(c => c.cardId === cardId && c.title === categoryTitle);
+  const isSubcategoryFavorite = (subcategoryId, cardId, categoryTitle, subcategoryTitle) =>
+    favorites.subcategories.some(
+      s => s.cardId === cardId && s.categoryTitle === categoryTitle && s.title === subcategoryTitle
+    );
+
   const [links, setLinks] = useState([]);
   const [showAddLink, setShowAddLink] = useState(false);
   const [newLink, setNewLink] = useState({ title: '', url: '', type: 'web', color: '#22C55E' });
 
   const [eotpLines, setEotpLines] = useState([]);
-  const [internalContacts, setInternalContacts] = useState([]);
+  const [internalContacts, setInternalContacts] = useState([
+    { id: 1, title: 'Manager de projets' },
+    { id: 2, title: 'Chargé(e) de Concertation' },
+    { id: 3, title: "Chargé(e) d'Etudes LA" },
+    { id: 4, title: "Chargé(e) d'Etudes LS" },
+    { id: 5, title: "Chargé(e) d'Etudes Poste HT" },
+    { id: 6, title: "Chargé(e) d'Etudes Poste BT et CC" },
+    { id: 7, title: "Chargé(e) d'Etudes SPC" },
+    { id: 8, title: 'Contrôleur Travaux' },
+    { id: 9, title: 'Assistant(e) Etudes' },
+  ]);
   const [showAddInternal, setShowAddInternal] = useState(false);
   const [newInternalTitle, setNewInternalTitle] = useState('');
   const [externalContacts, setExternalContacts] = useState([]);
@@ -127,7 +267,10 @@ function Board2() {
       }
       const savedInternal = localStorage.getItem(`board-${currentBoard.id}-internalContacts`);
       if (savedInternal) {
-        setInternalContacts(JSON.parse(savedInternal));
+        const parsed = JSON.parse(savedInternal);
+        if (parsed.length > 0) {
+          setInternalContacts(parsed);
+        }
       }
       const savedExternal = localStorage.getItem(`board-${currentBoard.id}-externalContacts`);
       if (savedExternal) {
@@ -416,12 +559,27 @@ function Board2() {
                             key={card.id}
                             className="bg-card-hover rounded-lg border-2 border-std p-4 hover:border-accent hover:ring-2 hover:ring-accent/30 transition-all"
                           >
-                            <h3
-                              onClick={() => setSelectedCard(card)}
-                              className="font-semibold text-primary mb-3 cursor-pointer hover:text-accent"
-                            >
-                              {card.title}
-                            </h3>
+                            <div className="flex items-center justify-between mb-3">
+                              <h3
+                                onClick={() => setSelectedCard(card)}
+                                className="font-semibold text-primary cursor-pointer hover:text-accent"
+                              >
+                                {card.title}
+                              </h3>
+                              <button
+                                onClick={e => toggleCardFavorite(e, card.id)}
+                                className="p-1 hover:bg-card-hover rounded"
+                              >
+                                <Star
+                                  size={16}
+                                  className={
+                                    isCardFavorite(card.id)
+                                      ? 'fill-yellow-400 text-yellow-400'
+                                      : 'text-gray-400'
+                                  }
+                                />
+                              </button>
+                            </div>
                             <div className="space-y-2">
                               {cardCategories.map(cat => {
                                 const catSubcats = subcategories.filter(
@@ -429,18 +587,35 @@ function Board2() {
                                 );
                                 return (
                                   <div key={cat.id} className="pl-3 border-l-2 border-accent">
-                                    <h4
-                                      onClick={() =>
-                                        setSelectedCategoryForTasks({
-                                          card,
-                                          category: cat,
-                                          subcategories: catSubcats,
-                                        })
-                                      }
-                                      className="text-sm font-medium text-secondary cursor-pointer hover:text-accent hover:underline"
-                                    >
-                                      {cat.title}
-                                    </h4>
+                                    <div className="flex items-center justify-between">
+                                      <h4
+                                        onClick={() =>
+                                          setSelectedCategoryForTasks({
+                                            card,
+                                            category: cat,
+                                            subcategories: catSubcats,
+                                          })
+                                        }
+                                        className="text-sm font-medium text-secondary cursor-pointer hover:text-accent hover:underline"
+                                      >
+                                        {cat.title}
+                                      </h4>
+                                      <button
+                                        onClick={e =>
+                                          toggleCategoryFavorite(e, cat.id, card.id, cat.title)
+                                        }
+                                        className="p-1 hover:bg-card-hover rounded"
+                                      >
+                                        <Star
+                                          size={14}
+                                          className={
+                                            isCategoryFavorite(cat.id, card.id, cat.title)
+                                              ? 'fill-yellow-400 text-yellow-400'
+                                              : 'text-gray-400'
+                                          }
+                                        />
+                                      </button>
+                                    </div>
                                   </div>
                                 );
                               })}
@@ -471,9 +646,35 @@ function Board2() {
                     <div className="bg-card rounded-lg border border-std max-w-lg w-full max-h-[80vh] overflow-auto">
                       <div className="p-4 border-b border-std flex items-center justify-between">
                         <div>
-                          <h3 className="font-bold text-primary">
-                            {selectedCategoryForTasks.category.title}
-                          </h3>
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-bold text-primary">
+                              {selectedCategoryForTasks.category.title}
+                            </h3>
+                            <button
+                              onClick={e =>
+                                toggleCategoryFavorite(
+                                  e,
+                                  selectedCategoryForTasks.category.id,
+                                  selectedCategoryForTasks.card.id,
+                                  selectedCategoryForTasks.category.title
+                                )
+                              }
+                              className="p-1 hover:bg-card-hover rounded"
+                            >
+                              <Star
+                                size={18}
+                                className={
+                                  isCategoryFavorite(
+                                    selectedCategoryForTasks.category.id,
+                                    selectedCategoryForTasks.card.id,
+                                    selectedCategoryForTasks.category.title
+                                  )
+                                    ? 'fill-yellow-400 text-yellow-400'
+                                    : 'text-gray-400'
+                                }
+                              />
+                            </button>
+                          </div>
                           <p className="text-sm text-muted">
                             {selectedCategoryForTasks.card.title}
                           </p>
@@ -509,7 +710,36 @@ function Board2() {
                                 }`}
                               >
                                 <div className="flex items-center justify-between">
-                                  <h4 className="font-medium text-secondary">{subcat.title}</h4>
+                                  <div className="flex items-center gap-2">
+                                    <button
+                                      onClick={e =>
+                                        toggleSubcategoryFavorite(
+                                          e,
+                                          subcat.id,
+                                          selectedCategoryForTasks.card.id,
+                                          selectedCategoryForTasks.category.id,
+                                          subcat.title,
+                                          selectedCategoryForTasks.category.title
+                                        )
+                                      }
+                                      className="p-1 hover:bg-white/50 rounded"
+                                    >
+                                      <Star
+                                        size={14}
+                                        className={
+                                          isSubcategoryFavorite(
+                                            subcat.id,
+                                            selectedCategoryForTasks.card.id,
+                                            selectedCategoryForTasks.category.title,
+                                            subcat.title
+                                          )
+                                            ? 'fill-yellow-400 text-yellow-400'
+                                            : 'text-gray-400'
+                                        }
+                                      />
+                                    </button>
+                                    <h4 className="font-medium text-secondary">{subcat.title}</h4>
+                                  </div>
                                   <button
                                     onClick={async e => {
                                       e.stopPropagation();
@@ -912,17 +1142,6 @@ function Board2() {
               </div>
             ) : (
               <div className="max-w-4xl mx-auto">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-xl font-bold text-primary">Tâches</h2>
-                  <button
-                    onClick={() => setShowAddCard(true)}
-                    className="flex items-center px-4 py-2 bg-accent text-white rounded-lg hover:opacity-90"
-                  >
-                    <Plus size={18} className="mr-2" />
-                    Nouvelle tâche
-                  </button>
-                </div>
-
                 {showAddCard && (
                   <div className="mb-6 bg-card rounded-lg border border-std p-4">
                     <input
@@ -954,174 +1173,222 @@ function Board2() {
                   </div>
                 )}
 
-                {board2Data.cards.length === 0 ? (
-                  <div className="text-center py-12 text-secondary">
-                    <ListTodo size={48} className="mx-auto mb-4 text-muted" />
-                    <p>Aucune tâche. Cliquez sur &quot;Nouvelle tâche&quot; pour commencer.</p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {board2Data.cards.map(card => (
-                      <div key={card.id} className="bg-card rounded-lg border border-std p-4">
-                        {editingCardId === card.id ? (
+                <div className="space-y-4">
+                  {board2Data.cards.map(card => (
+                    <div key={card.id} className="bg-card rounded-lg border border-std p-4">
+                      {editingCardId === card.id ? (
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            value={editingCardTitle}
+                            onChange={e => setEditingCardTitle(e.target.value)}
+                            onKeyDown={e => {
+                              if (e.key === 'Enter') handleRenameCard(card.id, editingCardTitle);
+                              if (e.key === 'Escape') setEditingCardId(null);
+                            }}
+                            className="flex-1 px-3 py-2 bg-input border border-std rounded-lg text-primary"
+                            autoFocus
+                          />
+                          <button
+                            onClick={() => handleRenameCard(card.id, editingCardTitle)}
+                            className="p-2 text-accent"
+                          >
+                            <Check size={18} />
+                          </button>
+                          <button onClick={() => setEditingCardId(null)} className="p-2 text-muted">
+                            <X size={18} />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center gap-3">
+                            <button
+                              onClick={() => toggleCardExpanded(card.id)}
+                              className="text-secondary hover:text-primary"
+                            >
+                              {expandedCards[card.id] ? (
+                                <ChevronDown size={20} />
+                              ) : (
+                                <ChevronRight size={20} />
+                              )}
+                            </button>
+                            <h3 className="font-semibold text-primary">{card.title}</h3>
+                            <button
+                              onClick={e => toggleCardFavorite(e, card.id, card.title)}
+                              className="p-1 hover:bg-card-hover rounded"
+                            >
+                              <Star
+                                size={16}
+                                className={
+                                  isCardFavorite(card.id)
+                                    ? 'fill-yellow-400 text-yellow-400'
+                                    : 'text-gray-400'
+                                }
+                              />
+                            </button>
+                          </div>
                           <div className="flex items-center gap-2">
-                            <input
-                              type="text"
-                              value={editingCardTitle}
-                              onChange={e => setEditingCardTitle(e.target.value)}
-                              onKeyDown={e => {
-                                if (e.key === 'Enter') handleRenameCard(card.id, editingCardTitle);
-                                if (e.key === 'Escape') setEditingCardId(null);
+                            <button
+                              onClick={() => {
+                                setEditingCardId(card.id);
+                                setEditingCardTitle(card.title);
                               }}
-                              className="flex-1 px-3 py-2 bg-input border border-std rounded-lg text-primary"
-                              autoFocus
-                            />
-                            <button
-                              onClick={() => handleRenameCard(card.id, editingCardTitle)}
-                              className="p-2 text-accent"
+                              className="p-1.5 text-muted hover:text-primary rounded"
                             >
-                              <Check size={18} />
+                              <Edit2 size={16} />
                             </button>
                             <button
-                              onClick={() => setEditingCardId(null)}
-                              className="p-2 text-muted"
+                              onClick={() => handleDeleteCard(card.id)}
+                              className="p-1.5 text-muted hover:text-urgent rounded"
                             >
-                              <X size={18} />
+                              <Trash2 size={16} />
                             </button>
                           </div>
-                        ) : (
-                          <div className="flex items-start justify-between">
-                            <div className="flex items-center gap-3">
-                              <button
-                                onClick={() => toggleCardExpanded(card.id)}
-                                className="text-secondary hover:text-primary"
-                              >
-                                {expandedCards[card.id] ? (
-                                  <ChevronDown size={20} />
-                                ) : (
-                                  <ChevronRight size={20} />
-                                )}
-                              </button>
-                              <h3 className="font-semibold text-primary">{card.title}</h3>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <button
-                                onClick={() => {
-                                  setEditingCardId(card.id);
-                                  setEditingCardTitle(card.title);
-                                }}
-                                className="p-1.5 text-muted hover:text-primary rounded"
-                              >
-                                <Edit2 size={16} />
-                              </button>
-                              <button
-                                onClick={() => handleDeleteCard(card.id)}
-                                className="p-1.5 text-muted hover:text-urgent rounded"
-                              >
-                                <Trash2 size={16} />
-                              </button>
-                            </div>
-                          </div>
-                        )}
+                        </div>
+                      )}
 
-                        {expandedCards[card.id] && (
-                          <div className="ml-8 mt-4 space-y-3">
-                            {(card.categories || []).map(cat => (
-                              <div key={cat.id} className="bg-card-hover rounded-lg p-3">
-                                <div className="flex items-center justify-between mb-2">
-                                  <h4 className="font-medium text-primary">{cat.title}</h4>
+                      {expandedCards[card.id] && (
+                        <div className="ml-8 mt-4 space-y-3">
+                          {(card.categories || []).map(cat => (
+                            <div key={cat.id} className="bg-card-hover rounded-lg p-3">
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-2">
                                   <button
-                                    onClick={() => handleDeleteCategory(card.id, cat.id)}
-                                    className="p-1 text-muted hover:text-urgent rounded"
+                                    onClick={e =>
+                                      toggleCategoryFavorite(e, cat.id, card.id, cat.title)
+                                    }
+                                    className="p-1 hover:bg-card-hover rounded"
                                   >
-                                    <Trash2 size={14} />
-                                  </button>
-                                </div>
-                                <div className="space-y-1 ml-2">
-                                  {(cat.subcategories || []).map(sub => (
-                                    <div
-                                      key={sub.id}
-                                      className="flex items-center justify-between text-sm text-secondary"
-                                    >
-                                      <span>{sub.title}</span>
-                                      <button
-                                        onClick={() =>
-                                          handleDeleteSubcategory(card.id, cat.id, sub.id)
-                                        }
-                                        className="p-1 text-muted hover:text-urgent rounded"
-                                      >
-                                        <Trash2 size={12} />
-                                      </button>
-                                    </div>
-                                  ))}
-                                </div>
-                                {showAddSubcategory === cat.id ? (
-                                  <div className="mt-2 flex gap-2">
-                                    <input
-                                      type="text"
-                                      placeholder="Nouvelle sous-tâche..."
-                                      value={newSubcategoryTitle}
-                                      onChange={e => setNewSubcategoryTitle(e.target.value)}
-                                      onKeyDown={e => {
-                                        if (e.key === 'Enter')
-                                          handleAddSubcategory(card.id, cat.id);
-                                        if (e.key === 'Escape') setShowAddSubcategory(null);
-                                      }}
-                                      className="flex-1 px-2 py-1 text-sm bg-input border border-std rounded text-primary"
-                                      autoFocus
+                                    <Star
+                                      size={14}
+                                      className={
+                                        isCategoryFavorite(cat.id, card.id, cat.title)
+                                          ? 'fill-yellow-400 text-yellow-400'
+                                          : 'text-gray-400'
+                                      }
                                     />
-                                    <button
-                                      onClick={() => handleAddSubcategory(card.id, cat.id)}
-                                      className="px-2 py-1 text-sm bg-accent text-white rounded"
-                                    >
-                                      +
-                                    </button>
-                                  </div>
-                                ) : (
-                                  <button
-                                    onClick={() => setShowAddSubcategory(cat.id)}
-                                    className="text-xs text-accent hover:underline mt-2"
-                                  >
-                                    + Sous-tâche
                                   </button>
-                                )}
-                              </div>
-                            ))}
-                            {showAddCategory === card.id ? (
-                              <div className="flex gap-2">
-                                <input
-                                  type="text"
-                                  placeholder="Nouvelle catégorie..."
-                                  value={newCategoryTitle}
-                                  onChange={e => setNewCategoryTitle(e.target.value)}
-                                  onKeyDown={e => {
-                                    if (e.key === 'Enter') handleAddCategory(card.id);
-                                    if (e.key === 'Escape') setShowAddCategory(null);
-                                  }}
-                                  className="flex-1 px-2 py-1 text-sm bg-input border border-std rounded text-primary"
-                                  autoFocus
-                                />
+                                  <h4 className="font-medium text-primary">{cat.title}</h4>
+                                </div>
                                 <button
-                                  onClick={() => handleAddCategory(card.id)}
-                                  className="px-2 py-1 text-sm bg-accent text-white rounded"
+                                  onClick={() => handleDeleteCategory(card.id, cat.id)}
+                                  className="p-1 text-muted hover:text-urgent rounded"
                                 >
-                                  +
+                                  <Trash2 size={14} />
                                 </button>
                               </div>
-                            ) : (
+                              <div className="space-y-1 ml-2">
+                                {(cat.subcategories || []).map(sub => (
+                                  <div
+                                    key={sub.id}
+                                    className="flex items-center justify-between text-sm text-secondary"
+                                  >
+                                    <div className="flex items-center gap-2">
+                                      <button
+                                        onClick={e =>
+                                          toggleSubcategoryFavorite(
+                                            e,
+                                            sub.id,
+                                            card.id,
+                                            cat.id,
+                                            sub.title,
+                                            cat.title
+                                          )
+                                        }
+                                        className="p-1 hover:bg-card-hover rounded"
+                                      >
+                                        <Star
+                                          size={12}
+                                          className={
+                                            isSubcategoryFavorite(
+                                              sub.id,
+                                              card.id,
+                                              cat.title,
+                                              sub.title
+                                            )
+                                              ? 'fill-yellow-400 text-yellow-400'
+                                              : 'text-gray-400'
+                                          }
+                                        />
+                                      </button>
+                                      <span>{sub.title}</span>
+                                    </div>
+                                    <button
+                                      onClick={() =>
+                                        handleDeleteSubcategory(card.id, cat.id, sub.id)
+                                      }
+                                      className="p-1 text-muted hover:text-urgent rounded"
+                                    >
+                                      <Trash2 size={12} />
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                              {showAddSubcategory === cat.id ? (
+                                <div className="mt-2 flex gap-2">
+                                  <input
+                                    type="text"
+                                    placeholder="Nouvelle sous-tâche..."
+                                    value={newSubcategoryTitle}
+                                    onChange={e => setNewSubcategoryTitle(e.target.value)}
+                                    onKeyDown={e => {
+                                      if (e.key === 'Enter') handleAddSubcategory(card.id, cat.id);
+                                      if (e.key === 'Escape') setShowAddSubcategory(null);
+                                    }}
+                                    className="flex-1 px-2 py-1 text-sm bg-input border border-std rounded text-primary"
+                                    autoFocus
+                                  />
+                                  <button
+                                    onClick={() => handleAddSubcategory(card.id, cat.id)}
+                                    className="px-2 py-1 text-sm bg-accent text-white rounded"
+                                  >
+                                    +
+                                  </button>
+                                </div>
+                              ) : (
+                                <button
+                                  onClick={() => setShowAddSubcategory(cat.id)}
+                                  className="text-xs text-accent hover:underline mt-2"
+                                >
+                                  + Sous-tâche
+                                </button>
+                              )}
+                            </div>
+                          ))}
+                          {showAddCategory === card.id ? (
+                            <div className="flex gap-2">
+                              <input
+                                type="text"
+                                placeholder="Nouvelle catégorie..."
+                                value={newCategoryTitle}
+                                onChange={e => setNewCategoryTitle(e.target.value)}
+                                onKeyDown={e => {
+                                  if (e.key === 'Enter') handleAddCategory(card.id);
+                                  if (e.key === 'Escape') setShowAddCategory(null);
+                                }}
+                                className="flex-1 px-2 py-1 text-sm bg-input border border-std rounded text-primary"
+                                autoFocus
+                              />
                               <button
-                                onClick={() => setShowAddCategory(card.id)}
-                                className="text-xs text-accent hover:underline mt-2"
+                                onClick={() => handleAddCategory(card.id)}
+                                className="px-2 py-1 text-sm bg-accent text-white rounded"
                               >
-                                + Catégorie
+                                +
                               </button>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => setShowAddCategory(card.id)}
+                              className="text-xs text-accent hover:underline mt-2"
+                            >
+                              + Catégorie
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>
@@ -1504,10 +1771,18 @@ function Board2() {
                   key={link.id}
                   onClick={() => {
                     if (!link.url) {
-                      const url = prompt("Entrez l'URL :", 'https://');
+                      const url = prompt(
+                        "Entrez l'URL/dossier :",
+                        link.type === 'folder' ? 'C:\\' : 'https://'
+                      );
                       if (url) {
                         setLinks(links.map(l => (l.id === link.id ? { ...l, url } : l)));
                       }
+                    } else if (link.type === 'folder') {
+                      const folderUrl = link.url.startsWith('file://')
+                        ? link.url
+                        : `file:///${link.url.replace(/\\/g, '/')}`;
+                      window.open(folderUrl, '_blank');
                     } else {
                       window.open(link.url, '_blank');
                     }
