@@ -1,7 +1,32 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useApp } from '../../context/AppContext';
 import Exchange from '../Exchange/Exchange';
 import { libraryTemplates } from '../../data/libraryData';
+
+function addBusinessDays(startDate, days) {
+  if (!startDate || !days) return '';
+  const date = new Date(startDate);
+  let added = 0;
+  while (added < days) {
+    date.setDate(date.getDate() + 1);
+    const day = date.getDay();
+    if (day !== 0 && day !== 6) added++;
+  }
+  return date.toISOString().split('T')[0];
+}
+
+function subtractBusinessDays(endDate, days) {
+  if (!endDate || !days) return '';
+  const date = new Date(endDate);
+  let subtracted = 0;
+  while (subtracted < days) {
+    date.setDate(date.getDate() - 1);
+    const day = date.getDay();
+    if (day !== 0 && day !== 6) subtracted++;
+  }
+  return date.toISOString().split('T')[0];
+}
+
 import {
   Plus,
   Archive,
@@ -34,9 +59,13 @@ function Board2() {
     categories,
     subcategories,
     setSelectedCard,
+    updateSubcategory,
   } = useApp();
   const [activeTab, setActiveTab] = useState('taches');
   const [selectedChapter, setSelectedChapter] = useState(null);
+  const [selectedCategoryForTasks, setSelectedCategoryForTasks] = useState(null);
+  const [selectedTask, setSelectedTask] = useState(null);
+  const [milestoneSortOrder, setMilestoneSortOrder] = useState('asc');
 
   const tabs = [
     { id: 'informations', label: 'Informations', icon: Info },
@@ -380,18 +409,36 @@ function Board2() {
                         return (
                           <div
                             key={card.id}
-                            onClick={() => setSelectedCard(card)}
-                            className="bg-card-hover rounded-lg border-2 border-std p-4 cursor-pointer hover:border-accent hover:ring-2 hover:ring-accent/30 transition-all"
+                            className="bg-card-hover rounded-lg border-2 border-std p-4 hover:border-accent hover:ring-2 hover:ring-accent/30 transition-all"
                           >
-                            <h3 className="font-semibold text-primary mb-3">{card.title}</h3>
+                            <h3
+                              onClick={() => setSelectedCard(card)}
+                              className="font-semibold text-primary mb-3 cursor-pointer hover:text-accent"
+                            >
+                              {card.title}
+                            </h3>
                             <div className="space-y-2">
-                              {cardCategories.map(cat => (
-                                <div key={cat.id} className="pl-3 border-l-2 border-accent">
-                                  <h4 className="text-sm font-medium text-secondary">
-                                    {cat.title}
-                                  </h4>
-                                </div>
-                              ))}
+                              {cardCategories.map(cat => {
+                                const catSubcats = subcategories.filter(
+                                  s => s.category_id === cat.id
+                                );
+                                return (
+                                  <div key={cat.id} className="pl-3 border-l-2 border-accent">
+                                    <h4
+                                      onClick={() =>
+                                        setSelectedCategoryForTasks({
+                                          card,
+                                          category: cat,
+                                          subcategories: catSubcats,
+                                        })
+                                      }
+                                      className="text-sm font-medium text-secondary cursor-pointer hover:text-accent hover:underline"
+                                    >
+                                      {cat.title}
+                                    </h4>
+                                  </div>
+                                );
+                              })}
                               {cardCategories.length === 0 && (
                                 <p className="text-sm text-muted">Aucune action</p>
                               )}
@@ -413,6 +460,382 @@ function Board2() {
                     </p>
                   )}
                 </div>
+
+                {selectedCategoryForTasks && (
+                  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-card rounded-lg border border-std max-w-lg w-full max-h-[80vh] overflow-auto">
+                      <div className="p-4 border-b border-std flex items-center justify-between">
+                        <div>
+                          <h3 className="font-bold text-primary">
+                            {selectedCategoryForTasks.category.title}
+                          </h3>
+                          <p className="text-sm text-muted">
+                            {selectedCategoryForTasks.card.title}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => setSelectedCategoryForTasks(null)}
+                          className="p-2 hover:bg-card-hover rounded"
+                        >
+                          <X size={20} className="text-secondary" />
+                        </button>
+                      </div>
+                      <div className="p-4 space-y-2">
+                        {selectedCategoryForTasks.subcategories.length > 0 ? (
+                          selectedCategoryForTasks.subcategories.map(subcat => {
+                            const isNotStarted = !subcat.start_date && !subcat.due_date;
+                            const status = isNotStarted ? 'not_started' : subcat.status || 'todo';
+                            return (
+                              <div
+                                key={subcat.id}
+                                onClick={() => setSelectedTask(subcat)}
+                                className={`p-3 rounded border cursor-pointer transition-all ${
+                                  status === 'not_started'
+                                    ? 'bg-gray-200 border-gray-300 hover:ring-2 hover:ring-accent hover:ring-offset-1'
+                                    : status === 'todo'
+                                      ? 'bg-orange-100 border-orange-300 hover:ring-2 hover:ring-accent hover:ring-offset-1'
+                                      : status === 'in_progress'
+                                        ? 'bg-yellow-100 border-yellow-300 hover:ring-2 hover:ring-accent hover:ring-offset-1'
+                                        : status === 'waiting'
+                                          ? 'bg-blue-100 border-blue-300 hover:ring-2 hover:ring-accent hover:ring-offset-1'
+                                          : status === 'done'
+                                            ? 'bg-green-100 border-green-300 hover:ring-2 hover:ring-accent hover:ring-offset-1'
+                                            : 'bg-gray-200 border-gray-300 hover:ring-2 hover:ring-accent hover:ring-offset-1'
+                                }`}
+                              >
+                                <h4 className="font-medium text-secondary">{subcat.title}</h4>
+                              </div>
+                            );
+                          })
+                        ) : (
+                          <p className="text-sm text-muted">Aucune tâche pour cette action</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {selectedTask && (
+                  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-card rounded-lg border border-std max-w-6xl w-full max-h-[95vh] overflow-hidden flex flex-col">
+                      <div className="p-4 border-b border-std flex items-center justify-between shrink-0">
+                        <div>
+                          <input
+                            type="text"
+                            value={selectedTask.title || ''}
+                            onChange={e => {
+                              setSelectedTask({ ...selectedTask, title: e.target.value });
+                              updateSubcategory(selectedTask.id, { title: e.target.value });
+                            }}
+                            className="font-bold text-xl text-primary bg-transparent border-b border-transparent hover:border-std focus:border-accent focus:outline-none w-full min-w-[200px]"
+                            style={{ wordBreak: 'break-word' }}
+                          />
+                          <p className="text-sm text-muted">
+                            {selectedCategoryForTasks?.category.title} -{' '}
+                            {selectedCategoryForTasks?.card.title}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span
+                            className={`px-3 py-1 rounded-full text-sm font-medium ${
+                              !selectedTask.start_date && !selectedTask.due_date
+                                ? 'bg-gray-200 text-gray-600 border border-gray-300'
+                                : selectedTask.status === 'todo'
+                                  ? 'bg-orange-100 text-orange-700 border border-orange-300'
+                                  : selectedTask.status === 'in_progress'
+                                    ? 'bg-yellow-100 text-yellow-700 border border-yellow-300'
+                                    : selectedTask.status === 'waiting'
+                                      ? 'bg-blue-100 text-blue-700 border border-blue-300'
+                                      : selectedTask.status === 'done'
+                                        ? 'bg-green-100 text-green-700 border border-green-300'
+                                        : 'bg-gray-200 text-gray-600 border border-gray-300'
+                            }`}
+                          >
+                            {!selectedTask.start_date && !selectedTask.due_date
+                              ? 'Pas encore'
+                              : selectedTask.status === 'todo'
+                                ? 'À faire'
+                                : selectedTask.status === 'in_progress'
+                                  ? 'En cours'
+                                  : selectedTask.status === 'waiting'
+                                    ? 'En attente'
+                                    : selectedTask.status === 'done'
+                                      ? 'Terminé'
+                                      : 'Pas encore'}
+                          </span>
+                          <button
+                            onClick={() => {
+                              if (selectedTask) {
+                                updateSubcategory(selectedTask.id, selectedTask);
+                              }
+                              setSelectedTask(null);
+                            }}
+                            className="p-2 hover:bg-card-hover rounded"
+                          >
+                            <X size={24} className="text-secondary" />
+                          </button>
+                        </div>
+                      </div>
+                      <div className="p-4 overflow-auto flex-1">
+                        <div className="grid grid-cols-5 gap-4">
+                          <div className="col-span-4 space-y-2">
+                            <div className="flex items-center justify-between">
+                              <label className="block text-sm font-medium text-secondary">
+                                Dates repères et description
+                              </label>
+                              <button
+                                onClick={() => {
+                                  const sorted = [...(selectedTask.milestones || [])].sort(
+                                    (a, b) => {
+                                      if (!a.date) return 1;
+                                      if (!b.date) return -1;
+                                      return milestoneSortOrder === 'asc'
+                                        ? new Date(a.date) - new Date(b.date)
+                                        : new Date(b.date) - new Date(a.date);
+                                    }
+                                  );
+                                  setSelectedTask({ ...selectedTask, milestones: sorted });
+                                  updateSubcategory(selectedTask.id, { milestones: sorted });
+                                  setMilestoneSortOrder(
+                                    milestoneSortOrder === 'asc' ? 'desc' : 'asc'
+                                  );
+                                }}
+                                className="text-xs text-accent hover:underline"
+                              >
+                                Trier {milestoneSortOrder === 'asc' ? '↓' : '↑'}
+                              </button>
+                            </div>
+                            <div className="space-y-1">
+                              {(selectedTask.milestones || []).map((milestone, idx) => (
+                                <div key={idx} className="flex gap-2 items-start">
+                                  <input
+                                    type="date"
+                                    value={milestone.date || ''}
+                                    onChange={e => {
+                                      const newMilestones = [...(selectedTask.milestones || [])];
+                                      newMilestones[idx] = { ...milestone, date: e.target.value };
+                                      setSelectedTask({
+                                        ...selectedTask,
+                                        milestones: newMilestones,
+                                      });
+                                      updateSubcategory(selectedTask.id, {
+                                        milestones: newMilestones,
+                                      });
+                                    }}
+                                    className="w-32 p-2 bg-card-hover border border-std rounded text-secondary text-sm"
+                                  />
+                                  <span className="text-muted pt-2">|</span>
+                                  <textarea
+                                    value={milestone.text || ''}
+                                    onChange={e => {
+                                      const newMilestones = [...(selectedTask.milestones || [])];
+                                      newMilestones[idx] = { ...milestone, text: e.target.value };
+                                      setSelectedTask({
+                                        ...selectedTask,
+                                        milestones: newMilestones,
+                                      });
+                                      updateSubcategory(selectedTask.id, {
+                                        milestones: newMilestones,
+                                      });
+                                    }}
+                                    className="flex-1 p-2 bg-card-hover border border-std rounded text-secondary text-sm min-h-[60px]"
+                                    placeholder="Texte..."
+                                    rows={2}
+                                  />
+                                  <button
+                                    onClick={() => {
+                                      const newMilestones = (selectedTask.milestones || []).filter(
+                                        (_, i) => i !== idx
+                                      );
+                                      setSelectedTask({
+                                        ...selectedTask,
+                                        milestones: newMilestones,
+                                      });
+                                      updateSubcategory(selectedTask.id, {
+                                        milestones: newMilestones,
+                                      });
+                                    }}
+                                    className="p-2 text-red-500 hover:bg-card-hover rounded"
+                                  >
+                                    <X size={16} />
+                                  </button>
+                                </div>
+                              ))}
+                              <button
+                                onClick={() => {
+                                  const newMilestones = [
+                                    ...(selectedTask.milestones || []),
+                                    { date: '', text: '' },
+                                  ];
+                                  setSelectedTask({ ...selectedTask, milestones: newMilestones });
+                                  updateSubcategory(selectedTask.id, { milestones: newMilestones });
+                                }}
+                                className="text-sm text-accent hover:underline"
+                              >
+                                + Ajouter une date repère
+                              </button>
+                            </div>
+                            <textarea
+                              value={selectedTask.description || ''}
+                              onChange={e => {
+                                setSelectedTask({ ...selectedTask, description: e.target.value });
+                                updateSubcategory(selectedTask.id, { description: e.target.value });
+                              }}
+                              className="w-full p-3 bg-card-hover border border-std rounded text-secondary text-sm min-h-[120px]"
+                              placeholder="Description supplémentaire..."
+                            />
+                          </div>
+                          <div className="col-span-1 space-y-2">
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <label className="block text-xs font-medium text-secondary mb-1">
+                                  Date début
+                                </label>
+                                <input
+                                  type="date"
+                                  value={
+                                    selectedTask.start_date
+                                      ? selectedTask.start_date.split('T')[0]
+                                      : ''
+                                  }
+                                  onChange={e => {
+                                    const newStartDate = e.target.value;
+                                    const duration = selectedTask.duration_days;
+                                    let newDueDate = '';
+                                    if (newStartDate && duration) {
+                                      newDueDate = addBusinessDays(newStartDate, duration);
+                                    }
+                                    setSelectedTask({
+                                      ...selectedTask,
+                                      start_date: newStartDate,
+                                      due_date: newDueDate,
+                                    });
+                                    updateSubcategory(selectedTask.id, {
+                                      start_date: newStartDate,
+                                      due_date: newDueDate,
+                                    });
+                                  }}
+                                  className="w-full p-2 bg-card-hover border border-std rounded text-secondary text-sm"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-xs font-medium text-secondary mb-1">
+                                  Durée (j)
+                                </label>
+                                <input
+                                  type="number"
+                                  value={selectedTask.duration_days || ''}
+                                  onChange={e => {
+                                    const duration = e.target.value ? parseInt(e.target.value) : '';
+                                    setSelectedTask({ ...selectedTask, duration_days: duration });
+                                    updateSubcategory(selectedTask.id, { duration_days: duration });
+                                    if (selectedTask.start_date && duration) {
+                                      const newDueDate = addBusinessDays(
+                                        selectedTask.start_date,
+                                        duration
+                                      );
+                                      setSelectedTask(prev => ({ ...prev, due_date: newDueDate }));
+                                      updateSubcategory(selectedTask.id, { due_date: newDueDate });
+                                    }
+                                  }}
+                                  className="w-full p-2 bg-card-hover border border-std rounded text-secondary text-sm"
+                                />
+                              </div>
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-secondary mb-1">
+                                Date échéance
+                              </label>
+                              <input
+                                type="date"
+                                value={
+                                  selectedTask.due_date ? selectedTask.due_date.split('T')[0] : ''
+                                }
+                                onChange={e => {
+                                  const newDueDate = e.target.value;
+                                  const duration = selectedTask.duration_days;
+                                  let newStartDate = '';
+                                  if (newDueDate && duration) {
+                                    newStartDate = subtractBusinessDays(newDueDate, duration);
+                                  }
+                                  setSelectedTask({
+                                    ...selectedTask,
+                                    due_date: newDueDate,
+                                    start_date: selectedTask.start_date || newStartDate,
+                                  });
+                                  updateSubcategory(selectedTask.id, {
+                                    due_date: newDueDate,
+                                    start_date: selectedTask.start_date || newStartDate,
+                                  });
+                                }}
+                                className="w-full p-2 bg-card-hover border border-std rounded text-secondary text-sm"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-secondary mb-1">
+                                Priorité
+                              </label>
+                              <select
+                                value={selectedTask.priority || 'normal'}
+                                onChange={e => {
+                                  setSelectedTask({ ...selectedTask, priority: e.target.value });
+                                  updateSubcategory(selectedTask.id, { priority: e.target.value });
+                                }}
+                                className="w-full p-2 bg-card-hover border border-std rounded text-secondary text-sm"
+                              >
+                                <option value="low">Basse</option>
+                                <option value="normal">Normale</option>
+                                <option value="high">Haute</option>
+                                <option value="urgent">Urgente</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-secondary mb-1">
+                                État
+                              </label>
+                              <select
+                                value={selectedTask.status || 'todo'}
+                                onChange={e => {
+                                  setSelectedTask({ ...selectedTask, status: e.target.value });
+                                  updateSubcategory(selectedTask.id, { status: e.target.value });
+                                }}
+                                className="w-full p-2 bg-card-hover border border-std rounded text-secondary text-sm"
+                              >
+                                <option value="not_started">Pas encore</option>
+                                <option value="todo">À faire</option>
+                                <option value="in_progress">En cours</option>
+                                <option value="waiting">En attente</option>
+                                <option value="done">Terminé</option>
+                              </select>
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-secondary mb-1">
+                                Assigné(e) à
+                              </label>
+                              <input
+                                type="text"
+                                value={selectedTask.assignee || ''}
+                                onChange={e => {
+                                  setSelectedTask({ ...selectedTask, assignee: e.target.value });
+                                  updateSubcategory(selectedTask.id, { assignee: e.target.value });
+                                }}
+                                className="w-full p-2 bg-card-hover border border-std rounded text-secondary text-sm"
+                              />
+                            </div>
+                            <div className="pt-4">
+                              <label className="block text-xs font-medium text-muted mb-1">
+                                Temps repère
+                              </label>
+                              <div className="p-2 bg-stone-700 border border-stone-500 rounded text-stone-300 text-sm font-medium text-center">
+                                {selectedTask.duration_days || '-'}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="max-w-4xl mx-auto">

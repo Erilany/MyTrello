@@ -92,6 +92,83 @@ function buildLibraryData(csv) {
 }
 
 const csvContent = fs.readFileSync(csvPath, 'latin1').replace(/\r/g, '');
+
+const cp1252ToUnicode = {
+  '\u0080': '\u20AC', // €
+  '\u0081': '\u0081', // UNUSED
+  '\u201A': '\u0082', // ‚
+  '\u0192': '\u0083', // ƒ
+  '\u201E': '\u0084', // „
+  '\u2026': '\u0085', // …
+  '\u2020': '\u0086', // †
+  '\u2021': '\u0087', // ‡
+  '\u02C6': '\u0088', // ˆ
+  '\u2030': '\u0089', // ‰
+  '\u0160': '\u008A', // Š
+  '\u2039': '\u008B', // ‹
+  '\u0152': '\u008C', // Œ
+  '\u008D': '\u008D', // UNUSED
+  '\u008E': '\u008E', // UNUSED
+  '\u008F': '\u008F', // UNUSED
+  '\u0090': '\u0090', // UNUSED
+  '\u2018': '\u0091', // '
+  '\u2019': '\u0092', // '
+  '\u201C': '\u0093', // "
+  '\u201D': '\u0094', // "
+  '\u2022': '\u0095', // •
+  '\u2013': '\u0096', // –
+  '\u2014': '\u0097', // —
+  '\u0098': '\u0098', // UNUSED
+  '\u2122': '\u0099', // ™
+  '\u0161': '\u009A', // š
+  '\u203A': '\u009B', // ›
+  '\u0153': '\u009C', // œ
+  '\u009D': '\u009D', // UNUSED
+  '\u009E': '\u009E', // UNUSED
+  '\u0178': '\u009F', // Ÿ
+  '\u00A0': '\u00A0', // NBSP
+  '\u00A1': '\u00A1', // ¡
+  '\u00A2': '\u00A2', // ¢
+  '\u00A3': '\u00A3', // £
+  '\u00A4': '\u00A4', // ¤
+  '\u00A5': '\u00A5', // ¥
+  '\u00A6': '\u00A6', // ¦
+  '\u00A7': '\u00A7', // §
+  '\u00A8': '\u00A8', // ¨
+  '\u00A9': '\u00A9', // ©
+  '\u00AA': '\u00AA', // ª
+  '\u00AB': '\u00AB', // «
+  '\u00AC': '\u00AC', // ¬
+  '\u00AD': '\u00AD', // SHY
+  '\u00AE': '\u00AE', // ®
+  '\u00AF': '\u00AF', // ¯
+};
+
+function escapeForJS(str) {
+  let result = '';
+  for (let i = 0; i < str.length; i++) {
+    const char = str[i];
+    const code = char.charCodeAt(0);
+    if (code > 127) {
+      const unicode = cp1252ToUnicode[char];
+      if (unicode) {
+        result += '\\u' + unicode.charCodeAt(0).toString(16).padStart(4, '0').toUpperCase();
+      } else {
+        result += '\\u' + code.toString(16).padStart(4, '0').toUpperCase();
+      }
+    } else if (code === 92) {
+      result += '\\\\';
+    } else if (code === 96) {
+      result += '\\`';
+    } else if (code === 36) {
+      result += '\\$';
+    } else {
+      result += char;
+    }
+  }
+  return result;
+}
+const csvDataEscaped = escapeForJS(csvContent);
 const libraryTemplates = buildLibraryData(csvContent);
 
 const jsCode = `function parsePTDuration(ptStr) {
@@ -181,7 +258,7 @@ function buildLibraryData(csv) {
   return libraryItems;
 }
 
-const csvData = \`${csvContent}\`;
+const csvData = \`${csvDataEscaped}\`;
 
 const libraryTemplates = buildLibraryData(csvData);
 
