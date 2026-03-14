@@ -1,28 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
-import { X, Calendar, User, Tag, MessageSquare, Trash2, Plus, Folder } from 'lucide-react';
+import { X, Calendar, Plus, Folder } from 'lucide-react';
 
 function CardModal({ card, onClose }) {
-  const {
-    updateCard,
-    categories,
-    subcategories,
-    addComment,
-    getComments,
-    deleteComment,
-    saveToLibrary,
-    createCategory,
-    cards,
-  } = useApp();
+  const { updateCard, categories, subcategories, saveToLibrary, createCategory, cards } = useApp();
 
   const [title, setTitle] = useState(card.title);
   const [description, setDescription] = useState(card.description || '');
-  const [priority, setPriority] = useState(card.priority || 'normal');
   const [dueDate, setDueDate] = useState(card.due_date || '');
-  const [assignee, setAssignee] = useState(card.assignee || '');
-  const [color, setColor] = useState(card.color || '#FFFFFF');
-  const [comments, setComments] = useState([]);
-  const [newComment, setNewComment] = useState('');
   const [newCategoryTitle, setNewCategoryTitle] = useState('');
 
   // MS Project fields
@@ -31,23 +16,11 @@ function CardModal({ card, onClose }) {
   const [parentId, setParentId] = useState(card.parent_id || null);
   const [predecessorId, setPredecessorId] = useState(card.predecessor_id || null);
 
-  useEffect(() => {
-    loadComments();
-  }, []);
-
-  const loadComments = async () => {
-    const result = await getComments('card', card.id);
-    setComments(result);
-  };
-
   const handleSave = async () => {
     await updateCard(card.id, {
       title,
       description,
-      priority,
       due_date: dueDate || null,
-      assignee,
-      color,
       start_date: startDate || null,
       duration_days: durationDays || 1,
       parent_id: parentId || null,
@@ -56,23 +29,10 @@ function CardModal({ card, onClose }) {
     onClose();
   };
 
-  const handleAddComment = async () => {
-    if (newComment.trim()) {
-      await addComment('card', card.id, newComment.trim());
-      setNewComment('');
-      await loadComments();
-    }
-  };
-
-  const handleDeleteComment = async commentId => {
-    await deleteComment(commentId);
-    await loadComments();
-  };
-
   const handleSaveToLibrary = async () => {
     const cardCategories = categories.filter(c => Number(c.card_id) === Number(card.id));
     const content = {
-      card: { title, description, priority, due_date: dueDate, assignee, color },
+      card: { title, description, due_date: dueDate },
       categories: cardCategories.map(cat => ({
         ...cat,
         subcategories: subcategories.filter(sc => Number(sc.category_id) === Number(cat.id)),
@@ -92,24 +52,6 @@ function CardModal({ card, onClose }) {
   };
 
   const cardCategories = categories.filter(c => Number(c.card_id) === Number(card.id));
-
-  const priorities = [
-    { value: 'urgent', label: 'Urgent', color: '#EF4444' },
-    { value: 'high', label: 'Haute', color: '#F97316' },
-    { value: 'normal', label: 'Normale', color: '#22C55E' },
-    { value: 'low', label: 'Basse', color: '#6B7280' },
-  ];
-
-  const colors = [
-    '#FFFFFF',
-    '#FEE2E2',
-    '#FEF3C7',
-    '#DCFCE7',
-    '#DBEAFE',
-    '#F3E8FF',
-    '#FCE7F3',
-    '#E5E7EB',
-  ];
 
   return (
     <div
@@ -148,24 +90,6 @@ function CardModal({ card, onClose }) {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-secondary mb-1">
-                <Tag size={14} className="inline mr-1" />
-                Priorité
-              </label>
-              <select
-                value={priority}
-                onChange={e => setPriority(e.target.value)}
-                className="w-full px-3 py-2 bg-input border border-std rounded-lg text-primary focus:outline-none focus:border-accent"
-              >
-                {priorities.map(p => (
-                  <option key={p.value} value={p.value}>
-                    {p.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-secondary mb-1">
                 <Calendar size={14} className="inline mr-1" />
                 Date d'échéance
               </label>
@@ -175,34 +99,6 @@ function CardModal({ card, onClose }) {
                 onChange={e => setDueDate(e.target.value)}
                 className="w-full px-3 py-2 bg-card-hover border border-std rounded-lg text-secondary focus:outline-none focus:border-accent"
               />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-secondary mb-1">
-              <User size={14} className="inline mr-1" />
-              Assigné à
-            </label>
-            <input
-              type="text"
-              value={assignee}
-              onChange={e => setAssignee(e.target.value)}
-              className="w-full px-3 py-2 bg-input border border-std rounded-lg text-primary placeholder-muted focus:outline-none focus:border-accent"
-              placeholder="Nom de la personne..."
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-secondary mb-1">Couleur</label>
-            <div className="flex gap-2">
-              {colors.map(c => (
-                <button
-                  key={c}
-                  onClick={() => setColor(c)}
-                  className={`w-8 h-8 rounded-full border-2 ${color === c ? 'border-accent' : 'border-std'}`}
-                  style={{ backgroundColor: c }}
-                />
-              ))}
             </div>
           </div>
 
@@ -332,51 +228,6 @@ function CardModal({ card, onClose }) {
             <button onClick={handleSaveToLibrary} className="text-sm text-accent hover:opacity-80">
               + Sauvegarder comme modèle
             </button>
-          </div>
-
-          <div className="pt-4 border-t border-std">
-            <h4 className="text-sm font-medium text-secondary mb-2">
-              <MessageSquare size={14} className="inline mr-1" />
-              Commentaires
-            </h4>
-
-            <div className="space-y-2 mb-3">
-              {comments.map(comment => (
-                <div key={comment.id} className="bg-card-hover rounded p-2">
-                  <div className="flex items-start justify-between">
-                    <p className="text-sm text-primary">{comment.content}</p>
-                    <button
-                      onClick={() => handleDeleteComment(comment.id)}
-                      className="text-muted hover:text-urgent"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                  <p className="text-xs text-muted mt-1">
-                    {new Date(comment.created_at).toLocaleDateString('fr-FR')}
-                  </p>
-                </div>
-              ))}
-            </div>
-
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={newComment}
-                onChange={e => setNewComment(e.target.value)}
-                placeholder="Ajouter un commentaire..."
-                className="flex-1 px-3 py-2 bg-input border border-std rounded-lg text-primary placeholder-muted focus:outline-none focus:border-accent text-sm"
-                onKeyDown={e => {
-                  if (e.key === 'Enter') handleAddComment();
-                }}
-              />
-              <button
-                onClick={handleAddComment}
-                className="px-3 py-2 bg-accent text-white rounded-lg hover:opacity-90 text-sm transition-std"
-              >
-                Envoyer
-              </button>
-            </div>
           </div>
         </div>
 

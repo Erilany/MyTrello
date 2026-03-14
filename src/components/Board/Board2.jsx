@@ -60,12 +60,17 @@ function Board2() {
     subcategories,
     setSelectedCard,
     updateSubcategory,
+    createSubcategory,
+    deleteSubcategory,
+    updateCategory,
   } = useApp();
   const [activeTab, setActiveTab] = useState('taches');
   const [selectedChapter, setSelectedChapter] = useState(null);
   const [selectedCategoryForTasks, setSelectedCategoryForTasks] = useState(null);
   const [selectedTask, setSelectedTask] = useState(null);
   const [milestoneSortOrder, setMilestoneSortOrder] = useState('asc');
+  const [newTaskTitle, setNewTaskTitle] = useState('');
+  const [editingCategoryTitle, setEditingCategoryTitle] = useState('');
 
   const tabs = [
     { id: 'informations', label: 'Informations', icon: Info },
@@ -503,13 +508,81 @@ function Board2() {
                                             : 'bg-gray-200 border-gray-300 hover:ring-2 hover:ring-accent hover:ring-offset-1'
                                 }`}
                               >
-                                <h4 className="font-medium text-secondary">{subcat.title}</h4>
+                                <div className="flex items-center justify-between">
+                                  <h4 className="font-medium text-secondary">{subcat.title}</h4>
+                                  <button
+                                    onClick={async e => {
+                                      e.stopPropagation();
+                                      if (confirm('Supprimer cette tâche ?')) {
+                                        await deleteSubcategory(subcat.id);
+                                        setSelectedCategoryForTasks({
+                                          ...selectedCategoryForTasks,
+                                          subcategories:
+                                            selectedCategoryForTasks.subcategories.filter(
+                                              s => s.id !== subcat.id
+                                            ),
+                                        });
+                                      }
+                                    }}
+                                    className="p-1 text-red-500 hover:bg-red-100 rounded"
+                                  >
+                                    <Trash2 size={14} />
+                                  </button>
+                                </div>
                               </div>
                             );
                           })
                         ) : (
                           <p className="text-sm text-muted">Aucune tâche pour cette action</p>
                         )}
+                        <div className="mt-3 pt-3 border-t border-std">
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              value={newTaskTitle}
+                              onChange={e => setNewTaskTitle(e.target.value)}
+                              placeholder="Nouvelle tâche..."
+                              className="flex-1 px-3 py-2 bg-card-hover border border-std rounded text-secondary text-sm"
+                              onKeyDown={async e => {
+                                if (e.key === 'Enter' && newTaskTitle.trim()) {
+                                  const newSub = await createSubcategory(
+                                    selectedCategoryForTasks.category.id,
+                                    newTaskTitle.trim()
+                                  );
+                                  setSelectedCategoryForTasks({
+                                    ...selectedCategoryForTasks,
+                                    subcategories: [
+                                      ...selectedCategoryForTasks.subcategories,
+                                      newSub,
+                                    ],
+                                  });
+                                  setNewTaskTitle('');
+                                }
+                              }}
+                            />
+                            <button
+                              onClick={async () => {
+                                if (newTaskTitle.trim()) {
+                                  const newSub = await createSubcategory(
+                                    selectedCategoryForTasks.category.id,
+                                    newTaskTitle.trim()
+                                  );
+                                  setSelectedCategoryForTasks({
+                                    ...selectedCategoryForTasks,
+                                    subcategories: [
+                                      ...selectedCategoryForTasks.subcategories,
+                                      newSub,
+                                    ],
+                                  });
+                                  setNewTaskTitle('');
+                                }
+                              }}
+                              className="px-3 py-2 bg-accent text-white rounded text-sm hover:opacity-90"
+                            >
+                              <Plus size={16} />
+                            </button>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
