@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
+import { useNavigate } from 'react-router-dom';
 import { RotateCcw, Trash2, Archive, Folder } from 'lucide-react';
 
 function Archives() {
-  const { getArchivedBoards, restoreBoard, boards, deleteBoard } = useApp();
+  const { getArchivedBoards, restoreBoard, boards, deleteBoard, loadBoard } = useApp();
   const [archivedBoards, setArchivedBoards] = useState([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadArchived();
-  }, []);
+  }, [getArchivedBoards]);
 
   const loadArchived = async () => {
     const archived = getArchivedBoards();
@@ -17,7 +19,12 @@ function Archives() {
 
   const handleRestore = async id => {
     restoreBoard(id);
-    loadArchived();
+    setTimeout(() => {
+      const archived = getArchivedBoards();
+      setArchivedBoards(archived);
+      loadBoard(id);
+      navigate('/board');
+    }, 100);
   };
 
   const handleDelete = async id => {

@@ -211,13 +211,20 @@ function Settings() {
                   onClick={() => {
                     setUsername(username);
                     setSaved(true);
-                    setTimeout(() => setSaved(false), 2000);
+                    setTimeout(() => setSaved(false), 1000);
                   }}
                   className="flex items-center px-4 py-2 text-sm bg-accent text-white rounded hover:opacity-90"
                 >
                   <Save size={14} className="mr-2" />
                   Enregistrer
                 </button>
+                {saved && (
+                  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                    <div className="bg-card border border-std rounded-lg p-6 max-w-sm mx-4">
+                      <p className="text-lg font-semibold text-accent text-center">Enregistré !</p>
+                    </div>
+                  </div>
+                )}
               </div>
             </>
           )}

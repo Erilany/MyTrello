@@ -77,6 +77,10 @@ function Board2() {
     createSubcategory,
     deleteSubcategory,
     updateCategory,
+    createCard,
+    createCategory,
+    loadBoard,
+    db,
   } = useApp();
   const [activeTab, setActiveTab] = useState('taches');
   const [selectedChapter, setSelectedChapter] = useState(null);
@@ -87,6 +91,70 @@ function Board2() {
   const [editingCategoryTitle, setEditingCategoryTitle] = useState('');
 
   const [planningSelectedTasks, setPlanningSelectedTasks] = useState([]);
+
+  useEffect(() => {
+    const handleBoard2Import = async e => {
+      const {
+        cards: importCards,
+        categories: importCategories,
+        subcategories: importSubcategories,
+        boardId,
+      } = e.detail;
+
+      const boardColumns = db?.columns?.filter(c => Number(c.board_id) === Number(boardId)) || [];
+      const firstColumnId = boardColumns.length > 0 ? boardColumns[0].id : 1;
+
+      for (const card of importCards) {
+        try {
+          const content = JSON.parse(card.content_json);
+          const tagsStr = card.tags || '';
+          const tags = tagsStr.split(',');
+          const chapter = tags[0] || null;
+
+          const cardId = await createCard(
+            firstColumnId,
+            content.card?.title || card.title,
+            content.card?.description || '',
+            content.card?.priority || 'normal',
+            content.card?.due_date || null,
+            content.card?.assignee || '',
+            null,
+            content.card?.duration_days ?? card.duration ?? 1,
+            null,
+            null,
+            null,
+            chapter
+          );
+
+          const cardCategories = content.categories || [];
+          const cardTitleForCompare = content.card?.title || card.title;
+          for (const cat of cardCategories) {
+            const isCatSelected = importCategories.some(
+              sc => sc.title === cat.title && sc.cardTitle === cardTitleForCompare
+            );
+            if (isCatSelected) {
+              await createCategory(
+                cardId,
+                cat.title,
+                cat.description || '',
+                cat.priority || 'normal',
+                cat.due_date || null,
+                cat.assignee || '',
+                null,
+                cat.duration_days ?? 1,
+                null
+              );
+            }
+          }
+        } catch (err) {
+          console.error('[Board2] Error importing card:', err);
+        }
+      }
+    };
+
+    window.addEventListener('board2-import', handleBoard2Import);
+    return () => window.removeEventListener('board2-import', handleBoard2Import);
+  }, [createCard, createCategory]);
   const [showTaskSelector, setShowTaskSelector] = useState(false);
   const [planningSortOrder, setPlanningSortOrder] = useState('date');
   const [ganttZoom, setGanttZoom] = useState('week');

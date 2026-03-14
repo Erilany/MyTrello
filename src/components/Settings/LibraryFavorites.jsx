@@ -5,7 +5,7 @@ import { Star, ChevronRight, ChevronDown, Search, Check } from 'lucide-react';
 const FAVORITES_KEY = 'mytrello_library_favorites';
 
 function LibraryFavorites() {
-  const { libraryItems, cards, categories, subcategories } = useApp();
+  const { libraryItems } = useApp();
   const [favorites, setFavorites] = useState({ cards: [], categories: [], subcategories: [] });
   const [expandedChapters, setExpandedChapters] = useState({});
   const [expandedCards, setExpandedCards] = useState({});
@@ -17,7 +17,6 @@ function LibraryFavorites() {
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
-        // Handle old format (array) - migrate to new format (object)
         if (Array.isArray(parsed)) {
           const newFormat = {
             cards: parsed,
@@ -42,7 +41,11 @@ function LibraryFavorites() {
   };
 
   const toggleCardFavorite = (cardId, cardTitle) => {
-    const newFavorites = { ...favorites };
+    const newFavorites = {
+      cards: favorites?.cards || [],
+      categories: favorites?.categories || [],
+      subcategories: favorites?.subcategories || [],
+    };
     if (newFavorites.cards.includes(cardId)) {
       newFavorites.cards = newFavorites.cards.filter(id => id !== cardId);
       newFavorites.categories = newFavorites.categories.filter(
@@ -64,21 +67,23 @@ function LibraryFavorites() {
     );
 
     if (isCurrentlyFavorite) {
-      // Remove category and all its subcategories
       newFavorites.categories = newFavorites.categories.filter(
         c => !(c.cardId === cardId && c.title === categoryTitle)
       );
       newFavorites.subcategories = newFavorites.subcategories.filter(
         s => !(s.cardId === cardId && s.categoryTitle === categoryTitle)
       );
+
+      const remainingCatsForCard = newFavorites.categories.filter(c => c.cardId === cardId);
+      if (remainingCatsForCard.length === 0) {
+        newFavorites.cards = newFavorites.cards.filter(id => id !== cardId);
+      }
     } else {
-      // Add category and automatically all its subcategories (tasks)
       newFavorites.categories.push({ cardId, cardTitle, title: categoryTitle });
       if (!newFavorites.cards.includes(cardId)) {
         newFavorites.cards.push(cardId);
       }
 
-      // Add all subcategories automatically
       if (subcategoriesList && subcategoriesList.length > 0) {
         subcategoriesList.forEach(sub => {
           if (
@@ -101,7 +106,6 @@ function LibraryFavorites() {
 
   const toggleSubcategoryFavorite = (cardId, cardTitle, categoryTitle, subcategoryTitle) => {
     const newFavorites = { ...favorites };
-    const subKey = `${cardId}_${categoryTitle}_${subcategoryTitle}`;
 
     if (
       newFavorites.subcategories.find(
@@ -117,6 +121,20 @@ function LibraryFavorites() {
             s.title === subcategoryTitle
           )
       );
+
+      const remainingSubcatsForCategory = newFavorites.subcategories.filter(
+        s => s.cardId === cardId && s.categoryTitle === categoryTitle
+      );
+      if (remainingSubcatsForCategory.length === 0) {
+        newFavorites.categories = newFavorites.categories.filter(
+          c => !(c.cardId === cardId && c.title === categoryTitle)
+        );
+
+        const remainingCatsForCard = newFavorites.categories.filter(c => c.cardId === cardId);
+        if (remainingCatsForCard.length === 0) {
+          newFavorites.cards = newFavorites.cards.filter(id => id !== cardId);
+        }
+      }
     } else {
       newFavorites.subcategories.push({
         cardId,
@@ -134,13 +152,13 @@ function LibraryFavorites() {
     saveFavorites(newFavorites);
   };
 
-  const isCardFavorite = cardId => favorites.cards.includes(cardId);
+  const isCardFavorite = cardId => favorites?.cards?.includes(cardId) || false;
   const isCategoryFavorite = (cardId, categoryTitle) =>
-    favorites.categories.some(c => c.cardId === cardId && c.title === categoryTitle);
+    favorites?.categories?.some(c => c.cardId === cardId && c.title === categoryTitle) || false;
   const isSubcategoryFavorite = (cardId, categoryTitle, subcategoryTitle) =>
-    favorites.subcategories.some(
+    favorites?.subcategories?.some(
       s => s.cardId === cardId && s.categoryTitle === categoryTitle && s.title === subcategoryTitle
-    );
+    ) || false;
 
   const toggleChapter = chapter => {
     setExpandedChapters(prev => ({ ...prev, [chapter]: !prev[chapter] }));
@@ -198,8 +216,10 @@ function LibraryFavorites() {
   }, {});
 
   const totalFavorites =
-    favorites.cards.length + favorites.categories.length + favorites.subcategories.length;
-  const totalItems = libraryItems.length;
+    (favorites.cards?.length || 0) +
+    (favorites.categories?.length || 0) +
+    (favorites.subcategories?.length || 0);
+  const totalItems = libraryItems?.length || 0;
 
   return (
     <div className="h-full flex flex-col">
@@ -262,19 +282,19 @@ function LibraryFavorites() {
                   return (
                     <div key={item.id} className="ml-2">
                       <div
-                        className={`flex items-center gap-2 px-3 py-2 rounded cursor-pointer transition-colors ${
+                        className={`flex items-center gap-2 px-3 py-2 rounded transition-colors ${
                           isCardFavorite(item.id)
                             ? 'bg-[var(--accent-soft)]'
                             : 'hover:bg-[var(--bg-card-hover)]'
                         }`}
-                        onClick={() => toggleCardFavorite(item.id, item.title)}
                       >
                         <div
-                          className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${
+                          className={`w-5 h-5 rounded border flex items-center justify-center transition-colors cursor-pointer ${
                             isCardFavorite(item.id)
                               ? 'bg-[var(--accent)] border-[var(--accent)]'
                               : 'border-[var(--border)]'
                           }`}
+                          onClick={() => toggleCardFavorite(item.id, item.title)}
                         >
                           {isCardFavorite(item.id) && <Check size={12} className="text-white" />}
                         </div>
@@ -283,7 +303,7 @@ function LibraryFavorites() {
                             e.stopPropagation();
                             toggleCard(cardKey);
                           }}
-                          className="flex items-center gap-1 flex-1 text-left"
+                          className="flex items-center gap-1 flex-1 text-left cursor-pointer"
                         >
                           {expandedCards[cardKey] ? (
                             <ChevronDown size={14} className="text-[var(--txt-secondary)]" />
@@ -303,26 +323,26 @@ function LibraryFavorites() {
                           return (
                             <div key={catKey} className="ml-6">
                               <div
-                                className={`flex items-center gap-2 px-3 py-2 rounded cursor-pointer transition-colors ${
+                                className={`flex items-center gap-2 px-3 py-2 rounded transition-colors ${
                                   isCategoryFavorite(item.id, cat.title)
                                     ? 'bg-[var(--done-soft)]'
                                     : 'hover:bg-[var(--bg-card-hover)]'
                                 }`}
-                                onClick={() =>
-                                  toggleCategoryFavorite(
-                                    item.id,
-                                    item.title,
-                                    cat.title,
-                                    cat.subcategories || []
-                                  )
-                                }
                               >
                                 <div
-                                  className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${
+                                  className={`w-4 h-4 rounded border flex items-center justify-center transition-colors cursor-pointer ${
                                     isCategoryFavorite(item.id, cat.title)
                                       ? 'bg-[var(--done)] border-[var(--done)]'
                                       : 'border-[var(--border)]'
                                   }`}
+                                  onClick={() =>
+                                    toggleCategoryFavorite(
+                                      item.id,
+                                      item.title,
+                                      cat.title,
+                                      cat.subcategories || []
+                                    )
+                                  }
                                 >
                                   {isCategoryFavorite(item.id, cat.title) && (
                                     <Check size={10} className="text-white" />
@@ -334,7 +354,7 @@ function LibraryFavorites() {
                                       e.stopPropagation();
                                       toggleCategory(catKey);
                                     }}
-                                    className="flex items-center gap-1 flex-1 text-left"
+                                    className="flex items-center gap-1 flex-1 text-left cursor-pointer"
                                   >
                                     {expandedCategories[catKey] ? (
                                       <ChevronDown
@@ -362,26 +382,26 @@ function LibraryFavorites() {
                                 (cat.subcategories || []).map(sub => (
                                   <div
                                     key={sub.title}
-                                    className={`flex items-center gap-2 px-3 py-2 ml-6 rounded cursor-pointer transition-colors ${
+                                    className={`flex items-center gap-2 px-3 py-2 ml-6 rounded transition-colors ${
                                       isSubcategoryFavorite(item.id, cat.title, sub.title)
                                         ? 'bg-yellow-50 dark:bg-yellow-900/20'
                                         : 'hover:bg-[var(--bg-card-hover)]'
                                     }`}
-                                    onClick={() =>
-                                      toggleSubcategoryFavorite(
-                                        item.id,
-                                        item.title,
-                                        cat.title,
-                                        sub.title
-                                      )
-                                    }
                                   >
                                     <div
-                                      className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${
+                                      className={`w-4 h-4 rounded border flex items-center justify-center transition-colors cursor-pointer ${
                                         isSubcategoryFavorite(item.id, cat.title, sub.title)
                                           ? 'bg-yellow-500 border-yellow-500'
                                           : 'border-[var(--border)]'
                                       }`}
+                                      onClick={() =>
+                                        toggleSubcategoryFavorite(
+                                          item.id,
+                                          item.title,
+                                          cat.title,
+                                          sub.title
+                                        )
+                                      }
                                     >
                                       {isSubcategoryFavorite(item.id, cat.title, sub.title) && (
                                         <Check size={10} className="text-white" />

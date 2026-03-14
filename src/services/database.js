@@ -93,6 +93,9 @@ function saveDatabase() {
 }
 
 function insertDefaultData() {
+  // Default data disabled by user request
+  return;
+
   const result = db.exec('SELECT COUNT(*) as count FROM boards');
   const count = result.length > 0 ? result[0].values[0][0] : 0;
 

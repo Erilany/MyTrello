@@ -14,6 +14,8 @@ import {
   Wand2,
   LayoutGrid,
   Home,
+  Edit3,
+  Archive as ArchiveIcon,
 } from 'lucide-react';
 
 function Sidebar() {
@@ -30,6 +32,8 @@ function Sidebar() {
     generateTestData,
     setLibraryOpen,
     setLibraryViewMode,
+    updateBoard,
+    archiveBoard,
   } = useApp();
   const [showBoards, setShowBoards] = useState(true);
   const [newBoardTitle, setNewBoardTitle] = useState('');
@@ -42,6 +46,21 @@ function Sidebar() {
   const handleDeleteBoard = async id => {
     if (window.confirm('Voulez-vous vraiment supprimer ce projet ?')) {
       await deleteBoard(id);
+      setMenuOpenId(null);
+    }
+  };
+
+  const handleRenameBoard = board => {
+    const newTitle = window.prompt('Nouveau nom du projet :', board.title);
+    if (newTitle && newTitle.trim() && newTitle !== board.title) {
+      updateBoard(board.id, newTitle.trim(), board.description || '');
+      setMenuOpenId(null);
+    }
+  };
+
+  const handleArchiveBoard = async id => {
+    if (window.confirm('Voulez-vous archiver ce projet ? Il sera déplace dans les archives.')) {
+      await archiveBoard(id);
       setMenuOpenId(null);
     }
   };
@@ -163,7 +182,7 @@ function Sidebar() {
               {boards.map(board => (
                 <div
                   key={board.id}
-                  className={`group flex items-center justify-between px-2 py-1.5 rounded cursor-pointer transition-std ${
+                  className={`group flex items-center justify-between px-2 py-0.5 rounded cursor-pointer transition-std ${
                     isOnBoardPage && Number(currentBoard?.id) === Number(board.id)
                       ? 'bg-accent-soft border-l-[3px] border-l-accent'
                       : 'hover:bg-card'
@@ -173,7 +192,9 @@ function Sidebar() {
                     navigate('/board');
                   }}
                 >
-                  <span className="truncate text-sm font-body">{board.title}</span>
+                  <span className="truncate text-[10px] font-body" title={board.title}>
+                    {board.title}
+                  </span>
                   <div className="relative">
                     <button
                       onClick={e => {
@@ -185,7 +206,27 @@ function Sidebar() {
                       <MoreHorizontal size={14} />
                     </button>
                     {menuOpenId === board.id && (
-                      <div className="absolute right-0 top-6 bg-card rounded-lg shadow-card z-10 py-1 w-36 border border-std">
+                      <div className="absolute right-0 top-6 bg-card rounded-lg shadow-card z-10 py-1 w-40 border border-std">
+                        <button
+                          onClick={e => {
+                            e.stopPropagation();
+                            handleRenameBoard(board);
+                          }}
+                          className="flex items-center w-full px-3 py-1.5 text-sm text-primary hover:bg-card-hover"
+                        >
+                          <Edit3 size={12} className="mr-2" />
+                          Renommer
+                        </button>
+                        <button
+                          onClick={e => {
+                            e.stopPropagation();
+                            handleArchiveBoard(board.id);
+                          }}
+                          className="flex items-center w-full px-3 py-1.5 text-sm text-primary hover:bg-card-hover"
+                        >
+                          <ArchiveIcon size={12} className="mr-2" />
+                          Archiver
+                        </button>
                         <button
                           onClick={e => {
                             e.stopPropagation();

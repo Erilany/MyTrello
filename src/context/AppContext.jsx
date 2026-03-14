@@ -353,9 +353,10 @@ export function AppProvider({ children }) {
   }, [cardColors]);
 
   useEffect(() => {
-    setBoards(db.boards.sort((a, b) => a.title.localeCompare(b.title)));
-    if (db.boards.length > 0) {
-      const firstBoard = db.boards[0];
+    const activeBoards = db.boards.filter(b => !b.is_archived);
+    setBoards(activeBoards.sort((a, b) => a.title.localeCompare(b.title)));
+    if (activeBoards.length > 0) {
+      const firstBoard = activeBoards[0];
       setCurrentBoard(firstBoard);
       const boardColumns = db.columns.filter(c => Number(c.board_id) === Number(firstBoard.id));
       const columnIds = boardColumns.map(c => Number(c.id));
@@ -603,14 +604,20 @@ export function AppProvider({ children }) {
 
   const loadBoards = useCallback(() => {
     setLoading(true);
-    setBoards(db.boards.sort((a, b) => a.title.localeCompare(b.title)));
+    const activeBoards = db.boards.filter(b => !b.is_archived);
+    setBoards(activeBoards.sort((a, b) => a.title.localeCompare(b.title)));
     setLibraryItems(db.libraryItems || []);
     setLoading(false);
   }, [db]);
 
   useEffect(() => {
-    setBoards(db.boards.sort((a, b) => a.title.localeCompare(b.title)));
+    const activeBoards = db.boards.filter(b => !b.is_archived);
+    setBoards(activeBoards.sort((a, b) => a.title.localeCompare(b.title)));
   }, [db.boards]);
+
+  useEffect(() => {
+    setLibraryItems(db.libraryItems || []);
+  }, [db.libraryItems]);
 
   const generateTestData = () => {
     if (!currentBoard && db.boards.length === 0) {
@@ -717,6 +724,7 @@ export function AppProvider({ children }) {
     const projectTime = localStorage.getItem('mytrello_project_time');
     const libraryFavorites = localStorage.getItem('mytrello_library_favorites');
     const libraryEditor = localStorage.getItem('mytrello_library_editor');
+    const libraryTemplates = localStorage.getItem('mytrello_library_templates');
     const theme = localStorage.getItem('mytrello-theme');
     const cardColors = localStorage.getItem('mytrello-cardColors');
     const username = localStorage.getItem('mytrello-username');
@@ -728,6 +736,7 @@ export function AppProvider({ children }) {
       projectTime: projectTime ? JSON.parse(projectTime) : {},
       libraryFavorites: libraryFavorites ? JSON.parse(libraryFavorites) : {},
       libraryEditor: libraryEditor ? JSON.parse(libraryEditor) : null,
+      libraryTemplates: libraryTemplates ? JSON.parse(libraryTemplates) : { templates: [] },
       settings: {
         theme,
         cardColors: cardColors ? JSON.parse(cardColors) : null,
@@ -763,6 +772,12 @@ export function AppProvider({ children }) {
         }
         if (parsed.libraryEditor) {
           localStorage.setItem('mytrello_library_editor', JSON.stringify(parsed.libraryEditor));
+        }
+        if (parsed.libraryTemplates) {
+          localStorage.setItem(
+            'mytrello_library_templates',
+            JSON.stringify(parsed.libraryTemplates)
+          );
         }
         if (parsed.settings) {
           if (parsed.settings.theme) {
