@@ -90,7 +90,7 @@ function LibraryPanel() {
   const [showUseForm, setShowUseForm] = useState(false);
   const [useFormBoardId, setUseFormBoardId] = useState('');
   const [useFormColumnId, setUseFormColumnId] = useState('');
-  const [useFormDestination, setUseFormDestination] = useState('board');
+  const [useFormDestination, setUseFormDestination] = useState('board2');
   const [showAddForm, setShowAddForm] = useState(false);
   const [newItemTitle, setNewItemTitle] = useState('');
   const [newItemType, setNewItemType] = useState('card');
@@ -1273,23 +1273,6 @@ function LibraryPanel() {
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-secondary mb-1">
-                    Destination
-                  </label>
-                  <select
-                    value={useFormDestination}
-                    onChange={e => {
-                      setUseFormDestination(e.target.value);
-                      setUseFormColumnId('');
-                    }}
-                    className="w-full px-3 py-2 bg-input border border-std rounded-lg text-primary focus:outline-none focus:border-accent"
-                  >
-                    <option value="board">Projets (Kanban)</option>
-                    <option value="board2">Projets 2 (Tableau Blanc)</option>
-                  </select>
-                </div>
-
-                <div>
                   <label className="block text-sm font-medium text-secondary mb-1">Projet</label>
                   <select
                     value={useFormBoardId}
@@ -1823,22 +1806,6 @@ function LibraryPanel() {
                 </button>
               </div>
               <div className="p-4 space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-secondary mb-1">
-                    Destination
-                  </label>
-                  <select
-                    value={useFormDestination}
-                    onChange={e => {
-                      setUseFormDestination(e.target.value);
-                      setSelectedColumnId('');
-                    }}
-                    className="w-full px-3 py-2 bg-input border border-std rounded-lg text-primary focus:outline-none focus:border-accent"
-                  >
-                    <option value="board">Projets (Kanban)</option>
-                    <option value="board2">Projets 2 (Tableau Blanc)</option>
-                  </select>
-                </div>
                 <div>
                   <label className="block text-sm font-medium text-secondary mb-1">Projet</label>
                   <select

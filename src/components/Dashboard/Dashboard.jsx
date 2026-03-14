@@ -1,12 +1,454 @@
-import React from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useApp } from '../../context/AppContext';
+import {
+  Clock,
+  Calendar,
+  CheckCircle,
+  AlertCircle,
+  Circle,
+  PlayCircle,
+  Users,
+  ChevronDown,
+} from 'lucide-react';
 
-function Dashboard() {
+function formatSeconds(seconds) {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  if (hours > 0) return `${hours}h ${minutes}m`;
+  return `${minutes}m`;
+}
+
+function formatPercentage(value, total) {
+  if (total === 0) return '0%';
+  return `${Math.round((value / total) * 100)}%`;
+}
+
+function getStatusColor(status) {
+  switch (status) {
+    case 'done':
+      return 'bg-green-500';
+    case 'in_progress':
+      return 'bg-yellow-500';
+    case 'waiting':
+      return 'bg-blue-500';
+    case 'todo':
+      return 'bg-orange-500';
+    default:
+      return 'bg-gray-400';
+  }
+}
+
+function getStatusLabel(status) {
+  switch (status) {
+    case 'done':
+      return 'Terminé';
+    case 'in_progress':
+      return 'En cours';
+    case 'waiting':
+      return 'En attente';
+    case 'todo':
+      return 'À faire';
+    default:
+      return 'Pas encore';
+  }
+}
+
+function getPriorityColor(priority) {
+  switch (priority) {
+    case 'urgent':
+      return 'text-red-500';
+    case 'high':
+      return 'text-orange-500';
+    default:
+      return 'text-blue-500';
+  }
+}
+
+function getPriorityLabel(priority) {
+  switch (priority) {
+    case 'urgent':
+      return 'Urgent';
+    case 'high':
+      return 'Haute';
+    default:
+      return 'Normale';
+  }
+}
+
+function getWeekNumber(date) {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return `${d.getUTCFullYear()}-W${Math.ceil(((d - yearStart) / 86400000 + 1) / 7)
+    .toString()
+    .padStart(2, '0')}`;
+}
+
+function getWeekRange(weekStr) {
+  const [year, week] = weekStr.split('-W').map(Number);
+  const simple = new Date(year, 0, 1 + (week - 1) * 7);
+  const dow = simple.getDay();
+  const start = new Date(simple);
+  if (dow <= 4) start.setDate(simple.getDate() - simple.getDay() + 1);
+  else start.setDate(simple.getDate() + 8 - simple.getDay());
+  const end = new Date(start);
+  end.setDate(end.getDate() + 6);
+  return { start, end };
+}
+
+function getUpcomingTasks(subcategories, categories, cards, boards, username, days) {
+  const now = new Date();
+  const futureDate = new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
+
+  return subcategories
+    .filter(sub => {
+      if (!sub.due_date) return false;
+      const dueDate = new Date(sub.due_date);
+      return dueDate >= now && dueDate <= futureDate;
+    })
+    .map(sub => {
+      const category = categories.find(c => Number(c.id) === Number(sub.category_id));
+      const card = category ? cards.find(c => Number(c.id) === Number(category.card_id)) : null;
+      const board = card ? boards.find(b => Number(b.id) === Number(card.board_id)) : null;
+      return { ...sub, category, card, board };
+    })
+    .filter(task => task.board)
+    .sort((a, b) => new Date(a.due_date) - new Date(b.due_date));
+}
+
+export default function Dashboard() {
+  const {
+    boards,
+    cards,
+    categories,
+    subcategories,
+    currentUsername,
+    getProjectTime,
+    getAllProjectTime,
+    getWeekNumber,
+    setSelectedCard,
+    loadBoard,
+  } = useApp();
+  const [selectedWeek, setSelectedWeek] = useState(() => getWeekNumber(new Date()));
+  const [timeRange, setTimeRange] = useState('week');
+  const [showMyTasks, setShowMyTasks] = useState(true);
+  const [showOtherTasks, setShowOtherTasks] = useState(false);
+  const [selectedProjectForOthers, setSelectedProjectForOthers] = useState(null);
+
+  const handleTaskClick = task => {
+    const category = categories.find(c => Number(c.id) === Number(task.category_id));
+    const card = category ? cards.find(c => Number(c.id) === Number(category.card_id)) : null;
+    if (card) {
+      setSelectedCard(card);
+      // Switch to the correct project so time tracking works
+      if (task.board?.id) {
+        loadBoard(task.board.id);
+      }
+    }
+  };
+
+  const handleTaskDoubleClick = task => {
+    setShowOtherTasks(true);
+    setSelectedProjectForOthers(task.board?.id);
+  };
+
+  const getOtherTasksFiltered = () => {
+    if (!selectedProjectForOthers) return otherTasks;
+    return otherTasks.filter(t => Number(t.board?.id) === Number(selectedProjectForOthers));
+  };
+
+  const weekOptions = useMemo(() => {
+    const options = [];
+    const now = new Date();
+    for (let i = 0; i < 12; i++) {
+      const d = new Date(now);
+      d.setDate(d.getDate() - i * 7);
+      const week = getWeekNumber(d);
+      const range = getWeekRange(week);
+      const year = range.start.getFullYear();
+      const startStr = range.start.toLocaleDateString('fr-FR', {
+        day: '2-digit',
+        month: '2-digit',
+      });
+      const endStr = range.end.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
+      options.push({
+        value: week,
+        label: `${year} - S${week.split('-W')[1]} (${startStr} - ${endStr})`,
+      });
+    }
+    return options;
+  }, []);
+
+  const projectTimeData = useMemo(() => {
+    const allTimes = getAllProjectTime(selectedWeek);
+    const totalTime = Object.values(allTimes).reduce((sum, val) => sum + val, 0);
+
+    return boards
+      .map(board => {
+        const time = allTimes[String(board.id)] || 0;
+        const percentage = totalTime > 0 ? (time / totalTime) * 100 : 0;
+        return { board, time, percentage };
+      })
+      .filter(item => item.time > 0)
+      .sort((a, b) => b.percentage - a.percentage);
+  }, [boards, selectedWeek]);
+
+  const maxPercentage = useMemo(() => {
+    return Math.max(...projectTimeData.map(p => p.percentage), 0);
+  }, [projectTimeData]);
+
+  const myTasks = useMemo(() => {
+    const days = timeRange === 'week' ? 7 : 30;
+    return getUpcomingTasks(subcategories, categories, cards, boards, currentUsername, days).filter(
+      task => task.assignee === currentUsername
+    );
+  }, [subcategories, categories, cards, boards, currentUsername, timeRange]);
+
+  const otherTasks = useMemo(() => {
+    const days = timeRange === 'week' ? 7 : 30;
+    return getUpcomingTasks(subcategories, categories, cards, boards, currentUsername, days).filter(
+      task => !task.assignee || task.assignee !== currentUsername
+    );
+  }, [subcategories, categories, cards, boards, currentUsername, timeRange]);
+
   return (
-    <div className="p-6">
+    <div className="p-6 max-w-7xl mx-auto">
       <h1 className="text-2xl font-display font-bold text-primary mb-6">Dashboard</h1>
-      <p className="text-secondary">Cette page sera développée ultérieurement.</p>
+
+      {/* Section 1: Temps passé par projet */}
+      <div className="bg-card rounded-lg border border-std p-6 mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-primary flex items-center gap-2">
+            <Clock size={20} className="text-accent" />
+            Temps passé par projet (semaine sélectionnée)
+          </h2>
+          <div className="flex items-center gap-2">
+            <ChevronDown size={16} className="text-muted" />
+            <select
+              value={selectedWeek}
+              onChange={e => setSelectedWeek(e.target.value)}
+              className="px-3 py-1.5 text-sm bg-input border border-std rounded text-primary"
+            >
+              {weekOptions.map(opt => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+        <p className="text-sm text-muted mb-4">
+          Ce graphique affiche le pourcentage de temps passé sur chaque projet cette semaine. Le
+          chrono démarre automatiquement quand vous sélectionnez un projet et continue même si vous
+          changez d'onglet ou si l'application est minimisée.
+        </p>
+
+        {projectTimeData.length === 0 ? (
+          <p className="text-secondary text-sm py-4">Aucun temps enregistré pour cette semaine</p>
+        ) : (
+          <div className="space-y-3">
+            {projectTimeData.map(({ board, time, percentage }) => (
+              <div key={board.id} className="flex items-center gap-4">
+                <div className="w-40 text-sm text-primary truncate" title={board.title}>
+                  {board.title}
+                </div>
+                <div className="flex-1 h-6 bg-card-hover rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-accent rounded-full transition-all duration-300"
+                    style={{ width: `${percentage}%` }}
+                  />
+                </div>
+                <div className="w-16 text-right text-sm font-medium text-primary">
+                  {Math.round(percentage)}%
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Section 2 & 3: Two columns */}
+      <div className="flex gap-4">
+        {/* Colonne gauche: Mes tâches */}
+        <div className={`bg-card rounded-lg border border-std p-6 ${!showMyTasks ? 'hidden' : ''}`}>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-primary flex items-center gap-2">
+              <CheckCircle size={20} className="text-green-500" />
+              Mes tâches à terminer
+            </h2>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setTimeRange('week')}
+                className={`px-3 py-1.5 text-sm rounded ${timeRange === 'week' ? 'bg-accent text-white' : 'bg-card-hover text-secondary'}`}
+              >
+                7 jours
+              </button>
+              <button
+                onClick={() => setTimeRange('month')}
+                className={`px-3 py-1.5 text-sm rounded ${timeRange === 'month' ? 'bg-accent text-white' : 'bg-card-hover text-secondary'}`}
+              >
+                30 jours
+              </button>
+              {!showOtherTasks && (
+                <button
+                  onClick={() => setShowOtherTasks(true)}
+                  className="px-3 py-1.5 text-sm rounded bg-orange-500 text-white hover:opacity-90"
+                >
+                  Afficher autres
+                </button>
+              )}
+            </div>
+          </div>
+          <p className="text-sm text-muted mb-4">
+            Liste des tâches qui vous sont assignées et qui doivent être terminées dans les{' '}
+            {timeRange === 'week' ? '7' : '30'} prochains jours.
+            <br />
+            <span className="text-xs">
+              Cliquez pour ouvrir la tâche, double-cliquez pour voir les autres tâches du projet
+            </span>
+          </p>
+
+          {myTasks.length === 0 ? (
+            <p className="text-secondary text-sm py-4">
+              Aucune tâche assignée à terminer dans cette période
+            </p>
+          ) : (
+            <div className="overflow-x-auto max-h-96">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-std">
+                    <th className="text-left py-2 px-3 text-muted font-medium">Projet</th>
+                    <th className="text-left py-2 px-3 text-muted font-medium">Action</th>
+                    <th className="text-left py-2 px-3 text-muted font-medium">Tâche</th>
+                    <th className="text-left py-2 px-3 text-muted font-medium">État</th>
+                    <th className="text-left py-2 px-3 text-muted font-medium">Priorité</th>
+                    <th className="text-left py-2 px-3 text-muted font-medium">Échéance</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {myTasks.map(task => (
+                    <tr
+                      key={task.id}
+                      className="border-b border-std hover:bg-card-hover cursor-pointer"
+                      onClick={() => handleTaskClick(task)}
+                      onDoubleClick={() => handleTaskDoubleClick(task)}
+                    >
+                      <td className="py-2 px-3 text-primary">{task.board?.title}</td>
+                      <td className="py-2 px-3 text-secondary">{task.category?.title}</td>
+                      <td className="py-2 px-3 text-primary font-medium">{task.title}</td>
+                      <td className="py-2 px-3">
+                        <span
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs text-white ${getStatusColor(task.status)}`}
+                        >
+                          {task.status === 'done' ? (
+                            <CheckCircle size={12} />
+                          ) : task.status === 'in_progress' ? (
+                            <PlayCircle size={12} />
+                          ) : (
+                            <Circle size={12} />
+                          )}
+                          {getStatusLabel(task.status)}
+                        </span>
+                      </td>
+                      <td className={`py-2 px-3 font-medium ${getPriorityColor(task.priority)}`}>
+                        {getPriorityLabel(task.priority)}
+                      </td>
+                      <td className="py-2 px-3 text-muted">{task.due_date}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        {/* Colonne droite: Autres tâches des projets */}
+        {showOtherTasks && (
+          <div className="bg-card rounded-lg border border-std p-6 flex-1">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-primary flex items-center gap-2">
+                <Users size={20} className="text-orange-500" />
+                Autres tâches des projets
+              </h2>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowOtherTasks(false)}
+                  className="px-3 py-1.5 text-sm rounded bg-card-hover text-secondary hover:bg-std"
+                >
+                  Masquer
+                </button>
+              </div>
+            </div>
+            {selectedProjectForOthers && (
+              <p className="text-sm text-muted mb-2">
+                Projet: {boards.find(b => Number(b.id) === Number(selectedProjectForOthers))?.title}
+                <button
+                  onClick={() => setSelectedProjectForOthers(null)}
+                  className="ml-2 text-accent hover:underline text-xs"
+                >
+                  Voir tous les projets
+                </button>
+              </p>
+            )}
+            <p className="text-sm text-muted mb-4">
+              Liste des tâches non assignées ou assignées à d'autres utilisateurs
+            </p>
+
+            {getOtherTasksFiltered().length === 0 ? (
+              <p className="text-secondary text-sm py-4">Aucune tâche trouvée</p>
+            ) : (
+              <div className="overflow-x-auto max-h-96">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-std">
+                      <th className="text-left py-2 px-3 text-muted font-medium">Projet</th>
+                      <th className="text-left py-2 px-3 text-muted font-medium">Action</th>
+                      <th className="text-left py-2 px-3 text-muted font-medium">Tâche</th>
+                      <th className="text-left py-2 px-3 text-muted font-medium">Assigné à</th>
+                      <th className="text-left py-2 px-3 text-muted font-medium">État</th>
+                      <th className="text-left py-2 px-3 text-muted font-medium">Priorité</th>
+                      <th className="text-left py-2 px-3 text-muted font-medium">Échéance</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {getOtherTasksFiltered().map(task => (
+                      <tr
+                        key={task.id}
+                        className="border-b border-std hover:bg-card-hover cursor-pointer"
+                        onClick={() => handleTaskClick(task)}
+                      >
+                        <td className="py-2 px-3 text-primary">{task.board?.title}</td>
+                        <td className="py-2 px-3 text-secondary">{task.category?.title}</td>
+                        <td className="py-2 px-3 text-primary font-medium">{task.title}</td>
+                        <td className="py-2 px-3 text-muted">{task.assignee || 'Non assigné'}</td>
+                        <td className="py-2 px-3">
+                          <span
+                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs text-white ${getStatusColor(task.status)}`}
+                          >
+                            {task.status === 'done' ? (
+                              <CheckCircle size={12} />
+                            ) : task.status === 'in_progress' ? (
+                              <PlayCircle size={12} />
+                            ) : (
+                              <Circle size={12} />
+                            )}
+                            {getStatusLabel(task.status)}
+                          </span>
+                        </td>
+                        <td className={`py-2 px-3 font-medium ${getPriorityColor(task.priority)}`}>
+                          {getPriorityLabel(task.priority)}
+                        </td>
+                        <td className="py-2 px-3 text-muted">{task.due_date}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
-
-export default Dashboard;

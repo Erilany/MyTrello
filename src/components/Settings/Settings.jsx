@@ -13,6 +13,18 @@ import {
 } from 'lucide-react';
 import LibraryFavorites from './LibraryFavorites';
 
+const DEFAULT_ROLES = [
+  'Manager de projets',
+  'Chargé(e) de Concertation',
+  "Chargé(e) d'Etudes LA",
+  "Chargé(e) d'Etudes LS",
+  "Chargé(e) d'Etudes Poste HT",
+  "Chargé(e) d'Etudes Poste BT et CC",
+  "Chargé(e) d'Etudes SPC",
+  'Contrôleur Travaux',
+  'Assistant(e) Etudes',
+];
+
 function Settings() {
   const {
     boards,
@@ -26,6 +38,7 @@ function Settings() {
     currentUsername,
     setUsername,
   } = useApp();
+  const [userRole, setUserRole] = useState(() => localStorage.getItem('mytrello-user-role') || '');
   const [boardTitle, setBoardTitle] = useState('');
   const [boardDescription, setBoardDescription] = useState('');
   const [saved, setSaved] = useState(false);
@@ -122,9 +135,7 @@ function Settings() {
   const tabs = [
     { id: 'profile', label: 'Profil', icon: User },
     { id: 'favorites', label: 'Favoris Bibliothèque', icon: Star },
-    { id: 'colors', label: 'Couleurs', icon: Palette },
     { id: 'backup', label: 'Sauvegarde', icon: Download },
-    { id: 'about', label: 'À propos', icon: Info },
   ];
 
   return (
@@ -176,6 +187,26 @@ function Settings() {
                     className="w-full px-4 py-2 bg-input border border-std rounded-lg text-primary placeholder-muted focus:outline-none focus:border-accent"
                   />
                 </div>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-secondary mb-2">
+                    Votre fonction
+                  </label>
+                  <select
+                    value={userRole}
+                    onChange={e => {
+                      setUserRole(e.target.value);
+                      localStorage.setItem('mytrello-user-role', e.target.value);
+                    }}
+                    className="w-full px-4 py-2 bg-input border border-std rounded-lg text-primary focus:outline-none focus:border-accent"
+                  >
+                    <option value="">Sélectionner votre fonction...</option>
+                    {DEFAULT_ROLES.map(role => (
+                      <option key={role} value={role}>
+                        {role}
+                      </option>
+                    ))}
+                  </select>
+                </div>
                 <button
                   onClick={() => {
                     setUsername(username);
@@ -188,127 +219,10 @@ function Settings() {
                   Enregistrer
                 </button>
               </div>
-
-              <div className="bg-card rounded-lg border border-std p-6 mb-6">
-                <h2 className="text-lg font-semibold text-primary mb-4">Projet actuel</h2>
-                {!currentBoard ? (
-                  <p className="text-secondary">
-                    Sélectionnez un projet dans la sidebar pour voir ses paramètres.
-                  </p>
-                ) : (
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-secondary mb-1">
-                        Nom du projet
-                      </label>
-                      <input
-                        type="text"
-                        value={boardTitle}
-                        onChange={e => setBoardTitle(e.target.value)}
-                        className="w-full px-3 py-2 bg-input border border-std rounded-lg text-primary"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-secondary mb-1">
-                        Description
-                      </label>
-                      <textarea
-                        value={boardDescription}
-                        onChange={e => setBoardDescription(e.target.value)}
-                        rows={3}
-                        className="w-full px-3 py-2 bg-input border border-std rounded-lg text-primary"
-                      />
-                    </div>
-                    <button
-                      type="button"
-                      onClick={handleSave}
-                      className="flex items-center px-4 py-2 bg-accent text-white rounded-lg hover:opacity-90"
-                    >
-                      <Save size={16} className="mr-2" />
-                      {saved ? 'Enregistré !' : 'Enregistrer'}
-                    </button>
-                  </div>
-                )}
-              </div>
             </>
           )}
 
           {activeTab === 'favorites' && <LibraryFavorites />}
-
-          {activeTab === 'colors' && (
-            <div className="bg-card rounded-lg border border-std p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-primary">Couleurs des cartes</h2>
-                <button
-                  onClick={handleResetColors}
-                  className="flex items-center px-3 py-1.5 text-sm text-secondary hover:bg-card-hover rounded-lg transition-colors"
-                >
-                  <RotateCcw size={14} className="mr-1.5" />
-                  Réinitialiser
-                </button>
-              </div>
-              <p className="text-sm text-secondary mb-4">
-                Les couleurs des cartes dépendent du <strong>nom de la colonne</strong>.
-              </p>
-              <div className="space-y-4">
-                {colorTypes.map(({ key, label, keywords }) => (
-                  <div key={key} className="flex items-center gap-4">
-                    <div className="w-24 flex-shrink-0">
-                      <span className="text-sm font-medium text-primary">{label}</span>
-                    </div>
-                    <div
-                      className="w-8 h-8 rounded-md flex-shrink-0"
-                      style={{
-                        background: `linear-gradient(90deg, ${localColors[key]?.gradient?.[0]}, ${localColors[key]?.gradient?.[1]})`,
-                      }}
-                    />
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="color"
-                        value={localColors[key]?.gradient?.[0] || '#000000'}
-                        onChange={e => handleColorChange(key, 0, e.target.value)}
-                        className="w-8 h-8 cursor-pointer rounded border-0"
-                      />
-                      <span className="text-secondary">→</span>
-                      <input
-                        type="color"
-                        value={localColors[key]?.gradient?.[1] || '#000000'}
-                        onChange={e => handleColorChange(key, 1, e.target.value)}
-                        className="w-8 h-8 cursor-pointer rounded border-0"
-                      />
-                    </div>
-                    <div className="flex-1">
-                      <input
-                        type="text"
-                        value={keywords}
-                        onChange={e =>
-                          setLocalColors({
-                            ...localColors,
-                            [key]: {
-                              ...localColors[key],
-                              keywords: e.target.value
-                                .split(',')
-                                .map(k => k.trim())
-                                .filter(k => k),
-                            },
-                          })
-                        }
-                        className="w-full px-2 py-1 text-xs bg-input border border-std rounded text-primary"
-                        placeholder="mot-clé1, mot-clé2"
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <button
-                onClick={handleSaveColors}
-                className="flex items-center px-4 py-2 mt-4 bg-accent text-white rounded-lg hover:opacity-90"
-              >
-                <Save size={16} className="mr-2" />
-                {saved ? 'Enregistré !' : 'Enregistrer les couleurs'}
-              </button>
-            </div>
-          )}
 
           {activeTab === 'backup' && (
             <div className="bg-card rounded-lg border border-std p-6">
@@ -334,23 +248,6 @@ function Settings() {
               <p className="text-sm text-secondary">
                 Exporter vos données en fichier JSON pour sauvegarder ou transférer votre projet.
               </p>
-            </div>
-          )}
-
-          {activeTab === 'about' && (
-            <div className="bg-card rounded-lg border border-std p-6">
-              <h2 className="text-lg font-semibold text-primary mb-4">À propos</h2>
-              <div className="flex items-start gap-3">
-                <Info size={20} className="text-accent mt-0.5" />
-                <div>
-                  <p className="font-medium text-primary">MyTrello</p>
-                  <p className="text-sm text-secondary mt-1">
-                    Application de gestion de projets à 3 niveaux avec intégration Outlook, Gmail et
-                    commandes vocales.
-                  </p>
-                  <p className="text-sm text-secondary mt-3">Développé avec Electron + React</p>
-                </div>
-              </div>
             </div>
           )}
         </div>

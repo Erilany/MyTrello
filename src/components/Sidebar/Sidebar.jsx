@@ -320,15 +320,6 @@ function Sidebar() {
             <Settings size={16} className="mr-2 text-secondary" />
             <span className="text-sm">Paramètres système</span>
           </NavLink>
-
-          <button
-            onClick={handleGenerateTestData}
-            disabled={isGenerating}
-            className="flex items-center w-full px-2 py-1.5 mt-4 rounded-md bg-etudes hover:opacity-90 disabled:opacity-50 transition-std text-white font-medium text-sm"
-          >
-            <Wand2 size={16} className="mr-2" />
-            {isGenerating ? 'Génération...' : 'Générer données test'}
-          </button>
         </div>
       </nav>
     </div>

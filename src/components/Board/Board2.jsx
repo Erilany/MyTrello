@@ -27,6 +27,14 @@ function subtractBusinessDays(endDate, days) {
   return date.toISOString().split('T')[0];
 }
 
+function getWeekNumber(date) {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  return Math.ceil(((d - yearStart) / 86400000 + 1) / 7);
+}
+
 import {
   Plus,
   Archive,
@@ -47,6 +55,9 @@ import {
   User,
   Building,
   Star,
+  Filter,
+  Download,
+  GripVertical,
 } from 'lucide-react';
 
 const FAVORITES_KEY = 'mytrello_library_favorites';
@@ -74,6 +85,308 @@ function Board2() {
   const [milestoneSortOrder, setMilestoneSortOrder] = useState('asc');
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [editingCategoryTitle, setEditingCategoryTitle] = useState('');
+
+  const [planningSelectedTasks, setPlanningSelectedTasks] = useState([]);
+  const [showTaskSelector, setShowTaskSelector] = useState(false);
+  const [planningSortOrder, setPlanningSortOrder] = useState('date');
+  const [ganttZoom, setGanttZoom] = useState('week');
+  const [ganttStartDate, setGanttStartDate] = useState(null);
+
+  useEffect(() => {
+    if (currentBoard) {
+      const saved = localStorage.getItem(`board-${currentBoard.id}-planning-selected`);
+      if (saved) {
+        try {
+          setPlanningSelectedTasks(JSON.parse(saved));
+        } catch (e) {
+          console.error('Error loading planning selected tasks:', e);
+        }
+      }
+    }
+  }, [currentBoard]);
+
+  useEffect(() => {
+    if (currentBoard && planningSelectedTasks.length > 0) {
+      localStorage.setItem(
+        `board-${currentBoard.id}-planning-selected`,
+        JSON.stringify(planningSelectedTasks)
+      );
+    }
+  }, [planningSelectedTasks, currentBoard]);
+
+  const getProjectTasks = () => {
+    const projectSubcategories = subcategories.filter(sub => {
+      const category = categories.find(c => Number(c.id) === Number(sub.category_id));
+      if (!category) return false;
+      const card = cards.find(c => Number(c.id) === Number(category.card_id));
+      return card && Number(card.board_id) === Number(currentBoard?.id);
+    });
+    return projectSubcategories.map(sub => {
+      const category = categories.find(c => Number(c.id) === Number(sub.category_id));
+      const card = category ? cards.find(c => Number(c.id) === Number(category.card_id)) : null;
+      return { ...sub, category, card };
+    });
+  };
+
+  const getSelectedTasks = () => {
+    const allTasks = getProjectTasks();
+    if (planningSelectedTasks.length === 0) return allTasks;
+    return allTasks.filter(t => planningSelectedTasks.includes(t.id));
+  };
+
+  const togglePlanningTask = taskId => {
+    setPlanningSelectedTasks(prev =>
+      prev.includes(taskId) ? prev.filter(id => id !== taskId) : [...prev, taskId]
+    );
+  };
+
+  const selectAllTasks = () => {
+    const allTaskIds = getProjectTasks().map(t => t.id);
+    setPlanningSelectedTasks(allTaskIds);
+  };
+
+  const deselectAllTasks = () => {
+    setPlanningSelectedTasks([]);
+  };
+
+  const calculateDuration = (start, end) => {
+    if (!start || !end) return 0;
+    const s = new Date(start);
+    const e = new Date(end);
+    let days = 0;
+    const current = new Date(s);
+    while (current <= e) {
+      const day = current.getDay();
+      if (day !== 0 && day !== 6) days++;
+      current.setDate(current.getDate() + 1);
+    }
+    return days;
+  };
+
+  const formatDuration = days => {
+    if (days === 0) return '0j';
+    if (days === 1) return '1j';
+    return `${days}j`;
+  };
+
+  const formatMSProjectDuration = days => {
+    return `P${days}D`;
+  };
+
+  const formatDateForMSP = date => {
+    if (!date) return '';
+    const d = new Date(date);
+    return d.toISOString().replace('T', 'T').split('.')[0];
+  };
+
+  const generateMSProjectXML = () => {
+    const tasks = getSelectedTasks();
+    if (tasks.length === 0) {
+      alert('Aucune tâche sélectionnée');
+      return;
+    }
+
+    const projectName = currentBoard?.title || 'Projet';
+    const today = new Date().toISOString().split('T')[0];
+    const startDate = tasks.length > 0 && tasks[0].start_date ? tasks[0].start_date : today;
+    const endDate =
+      tasks.length > 0 && tasks[tasks.length - 1].due_date
+        ? tasks[tasks.length - 1].due_date
+        : today;
+
+    let tasksXML = '';
+    tasks.forEach((task, index) => {
+      const uid = index + 1;
+      const taskStart = task.start_date
+        ? formatDateForMSP(task.start_date)
+        : formatDateForMSP(today);
+      const taskFinish = task.due_date ? formatDateForMSP(task.due_date) : formatDateForMSP(today);
+      const duration = task.duration_days || calculateDuration(task.start_date, task.due_date);
+      const durationStr = formatMSProjectDuration(duration);
+
+      const percentComplete =
+        task.status === 'done'
+          ? 100
+          : task.status === 'in_progress'
+            ? 50
+            : task.status === 'waiting'
+              ? 75
+              : 0;
+
+      let predecessorLinks = '';
+      if (task.predecessors && task.predecessors.length > 0) {
+        task.predecessors.forEach(pred => {
+          const predIndex = tasks.findIndex(t => t.id === pred.taskId);
+          if (predIndex !== -1) {
+            predecessorLinks += `
+			<PredecessorLink>
+				<Project>${predIndex + 1}</Project>
+				<TaskUID>${predIndex + 1}</TaskUID>
+				<Type>${pred.type === 'FS' ? 0 : pred.type === 'SS' ? 1 : pred.type === 'FF' ? 2 : 3}</Type>
+				<LinkLag>0</LinkLag>
+			</PredecessorLink>`;
+          }
+        });
+      }
+
+      tasksXML += `
+		<Task>
+			<UID>${uid}</UID>
+			<ID>${uid}</ID>
+			<Name>${task.title}</Name>
+			<Manual>0</Manual>
+			<Type>1</Type>
+			<IsNull>0</IsNull>
+			<CreateDate>${today}T09:00:00</CreateDate>
+			<WBS>${uid}</WBS>
+			<OutlineNumber>${uid}</OutlineNumber>
+			<OutlineLevel>1</OutlineLevel>
+			<Priority>500</Priority>
+			<Start>${taskStart}</Start>
+			<Finish>${taskFinish}</Finish>
+			<Duration>${durationStr}</Duration>
+			<ManualStart>${taskStart}</ManualStart>
+			<ManualFinish>${taskFinish}</ManualFinish>
+			<ManualDuration>${durationStr}</ManualDuration>
+			<DurationFormat>7</DurationFormat>
+			<Work>${durationStr}</Work>
+			<PercentComplete>${percentComplete}</PercentComplete>
+			<ActualDuration>${Math.floor((duration * percentComplete) / 100)}</ActualDuration>
+			<FreeformDurationFormat>7</FreeformDurationFormat>
+			<FreeSlack>0</FreeSlack>
+			<TotalSlack>0</TotalSlack>
+			<FixedCost>0</FixedCost>
+			<FixedCostAccrual>3</FixedCostAccrual>
+			<PercentWorkComplete>${percentComplete}</PercentWorkComplete>
+			<PhysicalPercentComplete>${percentComplete}</PhysicalPercentComplete>${predecessorLinks}
+			<Milestone>0</Milestone>
+			<Summary>0</Summary>
+			<Critical>0</Critical>
+		</Task>`;
+    });
+
+    const xml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Project xmlns="http://schemas.microsoft.com/project">
+	<SaveVersion>14</SaveVersion>
+	<BuildNumber>16.0.19127.20532</BuildNumber>
+	<Name>${projectName}</Name>
+	<GUID>${'{'}${Date.now().toString(16).toUpperCase()}-1320-F011-9752-D4F32D378D80{'}'}</GUID>
+	<Title>${projectName}</Title>
+	<CreationDate>${today}T09:00:00</CreationDate>
+	<LastSaved>${today}T${new Date().toTimeString().split(' ')[0]}</LastSaved>
+	<ScheduleFromStart>1</ScheduleFromStart>
+	<StartDate>${startDate}T09:00:00</StartDate>
+	<FinishDate>${endDate}T18:00:00</FinishDate>
+	<DurationFormat>7</DurationFormat>
+	<WorkFormat>2</WorkFormat>
+	<DefaultStartTime>09:00:00</DefaultStartTime>
+	<DefaultFinishTime>18:00:00</DefaultFinishTime>
+	<MinutesPerDay>480</MinutesPerDay>
+	<MinutesPerWeek>2400</MinutesPerWeek>
+	<DaysPerMonth>21</DaysPerMonth>
+	<DefaultTaskType>1</DefaultTaskType>
+	<Tasks>${tasksXML}
+	</Tasks>
+</Project>`;
+
+    const blob = new Blob([xml], { type: 'application/xml' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${projectName.replace(/[^a-z0-9]/gi, '_')}_planning.xml`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const getTaskStatusColor = status => {
+    switch (status) {
+      case 'done':
+        return 'bg-green-500';
+      case 'in_progress':
+        return 'bg-yellow-500';
+      case 'waiting':
+        return 'bg-blue-500';
+      case 'todo':
+        return 'bg-orange-500';
+      default:
+        return 'bg-gray-400';
+    }
+  };
+
+  const getSortedTasks = () => {
+    const tasks = getSelectedTasks();
+    if (planningSortOrder === 'date') {
+      return [...tasks].sort((a, b) => {
+        const dateA = a.start_date ? new Date(a.start_date) : new Date('2099-01-01');
+        const dateB = b.start_date ? new Date(b.start_date) : new Date('2099-01-01');
+        return dateA - dateB;
+      });
+    } else {
+      return tasks;
+    }
+  };
+
+  const getGanttDateRange = () => {
+    const tasks = getSelectedTasks();
+    if (tasks.length === 0) {
+      const today = new Date();
+      return {
+        start: today,
+        end: new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000),
+      };
+    }
+
+    let minDate = new Date('2099-01-01');
+    let maxDate = new Date('1970-01-01');
+
+    tasks.forEach(task => {
+      if (task.start_date) {
+        const d = new Date(task.start_date);
+        if (d < minDate) minDate = d;
+      }
+      if (task.due_date) {
+        const d = new Date(task.due_date);
+        if (d > maxDate) maxDate = d;
+      }
+    });
+
+    if (ganttStartDate) {
+      minDate = new Date(ganttStartDate);
+    }
+
+    minDate = new Date(minDate.getTime() - 7 * 24 * 60 * 60 * 1000);
+    maxDate = new Date(maxDate.getTime() + 14 * 24 * 60 * 60 * 1000);
+
+    return { start: minDate, end: maxDate };
+  };
+
+  const getGanttDays = () => {
+    const range = getGanttDateRange();
+    const days = [];
+    const current = new Date(range.start);
+    while (current <= range.end) {
+      days.push(new Date(current));
+      current.setDate(current.getDate() + 1);
+    }
+    return days;
+  };
+
+  const getTaskBarPosition = task => {
+    const range = getGanttDateRange();
+    const startDate = task.start_date ? new Date(task.start_date) : range.start;
+    const endDate = task.due_date ? new Date(task.due_date) : startDate;
+
+    const totalDays = Math.ceil((range.end - range.start) / (24 * 60 * 60 * 1000));
+    const startOffset = Math.ceil((startDate - range.start) / (24 * 60 * 60 * 1000));
+    const duration = Math.max(1, Math.ceil((endDate - startDate) / (24 * 60 * 60 * 1000)) + 1);
+
+    return {
+      left: `${(startOffset / totalDays) * 100}%`,
+      width: `${(duration / totalDays) * 100}%`,
+    };
+  };
 
   const tabs = [
     { id: 'informations', label: 'Informations', icon: Info },
@@ -513,22 +826,57 @@ function Board2() {
                   })
                   .filter(Boolean);
                 const chaptersFromCards = cards.map(card => card.chapter).filter(Boolean);
+                const chapterOrder = [
+                  'Jalons',
+                  'Processus décisionnels',
+                  'Proccessus Décisionnel',
+                  'Etudes',
+                  'Procédures administratives',
+                  'Procédures Administratives',
+                  'Achats',
+                  'Consignations',
+                  'Travaux',
+                  'Projet',
+                ];
                 const allChapters = [
                   ...new Set([...chaptersFromTemplates, ...chaptersFromCards]),
-                ].sort();
-                return allChapters.map(chapter => (
-                  <button
-                    key={chapter}
-                    onClick={() => setSelectedChapter(chapter)}
-                    className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
-                      selectedChapter === chapter
-                        ? 'bg-accent text-white'
-                        : 'bg-card border border-std text-secondary hover:bg-card-hover'
-                    }`}
-                  >
-                    {chapter}
-                  </button>
-                ));
+                ].sort((a, b) => {
+                  const indexA = chapterOrder.indexOf(a);
+                  const indexB = chapterOrder.indexOf(b);
+                  if (indexA === -1 && indexB === -1) return a.localeCompare(b);
+                  if (indexA === -1) return 1;
+                  if (indexB === -1) return -1;
+                  return indexA - indexB;
+                });
+                return allChapters.map((chapter, idx) => {
+                  const hasCards = cards.some(card => card.chapter === chapter);
+                  const hasCategories =
+                    hasCards &&
+                    categories.some(cat => {
+                      const card = cards.find(c => c.chapter === chapter);
+                      return card && Number(cat.card_id) === Number(card.id);
+                    });
+                  const isEmpty = !hasCards || !hasCategories;
+                  const isAfterProcessus =
+                    idx > 0 && allChapters[idx - 1]?.toLowerCase().includes('processus');
+                  return (
+                    <button
+                      key={chapter}
+                      onClick={() => !isEmpty && setSelectedChapter(chapter)}
+                      className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
+                        selectedChapter === chapter
+                          ? 'bg-accent text-white'
+                          : isEmpty
+                            ? 'bg-card border border-std text-muted opacity-50 cursor-not-allowed'
+                            : 'bg-card border border-std text-secondary hover:bg-card-hover'
+                      }`}
+                      style={isAfterProcessus ? { marginLeft: '2rem' } : {}}
+                      title={isEmpty ? "Ce chapitre n'a pas d'actions" : chapter}
+                    >
+                      {chapter}
+                    </button>
+                  );
+                });
               })()}
             </div>
 
@@ -1748,11 +2096,254 @@ function Board2() {
       )}
 
       {activeTab === 'planning' && (
-        <div className="flex-1 flex items-center justify-center text-secondary">
-          <div className="text-center">
-            <Calendar size={48} className="mx-auto mb-4 text-muted" />
-            <p>Page Planning à développer</p>
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <div className="p-4 border-b border-std flex items-center justify-between bg-card">
+            <div className="flex items-center gap-3">
+              <h2 className="text-lg font-bold text-primary">Planning</h2>
+              <button
+                onClick={() => setShowTaskSelector(true)}
+                className="flex items-center px-3 py-1.5 text-sm bg-accent-soft text-accent rounded-lg hover:bg-accent/20"
+              >
+                <Filter size={14} className="mr-2" />
+                {planningSelectedTasks.length === 0
+                  ? 'Toutes les tâches'
+                  : `${planningSelectedTasks.length} tâche(s) sélectionnée(s)`}
+              </button>
+            </div>
+            <div className="flex items-center gap-2">
+              <select
+                value={planningSortOrder}
+                onChange={e => setPlanningSortOrder(e.target.value)}
+                className="px-2 py-1.5 text-sm bg-input border border-std rounded text-primary"
+              >
+                <option value="date">Trier par date</option>
+                <option value="hierarchy">Trier par hiérarchie</option>
+              </select>
+              <select
+                value={ganttZoom}
+                onChange={e => setGanttZoom(e.target.value)}
+                className="px-2 py-1.5 text-sm bg-input border border-std rounded text-primary"
+              >
+                <option value="day">Jour</option>
+                <option value="week">Semaine</option>
+                <option value="month">Mois</option>
+              </select>
+              <button
+                onClick={() =>
+                  setGanttStartDate(
+                    prompt('Date de début (YYYY-MM-DD):', new Date().toISOString().split('T')[0])
+                  )
+                }
+                className="px-2 py-1.5 text-sm bg-input border border-std rounded text-primary hover:bg-card-hover"
+              >
+                Début
+              </button>
+              <button
+                onClick={generateMSProjectXML}
+                className="flex items-center px-3 py-1.5 text-sm bg-accent text-white rounded-lg hover:opacity-90"
+              >
+                <Download size={14} className="mr-2" />
+                Exporter MS Project
+              </button>
+            </div>
           </div>
+
+          <div className="flex-1 overflow-auto">
+            {getSelectedTasks().length === 0 ? (
+              <div className="flex items-center justify-center h-full text-secondary">
+                <div className="text-center">
+                  <Calendar size={48} className="mx-auto mb-4 text-muted" />
+                  <p className="mb-4">Aucune tâche à afficher</p>
+                  <button
+                    onClick={() => setShowTaskSelector(true)}
+                    className="px-4 py-2 bg-accent text-white rounded-lg hover:opacity-90"
+                  >
+                    Sélectionner des tâches
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex">
+                <div className="w-64 shrink-0 border-r border-std bg-card">
+                  <div className="sticky top-0 bg-card border-b border-std p-2 font-semibold text-sm text-primary">
+                    Tâche
+                  </div>
+                  {getSortedTasks().map(task => (
+                    <div
+                      key={task.id}
+                      className="p-2 border-b border-std hover:bg-card-hover text-sm"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`w-2 h-2 rounded-full ${getTaskStatusColor(task.status)}`}
+                        ></span>
+                        <span className="text-primary truncate" title={task.title}>
+                          {task.title}
+                        </span>
+                      </div>
+                      {task.category && (
+                        <div className="text-xs text-muted mt-1">{task.category.title}</div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <div className="flex-1 overflow-x-auto">
+                  <div className="min-w-max">
+                    <div className="flex sticky top-0 bg-card border-b border-std z-10">
+                      {(() => {
+                        const days = getGanttDays();
+                        const weeks = [];
+                        let currentWeek = null;
+
+                        days.forEach((day, idx) => {
+                          const weekNum = getWeekNumber(day);
+                          if (!currentWeek || currentWeek.week !== weekNum) {
+                            if (currentWeek) weeks.push(currentWeek);
+                            currentWeek = { week: weekNum, days: [], startIdx: idx };
+                          }
+                          currentWeek.days.push({ day, idx });
+                        });
+                        if (currentWeek) weeks.push(currentWeek);
+
+                        return weeks.map(week => (
+                          <div key={week.week} className="flex">
+                            <div
+                              className="text-xs text-center p-1 border-r border-std bg-card-hover font-medium text-secondary"
+                              style={{ minWidth: `${week.days.length * 30}px` }}
+                            >
+                              S{week.week}
+                            </div>
+                          </div>
+                        ));
+                      })()}
+                    </div>
+                    <div className="relative">
+                      {(() => {
+                        const days = getGanttDays();
+                        const range = getGanttDateRange();
+                        const totalDays = days.length;
+
+                        return getSortedTasks().map(task => {
+                          const pos = getTaskBarPosition(task);
+                          return (
+                            <div
+                              key={task.id}
+                              className="flex items-center h-8 border-b border-std relative"
+                              style={{ width: `${totalDays * 30}px` }}
+                            >
+                              {days.map((day, idx) => {
+                                const isWeekend = day.getDay() === 0 || day.getDay() === 6;
+                                return (
+                                  <div
+                                    key={idx}
+                                    className={`w-[30px] h-full border-r border-std ${isWeekend ? 'bg-gray-100 dark:bg-gray-800' : ''}`}
+                                  />
+                                );
+                              })}
+                              <div
+                                className={`absolute h-5 rounded ${getTaskStatusColor(task.status)} flex items-center justify-center text-white text-xs px-1 cursor-pointer hover:opacity-80`}
+                                style={{ left: pos.left, width: pos.width, top: '6px' }}
+                                title={`${task.title} (${task.start_date || '?'} - ${task.due_date || '?'})`}
+                              >
+                                <span className="truncate">{task.title}</span>
+                              </div>
+                            </div>
+                          );
+                        });
+                      })()}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {showTaskSelector && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+              <div className="bg-card rounded-lg border border-std w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
+                <div className="p-4 border-b border-std flex items-center justify-between">
+                  <h3 className="font-bold text-primary">Sélectionner les tâches</h3>
+                  <button
+                    onClick={() => setShowTaskSelector(false)}
+                    className="p-2 hover:bg-card-hover rounded"
+                  >
+                    <X size={20} className="text-secondary" />
+                  </button>
+                </div>
+                <div className="p-4 border-b border-std flex gap-2">
+                  <button
+                    onClick={selectAllTasks}
+                    className="px-3 py-1.5 text-sm bg-accent-soft text-accent rounded hover:bg-accent/20"
+                  >
+                    Tout sélectionner
+                  </button>
+                  <button
+                    onClick={deselectAllTasks}
+                    className="px-3 py-1.5 text-sm bg-card-hover rounded hover:bg-std"
+                  >
+                    Tout désélectionner
+                  </button>
+                </div>
+                <div className="flex-1 overflow-auto p-4">
+                  {(() => {
+                    const projectTasks = getProjectTasks();
+                    const grouped = {};
+
+                    projectTasks.forEach(task => {
+                      const cardTitle = task.card?.title || 'Sans carte';
+                      const catTitle = task.category?.title || 'Sans action';
+                      const key = `${cardTitle}|||${catTitle}`;
+                      if (!grouped[key]) {
+                        grouped[key] = {
+                          card: task.card?.title,
+                          category: task.category?.title,
+                          tasks: [],
+                        };
+                      }
+                      grouped[key].tasks.push(task);
+                    });
+
+                    return Object.entries(grouped).map(([key, group]) => (
+                      <div key={key} className="mb-4">
+                        <div className="font-medium text-sm text-primary mb-2">
+                          {group.card} → {group.category}
+                        </div>
+                        <div className="space-y-1 ml-4">
+                          {group.tasks.map(task => (
+                            <label
+                              key={task.id}
+                              className="flex items-center gap-2 p-2 hover:bg-card-hover rounded cursor-pointer"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={planningSelectedTasks.includes(task.id)}
+                                onChange={() => togglePlanningTask(task.id)}
+                                className="w-4 h-4 rounded border-std text-accent"
+                              />
+                              <span className="text-sm text-primary">{task.title}</span>
+                              {task.start_date && (
+                                <span className="text-xs text-muted ml-auto">
+                                  {task.start_date}
+                                </span>
+                              )}
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    ));
+                  })()}
+                </div>
+                <div className="p-4 border-t border-std">
+                  <button
+                    onClick={() => setShowTaskSelector(false)}
+                    className="w-full px-4 py-2 bg-accent text-white rounded-lg hover:opacity-90"
+                  >
+                    Confirmer
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

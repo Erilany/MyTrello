@@ -1,41 +1,16 @@
 import React from 'react';
 import { useApp } from '../../context/AppContext';
-import { Library, Search, Bell, Sun, Moon } from 'lucide-react';
+import { Search, Bell, Sun, Moon } from 'lucide-react';
 
 function Header() {
-  const {
-    currentBoard,
-    setLibraryOpen,
-    libraryOpen,
-    libraryViewMode,
-    setLibraryViewMode,
-    theme,
-    toggleTheme,
-  } = useApp();
-
-  const handleLibraryClick = () => {
-    if (libraryOpen && libraryViewMode === 'panel') {
-      setLibraryOpen(false);
-    } else {
-      setLibraryOpen(true);
-      setLibraryViewMode('panel');
-    }
-  };
+  const { theme, toggleTheme } = useApp();
 
   return (
     <header
       className="h-14 bg-sidebar border-b border-std flex items-center justify-between px-4"
       style={{ backdropFilter: 'blur(12px)' }}
     >
-      <div className="flex items-center">
-        <span className="text-secondary text-sm mr-2">|</span>
-        <h2
-          className="font-display text-base font-bold text-secondary"
-          style={{ letterSpacing: '-0.3px' }}
-        >
-          {currentBoard?.title || 'MyTrello'}
-        </h2>
-      </div>
+      <div className="flex items-center"></div>
 
       <div className="flex items-center space-x-2">
         <div className="relative">
@@ -49,14 +24,6 @@ function Header() {
             className="pl-9 pr-4 py-1.5 text-sm bg-input border border-std rounded-md text-primary placeholder-muted focus:outline-none focus:border-accent w-56 transition-std"
           />
         </div>
-
-        <button
-          onClick={handleLibraryClick}
-          className={`icon-btn ${libraryOpen && libraryViewMode === 'panel' ? 'active' : ''}`}
-          title="Bibliothèque"
-        >
-          <Library size={18} />
-        </button>
 
         <button
           onClick={toggleTheme}

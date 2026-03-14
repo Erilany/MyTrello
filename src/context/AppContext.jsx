@@ -320,6 +320,11 @@ export function AppProvider({ children }) {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState(null);
   const [unreadMentions, setUnreadMentions] = useState({});
+  const [projectTimer, setProjectTimer] = useState({
+    activeProjectId: null,
+    startTime: null,
+    intervals: {},
+  });
   const [cardColors, setCardColors] = useState({
     etudes: { gradient: ['#6366f1', '#3b82f6'], keywords: ['études', 'etudes'] },
     enCours: { gradient: ['#f59e0b', '#fbbf24'], keywords: ['cours', 'en cours'] },
@@ -442,6 +447,83 @@ export function AppProvider({ children }) {
       );
     }
   }, []);
+
+  // Project time tracking functions
+  const getWeekNumber = date => {
+    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    const dayNum = d.getUTCDay() || 7;
+    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    return `${d.getUTCFullYear()}-W${Math.ceil(((d - yearStart) / 86400000 + 1) / 7)
+      .toString()
+      .padStart(2, '0')}`;
+  };
+
+  const loadProjectTime = () => {
+    const stored = localStorage.getItem('mytrello_project_time');
+    return stored ? JSON.parse(stored) : {};
+  };
+
+  const saveProjectTime = data => {
+    localStorage.setItem('mytrello_project_time', JSON.stringify(data));
+  };
+
+  const addProjectTime = (projectId, seconds) => {
+    const week = getWeekNumber(new Date());
+    const data = loadProjectTime();
+    if (!data[week]) data[week] = {};
+    if (!data[week][projectId]) data[week][projectId] = 0;
+    data[week][projectId] += seconds;
+    saveProjectTime(data);
+  };
+
+  const getProjectTime = (projectId, week = null) => {
+    const w = week || getWeekNumber(new Date());
+    const data = loadProjectTime();
+    return data[w]?.[projectId] || 0;
+  };
+
+  const getAllProjectTime = (week = null) => {
+    const w = week || getWeekNumber(new Date());
+    const data = loadProjectTime();
+    return data[w] || {};
+  };
+
+  const clearProjectTimer = () => {
+    setProjectTimer({ activeProjectId: null, startTime: null, intervals: {} });
+  };
+
+  // Timer effect - runs every second when a project is active
+  useEffect(() => {
+    let interval = null;
+
+    if (projectTimer.activeProjectId && projectTimer.startTime) {
+      interval = setInterval(() => {
+        const now = new Date();
+        const elapsed = Math.floor((now - projectTimer.startTime) / 1000);
+        if (elapsed >= 1) {
+          addProjectTime(projectTimer.activeProjectId, elapsed);
+          setProjectTimer(prev => ({ ...prev, startTime: now }));
+        }
+      }, 1000);
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [projectTimer.activeProjectId, projectTimer.startTime]);
+
+  // Update timer when currentBoard changes
+  useEffect(() => {
+    if (currentBoard) {
+      const now = new Date();
+      setProjectTimer({
+        activeProjectId: String(currentBoard.id),
+        startTime: now,
+        intervals: {},
+      });
+    }
+  }, [currentBoard?.id]);
 
   // Ensure libraryItems has data - always check library editor first
   const forceLibraryItems = () => {
@@ -632,10 +714,25 @@ export function AppProvider({ children }) {
   };
 
   const exportData = () => {
+    const projectTime = localStorage.getItem('mytrello_project_time');
+    const libraryFavorites = localStorage.getItem('mytrello_library_favorites');
+    const libraryEditor = localStorage.getItem('mytrello_library_editor');
+    const theme = localStorage.getItem('mytrello-theme');
+    const cardColors = localStorage.getItem('mytrello-cardColors');
+    const username = localStorage.getItem('mytrello-username');
+
     const exportObj = {
       version: '1.0',
       exportedAt: new Date().toISOString(),
       data: db,
+      projectTime: projectTime ? JSON.parse(projectTime) : {},
+      libraryFavorites: libraryFavorites ? JSON.parse(libraryFavorites) : {},
+      libraryEditor: libraryEditor ? JSON.parse(libraryEditor) : null,
+      settings: {
+        theme,
+        cardColors: cardColors ? JSON.parse(cardColors) : null,
+        username,
+      },
     };
     const blob = new Blob([JSON.stringify(exportObj, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -654,6 +751,32 @@ export function AppProvider({ children }) {
       if (parsed.data) {
         setDb(parsed.data);
         saveToStorage(parsed.data);
+
+        if (parsed.projectTime) {
+          localStorage.setItem('mytrello_project_time', JSON.stringify(parsed.projectTime));
+        }
+        if (parsed.libraryFavorites) {
+          localStorage.setItem(
+            'mytrello_library_favorites',
+            JSON.stringify(parsed.libraryFavorites)
+          );
+        }
+        if (parsed.libraryEditor) {
+          localStorage.setItem('mytrello_library_editor', JSON.stringify(parsed.libraryEditor));
+        }
+        if (parsed.settings) {
+          if (parsed.settings.theme) {
+            localStorage.setItem('mytrello-theme', parsed.settings.theme);
+            setTheme(parsed.settings.theme);
+          }
+          if (parsed.settings.cardColors) {
+            localStorage.setItem('mytrello-cardColors', JSON.stringify(parsed.settings.cardColors));
+          }
+          if (parsed.settings.username) {
+            localStorage.setItem('mytrello-username', parsed.settings.username);
+          }
+        }
+
         if (parsed.data.boards.length > 0) {
           loadBoard(parsed.data.boards[0].id);
         }
@@ -1254,6 +1377,7 @@ export function AppProvider({ children }) {
           start_date: startDate,
           duration_days: durationDays,
           created_at: new Date().toISOString(),
+          predecessors: [],
         };
         const newDb = {
           ...currentDb,
@@ -1576,6 +1700,10 @@ export function AppProvider({ children }) {
     resetCardColors,
     addWorkingDays,
     getWorkingDaysBetween,
+    getProjectTime,
+    getAllProjectTime,
+    getWeekNumber,
+    projectTimer,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
