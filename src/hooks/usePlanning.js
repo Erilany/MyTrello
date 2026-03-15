@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 export function usePlanning(currentBoard) {
   const [planningSelectedTasks, setPlanningSelectedTasks] = useState([]);
@@ -31,23 +31,30 @@ export function usePlanning(currentBoard) {
     }
   }, [storageKey]);
 
+  const prevStateRef = useRef(null);
+
   useEffect(() => {
     if (!storageKey) return;
 
-    try {
-      localStorage.setItem(
-        storageKey,
-        JSON.stringify({
-          selectedTasks: planningSelectedTasks,
-          chapters: [...expandedPlanningChapters],
-          cards: [...expandedPlanningCards],
-          categories: [...expandedPlanningCategories],
-          sortOrder: planningSortOrder,
-          ganttZoom: ganttZoom,
-        })
-      );
-    } catch (e) {
-      console.error('Error saving planning state:', e);
+    const currentState = {
+      selectedTasks: planningSelectedTasks,
+      chapters: [...expandedPlanningChapters],
+      cards: [...expandedPlanningCards],
+      categories: [...expandedPlanningCategories],
+      sortOrder: planningSortOrder,
+      ganttZoom: ganttZoom,
+    };
+
+    const prevState = prevStateRef.current;
+    const stateJson = JSON.stringify(currentState);
+
+    if (!prevState || JSON.stringify(prevState) !== stateJson) {
+      prevStateRef.current = currentState;
+      try {
+        localStorage.setItem(storageKey, stateJson);
+      } catch (e) {
+        console.error('Error saving planning state:', e);
+      }
     }
   }, [
     storageKey,
@@ -110,6 +117,9 @@ export function usePlanning(currentBoard) {
         const baseDate = new Date();
         baseDate.setDate(baseDate.getDate() + daysDiff - 30);
         setGanttStartDate(baseDate.toISOString().split('T')[0]);
+      } else {
+        setGanttStartDateInput(0);
+        setGanttStartDate(new Date().toISOString().split('T')[0]);
       }
     } catch (err) {
       console.error('Error centering on task:', err);

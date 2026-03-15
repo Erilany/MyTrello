@@ -187,11 +187,13 @@ function LibraryPanel() {
   };
 
   const handleLoadTemplate = template => {
+    setSelectedCards([]);
+    setSelectedCategories([]);
+    setSelectedSubcategories([]);
     setSelectedCards(template.cards || []);
     setSelectedCategories(template.categories || []);
     setSelectedSubcategories(template.subcategories || []);
     setShowTemplatesList(false);
-    alert('Template chargé !');
   };
 
   const handleDeleteTemplate = templateId => {
@@ -1074,10 +1076,37 @@ function LibraryPanel() {
     let categoriesAdded = 0;
     let subcategoriesAdded = 0;
 
+    // Get categories and subcategories for the target board
+    const boardCards = db.cards.filter(c => {
+      const column = db.columns.find(col => Number(col.id) === Number(c.column_id));
+      return column && Number(column.board_id) === boardId;
+    });
+    const boardCardIds = boardCards.map(c => c.id);
+    const boardCategories = db.categories.filter(cat => 
+      boardCardIds.includes(Number(cat.card_id)) && !cat.parent_id
+    );
+    const boardCategoryIds = boardCategories.map(c => c.id);
+    const boardSubcategories = db.subcategories.filter(sub => 
+      boardCategoryIds.includes(Number(sub.category_id))
+    );
+
     for (const card of selectedCards) {
       try {
         const content = JSON.parse(card.content_json);
         const cardDuration = content.card?.duration_days ?? card.duration ?? 1;
+        const cardTitle = content.card?.title || card.title;
+
+        // Check if card already exists
+        const existingCard = db.cards.find(
+          c => c.title && c.title.toLowerCase() === cardTitle.toLowerCase() && !c.is_archived
+        );
+        if (existingCard) {
+          const column = db.columns.find(col => Number(col.id) === Number(existingCard.column_id));
+          if (column && Number(column.board_id) === boardId) {
+            errors.push(`Carte "${cardTitle}": existe déjà dans ce projet`);
+            continue;
+          }
+        }
 
         const tagsStr = card.tags || '';
         const tags = tagsStr.split(',');
@@ -1085,7 +1114,7 @@ function LibraryPanel() {
 
         const cardId = await createCard(
           null,
-          content.card?.title || card.title,
+          cardTitle,
           content.card?.description || '',
           content.card?.priority || 'normal',
           content.card?.due_date || null,
@@ -1100,14 +1129,23 @@ function LibraryPanel() {
         cardsAdded++;
 
         const cardCategories = content.categories || [];
-        const cardTitleForCompare = content.card?.title || card.title;
         for (const cat of cardCategories) {
           const isCatSelected = selectedCategories.some(
-            sc => sc.title === cat.title && sc.cardTitle === cardTitleForCompare
+            sc => sc.title === cat.title && sc.cardTitle === cardTitle
           );
           if (isCatSelected) {
             try {
               const categoryDuration = cat.duration_days ?? 1;
+
+              // Check if category already exists for this card
+              const existingCat = boardCategories.find(
+                c => c.title && c.title.toLowerCase() === cat.title.toLowerCase() && Number(c.card_id) === cardId
+              );
+              if (existingCat) {
+                errors.push(`Catégorie "${cat.title}": existe déjà pour la carte "${cardTitle}"`);
+                continue;
+              }
+
               const categoryId = await createCategory(
                 cardId,
                 cat.title,
@@ -1127,10 +1165,19 @@ function LibraryPanel() {
                   ss =>
                     ss.title === subcat.title &&
                     ss.categoryTitle === cat.title &&
-                    ss.cardTitle === cardTitleForCompare
+                    ss.cardTitle === cardTitle
                 );
                 if (isSubcatSelected) {
                   try {
+                    // Check if subcategory already exists for this category
+                    const existingSubcat = boardSubcategories.find(
+                      s => s.title && s.title.toLowerCase() === subcat.title.toLowerCase() && Number(s.category_id) === categoryId
+                    );
+                    if (existingSubcat) {
+                      errors.push(`Sous-catégorie "${subcat.title}": existe déjà dans la catégorie "${cat.title}"`);
+                      continue;
+                    }
+
                     const subcatDuration = subcat.duration_days ?? 1;
                     await createSubcategory(
                       categoryId,
@@ -1162,6 +1209,7 @@ function LibraryPanel() {
       }
     }
 
+    // Handle standalone categories (not attached to selected cards)
     for (const cat of selectedCategories.filter(
       cat =>
         !selectedCards.some(
@@ -1172,6 +1220,16 @@ function LibraryPanel() {
     )) {
       try {
         const categoryDuration = cat.duration_days ?? 1;
+
+        // Check if category already exists anywhere in the project
+        const existingCat = boardCategories.find(
+          c => c.title && c.title.toLowerCase() === cat.title.toLowerCase()
+        );
+        if (existingCat) {
+          errors.push(`Catégorie "${cat.title}": existe déjà dans ce projet`);
+          continue;
+        }
+
         const categoryId = await createCategory(
           null,
           cat.title,
@@ -1184,6 +1242,90 @@ function LibraryPanel() {
           null
         );
         categoriesAdded++;
+
+        const catSubcategories = selectedSubcategories.filter(
+          ss => ss.categoryTitle === cat.title && !ss.cardTitle
+        );
+        for (const subcat of catSubcategories) {
+          try {
+            // Check if subcategory already exists
+            const existingSubcat = boardSubcategories.find(
+              s => s.title && s.title.toLowerCase() === subcat.title.toLowerCase() && Number(s.category_id) === categoryId
+            );
+            if (existingSubcat) {
+              errors.push(`Sous-catégorie "${subcat.title}": existe déjà dans ce projet`);
+              continue;
+            }
+
+            const subcatDuration = subcat.duration_days ?? 1;
+            await createSubcategory(
+              categoryId,
+              subcat.title,
+              subcat.description || '',
+              subcat.priority || 'normal',
+              subcat.due_date || null,
+              subcat.assignee || '',
+              null,
+              subcatDuration,
+              null
+            );
+            subcategoriesAdded++;
+          } catch (subcatErr) {
+            console.error('[LibraryPanel] Error creating subcategory:', subcatErr.message);
+            errors.push(`Sous-catégorie "${subcat.title}": ${subcatErr.message}`);
+          }
+        }
+      } catch (catErr) {
+        console.error('[LibraryPanel] Error creating category:', catErr.message);
+        errors.push(`Catégorie "${cat.title}": ${catErr.message}`);
+      }
+    }
+
+    console.log('[LibraryPanel] Calling loadBoard for:', boardId);
+    loadBoard(boardId);
+
+    setTimeout(() => {
+      console.log(
+        '[LibraryPanel] Navigating to:',
+        useFormDestination === 'board2' ? '/board2' : `/board/${boardId}`
+      );
+      if (useFormDestination === 'board2') {
+        navigate('/board2');
+      } else {
+        navigate(`/board/${boardId}`);
+      }
+      setIsUseFormLoading(false);
+
+      let message = '';
+      if (errors.length === 0) {
+        message = `Opération terminée !\n${cardsAdded} carte(s) créée(s)`;
+        if (categoriesAdded > 0) {
+          message += `\n${categoriesAdded} catégorie(s) créée(s)`;
+        }
+        if (subcategoriesAdded > 0) {
+          message += `\n${subcategoriesAdded} sous-catégorie(s) ajoutée(s)`;
+        }
+      } else {
+        message = `Opération annulée - Doublons détectés :\n${errors.join('\n')}`;
+        if (cardsAdded > 0 || categoriesAdded > 0 || subcategoriesAdded > 0) {
+          message += `\n\nAucune création effectuée en raison des erreurs.`;
+        }
+      }
+      alert(message);
+    }, 300);
+  };
+            null,
+            cat.title,
+            cat.description || '',
+            cat.priority || 'normal',
+            cat.due_date || null,
+            cat.assignee || '',
+            null,
+            categoryDuration,
+            null
+          );
+          categoriesAdded++;
+        }
 
         const catSubcategories = selectedSubcategories.filter(
           ss => ss.categoryTitle === cat.title && !ss.cardTitle
@@ -1229,9 +1371,18 @@ function LibraryPanel() {
       }
       setIsUseFormLoading(false);
 
-      let message = `Éléments ajoutés au projet avec succès !\n${cardsAdded} carte(s), ${categoriesAdded} catégorie(s), ${subcategoriesAdded} sous-catégorie(s)`;
+      let message = `Opération terminée !\n${cardsAdded} carte(s) créée(s)`;
+      if (categoriesAdded > 0) {
+        message += `\n${categoriesAdded} catégorie(s) créée(s)`;
+      }
+      if (categoriesExistingUsed > 0) {
+        message += `\n${categoriesExistingUsed} catégorie(s) existante(s) utilisée(s)`;
+      }
+      if (subcategoriesAdded > 0) {
+        message += `\n${subcategoriesAdded} sous-catégorie(s) ajoutée(s)`;
+      }
       if (errors.length > 0) {
-        message += `\n\nErreurs (doublons) :\n${errors.join('\n')}`;
+        message += `\n\nErreurs :\n${errors.join('\n')}`;
       }
       alert(message);
     }, 300);
@@ -1394,6 +1545,20 @@ function LibraryPanel() {
               <Star size={16} className={filter === 'favorites' ? 'fill-current' : ''} />
               Favoris
             </button>
+            {(selectedCards.length > 0 ||
+              selectedCategories.length > 0 ||
+              selectedSubcategories.length > 0) && (
+              <button
+                onClick={() => {
+                  setSelectedCards([]);
+                  setSelectedCategories([]);
+                  setSelectedSubcategories([]);
+                }}
+                className="px-3 py-2 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"
+              >
+                Tout désélectionner
+              </button>
+            )}
             <div className="relative flex-1 max-w-md">
               <Search
                 size={18}
@@ -1465,13 +1630,49 @@ function LibraryPanel() {
                   Sélection: {selectedCards.length} carte(s), {selectedCategories.length}{' '}
                   catégorie(s), {selectedSubcategories.length} sous-catégorie(s)
                 </div>
-                <button
-                  onClick={() => setShowUseForm(true)}
-                  className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-                >
-                  Utiliser
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => {
+                      setSelectedCards([]);
+                      setSelectedCategories([]);
+                      setSelectedSubcategories([]);
+                    }}
+                    className="px-3 py-2 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"
+                  >
+                    Tout désélectionner
+                  </button>
+                  <button
+                    onClick={() => setShowUseForm(true)}
+                    className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                  >
+                    Utiliser
+                  </button>
+                </div>
               </div>
+            </div>
+          )}
+
+          {/* Boutons des Templates - visibles au-dessus des colonnes */}
+          {showTemplatesList && templates.length > 0 && (
+            <div className="mb-4 flex flex-wrap gap-2">
+              {templates.map(template => (
+                <button
+                  key={template.id}
+                  onClick={() => handleLoadTemplate(template)}
+                  className="px-3 py-1.5 text-sm bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 rounded-lg hover:bg-purple-200 dark:hover:bg-purple-900/60 border border-purple-200 dark:border-purple-700 flex items-center gap-2"
+                >
+                  {template.name}
+                  <button
+                    onClick={e => {
+                      e.stopPropagation();
+                      handleDeleteTemplate(template.id);
+                    }}
+                    className="p-0.5 text-purple-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
+                  >
+                    <Trash2 size={12} />
+                  </button>
+                </button>
+              ))}
             </div>
           )}
 
@@ -2069,47 +2270,6 @@ function LibraryPanel() {
                   )}
                 </div>
               </div>
-            </div>
-          </div>
-        )}
-
-        {/* Liste des Templates */}
-        {showTemplatesList && templates.length > 0 && (
-          <div className="mb-4 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
-            <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-              Mes Templates
-            </h3>
-            <div className="space-y-2 max-h-48 overflow-y-auto">
-              {templates.map(template => (
-                <div
-                  key={template.id}
-                  className="flex items-center justify-between p-2 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700"
-                >
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-800 dark:text-white truncate">
-                      {template.name}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {template.cards?.length || 0} carte(s), {template.categories?.length || 0}{' '}
-                      catégorie(s)
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2 ml-2">
-                    <button
-                      onClick={() => handleLoadTemplate(template)}
-                      className="px-2 py-1 text-xs bg-purple-500 text-white rounded hover:bg-purple-600"
-                    >
-                      Charger
-                    </button>
-                    <button
-                      onClick={() => handleDeleteTemplate(template.id)}
-                      className="p-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                </div>
-              ))}
             </div>
           </div>
         )}

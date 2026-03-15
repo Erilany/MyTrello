@@ -1,14 +1,14 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
+import { usePlanning } from '../../hooks/usePlanning';
 import Exchange from '../Exchange/Exchange';
 import { libraryTemplates } from '../../data/libraryData';
-import { addBusinessDays, subtractBusinessDays, getWeekNumber } from '../../utils/dateUtils';
 import {
   getGanttDateRange as utilsGetGanttDateRange,
   getGanttDays as utilsGetGanttDays,
   getTaskBarPosition as utilsGetTaskBarPosition,
 } from '../../utils/ganttUtils';
-import { generateMSProjectXML, calculateDuration, formatDuration } from '../../utils/xmlUtils';
+import { PlanningView } from '../Planning';
 
 import {
   Plus,
@@ -30,9 +30,6 @@ import {
   User,
   Building,
   Star,
-  Filter,
-  Download,
-  GripVertical,
 } from 'lucide-react';
 
 const FAVORITES_KEY = 'mytrello_library_favorites';
@@ -43,94 +40,41 @@ function Board2() {
     archiveBoard,
     canArchiveBoard,
     getUnreadCount,
-    libraryItems,
     cards,
     categories,
     subcategories,
     columns,
     setSelectedCard,
     setSelectedSubcategory,
-    updateSubcategory,
     createSubcategory,
     deleteSubcategory,
-    updateCategory,
-    createCard,
-    createCategory,
-    loadBoard,
-    db,
   } = useApp();
   const [activeTab, setActiveTab] = useState('taches');
   const [selectedChapter, setSelectedChapter] = useState(null);
   const [selectedCategoryForTasks, setSelectedCategoryForTasks] = useState(null);
-  const [milestoneSortOrder, setMilestoneSortOrder] = useState('asc');
   const [newTaskTitle, setNewTaskTitle] = useState('');
-  const [editingCategoryTitle, setEditingCategoryTitle] = useState('');
 
-  const [planningSelectedTasks, setPlanningSelectedTasks] = useState([]);
-
-  const [expandedPlanningChapters, setExpandedPlanningChapters] = useState(new Set());
-  const [expandedPlanningCards, setExpandedPlanningCards] = useState(new Set());
-  const [expandedPlanningCategories, setExpandedPlanningCategories] = useState(new Set());
-
-  const [planningSortOrder, setPlanningSortOrder] = useState('date');
-  const [ganttZoom, setGanttZoom] = useState('week');
-  const [ganttStartDate, setGanttStartDate] = useState(null);
-  const [ganttStartDateInput, setGanttStartDateInput] = useState(0);
-
-  useEffect(() => {
-    if (activeTab === 'planning' && currentBoard?.id) {
-      const boardId = currentBoard.id;
-      const chapters = JSON.parse(
-        localStorage.getItem(`planning_expanded_${boardId}_chapters`) || '[]'
-      );
-      const cards = JSON.parse(localStorage.getItem(`planning_expanded_${boardId}_cards`) || '[]');
-      const categories = JSON.parse(
-        localStorage.getItem(`planning_expanded_${boardId}_categories`) || '[]'
-      );
-      setExpandedPlanningChapters(new Set(chapters));
-      setExpandedPlanningCards(new Set(cards));
-      setExpandedPlanningCategories(new Set(categories));
-
-      const selectedTasks = JSON.parse(
-        localStorage.getItem(`planning_selected_${boardId}`) || '[]'
-      );
-      setPlanningSelectedTasks(selectedTasks);
-    }
-  }, [activeTab, currentBoard?.id]);
-
-  const savePlanningExpandedState = (type, key, isExpanded) => {
-    if (!currentBoard?.id) return;
-    const storageKey = `planning_expanded_${currentBoard.id}_${type}`;
-    const saved = JSON.parse(localStorage.getItem(storageKey) || '[]');
-    if (isExpanded) {
-      if (!saved.includes(key)) saved.push(key);
-    } else {
-      const idx = saved.indexOf(key);
-      if (idx > -1) saved.splice(idx, 1);
-    }
-    localStorage.setItem(storageKey, JSON.stringify(saved));
-  };
-
-  const savePlanningSelectedTasks = taskIds => {
-    if (!currentBoard?.id) return;
-    localStorage.setItem(`planning_selected_${currentBoard.id}`, JSON.stringify(taskIds));
-  };
-
-  const centerGanttOnTask = task => {
-    try {
-      if (task.start_date || task.due_date) {
-        const targetDate = task.start_date ? new Date(task.start_date) : new Date(task.due_date);
-        const today = new Date();
-        const daysDiff = Math.ceil((targetDate - today) / (1000 * 60 * 60 * 24));
-        setGanttStartDateInput(daysDiff);
-        const baseDate = new Date();
-        baseDate.setDate(baseDate.getDate() + daysDiff - 30);
-        setGanttStartDate(baseDate.toISOString().split('T')[0]);
-      }
-    } catch (err) {
-      console.error('Error centering on task:', err);
-    }
-  };
+  const {
+    planningSelectedTasks,
+    expandedPlanningChapters,
+    expandedPlanningCards,
+    expandedPlanningCategories,
+    planningSortOrder,
+    setPlanningSortOrder,
+    ganttZoom,
+    setGanttZoom,
+    ganttStartDate,
+    setGanttStartDate,
+    ganttStartDateInput,
+    setGanttStartDateInput,
+    togglePlanningTask,
+    selectAllTasks,
+    deselectAllTasks,
+    toggleChapter,
+    toggleCard,
+    toggleCategory,
+    centerGanttOnTask,
+  } = usePlanning(currentBoard);
 
   const getProjectTasks = () => {
     const boardColumns = columns.filter(col => Number(col.board_id) === Number(currentBoard?.id));
@@ -141,7 +85,6 @@ function Board2() {
       if (!category) return false;
       const card = cards.find(c => Number(c.id) === Number(category.card_id));
       if (!card) return false;
-      // Card belongs to board if column_id is in board columns OR column_id is null/undefined
       return (
         boardColumnIds.includes(Number(card.column_id)) ||
         !card.column_id ||
@@ -161,192 +104,7 @@ function Board2() {
     return allTasks.filter(t => planningSelectedTasks.includes(t.id));
   };
 
-  const togglePlanningTask = taskId => {
-    const newSelection = planningSelectedTasks.includes(taskId)
-      ? planningSelectedTasks.filter(id => id !== taskId)
-      : [...planningSelectedTasks, taskId];
-    setPlanningSelectedTasks(newSelection);
-    savePlanningSelectedTasks(newSelection);
-  };
-
-  const selectAllTasks = () => {
-    const allTaskIds = getProjectTasks().map(t => t.id);
-    setPlanningSelectedTasks(allTaskIds);
-    savePlanningSelectedTasks(allTaskIds);
-  };
-
-  const deselectAllTasks = () => {
-    setPlanningSelectedTasks([]);
-    savePlanningSelectedTasks([]);
-  };
-
   const [showTaskSelector, setShowTaskSelector] = useState(false);
-
-  const handleExportMSProject = () => {
-    const tasks = getSelectedTasks();
-    if (tasks.length === 0) {
-      alert('Aucune tâche sélectionnée');
-      return;
-    }
-
-    const projectName = currentBoard?.title || 'Projet';
-    const xml = generateMSProjectXML(tasks, projectName);
-
-    if (!xml) return;
-
-    const blob = new Blob([xml], { type: 'application/xml' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${projectName.replace(/[^a-z0-9]/gi, '_')}_planning.xml`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
-  const getTaskStatusColor = status => {
-    switch (status) {
-      case 'done':
-        return 'bg-green-500';
-      case 'in_progress':
-        return 'bg-yellow-500';
-      case 'waiting':
-        return 'bg-blue-500';
-      case 'todo':
-        return 'bg-orange-500';
-      default:
-        return 'bg-gray-400';
-    }
-  };
-
-  const getGroupedTasks = () => {
-    const tasks = getSelectedTasks();
-    const groups = {};
-
-    tasks.forEach(task => {
-      const card = task.card || {};
-      const category = task.category || {};
-      const chapter = card.chapter || 'Sans chapitre';
-      const cardId = card.id || 'nocard';
-      const categoryId = category.id || 'nocategory';
-
-      if (!groups[chapter]) {
-        groups[chapter] = {};
-      }
-      if (!groups[chapter][cardId]) {
-        groups[chapter][cardId] = {
-          card,
-          categories: {},
-        };
-      }
-      if (!groups[chapter][cardId].categories[categoryId]) {
-        groups[chapter][cardId].categories[categoryId] = {
-          category,
-          tasks: [],
-        };
-      }
-      groups[chapter][cardId].categories[categoryId].tasks.push(task);
-    });
-
-    return groups;
-  };
-
-  const getPlanningFlatList = () => {
-    const grouped = getGroupedTasks();
-    const flatList = [];
-    let uniqueId = 0;
-
-    Object.entries(grouped).forEach(([chapter, cards]) => {
-      const chapterKey = `chapter-${chapter}`;
-      const isChapterExpanded = expandedPlanningChapters.has(chapter);
-      const chapterTaskCount = Object.values(cards).reduce(
-        (sum, c) => sum + Object.values(c.categories).reduce((s, cat) => s + cat.tasks.length, 0),
-        0
-      );
-
-      flatList.push({
-        type: 'chapter',
-        key: chapterKey,
-        title: chapter,
-        count: chapterTaskCount,
-        expanded: isChapterExpanded,
-      });
-
-      if (isChapterExpanded) {
-        Object.entries(cards).forEach(([cardId, cardData]) => {
-          const cardKey = `card-${chapter}-${cardId}`;
-          const isCardExpanded = expandedPlanningCards.has(`card-${cardId}`);
-          const cardTaskCount = Object.values(cardData.categories).reduce(
-            (sum, cat) => sum + cat.tasks.length,
-            0
-          );
-
-          flatList.push({
-            type: 'card',
-            key: cardKey,
-            title: cardData.card?.title || 'Sans titre',
-            count: cardTaskCount,
-            expanded: isCardExpanded,
-            parentKey: chapterKey,
-          });
-
-          if (isCardExpanded) {
-            Object.entries(cardData.categories).forEach(([catId, catData]) => {
-              const catKey = `cat-${catId}`;
-              const isCatExpanded = expandedPlanningCategories.has(catKey);
-
-              flatList.push({
-                type: 'category',
-                key: catKey,
-                title: catData.category?.title || 'Sans catégorie',
-                count: catData.tasks.length,
-                expanded: isCatExpanded,
-                parentKey: cardKey,
-                tasks: catData.tasks,
-              });
-
-              if (isCatExpanded) {
-                catData.tasks.forEach(task => {
-                  flatList.push({ type: 'task', key: `task-${task.id}`, task });
-                });
-              }
-            });
-          }
-        });
-      }
-    });
-
-    return flatList;
-  };
-
-  const getSortedTasks = () => {
-    const tasks = getSelectedTasks();
-    if (planningSortOrder === 'date') {
-      return [...tasks].sort((a, b) => {
-        const dateA = a.start_date ? new Date(a.start_date) : new Date('2099-01-01');
-        const dateB = b.start_date ? new Date(b.start_date) : new Date('2099-01-01');
-        return dateA - dateB;
-      });
-    } else {
-      return tasks;
-    }
-  };
-
-  const getGanttDateRange = () => {
-    const tasks = getSelectedTasks();
-    return utilsGetGanttDateRange(tasks, ganttStartDate);
-  };
-
-  const getGanttDays = () => {
-    const tasks = getSelectedTasks();
-    return utilsGetGanttDays(tasks, ganttStartDate);
-  };
-
-  const getTaskBarPosition = task => {
-    const tasks = getSelectedTasks();
-    return utilsGetTaskBarPosition(task, tasks, ganttStartDate);
-  };
 
   const tabs = [
     { id: 'informations', label: 'Informations', icon: Info },
@@ -1734,419 +1492,33 @@ function Board2() {
       )}
 
       {activeTab === 'planning' && (
-        <div className="flex-1 flex flex-col overflow-hidden">
-          <div className="p-4 border-b border-std flex items-center justify-between bg-card">
-            <div className="flex items-center gap-3">
-              <h2 className="text-lg font-bold text-primary">Planning</h2>
-              <button
-                onClick={() => setShowTaskSelector(true)}
-                className="flex items-center px-3 py-1.5 text-sm bg-accent-soft text-accent rounded-lg hover:bg-accent/20"
-              >
-                <Filter size={14} className="mr-2" />
-                {planningSelectedTasks.length === 0
-                  ? 'Toutes les tâches'
-                  : `${planningSelectedTasks.length} tâche(s) sélectionnée(s)`}
-              </button>
-            </div>
-            <div className="flex items-center gap-2">
-              <select
-                value={planningSortOrder}
-                onChange={e => setPlanningSortOrder(e.target.value)}
-                className="px-2 py-1.5 text-sm bg-input border border-std rounded text-primary"
-              >
-                <option value="date">Trier par date</option>
-                <option value="hierarchy">Trier par hiérarchie</option>
-              </select>
-              <select
-                value={ganttZoom}
-                onChange={e => setGanttZoom(e.target.value)}
-                className="px-2 py-1.5 text-sm bg-input border border-std rounded text-primary"
-              >
-                <option value="day">Jour</option>
-                <option value="week">Semaine</option>
-                <option value="month">Mois</option>
-              </select>
-              <button
-                onClick={() => {
-                  const range = getGanttDateRange();
-                  const today = new Date();
-                  const diffDays = Math.ceil((today - range.start) / (1000 * 60 * 60 * 24));
-                  setGanttStartDateInput(diffDays);
-                }}
-                className="px-2 py-1.5 text-sm bg-input border border-std rounded text-primary hover:bg-card-hover"
-                title="Aller à aujourd'hui"
-              >
-                Aujourd'hui
-              </button>
-              <input
-                type="range"
-                min="-90"
-                max="365"
-                value={ganttStartDateInput}
-                onChange={e => {
-                  const days = parseInt(e.target.value);
-                  setGanttStartDateInput(days);
-                  const range = getGanttDateRange();
-                  const baseDate = new Date();
-                  baseDate.setDate(
-                    baseDate.getDate() +
-                      days -
-                      Math.ceil((baseDate - range.start) / (1000 * 60 * 60 * 24))
-                  );
-                  setGanttStartDate(baseDate.toISOString().split('T')[0]);
-                }}
-                className="w-32 h-2 bg-std rounded-lg appearance-none cursor-pointer"
-                title={`Déplacer: ${ganttStartDateInput > 0 ? '+' : ''}${ganttStartDateInput} jours`}
-              />
-              <button
-                onClick={handleExportMSProject}
-                className="flex items-center px-3 py-1.5 text-sm bg-accent text-white rounded-lg hover:opacity-90"
-              >
-                <Download size={14} className="mr-2" />
-                Exporter MS Project
-              </button>
-            </div>
-          </div>
-
-          <div className="flex-1 overflow-auto">
-            {getSelectedTasks().length === 0 ? (
-              <div className="flex items-center justify-center h-full text-secondary">
-                <div className="text-center">
-                  <Calendar size={48} className="mx-auto mb-4 text-muted" />
-                  <p className="mb-4">Aucune tâche à afficher</p>
-                  <button
-                    onClick={() => setShowTaskSelector(true)}
-                    className="px-4 py-2 bg-accent text-white rounded-lg hover:opacity-90"
-                  >
-                    Sélectionner des tâches
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="flex flex-1 overflow-auto">
-                <div className="w-64 shrink-0 border-r border-std bg-card">
-                  <div className="sticky top-0 h-8 bg-card border-b border-std p-2 font-semibold text-sm text-primary flex items-center z-10">
-                    Tâche
-                  </div>
-                  {(() => {
-                    const grouped = getGroupedTasks();
-                    return Object.entries(grouped).map(([chapter, cards]) => {
-                      const chapterKey = chapter;
-                      const isChapterExpanded = expandedPlanningChapters.has(chapterKey);
-                      const chapterTaskCount = Object.values(cards).reduce(
-                        (sum, c) =>
-                          sum +
-                          Object.values(c.categories).reduce((s, cat) => s + cat.tasks.length, 0),
-                        0
-                      );
-
-                      return (
-                        <div key={chapterKey}>
-                          <div
-                            className="h-8 flex items-center px-2 border-b border-std hover:bg-card-hover text-sm cursor-pointer font-medium text-primary"
-                            onClick={() => {
-                              const isExpanded = expandedPlanningChapters.has(chapterKey);
-                              setExpandedPlanningChapters(prev => {
-                                const next = new Set(prev);
-                                if (isExpanded) next.delete(chapterKey);
-                                else next.add(chapterKey);
-                                return next;
-                              });
-                              savePlanningExpandedState('chapters', chapterKey, !isExpanded);
-                            }}
-                          >
-                            <span className="mr-1 text-xs">{isChapterExpanded ? '▼' : '▶'}</span>
-                            <span className="truncate">{chapterKey}</span>
-                            <span className="ml-1 text-xs text-muted">({chapterTaskCount})</span>
-                          </div>
-                          {isChapterExpanded &&
-                            Object.entries(cards).map(([cardId, cardData]) => {
-                              const cardKey = `${chapterKey}|${cardId}`;
-                              const isCardExpanded = expandedPlanningCards.has(cardKey);
-                              const cardTaskCount = Object.values(cardData.categories).reduce(
-                                (sum, cat) => sum + cat.tasks.length,
-                                0
-                              );
-
-                              return (
-                                <div key={cardKey}>
-                                  <div
-                                    className="h-8 flex items-center px-2 pl-6 border-b border-std hover:bg-card-hover text-sm cursor-pointer text-secondary"
-                                    onClick={() => {
-                                      const isExpanded = expandedPlanningCards.has(cardKey);
-                                      setExpandedPlanningCards(prev => {
-                                        const next = new Set(prev);
-                                        if (isExpanded) next.delete(cardKey);
-                                        else next.add(cardKey);
-                                        return next;
-                                      });
-                                      savePlanningExpandedState('cards', cardKey, !isExpanded);
-                                    }}
-                                  >
-                                    <span className="mr-1 text-xs">
-                                      {isCardExpanded ? '▼' : '▶'}
-                                    </span>
-                                    <span className="truncate">
-                                      {cardData.card?.title || 'Sans titre'}
-                                    </span>
-                                    <span className="ml-1 text-xs text-muted">
-                                      ({cardTaskCount})
-                                    </span>
-                                  </div>
-                                  {isCardExpanded &&
-                                    Object.entries(cardData.categories).map(([catId, catData]) => {
-                                      const catKey = `${cardKey}|${catId}`;
-                                      const isCatExpanded = expandedPlanningCategories.has(catKey);
-
-                                      return (
-                                        <div key={catKey}>
-                                          <div
-                                            className="h-8 flex items-center px-2 pl-10 border-b border-std hover:bg-card-hover text-sm cursor-pointer text-muted"
-                                            onClick={() => {
-                                              const isExpanded =
-                                                expandedPlanningCategories.has(catKey);
-                                              setExpandedPlanningCategories(prev => {
-                                                const next = new Set(prev);
-                                                if (isExpanded) next.delete(catKey);
-                                                else next.add(catKey);
-                                                return next;
-                                              });
-                                              savePlanningExpandedState(
-                                                'categories',
-                                                catKey,
-                                                !isExpanded
-                                              );
-                                            }}
-                                          >
-                                            <span className="mr-1 text-xs">
-                                              {isCatExpanded ? '▼' : '▶'}
-                                            </span>
-                                            <span className="truncate">
-                                              {catData.category?.title || 'Sans catégorie'}
-                                            </span>
-                                            <span className="ml-1 text-xs text-muted">
-                                              ({catData.tasks.length})
-                                            </span>
-                                          </div>
-                                          {isCatExpanded &&
-                                            catData.tasks.map(task => (
-                                              <div
-                                                key={task.id}
-                                                className="h-8 flex items-center px-2 pl-14 border-b border-std hover:bg-card-hover text-sm"
-                                              >
-                                                <div className="flex items-center gap-2 w-full">
-                                                  <span
-                                                    className={`w-2 h-2 rounded-full shrink-0 ${getTaskStatusColor(task.status)}`}
-                                                  ></span>
-                                                  <span
-                                                    className="text-primary truncate cursor-pointer hover:underline"
-                                                    title={task.title}
-                                                    onClick={e => {
-                                                      e.stopPropagation();
-                                                      centerGanttOnTask(task);
-                                                    }}
-                                                    onDoubleClick={e => {
-                                                      e.stopPropagation();
-                                                      setSelectedSubcategory(task);
-                                                    }}
-                                                  >
-                                                    {task.title}
-                                                  </span>
-                                                </div>
-                                              </div>
-                                            ))}
-                                        </div>
-                                      );
-                                    })}
-                                </div>
-                              );
-                            })}
-                        </div>
-                      );
-                    });
-                  })()}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="min-w-max">
-                    <div className="flex sticky top-0 h-8 bg-card border-b border-std z-10">
-                      {(() => {
-                        const days = getGanttDays();
-                        const weeks = [];
-                        let currentWeek = null;
-
-                        days.forEach((day, idx) => {
-                          const weekNum = getWeekNumber(day);
-                          if (!currentWeek || currentWeek.week !== weekNum) {
-                            if (currentWeek) weeks.push(currentWeek);
-                            currentWeek = { week: weekNum, days: [], startIdx: idx };
-                          }
-                          currentWeek.days.push({ day, idx });
-                        });
-                        if (currentWeek) weeks.push(currentWeek);
-
-                        return weeks.map(week => (
-                          <div key={week.week} className="flex">
-                            <div
-                              className="text-xs text-center p-1 border-r border-std bg-card-hover font-medium text-secondary"
-                              style={{ minWidth: `${week.days.length * 30}px` }}
-                            >
-                              S{week.week}
-                            </div>
-                          </div>
-                        ));
-                      })()}
-                    </div>
-                    <div className="relative">
-                      {(() => {
-                        const days = getGanttDays();
-                        const range = getGanttDateRange();
-                        const totalDays = days.length;
-                        const flatList = getPlanningFlatList();
-
-                        return flatList.map(item => {
-                          if (item.type !== 'task') {
-                            return (
-                              <div
-                                key={item.key}
-                                className="h-8 border-b border-std bg-card-hover"
-                                style={{ width: `${totalDays * 30}px` }}
-                              />
-                            );
-                          }
-                          const task = item.task;
-                          const pos = getTaskBarPosition(task);
-                          return (
-                            <div
-                              key={task.id}
-                              className="flex items-center h-8 border-b border-std relative"
-                              style={{ width: `${totalDays * 30}px` }}
-                            >
-                              {days.map((day, idx) => {
-                                const isWeekend = day.getDay() === 0 || day.getDay() === 6;
-                                return (
-                                  <div
-                                    key={idx}
-                                    className={`w-[30px] h-full border-r border-std ${isWeekend ? 'bg-gray-100 dark:bg-gray-800' : ''}`}
-                                  />
-                                );
-                              })}
-                              <div
-                                className={`absolute h-5 rounded ${getTaskStatusColor(task.status)} flex items-center justify-center text-white text-xs px-1 cursor-pointer hover:opacity-80`}
-                                style={{ left: pos.left, width: pos.width, top: '6px' }}
-                                title={`${task.title} (${task.start_date || '?'} - ${task.due_date || '?'})`}
-                              >
-                                <span className="truncate">{task.title}</span>
-                              </div>
-                            </div>
-                          );
-                        });
-                      })()}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {showTaskSelector && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-              <div className="bg-card rounded-lg border border-std w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
-                <div className="p-4 border-b border-std flex items-center justify-between">
-                  <h3 className="font-bold text-primary">Sélectionner les tâches</h3>
-                  <button
-                    onClick={() => setShowTaskSelector(false)}
-                    className="p-2 hover:bg-card-hover rounded"
-                  >
-                    <X size={20} className="text-secondary" />
-                  </button>
-                </div>
-                <div className="p-4 border-b border-std flex gap-2">
-                  <button
-                    onClick={selectAllTasks}
-                    className="px-3 py-1.5 text-sm bg-accent-soft text-accent rounded hover:bg-accent/20"
-                  >
-                    Tout sélectionner
-                  </button>
-                  <button
-                    onClick={deselectAllTasks}
-                    className="px-3 py-1.5 text-sm bg-card-hover rounded hover:bg-std"
-                  >
-                    Tout désélectionner
-                  </button>
-                </div>
-                <div className="flex-1 overflow-auto p-4">
-                  {(() => {
-                    const projectTasks = getProjectTasks();
-                    const grouped = {};
-
-                    projectTasks.forEach(task => {
-                      const cardTitle = task.card?.title || 'Sans carte';
-                      const catTitle = task.category?.title || 'Sans action';
-                      const key = `${cardTitle}|||${catTitle}`;
-                      if (!grouped[key]) {
-                        grouped[key] = {
-                          card: task.card?.title,
-                          category: task.category?.title,
-                          tasks: [],
-                        };
-                      }
-                      grouped[key].tasks.push(task);
-                    });
-
-                    return Object.entries(grouped).map(([key, group]) => (
-                      <div key={key} className="mb-4">
-                        <div className="font-medium text-sm text-primary mb-2">
-                          {group.card} → {group.category}
-                        </div>
-                        <div className="space-y-1 ml-4">
-                          {group.tasks.map(task => (
-                            <label
-                              key={task.id}
-                              className="flex items-center gap-2 p-2 hover:bg-card-hover rounded cursor-pointer"
-                            >
-                              <input
-                                type="checkbox"
-                                checked={planningSelectedTasks.includes(task.id)}
-                                onChange={() => togglePlanningTask(task.id)}
-                                className="w-4 h-4 rounded border-std text-accent"
-                              />
-                              <span
-                                className="text-sm text-primary hover:underline cursor-pointer"
-                                onClick={e => {
-                                  e.stopPropagation();
-                                  centerGanttOnTask(task);
-                                }}
-                                onDoubleClick={e => {
-                                  e.stopPropagation();
-                                  setSelectedSubcategory(task);
-                                }}
-                              >
-                                {task.title}
-                              </span>
-                              {task.start_date && (
-                                <span className="text-xs text-muted ml-auto">
-                                  {task.start_date}
-                                </span>
-                              )}
-                            </label>
-                          ))}
-                        </div>
-                      </div>
-                    ));
-                  })()}
-                </div>
-                <div className="p-4 border-t border-std">
-                  <button
-                    onClick={() => setShowTaskSelector(false)}
-                    className="w-full px-4 py-2 bg-accent text-white rounded-lg hover:opacity-90"
-                  >
-                    Confirmer
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
+        <PlanningView
+          currentBoard={currentBoard}
+          tasks={getProjectTasks()}
+          selectedTaskIds={planningSelectedTasks}
+          onToggleTask={togglePlanningTask}
+          onSelectAll={ids => selectAllTasks(ids)}
+          onDeselectAll={deselectAllTasks}
+          showTaskSelector={showTaskSelector}
+          setShowTaskSelector={setShowTaskSelector}
+          expandedChapters={expandedPlanningChapters}
+          expandedCards={expandedPlanningCards}
+          expandedCategories={expandedPlanningCategories}
+          onToggleChapter={toggleChapter}
+          onToggleCard={toggleCard}
+          onToggleCategory={toggleCategory}
+          onCenterTask={centerGanttOnTask}
+          onEditTask={task => setSelectedSubcategory(task)}
+          sortOrder={planningSortOrder}
+          setSortOrder={setPlanningSortOrder}
+          zoom={ganttZoom}
+          setZoom={setGanttZoom}
+          startDate={ganttStartDate}
+          setStartDate={setGanttStartDate}
+          startDateInput={ganttStartDateInput}
+          setStartDateInput={setGanttStartDateInput}
+          ganttStartDate={ganttStartDate}
+        />
       )}
 
       {activeTab === 'echanges' && currentBoard && <Exchange boardId={currentBoard.id} />}

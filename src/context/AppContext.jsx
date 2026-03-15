@@ -355,7 +355,7 @@ export function AppProvider({ children }) {
   useEffect(() => {
     const activeBoards = db.boards.filter(b => !b.is_archived);
     setBoards(activeBoards.sort((a, b) => a.title.localeCompare(b.title)));
-    if (activeBoards.length > 0) {
+    if (activeBoards.length > 0 && !currentBoard) {
       const firstBoard = activeBoards[0];
       setCurrentBoard(firstBoard);
       const boardColumns = db.columns.filter(c => Number(c.board_id) === Number(firstBoard.id));
@@ -382,7 +382,7 @@ export function AppProvider({ children }) {
           .sort((a, b) => a.position - b.position)
       );
     }
-  }, [db.boards, db.columns, db.cards, db.categories, db.subcategories]);
+  }, [db.boards, db.columns, db.cards, db.categories, db.subcategories, currentBoard]);
 
   const toggleTheme = useCallback(() => {
     setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
