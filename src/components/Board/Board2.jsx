@@ -72,6 +72,11 @@ function Board2() {
   const [expandedPlanningCards, setExpandedPlanningCards] = useState(new Set());
   const [expandedPlanningCategories, setExpandedPlanningCategories] = useState(new Set());
 
+  const [planningSortOrder, setPlanningSortOrder] = useState('date');
+  const [ganttZoom, setGanttZoom] = useState('week');
+  const [ganttStartDate, setGanttStartDate] = useState(null);
+  const [ganttStartDateInput, setGanttStartDateInput] = useState(0);
+
   useEffect(() => {
     if (activeTab === 'planning' && currentBoard?.id) {
       const boardId = currentBoard.id;
@@ -111,75 +116,6 @@ function Board2() {
     localStorage.setItem(`planning_selected_${currentBoard.id}`, JSON.stringify(taskIds));
   };
 
-  useEffect(() => {
-    const handleBoard2Import = async e => {
-      const {
-        cards: importCards,
-        categories: importCategories,
-        subcategories: importSubcategories,
-        boardId,
-      } = e.detail;
-
-      const boardColumns = db?.columns?.filter(c => Number(c.board_id) === Number(boardId)) || [];
-      const firstColumnId = boardColumns.length > 0 ? boardColumns[0].id : 1;
-
-      for (const card of importCards) {
-        try {
-          const content = JSON.parse(card.content_json);
-          const tagsStr = card.tags || '';
-          const tags = tagsStr.split(',');
-          const chapter = tags[0] || null;
-
-          const cardId = await createCard(
-            firstColumnId,
-            content.card?.title || card.title,
-            content.card?.description || '',
-            content.card?.priority || 'normal',
-            content.card?.due_date || null,
-            content.card?.assignee || '',
-            null,
-            content.card?.duration_days ?? card.duration ?? 1,
-            null,
-            null,
-            null,
-            chapter
-          );
-
-          const cardCategories = content.categories || [];
-          const cardTitleForCompare = content.card?.title || card.title;
-          for (const cat of cardCategories) {
-            const isCatSelected = importCategories.some(
-              sc => sc.title === cat.title && sc.cardTitle === cardTitleForCompare
-            );
-            if (isCatSelected) {
-              await createCategory(
-                cardId,
-                cat.title,
-                cat.description || '',
-                cat.priority || 'normal',
-                cat.due_date || null,
-                cat.assignee || '',
-                null,
-                cat.duration_days ?? 1,
-                null
-              );
-            }
-          }
-        } catch (err) {
-          console.error('[Board2] Error importing card:', err);
-        }
-      }
-    };
-
-    window.addEventListener('board2-import', handleBoard2Import);
-    return () => window.removeEventListener('board2-import', handleBoard2Import);
-  }, [createCard, createCategory]);
-  const [showTaskSelector, setShowTaskSelector] = useState(false);
-  const [planningSortOrder, setPlanningSortOrder] = useState('date');
-  const [ganttZoom, setGanttZoom] = useState('week');
-  const [ganttStartDate, setGanttStartDate] = useState(null);
-  const [ganttStartDateInput, setGanttStartDateInput] = useState(0);
-
   const centerGanttOnTask = task => {
     try {
       if (task.start_date || task.due_date) {
@@ -195,28 +131,6 @@ function Board2() {
       console.error('Error centering on task:', err);
     }
   };
-
-  useEffect(() => {
-    if (currentBoard) {
-      const saved = localStorage.getItem(`board-${currentBoard.id}-planning-selected`);
-      if (saved) {
-        try {
-          setPlanningSelectedTasks(JSON.parse(saved));
-        } catch (e) {
-          console.error('Error loading planning selected tasks:', e);
-        }
-      }
-    }
-  }, [currentBoard]);
-
-  useEffect(() => {
-    if (currentBoard && planningSelectedTasks.length > 0) {
-      localStorage.setItem(
-        `board-${currentBoard.id}-planning-selected`,
-        JSON.stringify(planningSelectedTasks)
-      );
-    }
-  }, [planningSelectedTasks, currentBoard]);
 
   const getProjectTasks = () => {
     const boardColumns = columns.filter(col => Number(col.board_id) === Number(currentBoard?.id));
@@ -265,6 +179,8 @@ function Board2() {
     setPlanningSelectedTasks([]);
     savePlanningSelectedTasks([]);
   };
+
+  const [showTaskSelector, setShowTaskSelector] = useState(false);
 
   const handleExportMSProject = () => {
     const tasks = getSelectedTasks();
@@ -2296,9 +2212,9 @@ function Board2() {
               {showAddLink ? (
                 <div className="flex items-center gap-2 p-2 bg-card border border-std rounded">
                   <select
-                    value={newLink.type}
-                    onChange={e => setNewLink({ ...newLink, type: e.target.value })}
-                    className="px-2 py-1 text-sm bg-input border border-std rounded text-primary"
+                    value={ganttZoom}
+                    onChange={e => setGanttZoom(e.target.value)}
+                    className="px-2 py-1.5 text-sm bg-input border border-std rounded text-primary"
                   >
                     <option value="web">Internet</option>
                     <option value="folder">Dossier</option>
