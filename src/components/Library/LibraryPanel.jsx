@@ -105,6 +105,7 @@ function LibraryPanel() {
   const [useFormBoardId, setUseFormBoardId] = useState('');
   const [useFormColumnId, setUseFormColumnId] = useState('');
   const [useFormDestination, setUseFormDestination] = useState('board2');
+  const [isUseFormLoading, setIsUseFormLoading] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newItemTitle, setNewItemTitle] = useState('');
   const [newItemType, setNewItemType] = useState('card');
@@ -1058,17 +1059,20 @@ function LibraryPanel() {
     console.log('[LibraryPanel] selectedCards:', selectedCards);
     console.log('[LibraryPanel] selectedCategories:', selectedCategories);
     console.log('[LibraryPanel] selectedSubcategories:', selectedSubcategories);
+
     if (!useFormBoardId) {
       alert('Veuillez sélectionner un projet');
       return;
     }
-    if (useFormDestination !== 'board2' && !useFormColumnId) {
-      alert('Veuillez sélectionner une colonne');
-      return;
-    }
 
-    const columnId = useFormDestination === 'board2' ? 1 : parseInt(useFormColumnId);
+    setIsUseFormLoading(true);
+
     const boardId = parseInt(useFormBoardId);
+
+    const errors = [];
+    let cardsAdded = 0;
+    let categoriesAdded = 0;
+    let subcategoriesAdded = 0;
 
     for (const card of selectedCards) {
       try {
@@ -1080,7 +1084,7 @@ function LibraryPanel() {
         const chapter = tags[0] || null;
 
         const cardId = await createCard(
-          columnId,
+          null,
           content.card?.title || card.title,
           content.card?.description || '',
           content.card?.priority || 'normal',
@@ -1093,6 +1097,7 @@ function LibraryPanel() {
           null,
           chapter
         );
+        cardsAdded++;
 
         const cardCategories = content.categories || [];
         const cardTitleForCompare = content.card?.title || card.title;
@@ -1101,70 +1106,59 @@ function LibraryPanel() {
             sc => sc.title === cat.title && sc.cardTitle === cardTitleForCompare
           );
           if (isCatSelected) {
-            const categoryDuration = cat.duration_days ?? 1;
-            const categoryId = await createCategory(
-              cardId,
-              cat.title,
-              cat.description || '',
-              cat.priority || 'normal',
-              cat.due_date || null,
-              cat.assignee || '',
-              null,
-              categoryDuration,
-              null
-            );
+            try {
+              const categoryDuration = cat.duration_days ?? 1;
+              const categoryId = await createCategory(
+                cardId,
+                cat.title,
+                cat.description || '',
+                cat.priority || 'normal',
+                cat.due_date || null,
+                cat.assignee || '',
+                null,
+                categoryDuration,
+                null
+              );
+              categoriesAdded++;
 
-            const catSubcategories = cat.subcategories || [];
-            console.log(
-              '[LibraryPanel] Checking subcats for card:',
-              cardTitleForCompare,
-              'category:',
-              cat.title
-            );
-            console.log(
-              '[LibraryPanel] subcats in content:',
-              catSubcategories.map(s => s.title)
-            );
-            console.log(
-              '[LibraryPanel] selectedSubcategories:',
-              selectedSubcategories.map(s => ({
-                title: s.title,
-                categoryTitle: s.categoryTitle,
-                cardTitle: s.cardTitle,
-              }))
-            );
-            for (const subcat of catSubcategories) {
-              const isSubcatSelected = selectedSubcategories.some(
-                ss =>
-                  ss.title === subcat.title &&
-                  ss.categoryTitle === cat.title &&
-                  ss.cardTitle === cardTitleForCompare
-              );
-              console.log(
-                '[LibraryPanel] Checking subcat:',
-                subcat.title,
-                'isSubcatSelected:',
-                isSubcatSelected
-              );
-              if (isSubcatSelected) {
-                const subcatDuration = subcat.duration_days ?? 1;
-                await createSubcategory(
-                  categoryId,
-                  subcat.title,
-                  subcat.description || '',
-                  subcat.priority || 'normal',
-                  subcat.due_date || null,
-                  subcat.assignee || '',
-                  null,
-                  subcatDuration,
-                  null
+              const catSubcategories = cat.subcategories || [];
+              for (const subcat of catSubcategories) {
+                const isSubcatSelected = selectedSubcategories.some(
+                  ss =>
+                    ss.title === subcat.title &&
+                    ss.categoryTitle === cat.title &&
+                    ss.cardTitle === cardTitleForCompare
                 );
+                if (isSubcatSelected) {
+                  try {
+                    const subcatDuration = subcat.duration_days ?? 1;
+                    await createSubcategory(
+                      categoryId,
+                      subcat.title,
+                      subcat.description || '',
+                      subcat.priority || 'normal',
+                      subcat.due_date || null,
+                      subcat.assignee || '',
+                      null,
+                      subcatDuration,
+                      null
+                    );
+                    subcategoriesAdded++;
+                  } catch (subcatErr) {
+                    console.error('[LibraryPanel] Error creating subcategory:', subcatErr.message);
+                    errors.push(`Sous-catégorie "${subcat.title}": ${subcatErr.message}`);
+                  }
+                }
               }
+            } catch (catErr) {
+              console.error('[LibraryPanel] Error creating category:', catErr.message);
+              errors.push(`Catégorie "${cat.title}": ${catErr.message}`);
             }
           }
         }
-      } catch (e) {
-        console.error('Error creating card:', e);
+      } catch (cardErr) {
+        console.error('[LibraryPanel] Error creating card:', cardErr.message);
+        errors.push(`Carte "${card.title}": ${cardErr.message}`);
       }
     }
 
@@ -1189,26 +1183,34 @@ function LibraryPanel() {
           categoryDuration,
           null
         );
+        categoriesAdded++;
 
         const catSubcategories = selectedSubcategories.filter(
           ss => ss.categoryTitle === cat.title && !ss.cardTitle
         );
         for (const subcat of catSubcategories) {
-          const subcatDuration = subcat.duration_days ?? 1;
-          await createSubcategory(
-            categoryId,
-            subcat.title,
-            subcat.description || '',
-            subcat.priority || 'normal',
-            subcat.due_date || null,
-            subcat.assignee || '',
-            null,
-            subcatDuration,
-            null
-          );
+          try {
+            const subcatDuration = subcat.duration_days ?? 1;
+            await createSubcategory(
+              categoryId,
+              subcat.title,
+              subcat.description || '',
+              subcat.priority || 'normal',
+              subcat.due_date || null,
+              subcat.assignee || '',
+              null,
+              subcatDuration,
+              null
+            );
+            subcategoriesAdded++;
+          } catch (subcatErr) {
+            console.error('[LibraryPanel] Error creating subcategory:', subcatErr.message);
+            errors.push(`Sous-catégorie "${subcat.title}": ${subcatErr.message}`);
+          }
         }
-      } catch (e) {
-        console.error('Error creating category:', e);
+      } catch (catErr) {
+        console.error('[LibraryPanel] Error creating category:', catErr.message);
+        errors.push(`Catégorie "${cat.title}": ${catErr.message}`);
       }
     }
 
@@ -1225,7 +1227,13 @@ function LibraryPanel() {
       } else {
         navigate(`/board/${boardId}`);
       }
-      alert('Éléments ajoutés au projet avec succès !');
+      setIsUseFormLoading(false);
+
+      let message = `Éléments ajoutés au projet avec succès !\n${cardsAdded} carte(s), ${categoriesAdded} catégorie(s), ${subcategoriesAdded} sous-catégorie(s)`;
+      if (errors.length > 0) {
+        message += `\n\nErreurs (doublons) :\n${errors.join('\n')}`;
+      }
+      alert(message);
     }, 300);
   };
 
@@ -1447,6 +1455,25 @@ function LibraryPanel() {
               </button>
             </div>
           </div>
+
+          {(selectedCards.length > 0 ||
+            selectedCategories.length > 0 ||
+            selectedSubcategories.length > 0) && (
+            <div className="mb-4 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg">
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-gray-600 dark:text-gray-400">
+                  Sélection: {selectedCards.length} carte(s), {selectedCategories.length}{' '}
+                  catégorie(s), {selectedSubcategories.length} sous-catégorie(s)
+                </div>
+                <button
+                  onClick={() => setShowUseForm(true)}
+                  className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                >
+                  Utiliser
+                </button>
+              </div>
+            </div>
+          )}
 
           <div className="flex-1 grid grid-cols-3 gap-6 overflow-hidden">
             <div className="flex flex-col overflow-hidden">
@@ -1723,15 +1750,39 @@ function LibraryPanel() {
                 <div className="flex justify-end gap-2 pt-2">
                   <button
                     onClick={() => setShowUseForm(false)}
-                    className="px-4 py-2 text-secondary hover:text-primary hover:bg-card rounded-lg transition-std"
+                    disabled={isUseFormLoading}
+                    className="px-4 py-2 text-secondary hover:text-primary hover:bg-card rounded-lg transition-std disabled:opacity-50"
                   >
                     Annuler
                   </button>
                   <button
                     onClick={handleMainViewConfirmUse}
-                    className="px-4 py-2 bg-accent text-white rounded-lg hover:opacity-90 transition-std"
+                    disabled={isUseFormLoading}
+                    className="px-4 py-2 bg-accent text-white rounded-lg hover:opacity-90 transition-std disabled:opacity-50 flex items-center gap-2"
                   >
-                    Confirmer
+                    {isUseFormLoading && (
+                      <svg
+                        className="animate-spin h-4 w-4 text-white"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        ></circle>
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                      </svg>
+                    )}
+                    {isUseFormLoading ? 'Ajout en cours...' : 'Confirmer'}
                   </button>
                 </div>
               </div>

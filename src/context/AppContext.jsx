@@ -422,7 +422,14 @@ export function AppProvider({ children }) {
         columnIds
       );
       const filteredCards = storageData.cards.filter(
-        c => columnIds.includes(Number(c.column_id)) && !c.is_archived
+        c =>
+          (columnIds.includes(Number(c.column_id)) ||
+            c.column_id === null ||
+            c.column_id === undefined ||
+            c.column_id === '' ||
+            c.column_id === 0 ||
+            !c.column_id) &&
+          !c.is_archived
       );
       console.log(
         '[loadBoard] Filtered cards:',
@@ -1055,6 +1062,18 @@ export function AppProvider({ children }) {
     chapter = null
   ) => {
     console.log('[createCard] Called with columnId:', columnId, 'title:', title);
+
+    // Check for duplicate card title in current board
+    const existingCard = db.cards.find(
+      c => c.title && c.title.toLowerCase() === title.toLowerCase() && !c.is_archived
+    );
+    if (existingCard) {
+      console.log('[createCard] Duplicate card title found:', title);
+      return Promise.reject(
+        new Error(`Une carte avec le titre "${title}" existe déjà dans ce projet.`)
+      );
+    }
+
     return new Promise(resolve => {
       let cardId;
 
@@ -1248,6 +1267,22 @@ export function AppProvider({ children }) {
     reloadBoardId = null
   ) => {
     console.log('[createCategory] Called with cardId:', cardId, 'title:', title);
+
+    // Check for duplicate category title for this card
+    const existingCategory = db.categories.find(
+      c =>
+        c.title &&
+        c.title.toLowerCase() === title.toLowerCase() &&
+        Number(c.card_id) === Number(cardId) &&
+        !c.parent_id
+    );
+    if (existingCategory) {
+      console.log('[createCategory] Duplicate category title found:', title);
+      return Promise.reject(
+        new Error(`Une catégorie avec le titre "${title}" existe déjà pour cette carte.`)
+      );
+    }
+
     return new Promise(resolve => {
       let catId;
       setDb(currentDb => {
@@ -1373,6 +1408,20 @@ export function AppProvider({ children }) {
     durationDays = 1,
     reloadBoardId = null
   ) => {
+    // Check for duplicate subcategory title for this category
+    const existingSubcategory = db.subcategories.find(
+      s =>
+        s.title &&
+        s.title.toLowerCase() === title.toLowerCase() &&
+        Number(s.category_id) === Number(categoryId)
+    );
+    if (existingSubcategory) {
+      console.log('[createSubcategory] Duplicate subcategory title found:', title);
+      return Promise.reject(
+        new Error(`Une sous-catégorie avec le titre "${title}" existe déjà pour cette catégorie.`)
+      );
+    }
+
     return new Promise(resolve => {
       let subcatId;
       setDb(currentDb => {

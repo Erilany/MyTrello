@@ -41,7 +41,11 @@ function Sidebar() {
   const [menuOpenId, setMenuOpenId] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
 
-  const isOnBoardPage = location.pathname === '/board' || location.pathname.startsWith('/board/');
+  const isOnBoardPage =
+    location.pathname === '/board' ||
+    location.pathname.startsWith('/board/') ||
+    location.pathname === '/board2' ||
+    location.pathname.startsWith('/board2/');
 
   const handleDeleteBoard = async id => {
     if (window.confirm('Voulez-vous vraiment supprimer ce projet ?')) {
