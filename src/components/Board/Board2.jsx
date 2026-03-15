@@ -74,6 +74,7 @@ function Board2() {
     subcategories,
     columns,
     setSelectedCard,
+    setSelectedSubcategory,
     updateSubcategory,
     createSubcategory,
     deleteSubcategory,
@@ -86,7 +87,6 @@ function Board2() {
   const [activeTab, setActiveTab] = useState('taches');
   const [selectedChapter, setSelectedChapter] = useState(null);
   const [selectedCategoryForTasks, setSelectedCategoryForTasks] = useState(null);
-  const [selectedTask, setSelectedTask] = useState(null);
   const [milestoneSortOrder, setMilestoneSortOrder] = useState('asc');
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [editingCategoryTitle, setEditingCategoryTitle] = useState('');
@@ -1266,7 +1266,7 @@ function Board2() {
                             return (
                               <div
                                 key={subcat.id}
-                                onClick={() => setSelectedTask(subcat)}
+                                onClick={() => setSelectedSubcategory(subcat)}
                                 className={`p-3 rounded border cursor-pointer transition-all ${
                                   status === 'not_started'
                                     ? 'bg-gray-200 border-gray-300 hover:ring-2 hover:ring-accent hover:ring-offset-1'
@@ -1997,274 +1997,6 @@ function Board2() {
         </div>
       )}
 
-      {(activeTab === 'taches' || activeTab === 'planning') && selectedTask && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-card rounded-lg border border-std max-w-6xl w-full max-h-[95vh] overflow-hidden flex flex-col">
-            <div className="p-4 border-b border-std flex items-center justify-between shrink-0">
-              <div>
-                <input
-                  type="text"
-                  value={selectedTask.title || ''}
-                  onChange={e => {
-                    setSelectedTask({ ...selectedTask, title: e.target.value });
-                    updateSubcategory(selectedTask.id, { title: e.target.value });
-                  }}
-                  className="font-bold text-xl text-primary bg-transparent border-b border-transparent hover:border-std focus:border-accent focus:outline-none w-full min-w-[200px]"
-                  style={{ wordBreak: 'break-word' }}
-                />
-                <p className="text-sm text-muted">
-                  {selectedCategoryForTasks?.category.title} -{' '}
-                  {selectedCategoryForTasks?.card.title}
-                </p>
-              </div>
-              <div className="flex items-center gap-3">
-                <span
-                  className={`px-3 py-1 rounded-full text-sm font-medium ${
-                    !selectedTask.start_date && !selectedTask.due_date
-                      ? 'bg-gray-200 text-gray-600 border border-gray-300'
-                      : selectedTask.status === 'todo'
-                        ? 'bg-orange-100 text-orange-700 border border-orange-300'
-                        : selectedTask.status === 'in_progress'
-                          ? 'bg-yellow-100 text-yellow-700 border border-yellow-300'
-                          : selectedTask.status === 'waiting'
-                            ? 'bg-blue-100 text-blue-700 border border-blue-300'
-                            : selectedTask.status === 'done'
-                              ? 'bg-green-100 text-green-700 border border-green-300'
-                              : 'bg-gray-200 text-gray-600 border border-gray-300'
-                  }`}
-                >
-                  {!selectedTask.start_date && !selectedTask.due_date
-                    ? 'Non planifié'
-                    : selectedTask.status === 'todo'
-                      ? 'À faire'
-                      : selectedTask.status === 'in_progress'
-                        ? 'En cours'
-                        : selectedTask.status === 'waiting'
-                          ? 'En attente'
-                          : selectedTask.status === 'done'
-                            ? 'Terminé'
-                            : 'Inconnu'}
-                </span>
-                <button
-                  onClick={() => setSelectedTask(null)}
-                  className="p-2 hover:bg-card-hover rounded"
-                >
-                  <X size={20} className="text-secondary" />
-                </button>
-              </div>
-            </div>
-            <div className="flex-1 overflow-auto p-4 space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-primary mb-1">
-                    Date de début
-                  </label>
-                  <input
-                    type="date"
-                    value={selectedTask.start_date ? selectedTask.start_date.split('T')[0] : ''}
-                    onChange={e => {
-                      const newStartDate = e.target.value;
-                      const duration = selectedTask.duration_days;
-                      setSelectedTask({
-                        ...selectedTask,
-                        start_date: newStartDate,
-                        due_date:
-                          newStartDate && duration
-                            ? addBusinessDays(newStartDate, duration)
-                            : selectedTask.due_date,
-                      });
-                      updateSubcategory(selectedTask.id, {
-                        start_date: newStartDate || null,
-                        due_date:
-                          newStartDate && duration
-                            ? addBusinessDays(newStartDate, duration)
-                            : selectedTask.due_date,
-                      });
-                    }}
-                    className="w-full px-3 py-2 bg-input border border-std rounded-lg text-primary text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-primary mb-1">
-                    Durée (jours)
-                  </label>
-                  <input
-                    type="number"
-                    value={selectedTask.duration_days || ''}
-                    onChange={e => {
-                      const duration = parseInt(e.target.value) || 1;
-                      setSelectedTask({ ...selectedTask, duration_days: duration });
-                      updateSubcategory(selectedTask.id, { duration_days: duration });
-                      if (selectedTask.start_date) {
-                        const newDueDate = addBusinessDays(selectedTask.start_date, duration);
-                        setSelectedTask(prev => ({ ...prev, due_date: newDueDate }));
-                        updateSubcategory(selectedTask.id, { due_date: newDueDate });
-                      }
-                    }}
-                    className="w-full px-3 py-2 bg-input border border-std rounded-lg text-primary text-sm"
-                    min="1"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-primary mb-1">
-                    Date d'échéance
-                  </label>
-                  <input
-                    type="date"
-                    value={selectedTask.due_date ? selectedTask.due_date.split('T')[0] : ''}
-                    onChange={e => {
-                      const newDueDate = e.target.value;
-                      setSelectedTask({ ...selectedTask, due_date: newDueDate });
-                      updateSubcategory(selectedTask.id, {
-                        due_date: newDueDate || null,
-                      });
-                    }}
-                    className="w-full px-3 py-2 bg-input border border-std rounded-lg text-primary text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-primary mb-1">Priorité</label>
-                  <select
-                    value={selectedTask.priority || 'normal'}
-                    onChange={e => {
-                      setSelectedTask({ ...selectedTask, priority: e.target.value });
-                      updateSubcategory(selectedTask.id, { priority: e.target.value });
-                    }}
-                    className="w-full px-3 py-2 bg-input border border-std rounded-lg text-primary text-sm"
-                  >
-                    <option value="urgent">Urgent</option>
-                    <option value="high">Haute</option>
-                    <option value="normal">Normale</option>
-                    <option value="low">Basse</option>
-                  </select>
-                </div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-primary mb-1">Statut</label>
-                  <select
-                    value={selectedTask.status || 'todo'}
-                    onChange={e => {
-                      setSelectedTask({ ...selectedTask, status: e.target.value });
-                      updateSubcategory(selectedTask.id, { status: e.target.value });
-                    }}
-                    className="w-full px-3 py-2 bg-input border border-std rounded-lg text-primary text-sm"
-                  >
-                    <option value="todo">À faire</option>
-                    <option value="in_progress">En cours</option>
-                    <option value="waiting">En attente</option>
-                    <option value="done">Terminé</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-primary mb-1">Assigné à</label>
-                  <input
-                    type="text"
-                    value={selectedTask.assignee || ''}
-                    onChange={e => {
-                      setSelectedTask({ ...selectedTask, assignee: e.target.value });
-                      updateSubcategory(selectedTask.id, { assignee: e.target.value });
-                    }}
-                    className="w-full px-3 py-2 bg-input border border-std rounded-lg text-primary text-sm"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-primary mb-1">Description</label>
-                <textarea
-                  value={selectedTask.description || ''}
-                  onChange={e => {
-                    setSelectedTask({ ...selectedTask, description: e.target.value });
-                    updateSubcategory(selectedTask.id, {
-                      description: e.target.value,
-                    });
-                  }}
-                  className="w-full px-3 py-2 bg-input border border-std rounded-lg text-primary text-sm"
-                  rows={3}
-                />
-              </div>
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="block text-sm font-medium text-primary">Jalons</label>
-                  <button
-                    onClick={() => {
-                      const newMilestone = prompt('Nom du jalon:');
-                      if (newMilestone) {
-                        const sorted = [
-                          ...(selectedTask.milestones || []),
-                          { id: Date.now(), title: newMilestone, done: false },
-                        ].sort((a, b) => {
-                          if (a.done !== b.done) return a.done ? 1 : -1;
-                          return 0;
-                        });
-                        setSelectedTask({ ...selectedTask, milestones: sorted });
-                        updateSubcategory(selectedTask.id, { milestones: sorted });
-                      }
-                    }}
-                    className="text-xs text-accent hover:underline"
-                  >
-                    + Jalon
-                  </button>
-                </div>
-                {(selectedTask.milestones || []).map((milestone, idx) => (
-                  <div
-                    key={milestone.id}
-                    className="flex items-center gap-2 p-2 bg-card-hover rounded"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={milestone.done}
-                      onChange={e => {
-                        const newMilestones = [...(selectedTask.milestones || [])];
-                        newMilestones[idx] = {
-                          ...milestone,
-                          done: e.target.checked,
-                        };
-                        setSelectedTask({
-                          ...selectedTask,
-                          milestones: newMilestones,
-                        });
-                        updateSubcategory(selectedTask.id, {
-                          milestones: newMilestones,
-                        });
-                      }}
-                      className="w-4 h-4 rounded border-std text-accent"
-                    />
-                    <span
-                      className={`flex-1 text-sm ${
-                        milestone.done ? 'line-through text-muted' : 'text-primary'
-                      }`}
-                    >
-                      {milestone.title}
-                    </span>
-                    <button
-                      onClick={() => {
-                        const newMilestones = (selectedTask.milestones || []).filter(
-                          (_, i) => i !== idx
-                        );
-                        setSelectedTask({
-                          ...selectedTask,
-                          milestones: newMilestones,
-                        });
-                        updateSubcategory(selectedTask.id, {
-                          milestones: newMilestones,
-                        });
-                      }}
-                      className="p-1 text-muted hover:text-urgent rounded"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
-                ))}
-              </div>
-              <div className="p-2 bg-stone-700 border border-stone-500 rounded text-stone-300 text-sm font-medium text-center">
-                {selectedTask.duration_days || '-'} jour(s)
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {activeTab === 'planning' && (
         <div className="flex-1 flex flex-col overflow-hidden">
           <div className="p-4 border-b border-std flex items-center justify-between bg-card">
@@ -2453,7 +2185,7 @@ function Board2() {
                                                     title={task.title}
                                                     onClick={e => {
                                                       e.stopPropagation();
-                                                      setSelectedTask(task);
+                                                      setSelectedSubcategory(task);
                                                     }}
                                                   >
                                                     {task.title}
@@ -2620,7 +2352,7 @@ function Board2() {
                                 className="text-sm text-primary hover:underline cursor-pointer"
                                 onClick={e => {
                                   e.stopPropagation();
-                                  setSelectedTask(task);
+                                  setSelectedSubcategory(task);
                                 }}
                               >
                                 {task.title}
