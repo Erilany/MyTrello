@@ -41,7 +41,7 @@ function Exchange({ boardId }) {
       setMessages(msgs);
       markMessagesAsRead(boardId);
     }
-  }, [boardId, getMessages, markMessagesAsRead]);
+  }, [boardId]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -54,7 +54,7 @@ function Exchange({ boardId }) {
       }
     }, 2000);
     return () => clearInterval(interval);
-  }, [boardId, getMessages]);
+  }, [boardId]);
 
   const handleFileSelect = e => {
     const files = Array.from(e.target.files);

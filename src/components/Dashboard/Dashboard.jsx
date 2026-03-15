@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
+import { useNavigate } from 'react-router-dom';
+import SubCategoryModal from '../SubCategory/SubCategoryModal';
 import {
   Clock,
   Calendar,
@@ -97,7 +99,7 @@ function getWeekRange(weekStr) {
   return { start, end };
 }
 
-function getUpcomingTasks(subcategories, categories, cards, boards, username, days) {
+function getUpcomingTasks(subcategories, categories, cards, boards, columns, username, days) {
   const now = new Date();
   const futureDate = new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
 
@@ -110,7 +112,8 @@ function getUpcomingTasks(subcategories, categories, cards, boards, username, da
     .map(sub => {
       const category = categories.find(c => Number(c.id) === Number(sub.category_id));
       const card = category ? cards.find(c => Number(c.id) === Number(category.card_id)) : null;
-      const board = card ? boards.find(b => Number(b.id) === Number(card.board_id)) : null;
+      const column = card ? columns.find(col => Number(col.id) === Number(card.column_id)) : null;
+      const board = column ? boards.find(b => Number(b.id) === Number(column.board_id)) : null;
       return { ...sub, category, card, board };
     })
     .filter(task => task.board)
@@ -118,6 +121,7 @@ function getUpcomingTasks(subcategories, categories, cards, boards, username, da
 }
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const {
     boards,
     cards,
@@ -129,28 +133,48 @@ export default function Dashboard() {
     getWeekNumber,
     setSelectedCard,
     loadBoard,
+    db,
   } = useApp();
+
+  // Load all data from localStorage for dashboard
+  const STORAGE_KEY = 'mytrello_db';
+  const [storageData, setStorageData] = useState(null);
+  useEffect(() => {
+    const data = localStorage.getItem(STORAGE_KEY);
+    if (data) {
+      setStorageData(JSON.parse(data));
+    }
+  }, []);
+
+  // Use storage data if available, otherwise fallback to db
+  const allBoards = storageData?.boards || db?.boards || boards;
+  const allCards = storageData?.cards || db?.cards || cards;
+  const allCategories = storageData?.categories || db?.categories || categories;
+  const allSubcategories = storageData?.subcategories || db?.subcategories || subcategories;
+  const allColumns = storageData?.columns || db?.columns || [];
+
   const [selectedWeek, setSelectedWeek] = useState(() => getWeekNumber(new Date()));
   const [timeRange, setTimeRange] = useState('week');
   const [showMyTasks, setShowMyTasks] = useState(true);
   const [showOtherTasks, setShowOtherTasks] = useState(false);
   const [selectedProjectForOthers, setSelectedProjectForOthers] = useState(null);
+  const [selectedTaskDashboard, setSelectedTaskDashboard] = useState(null);
 
   const handleTaskClick = task => {
-    const category = categories.find(c => Number(c.id) === Number(task.category_id));
-    const card = category ? cards.find(c => Number(c.id) === Number(category.card_id)) : null;
-    if (card) {
-      setSelectedCard(card);
-      // Switch to the correct project so time tracking works
-      if (task.board?.id) {
-        loadBoard(task.board.id);
-      }
-    }
+    setSelectedTaskDashboard(task);
   };
 
-  const handleTaskDoubleClick = task => {
-    setShowOtherTasks(true);
-    setSelectedProjectForOthers(task.board?.id);
+  const handleCloseTask = () => {
+    setSelectedTaskDashboard(null);
+  };
+
+  const handleDueDateClick = (e, task) => {
+    e.stopPropagation();
+    if (task.board?.id) {
+      localStorage.setItem('mytrello_open_tab', 'planning');
+      loadBoard(task.board.id);
+      navigate('/board');
+    }
   };
 
   const getOtherTasksFiltered = () => {
@@ -200,17 +224,46 @@ export default function Dashboard() {
 
   const myTasks = useMemo(() => {
     const days = timeRange === 'week' ? 7 : 30;
-    return getUpcomingTasks(subcategories, categories, cards, boards, currentUsername, days).filter(
-      task => task.assignee === currentUsername
+    const allTasks = getUpcomingTasks(
+      allSubcategories,
+      allCategories,
+      allCards,
+      allBoards,
+      allColumns,
+      currentUsername,
+      days
     );
-  }, [subcategories, categories, cards, boards, currentUsername, timeRange]);
+    return allTasks.filter(task => task.assignee === currentUsername);
+  }, [
+    allSubcategories,
+    allCategories,
+    allCards,
+    allBoards,
+    allColumns,
+    currentUsername,
+    timeRange,
+  ]);
 
   const otherTasks = useMemo(() => {
     const days = timeRange === 'week' ? 7 : 30;
-    return getUpcomingTasks(subcategories, categories, cards, boards, currentUsername, days).filter(
-      task => !task.assignee || task.assignee !== currentUsername
-    );
-  }, [subcategories, categories, cards, boards, currentUsername, timeRange]);
+    return getUpcomingTasks(
+      allSubcategories,
+      allCategories,
+      allCards,
+      allBoards,
+      allColumns,
+      currentUsername,
+      days
+    ).filter(task => !task.assignee || task.assignee !== currentUsername);
+  }, [
+    allSubcategories,
+    allCategories,
+    allCards,
+    allBoards,
+    allColumns,
+    currentUsername,
+    timeRange,
+  ]);
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
@@ -268,9 +321,9 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* Section 2 & 3: Two columns */}
-      <div className="flex gap-4">
-        {/* Colonne gauche: Mes tâches */}
+      {/* Section 2 & 3: Stacked (1 column, 2 rows) */}
+      <div className="flex flex-col gap-4">
+        {/* Row 1: Mes tâches */}
         <div className={`bg-card rounded-lg border border-std p-6 ${!showMyTasks ? 'hidden' : ''}`}>
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-primary flex items-center gap-2">
@@ -304,9 +357,7 @@ export default function Dashboard() {
             Liste des tâches qui vous sont assignées et qui doivent être terminées dans les{' '}
             {timeRange === 'week' ? '7' : '30'} prochains jours.
             <br />
-            <span className="text-xs">
-              Cliquez pour ouvrir la tâche, double-cliquez pour voir les autres tâches du projet
-            </span>
+            <span className="text-xs">Cliquez sur une tâche pour voir ses détails ci-dessous</span>
           </p>
 
           {myTasks.length === 0 ? (
@@ -332,7 +383,6 @@ export default function Dashboard() {
                       key={task.id}
                       className="border-b border-std hover:bg-card-hover cursor-pointer"
                       onClick={() => handleTaskClick(task)}
-                      onDoubleClick={() => handleTaskDoubleClick(task)}
                     >
                       <td className="py-2 px-3 text-primary">{task.board?.title}</td>
                       <td className="py-2 px-3 text-secondary">{task.category?.title}</td>
@@ -354,16 +404,35 @@ export default function Dashboard() {
                       <td className={`py-2 px-3 font-medium ${getPriorityColor(task.priority)}`}>
                         {getPriorityLabel(task.priority)}
                       </td>
-                      <td className="py-2 px-3 text-muted">{task.due_date}</td>
+                      <td
+                        className="py-2 px-3 text-muted cursor-pointer hover:text-accent"
+                        onClick={e => handleDueDateClick(e, task)}
+                        title="Cliquez pour ouvrir le planning"
+                      >
+                        {task.due_date}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
           )}
+
+          {/* Selected task display */}
+          {selectedTaskDashboard && (
+            <div className="mt-4 p-4 bg-card-hover rounded-lg border border-std">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-semibold text-primary">Tâche sélectionnée</h3>
+                <button onClick={handleCloseTask} className="text-muted hover:text-primary">
+                  ✕
+                </button>
+              </div>
+              <SubCategoryModal subcategory={selectedTaskDashboard} onClose={handleCloseTask} />
+            </div>
+          )}
         </div>
 
-        {/* Colonne droite: Autres tâches des projets */}
+        {/* Row 2: Autres tâches des projets */}
         {showOtherTasks && (
           <div className="bg-card rounded-lg border border-std p-6 flex-1">
             <div className="flex items-center justify-between mb-4">

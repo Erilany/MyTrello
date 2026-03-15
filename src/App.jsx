@@ -75,7 +75,7 @@ function AppContent() {
   return (
     <div className={`flex h-screen bg-app ${theme}`}>
       <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden -ml-[20px]">
         <Header />
         <main className="flex-1 overflow-auto p-4 bg-app">
           {showMainLibrary ? (

@@ -3,7 +3,15 @@ import { useApp } from '../../context/AppContext';
 import { X, Calendar, Plus, Folder } from 'lucide-react';
 
 function CardModal({ card, onClose }) {
-  const { updateCard, categories, subcategories, saveToLibrary, createCategory, cards } = useApp();
+  const {
+    updateCard,
+    categories,
+    subcategories,
+    saveToLibrary,
+    createCategory,
+    cards,
+    libraryItems,
+  } = useApp();
 
   const [title, setTitle] = useState(card.title);
   const [description, setDescription] = useState(card.description || '');
@@ -16,7 +24,81 @@ function CardModal({ card, onClose }) {
   const [parentId, setParentId] = useState(card.parent_id || null);
   const [predecessorId, setPredecessorId] = useState(card.predecessor_id || null);
 
+  // Temps repère from library (read-only)
+  const libraryCard = libraryItems?.find(item => item.type === 'card' && item.title === card.title);
+  const tempsRepere = libraryCard
+    ? JSON.parse(libraryCard.content_json)?.card?.duration_days || libraryCard.duration || null
+    : null;
+
+  // Helper to add working days (excluding weekends)
+  const addWorkingDays = (startDateStr, days) => {
+    if (!startDateStr || days <= 0) return '';
+    const date = new Date(startDateStr);
+    let daysAdded = 0;
+    while (daysAdded < days) {
+      date.setDate(date.getDate() + 1);
+      const dayOfWeek = date.getDay();
+      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+        daysAdded++;
+      }
+    }
+    return date.toISOString().split('T')[0];
+  };
+
+  // Helper to subtract working days
+  const subtractWorkingDays = (endDateStr, days) => {
+    if (!endDateStr || days <= 0) return '';
+    const date = new Date(endDateStr);
+    let daysSubtracted = 0;
+    while (daysSubtracted < days) {
+      date.setDate(date.getDate() - 1);
+      const dayOfWeek = date.getDay();
+      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+        daysSubtracted++;
+      }
+    }
+    return date.toISOString().split('T')[0];
+  };
+
+  const handleDurationChange = newDuration => {
+    const duration = parseInt(newDuration) || 1;
+    setDurationDays(duration);
+
+    if (startDate && !dueDate) {
+      // Calculate due date from start date + duration
+      const calculatedDueDate = addWorkingDays(startDate, duration);
+      setDueDate(calculatedDueDate);
+    } else if (dueDate && !startDate) {
+      // Calculate start date from due date - duration
+      const calculatedStartDate = subtractWorkingDays(dueDate, duration);
+      setStartDate(calculatedStartDate);
+    }
+  };
+
+  const handleStartDateChange = newStartDate => {
+    setStartDate(newStartDate);
+    if (newStartDate && durationDays > 0 && !dueDate) {
+      // Calculate due date from start date + duration
+      const calculatedDueDate = addWorkingDays(newStartDate, durationDays);
+      setDueDate(calculatedDueDate);
+    }
+  };
+
+  const handleDueDateChange = newDueDate => {
+    setDueDate(newDueDate);
+    if (newDueDate && durationDays > 0 && !startDate) {
+      // Calculate start date from due date - duration
+      const calculatedStartDate = subtractWorkingDays(newDueDate, durationDays);
+      setStartDate(calculatedStartDate);
+    }
+  };
+
   const handleSave = async () => {
+    console.log('[CardModal] Saving card:', card.id, {
+      due_date: dueDate,
+      start_date: startDate,
+      duration_days: durationDays,
+    });
     await updateCard(card.id, {
       title,
       description,
@@ -32,7 +114,13 @@ function CardModal({ card, onClose }) {
   const handleSaveToLibrary = async () => {
     const cardCategories = categories.filter(c => Number(c.card_id) === Number(card.id));
     const content = {
-      card: { title, description, due_date: dueDate },
+      card: {
+        title,
+        description,
+        due_date: dueDate,
+        start_date: startDate,
+        duration_days: durationDays,
+      },
       categories: cardCategories.map(cat => ({
         ...cat,
         subcategories: subcategories.filter(sc => Number(sc.category_id) === Number(cat.id)),
@@ -81,7 +169,7 @@ function CardModal({ card, onClose }) {
             <textarea
               value={description}
               onChange={e => setDescription(e.target.value)}
-              rows={3}
+              rows={6}
               className="w-full px-3 py-2 bg-input border border-std rounded-lg text-primary placeholder-muted focus:outline-none focus:border-accent"
               placeholder="Ajouter une description..."
             />
@@ -96,7 +184,7 @@ function CardModal({ card, onClose }) {
               <input
                 type="date"
                 value={dueDate}
-                onChange={e => setDueDate(e.target.value)}
+                onChange={e => handleDueDateChange(e.target.value)}
                 className="w-full px-3 py-2 bg-card-hover border border-std rounded-lg text-secondary focus:outline-none focus:border-accent"
               />
             </div>
@@ -116,21 +204,35 @@ function CardModal({ card, onClose }) {
                 <input
                   type="date"
                   value={startDate}
-                  onChange={e => setStartDate(e.target.value)}
+                  onChange={e => handleStartDateChange(e.target.value)}
                   className="w-full px-3 py-2 bg-card-hover border border-std rounded-lg text-secondary focus:outline-none focus:border-accent text-sm"
                 />
               </div>
-              <div>
-                <label className="block text-xs font-medium text-secondary mb-1">
-                  Durée (jours ouvrés)
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  value={durationDays}
-                  onChange={e => setDurationDays(parseInt(e.target.value) || 1)}
-                  className="w-full px-3 py-2 bg-input border border-std rounded-lg text-primary focus:outline-none focus:border-accent text-sm"
-                />
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-xs font-medium text-secondary mb-1">Durée (j)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={durationDays}
+                    onChange={e => handleDurationChange(e.target.value)}
+                    className="w-full px-2 py-2 bg-input border border-std rounded-lg text-primary focus:outline-none focus:border-accent text-sm"
+                  />
+                </div>
+                {tempsRepere && (
+                  <div>
+                    <label className="block text-xs font-medium text-secondary mb-1">
+                      Temps repère
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={tempsRepere}
+                      disabled
+                      className="w-full px-2 py-2 bg-card-hover border border-std rounded-lg text-secondary text-sm disabled:opacity-50"
+                    />
+                  </div>
+                )}
               </div>
             </div>
 

@@ -50,6 +50,15 @@ function Board2() {
     deleteSubcategory,
   } = useApp();
   const [activeTab, setActiveTab] = useState('taches');
+
+  useEffect(() => {
+    const openTab = localStorage.getItem('mytrello_open_tab');
+    if (openTab === 'planning') {
+      setActiveTab('planning');
+      localStorage.removeItem('mytrello_open_tab');
+    }
+  }, []);
+
   const [selectedChapter, setSelectedChapter] = useState(null);
   const [selectedCategoryForTasks, setSelectedCategoryForTasks] = useState(null);
   const [newTaskTitle, setNewTaskTitle] = useState('');
@@ -493,15 +502,6 @@ function Board2() {
             <p className="text-sm text-secondary mb-2">{currentBoard.description}</p>
           )}
         </div>
-        {currentBoard && (
-          <button
-            onClick={handleArchiveBoard}
-            className="flex items-center px-3 py-1.5 text-sm bg-card hover:bg-card-hover border border-std rounded transition-std text-secondary"
-          >
-            <Archive size={14} className="mr-2" />
-            Archiver
-          </button>
-        )}
       </div>
 
       <div className="flex border-b border-std mb-4">

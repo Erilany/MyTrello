@@ -189,11 +189,17 @@ export default function PlanningGantt({
                   />
                 )}
                 <div
-                  className={`absolute h-5 rounded ${getTaskStatusColor(task.status)} flex items-center justify-center text-white text-xs px-1 cursor-pointer hover:opacity-80`}
+                  className={`absolute h-5 rounded ${getTaskStatusColor(task.status)} flex items-center justify-center text-white text-xs px-1 cursor-pointer hover:opacity-80 overflow-hidden`}
                   style={{ left: pos.left, width: pos.width, top: '6px' }}
                   title={`${task.title} (${task.start_date || '?'} - ${task.due_date || '?'})`}
                 >
-                  <span className="truncate">{task.title}</span>
+                  {task.progress > 0 && task.progress < 100 && (
+                    <div
+                      className="absolute inset-y-0 left-0 bg-white/30"
+                      style={{ width: `${task.progress}%` }}
+                    />
+                  )}
+                  <span className="truncate relative z-10">{task.title}</span>
                 </div>
               </div>
             );
