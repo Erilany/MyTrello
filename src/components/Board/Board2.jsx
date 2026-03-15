@@ -2,38 +2,13 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useApp } from '../../context/AppContext';
 import Exchange from '../Exchange/Exchange';
 import { libraryTemplates } from '../../data/libraryData';
-
-function addBusinessDays(startDate, days) {
-  if (!startDate || !days) return '';
-  const date = new Date(startDate);
-  let added = 0;
-  while (added < days) {
-    date.setDate(date.getDate() + 1);
-    const day = date.getDay();
-    if (day !== 0 && day !== 6) added++;
-  }
-  return date.toISOString().split('T')[0];
-}
-
-function subtractBusinessDays(endDate, days) {
-  if (!endDate || !days) return '';
-  const date = new Date(endDate);
-  let subtracted = 0;
-  while (subtracted < days) {
-    date.setDate(date.getDate() - 1);
-    const day = date.getDay();
-    if (day !== 0 && day !== 6) subtracted++;
-  }
-  return date.toISOString().split('T')[0];
-}
-
-function getWeekNumber(date) {
-  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-  const dayNum = d.getUTCDay() || 7;
-  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
-  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-  return Math.ceil(((d - yearStart) / 86400000 + 1) / 7);
-}
+import { addBusinessDays, subtractBusinessDays, getWeekNumber } from '../../utils/dateUtils';
+import {
+  getGanttDateRange as utilsGetGanttDateRange,
+  getGanttDays as utilsGetGanttDays,
+  getTaskBarPosition as utilsGetTaskBarPosition,
+} from '../../utils/ganttUtils';
+import { generateMSProjectXML, calculateDuration, formatDuration } from '../../utils/xmlUtils';
 
 import {
   Plus,
@@ -203,6 +178,23 @@ function Board2() {
   const [planningSortOrder, setPlanningSortOrder] = useState('date');
   const [ganttZoom, setGanttZoom] = useState('week');
   const [ganttStartDate, setGanttStartDate] = useState(null);
+  const [ganttStartDateInput, setGanttStartDateInput] = useState(0);
+
+  const centerGanttOnTask = task => {
+    try {
+      if (task.start_date || task.due_date) {
+        const targetDate = task.start_date ? new Date(task.start_date) : new Date(task.due_date);
+        const today = new Date();
+        const daysDiff = Math.ceil((targetDate - today) / (1000 * 60 * 60 * 24));
+        setGanttStartDateInput(daysDiff);
+        const baseDate = new Date();
+        baseDate.setDate(baseDate.getDate() + daysDiff - 30);
+        setGanttStartDate(baseDate.toISOString().split('T')[0]);
+      }
+    } catch (err) {
+      console.error('Error centering on task:', err);
+    }
+  };
 
   useEffect(() => {
     if (currentBoard) {
@@ -274,37 +266,7 @@ function Board2() {
     savePlanningSelectedTasks([]);
   };
 
-  const calculateDuration = (start, end) => {
-    if (!start || !end) return 0;
-    const s = new Date(start);
-    const e = new Date(end);
-    let days = 0;
-    const current = new Date(s);
-    while (current <= e) {
-      const day = current.getDay();
-      if (day !== 0 && day !== 6) days++;
-      current.setDate(current.getDate() + 1);
-    }
-    return days;
-  };
-
-  const formatDuration = days => {
-    if (days === 0) return '0j';
-    if (days === 1) return '1j';
-    return `${days}j`;
-  };
-
-  const formatMSProjectDuration = days => {
-    return `P${days}D`;
-  };
-
-  const formatDateForMSP = date => {
-    if (!date) return '';
-    const d = new Date(date);
-    return d.toISOString().replace('T', 'T').split('.')[0];
-  };
-
-  const generateMSProjectXML = () => {
+  const handleExportMSProject = () => {
     const tasks = getSelectedTasks();
     if (tasks.length === 0) {
       alert('Aucune tâche sélectionnée');
@@ -312,107 +274,9 @@ function Board2() {
     }
 
     const projectName = currentBoard?.title || 'Projet';
-    const today = new Date().toISOString().split('T')[0];
-    const startDate = tasks.length > 0 && tasks[0].start_date ? tasks[0].start_date : today;
-    const endDate =
-      tasks.length > 0 && tasks[tasks.length - 1].due_date
-        ? tasks[tasks.length - 1].due_date
-        : today;
+    const xml = generateMSProjectXML(tasks, projectName);
 
-    let tasksXML = '';
-    tasks.forEach((task, index) => {
-      const uid = index + 1;
-      const taskStart = task.start_date
-        ? formatDateForMSP(task.start_date)
-        : formatDateForMSP(today);
-      const taskFinish = task.due_date ? formatDateForMSP(task.due_date) : formatDateForMSP(today);
-      const duration = task.duration_days || calculateDuration(task.start_date, task.due_date);
-      const durationStr = formatMSProjectDuration(duration);
-
-      const percentComplete =
-        task.status === 'done'
-          ? 100
-          : task.status === 'in_progress'
-            ? 50
-            : task.status === 'waiting'
-              ? 75
-              : 0;
-
-      let predecessorLinks = '';
-      if (task.predecessors && task.predecessors.length > 0) {
-        task.predecessors.forEach(pred => {
-          const predIndex = tasks.findIndex(t => t.id === pred.taskId);
-          if (predIndex !== -1) {
-            predecessorLinks += `
-			<PredecessorLink>
-				<Project>${predIndex + 1}</Project>
-				<TaskUID>${predIndex + 1}</TaskUID>
-				<Type>${pred.type === 'FS' ? 0 : pred.type === 'SS' ? 1 : pred.type === 'FF' ? 2 : 3}</Type>
-				<LinkLag>0</LinkLag>
-			</PredecessorLink>`;
-          }
-        });
-      }
-
-      tasksXML += `
-		<Task>
-			<UID>${uid}</UID>
-			<ID>${uid}</ID>
-			<Name>${task.title}</Name>
-			<Manual>0</Manual>
-			<Type>1</Type>
-			<IsNull>0</IsNull>
-			<CreateDate>${today}T09:00:00</CreateDate>
-			<WBS>${uid}</WBS>
-			<OutlineNumber>${uid}</OutlineNumber>
-			<OutlineLevel>1</OutlineLevel>
-			<Priority>500</Priority>
-			<Start>${taskStart}</Start>
-			<Finish>${taskFinish}</Finish>
-			<Duration>${durationStr}</Duration>
-			<ManualStart>${taskStart}</ManualStart>
-			<ManualFinish>${taskFinish}</ManualFinish>
-			<ManualDuration>${durationStr}</ManualDuration>
-			<DurationFormat>7</DurationFormat>
-			<Work>${durationStr}</Work>
-			<PercentComplete>${percentComplete}</PercentComplete>
-			<ActualDuration>${Math.floor((duration * percentComplete) / 100)}</ActualDuration>
-			<FreeformDurationFormat>7</FreeformDurationFormat>
-			<FreeSlack>0</FreeSlack>
-			<TotalSlack>0</TotalSlack>
-			<FixedCost>0</FixedCost>
-			<FixedCostAccrual>3</FixedCostAccrual>
-			<PercentWorkComplete>${percentComplete}</PercentWorkComplete>
-			<PhysicalPercentComplete>${percentComplete}</PhysicalPercentComplete>${predecessorLinks}
-			<Milestone>0</Milestone>
-			<Summary>0</Summary>
-			<Critical>0</Critical>
-		</Task>`;
-    });
-
-    const xml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<Project xmlns="http://schemas.microsoft.com/project">
-	<SaveVersion>14</SaveVersion>
-	<BuildNumber>16.0.19127.20532</BuildNumber>
-	<Name>${projectName}</Name>
-	<GUID>${'{'}${Date.now().toString(16).toUpperCase()}-1320-F011-9752-D4F32D378D80{'}'}</GUID>
-	<Title>${projectName}</Title>
-	<CreationDate>${today}T09:00:00</CreationDate>
-	<LastSaved>${today}T${new Date().toTimeString().split(' ')[0]}</LastSaved>
-	<ScheduleFromStart>1</ScheduleFromStart>
-	<StartDate>${startDate}T09:00:00</StartDate>
-	<FinishDate>${endDate}T18:00:00</FinishDate>
-	<DurationFormat>7</DurationFormat>
-	<WorkFormat>2</WorkFormat>
-	<DefaultStartTime>09:00:00</DefaultStartTime>
-	<DefaultFinishTime>18:00:00</DefaultFinishTime>
-	<MinutesPerDay>480</MinutesPerDay>
-	<MinutesPerWeek>2400</MinutesPerWeek>
-	<DaysPerMonth>21</DaysPerMonth>
-	<DefaultTaskType>1</DefaultTaskType>
-	<Tasks>${tasksXML}
-	</Tasks>
-</Project>`;
+    if (!xml) return;
 
     const blob = new Blob([xml], { type: 'application/xml' });
     const url = URL.createObjectURL(blob);
@@ -475,10 +339,11 @@ function Board2() {
   const getPlanningFlatList = () => {
     const grouped = getGroupedTasks();
     const flatList = [];
+    let uniqueId = 0;
 
     Object.entries(grouped).forEach(([chapter, cards]) => {
-      const chapterKey = chapter;
-      const isChapterExpanded = expandedPlanningChapters.has(chapterKey);
+      const chapterKey = `chapter-${chapter}`;
+      const isChapterExpanded = expandedPlanningChapters.has(chapter);
       const chapterTaskCount = Object.values(cards).reduce(
         (sum, c) => sum + Object.values(c.categories).reduce((s, cat) => s + cat.tasks.length, 0),
         0
@@ -487,15 +352,15 @@ function Board2() {
       flatList.push({
         type: 'chapter',
         key: chapterKey,
-        title: chapterKey,
+        title: chapter,
         count: chapterTaskCount,
         expanded: isChapterExpanded,
       });
 
       if (isChapterExpanded) {
         Object.entries(cards).forEach(([cardId, cardData]) => {
-          const cardKey = `${chapterKey}|${cardId}`;
-          const isCardExpanded = expandedPlanningCards.has(cardKey);
+          const cardKey = `card-${chapter}-${cardId}`;
+          const isCardExpanded = expandedPlanningCards.has(`card-${cardId}`);
           const cardTaskCount = Object.values(cardData.categories).reduce(
             (sum, cat) => sum + cat.tasks.length,
             0
@@ -512,7 +377,7 @@ function Board2() {
 
           if (isCardExpanded) {
             Object.entries(cardData.categories).forEach(([catId, catData]) => {
-              const catKey = `${cardKey}|${catId}`;
+              const catKey = `cat-${catId}`;
               const isCatExpanded = expandedPlanningCategories.has(catKey);
 
               flatList.push({
@@ -554,62 +419,17 @@ function Board2() {
 
   const getGanttDateRange = () => {
     const tasks = getSelectedTasks();
-    if (tasks.length === 0) {
-      const today = new Date();
-      return {
-        start: today,
-        end: new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000),
-      };
-    }
-
-    let minDate = new Date('2099-01-01');
-    let maxDate = new Date('1970-01-01');
-
-    tasks.forEach(task => {
-      if (task.start_date) {
-        const d = new Date(task.start_date);
-        if (d < minDate) minDate = d;
-      }
-      if (task.due_date) {
-        const d = new Date(task.due_date);
-        if (d > maxDate) maxDate = d;
-      }
-    });
-
-    if (ganttStartDate) {
-      minDate = new Date(ganttStartDate);
-    }
-
-    minDate = new Date(minDate.getTime() - 7 * 24 * 60 * 60 * 1000);
-    maxDate = new Date(maxDate.getTime() + 14 * 24 * 60 * 60 * 1000);
-
-    return { start: minDate, end: maxDate };
+    return utilsGetGanttDateRange(tasks, ganttStartDate);
   };
 
   const getGanttDays = () => {
-    const range = getGanttDateRange();
-    const days = [];
-    const current = new Date(range.start);
-    while (current <= range.end) {
-      days.push(new Date(current));
-      current.setDate(current.getDate() + 1);
-    }
-    return days;
+    const tasks = getSelectedTasks();
+    return utilsGetGanttDays(tasks, ganttStartDate);
   };
 
   const getTaskBarPosition = task => {
-    const range = getGanttDateRange();
-    const startDate = task.start_date ? new Date(task.start_date) : range.start;
-    const endDate = task.due_date ? new Date(task.due_date) : startDate;
-
-    const totalDays = Math.ceil((range.end - range.start) / (24 * 60 * 60 * 1000));
-    const startOffset = Math.ceil((startDate - range.start) / (24 * 60 * 60 * 1000));
-    const duration = Math.max(1, Math.ceil((endDate - startDate) / (24 * 60 * 60 * 1000)) + 1);
-
-    return {
-      left: `${(startOffset / totalDays) * 100}%`,
-      width: `${(duration / totalDays) * 100}%`,
-    };
+    const tasks = getSelectedTasks();
+    return utilsGetTaskBarPosition(task, tasks, ganttStartDate);
   };
 
   const tabs = [
@@ -2031,17 +1851,39 @@ function Board2() {
                 <option value="month">Mois</option>
               </select>
               <button
-                onClick={() =>
-                  setGanttStartDate(
-                    prompt('Date de début (YYYY-MM-DD):', new Date().toISOString().split('T')[0])
-                  )
-                }
+                onClick={() => {
+                  const range = getGanttDateRange();
+                  const today = new Date();
+                  const diffDays = Math.ceil((today - range.start) / (1000 * 60 * 60 * 24));
+                  setGanttStartDateInput(diffDays);
+                }}
                 className="px-2 py-1.5 text-sm bg-input border border-std rounded text-primary hover:bg-card-hover"
+                title="Aller à aujourd'hui"
               >
-                Début
+                Aujourd'hui
               </button>
+              <input
+                type="range"
+                min="-90"
+                max="365"
+                value={ganttStartDateInput}
+                onChange={e => {
+                  const days = parseInt(e.target.value);
+                  setGanttStartDateInput(days);
+                  const range = getGanttDateRange();
+                  const baseDate = new Date();
+                  baseDate.setDate(
+                    baseDate.getDate() +
+                      days -
+                      Math.ceil((baseDate - range.start) / (1000 * 60 * 60 * 24))
+                  );
+                  setGanttStartDate(baseDate.toISOString().split('T')[0]);
+                }}
+                className="w-32 h-2 bg-std rounded-lg appearance-none cursor-pointer"
+                title={`Déplacer: ${ganttStartDateInput > 0 ? '+' : ''}${ganttStartDateInput} jours`}
+              />
               <button
-                onClick={generateMSProjectXML}
+                onClick={handleExportMSProject}
                 className="flex items-center px-3 py-1.5 text-sm bg-accent text-white rounded-lg hover:opacity-90"
               >
                 <Download size={14} className="mr-2" />
@@ -2184,6 +2026,10 @@ function Board2() {
                                                     className="text-primary truncate cursor-pointer hover:underline"
                                                     title={task.title}
                                                     onClick={e => {
+                                                      e.stopPropagation();
+                                                      centerGanttOnTask(task);
+                                                    }}
+                                                    onDoubleClick={e => {
                                                       e.stopPropagation();
                                                       setSelectedSubcategory(task);
                                                     }}
@@ -2351,6 +2197,10 @@ function Board2() {
                               <span
                                 className="text-sm text-primary hover:underline cursor-pointer"
                                 onClick={e => {
+                                  e.stopPropagation();
+                                  centerGanttOnTask(task);
+                                }}
+                                onDoubleClick={e => {
                                   e.stopPropagation();
                                   setSelectedSubcategory(task);
                                 }}

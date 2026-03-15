@@ -31,7 +31,7 @@ function SubCategoryModal({ subcategory, onClose }) {
       duration_days: durationDays || 1,
       milestones,
     });
-    onClose();
+    setTimeout(() => onClose(), 50);
   };
 
   const handleSaveToLibrary = async () => {
