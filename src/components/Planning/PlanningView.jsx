@@ -99,16 +99,16 @@ export default function PlanningView({
   const selectedTasks = getSelectedTasks();
 
   const computedGanttDateRange = useMemo(() => {
-    return getGanttDateRange(selectedTasks, ganttStartDate);
-  }, [selectedTasks, ganttStartDate]);
+    return getGanttDateRange(selectedTasks, ganttStartDate, zoom);
+  }, [selectedTasks, ganttStartDate, zoom]);
 
   const computedGanttDays = useMemo(() => {
-    return getGanttDays(selectedTasks, ganttStartDate);
-  }, [selectedTasks, ganttStartDate]);
+    return getGanttDays(selectedTasks, ganttStartDate, zoom);
+  }, [selectedTasks, ganttStartDate, zoom]);
 
   const computedGetTaskBarPosition = useMemo(() => {
-    return task => getTaskBarPosition(task, selectedTasks, ganttStartDate);
-  }, [selectedTasks, ganttStartDate]);
+    return task => getTaskBarPosition(task, selectedTasks, ganttStartDate, zoom);
+  }, [selectedTasks, ganttStartDate, zoom]);
 
   return (
     <div className="flex-1 flex flex-col min-h-0">
