@@ -72,6 +72,7 @@ function Board2() {
     cards,
     categories,
     subcategories,
+    columns,
     setSelectedCard,
     updateSubcategory,
     createSubcategory,
@@ -91,6 +92,49 @@ function Board2() {
   const [editingCategoryTitle, setEditingCategoryTitle] = useState('');
 
   const [planningSelectedTasks, setPlanningSelectedTasks] = useState([]);
+
+  const [expandedPlanningChapters, setExpandedPlanningChapters] = useState(new Set());
+  const [expandedPlanningCards, setExpandedPlanningCards] = useState(new Set());
+  const [expandedPlanningCategories, setExpandedPlanningCategories] = useState(new Set());
+
+  useEffect(() => {
+    if (activeTab === 'planning' && currentBoard?.id) {
+      const boardId = currentBoard.id;
+      const chapters = JSON.parse(
+        localStorage.getItem(`planning_expanded_${boardId}_chapters`) || '[]'
+      );
+      const cards = JSON.parse(localStorage.getItem(`planning_expanded_${boardId}_cards`) || '[]');
+      const categories = JSON.parse(
+        localStorage.getItem(`planning_expanded_${boardId}_categories`) || '[]'
+      );
+      setExpandedPlanningChapters(new Set(chapters));
+      setExpandedPlanningCards(new Set(cards));
+      setExpandedPlanningCategories(new Set(categories));
+
+      const selectedTasks = JSON.parse(
+        localStorage.getItem(`planning_selected_${boardId}`) || '[]'
+      );
+      setPlanningSelectedTasks(selectedTasks);
+    }
+  }, [activeTab, currentBoard?.id]);
+
+  const savePlanningExpandedState = (type, key, isExpanded) => {
+    if (!currentBoard?.id) return;
+    const storageKey = `planning_expanded_${currentBoard.id}_${type}`;
+    const saved = JSON.parse(localStorage.getItem(storageKey) || '[]');
+    if (isExpanded) {
+      if (!saved.includes(key)) saved.push(key);
+    } else {
+      const idx = saved.indexOf(key);
+      if (idx > -1) saved.splice(idx, 1);
+    }
+    localStorage.setItem(storageKey, JSON.stringify(saved));
+  };
+
+  const savePlanningSelectedTasks = taskIds => {
+    if (!currentBoard?.id) return;
+    localStorage.setItem(`planning_selected_${currentBoard.id}`, JSON.stringify(taskIds));
+  };
 
   useEffect(() => {
     const handleBoard2Import = async e => {
@@ -183,11 +227,20 @@ function Board2() {
   }, [planningSelectedTasks, currentBoard]);
 
   const getProjectTasks = () => {
+    const boardColumns = columns.filter(col => Number(col.board_id) === Number(currentBoard?.id));
+    const boardColumnIds = boardColumns.map(col => col.id);
+
     const projectSubcategories = subcategories.filter(sub => {
       const category = categories.find(c => Number(c.id) === Number(sub.category_id));
       if (!category) return false;
       const card = cards.find(c => Number(c.id) === Number(category.card_id));
-      return card && Number(card.board_id) === Number(currentBoard?.id);
+      if (!card) return false;
+      // Card belongs to board if column_id is in board columns OR column_id is null/undefined
+      return (
+        boardColumnIds.includes(Number(card.column_id)) ||
+        !card.column_id ||
+        card.column_id === null
+      );
     });
     return projectSubcategories.map(sub => {
       const category = categories.find(c => Number(c.id) === Number(sub.category_id));
@@ -203,18 +256,22 @@ function Board2() {
   };
 
   const togglePlanningTask = taskId => {
-    setPlanningSelectedTasks(prev =>
-      prev.includes(taskId) ? prev.filter(id => id !== taskId) : [...prev, taskId]
-    );
+    const newSelection = planningSelectedTasks.includes(taskId)
+      ? planningSelectedTasks.filter(id => id !== taskId)
+      : [...planningSelectedTasks, taskId];
+    setPlanningSelectedTasks(newSelection);
+    savePlanningSelectedTasks(newSelection);
   };
 
   const selectAllTasks = () => {
     const allTaskIds = getProjectTasks().map(t => t.id);
     setPlanningSelectedTasks(allTaskIds);
+    savePlanningSelectedTasks(allTaskIds);
   };
 
   const deselectAllTasks = () => {
     setPlanningSelectedTasks([]);
+    savePlanningSelectedTasks([]);
   };
 
   const calculateDuration = (start, end) => {
@@ -381,6 +438,105 @@ function Board2() {
       default:
         return 'bg-gray-400';
     }
+  };
+
+  const getGroupedTasks = () => {
+    const tasks = getSelectedTasks();
+    const groups = {};
+
+    tasks.forEach(task => {
+      const card = task.card || {};
+      const category = task.category || {};
+      const chapter = card.chapter || 'Sans chapitre';
+      const cardId = card.id || 'nocard';
+      const categoryId = category.id || 'nocategory';
+
+      if (!groups[chapter]) {
+        groups[chapter] = {};
+      }
+      if (!groups[chapter][cardId]) {
+        groups[chapter][cardId] = {
+          card,
+          categories: {},
+        };
+      }
+      if (!groups[chapter][cardId].categories[categoryId]) {
+        groups[chapter][cardId].categories[categoryId] = {
+          category,
+          tasks: [],
+        };
+      }
+      groups[chapter][cardId].categories[categoryId].tasks.push(task);
+    });
+
+    return groups;
+  };
+
+  const getPlanningFlatList = () => {
+    const grouped = getGroupedTasks();
+    const flatList = [];
+
+    Object.entries(grouped).forEach(([chapter, cards]) => {
+      const chapterKey = chapter;
+      const isChapterExpanded = expandedPlanningChapters.has(chapterKey);
+      const chapterTaskCount = Object.values(cards).reduce(
+        (sum, c) => sum + Object.values(c.categories).reduce((s, cat) => s + cat.tasks.length, 0),
+        0
+      );
+
+      flatList.push({
+        type: 'chapter',
+        key: chapterKey,
+        title: chapterKey,
+        count: chapterTaskCount,
+        expanded: isChapterExpanded,
+      });
+
+      if (isChapterExpanded) {
+        Object.entries(cards).forEach(([cardId, cardData]) => {
+          const cardKey = `${chapterKey}|${cardId}`;
+          const isCardExpanded = expandedPlanningCards.has(cardKey);
+          const cardTaskCount = Object.values(cardData.categories).reduce(
+            (sum, cat) => sum + cat.tasks.length,
+            0
+          );
+
+          flatList.push({
+            type: 'card',
+            key: cardKey,
+            title: cardData.card?.title || 'Sans titre',
+            count: cardTaskCount,
+            expanded: isCardExpanded,
+            parentKey: chapterKey,
+          });
+
+          if (isCardExpanded) {
+            Object.entries(cardData.categories).forEach(([catId, catData]) => {
+              const catKey = `${cardKey}|${catId}`;
+              const isCatExpanded = expandedPlanningCategories.has(catKey);
+
+              flatList.push({
+                type: 'category',
+                key: catKey,
+                title: catData.category?.title || 'Sans catégorie',
+                count: catData.tasks.length,
+                expanded: isCatExpanded,
+                parentKey: cardKey,
+                tasks: catData.tasks,
+              });
+
+              if (isCatExpanded) {
+                catData.tasks.forEach(task => {
+                  flatList.push({ type: 'task', key: `task-${task.id}`, task });
+                });
+              }
+            });
+          }
+        });
+      }
+    });
+
+    return flatList;
   };
 
   const getSortedTasks = () => {
@@ -1233,328 +1389,6 @@ function Board2() {
                     </div>
                   </div>
                 )}
-
-                {selectedTask && (
-                  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-card rounded-lg border border-std max-w-6xl w-full max-h-[95vh] overflow-hidden flex flex-col">
-                      <div className="p-4 border-b border-std flex items-center justify-between shrink-0">
-                        <div>
-                          <input
-                            type="text"
-                            value={selectedTask.title || ''}
-                            onChange={e => {
-                              setSelectedTask({ ...selectedTask, title: e.target.value });
-                              updateSubcategory(selectedTask.id, { title: e.target.value });
-                            }}
-                            className="font-bold text-xl text-primary bg-transparent border-b border-transparent hover:border-std focus:border-accent focus:outline-none w-full min-w-[200px]"
-                            style={{ wordBreak: 'break-word' }}
-                          />
-                          <p className="text-sm text-muted">
-                            {selectedCategoryForTasks?.category.title} -{' '}
-                            {selectedCategoryForTasks?.card.title}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <span
-                            className={`px-3 py-1 rounded-full text-sm font-medium ${
-                              !selectedTask.start_date && !selectedTask.due_date
-                                ? 'bg-gray-200 text-gray-600 border border-gray-300'
-                                : selectedTask.status === 'todo'
-                                  ? 'bg-orange-100 text-orange-700 border border-orange-300'
-                                  : selectedTask.status === 'in_progress'
-                                    ? 'bg-yellow-100 text-yellow-700 border border-yellow-300'
-                                    : selectedTask.status === 'waiting'
-                                      ? 'bg-blue-100 text-blue-700 border border-blue-300'
-                                      : selectedTask.status === 'done'
-                                        ? 'bg-green-100 text-green-700 border border-green-300'
-                                        : 'bg-gray-200 text-gray-600 border border-gray-300'
-                            }`}
-                          >
-                            {!selectedTask.start_date && !selectedTask.due_date
-                              ? 'Pas encore'
-                              : selectedTask.status === 'todo'
-                                ? 'À faire'
-                                : selectedTask.status === 'in_progress'
-                                  ? 'En cours'
-                                  : selectedTask.status === 'waiting'
-                                    ? 'En attente'
-                                    : selectedTask.status === 'done'
-                                      ? 'Terminé'
-                                      : 'Pas encore'}
-                          </span>
-                          <button
-                            onClick={() => {
-                              if (selectedTask) {
-                                updateSubcategory(selectedTask.id, selectedTask);
-                              }
-                              setSelectedTask(null);
-                            }}
-                            className="p-2 hover:bg-card-hover rounded"
-                          >
-                            <X size={24} className="text-secondary" />
-                          </button>
-                        </div>
-                      </div>
-                      <div className="p-4 overflow-auto flex-1">
-                        <div className="grid grid-cols-5 gap-4">
-                          <div className="col-span-4 space-y-2">
-                            <div className="flex items-center justify-between">
-                              <label className="block text-sm font-medium text-secondary">
-                                Dates repères et description
-                              </label>
-                              <button
-                                onClick={() => {
-                                  const sorted = [...(selectedTask.milestones || [])].sort(
-                                    (a, b) => {
-                                      if (!a.date) return 1;
-                                      if (!b.date) return -1;
-                                      return milestoneSortOrder === 'asc'
-                                        ? new Date(a.date) - new Date(b.date)
-                                        : new Date(b.date) - new Date(a.date);
-                                    }
-                                  );
-                                  setSelectedTask({ ...selectedTask, milestones: sorted });
-                                  updateSubcategory(selectedTask.id, { milestones: sorted });
-                                  setMilestoneSortOrder(
-                                    milestoneSortOrder === 'asc' ? 'desc' : 'asc'
-                                  );
-                                }}
-                                className="text-xs text-accent hover:underline"
-                              >
-                                Trier {milestoneSortOrder === 'asc' ? '↓' : '↑'}
-                              </button>
-                            </div>
-                            <div className="space-y-1">
-                              {(selectedTask.milestones || []).map((milestone, idx) => (
-                                <div key={idx} className="flex gap-2 items-start">
-                                  <input
-                                    type="date"
-                                    value={milestone.date || ''}
-                                    onChange={e => {
-                                      const newMilestones = [...(selectedTask.milestones || [])];
-                                      newMilestones[idx] = { ...milestone, date: e.target.value };
-                                      setSelectedTask({
-                                        ...selectedTask,
-                                        milestones: newMilestones,
-                                      });
-                                      updateSubcategory(selectedTask.id, {
-                                        milestones: newMilestones,
-                                      });
-                                    }}
-                                    className="w-32 p-2 bg-card-hover border border-std rounded text-secondary text-sm"
-                                  />
-                                  <span className="text-muted pt-2">|</span>
-                                  <textarea
-                                    value={milestone.text || ''}
-                                    onChange={e => {
-                                      const newMilestones = [...(selectedTask.milestones || [])];
-                                      newMilestones[idx] = { ...milestone, text: e.target.value };
-                                      setSelectedTask({
-                                        ...selectedTask,
-                                        milestones: newMilestones,
-                                      });
-                                      updateSubcategory(selectedTask.id, {
-                                        milestones: newMilestones,
-                                      });
-                                    }}
-                                    className="flex-1 p-2 bg-card-hover border border-std rounded text-secondary text-sm min-h-[60px]"
-                                    placeholder="Texte..."
-                                    rows={2}
-                                  />
-                                  <button
-                                    onClick={() => {
-                                      const newMilestones = (selectedTask.milestones || []).filter(
-                                        (_, i) => i !== idx
-                                      );
-                                      setSelectedTask({
-                                        ...selectedTask,
-                                        milestones: newMilestones,
-                                      });
-                                      updateSubcategory(selectedTask.id, {
-                                        milestones: newMilestones,
-                                      });
-                                    }}
-                                    className="p-2 text-red-500 hover:bg-card-hover rounded"
-                                  >
-                                    <X size={16} />
-                                  </button>
-                                </div>
-                              ))}
-                              <button
-                                onClick={() => {
-                                  const newMilestones = [
-                                    ...(selectedTask.milestones || []),
-                                    { date: '', text: '' },
-                                  ];
-                                  setSelectedTask({ ...selectedTask, milestones: newMilestones });
-                                  updateSubcategory(selectedTask.id, { milestones: newMilestones });
-                                }}
-                                className="text-sm text-accent hover:underline"
-                              >
-                                + Ajouter une date repère
-                              </button>
-                            </div>
-                            <textarea
-                              value={selectedTask.description || ''}
-                              onChange={e => {
-                                setSelectedTask({ ...selectedTask, description: e.target.value });
-                                updateSubcategory(selectedTask.id, { description: e.target.value });
-                              }}
-                              className="w-full p-3 bg-card-hover border border-std rounded text-secondary text-sm min-h-[120px]"
-                              placeholder="Description supplémentaire..."
-                            />
-                          </div>
-                          <div className="col-span-1 space-y-2">
-                            <div className="grid grid-cols-2 gap-2">
-                              <div>
-                                <label className="block text-xs font-medium text-secondary mb-1">
-                                  Date début
-                                </label>
-                                <input
-                                  type="date"
-                                  value={
-                                    selectedTask.start_date
-                                      ? selectedTask.start_date.split('T')[0]
-                                      : ''
-                                  }
-                                  onChange={e => {
-                                    const newStartDate = e.target.value;
-                                    const duration = selectedTask.duration_days;
-                                    let newDueDate = '';
-                                    if (newStartDate && duration) {
-                                      newDueDate = addBusinessDays(newStartDate, duration);
-                                    }
-                                    setSelectedTask({
-                                      ...selectedTask,
-                                      start_date: newStartDate,
-                                      due_date: newDueDate,
-                                    });
-                                    updateSubcategory(selectedTask.id, {
-                                      start_date: newStartDate,
-                                      due_date: newDueDate,
-                                    });
-                                  }}
-                                  className="w-full p-2 bg-card-hover border border-std rounded text-secondary text-sm"
-                                />
-                              </div>
-                              <div>
-                                <label className="block text-xs font-medium text-secondary mb-1">
-                                  Durée (j)
-                                </label>
-                                <input
-                                  type="number"
-                                  value={selectedTask.duration_days || ''}
-                                  onChange={e => {
-                                    const duration = e.target.value ? parseInt(e.target.value) : '';
-                                    setSelectedTask({ ...selectedTask, duration_days: duration });
-                                    updateSubcategory(selectedTask.id, { duration_days: duration });
-                                    if (selectedTask.start_date && duration) {
-                                      const newDueDate = addBusinessDays(
-                                        selectedTask.start_date,
-                                        duration
-                                      );
-                                      setSelectedTask(prev => ({ ...prev, due_date: newDueDate }));
-                                      updateSubcategory(selectedTask.id, { due_date: newDueDate });
-                                    }
-                                  }}
-                                  className="w-full p-2 bg-card-hover border border-std rounded text-secondary text-sm"
-                                />
-                              </div>
-                            </div>
-                            <div>
-                              <label className="block text-xs font-medium text-secondary mb-1">
-                                Date échéance
-                              </label>
-                              <input
-                                type="date"
-                                value={
-                                  selectedTask.due_date ? selectedTask.due_date.split('T')[0] : ''
-                                }
-                                onChange={e => {
-                                  const newDueDate = e.target.value;
-                                  const duration = selectedTask.duration_days;
-                                  let newStartDate = '';
-                                  if (newDueDate && duration) {
-                                    newStartDate = subtractBusinessDays(newDueDate, duration);
-                                  }
-                                  setSelectedTask({
-                                    ...selectedTask,
-                                    due_date: newDueDate,
-                                    start_date: selectedTask.start_date || newStartDate,
-                                  });
-                                  updateSubcategory(selectedTask.id, {
-                                    due_date: newDueDate,
-                                    start_date: selectedTask.start_date || newStartDate,
-                                  });
-                                }}
-                                className="w-full p-2 bg-card-hover border border-std rounded text-secondary text-sm"
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-xs font-medium text-secondary mb-1">
-                                Priorité
-                              </label>
-                              <select
-                                value={selectedTask.priority || 'normal'}
-                                onChange={e => {
-                                  setSelectedTask({ ...selectedTask, priority: e.target.value });
-                                  updateSubcategory(selectedTask.id, { priority: e.target.value });
-                                }}
-                                className="w-full p-2 bg-card-hover border border-std rounded text-secondary text-sm"
-                              >
-                                <option value="low">Basse</option>
-                                <option value="normal">Normale</option>
-                                <option value="high">Haute</option>
-                                <option value="urgent">Urgente</option>
-                              </select>
-                            </div>
-                            <div>
-                              <label className="block text-xs font-medium text-secondary mb-1">
-                                État
-                              </label>
-                              <select
-                                value={selectedTask.status || 'todo'}
-                                onChange={e => {
-                                  setSelectedTask({ ...selectedTask, status: e.target.value });
-                                  updateSubcategory(selectedTask.id, { status: e.target.value });
-                                }}
-                                className="w-full p-2 bg-card-hover border border-std rounded text-secondary text-sm"
-                              >
-                                <option value="not_started">Pas encore</option>
-                                <option value="todo">À faire</option>
-                                <option value="in_progress">En cours</option>
-                                <option value="waiting">En attente</option>
-                                <option value="done">Terminé</option>
-                              </select>
-                            </div>
-                            <div>
-                              <label className="block text-xs font-medium text-secondary mb-1">
-                                Assigné(e) à
-                              </label>
-                              <input
-                                type="text"
-                                value={selectedTask.assignee || ''}
-                                onChange={e => {
-                                  setSelectedTask({ ...selectedTask, assignee: e.target.value });
-                                  updateSubcategory(selectedTask.id, { assignee: e.target.value });
-                                }}
-                                className="w-full p-2 bg-card-hover border border-std rounded text-secondary text-sm"
-                              />
-                            </div>
-                            <div className="pt-4">
-                              <label className="block text-xs font-medium text-muted mb-1">
-                                Temps repère
-                              </label>
-                              <div className="p-2 bg-stone-700 border border-stone-500 rounded text-stone-300 text-sm font-medium text-center">
-                                {selectedTask.duration_days || '-'}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
               </div>
             ) : (
               <div className="max-w-4xl mx-auto">
@@ -2163,6 +1997,274 @@ function Board2() {
         </div>
       )}
 
+      {(activeTab === 'taches' || activeTab === 'planning') && selectedTask && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-card rounded-lg border border-std max-w-6xl w-full max-h-[95vh] overflow-hidden flex flex-col">
+            <div className="p-4 border-b border-std flex items-center justify-between shrink-0">
+              <div>
+                <input
+                  type="text"
+                  value={selectedTask.title || ''}
+                  onChange={e => {
+                    setSelectedTask({ ...selectedTask, title: e.target.value });
+                    updateSubcategory(selectedTask.id, { title: e.target.value });
+                  }}
+                  className="font-bold text-xl text-primary bg-transparent border-b border-transparent hover:border-std focus:border-accent focus:outline-none w-full min-w-[200px]"
+                  style={{ wordBreak: 'break-word' }}
+                />
+                <p className="text-sm text-muted">
+                  {selectedCategoryForTasks?.category.title} -{' '}
+                  {selectedCategoryForTasks?.card.title}
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                <span
+                  className={`px-3 py-1 rounded-full text-sm font-medium ${
+                    !selectedTask.start_date && !selectedTask.due_date
+                      ? 'bg-gray-200 text-gray-600 border border-gray-300'
+                      : selectedTask.status === 'todo'
+                        ? 'bg-orange-100 text-orange-700 border border-orange-300'
+                        : selectedTask.status === 'in_progress'
+                          ? 'bg-yellow-100 text-yellow-700 border border-yellow-300'
+                          : selectedTask.status === 'waiting'
+                            ? 'bg-blue-100 text-blue-700 border border-blue-300'
+                            : selectedTask.status === 'done'
+                              ? 'bg-green-100 text-green-700 border border-green-300'
+                              : 'bg-gray-200 text-gray-600 border border-gray-300'
+                  }`}
+                >
+                  {!selectedTask.start_date && !selectedTask.due_date
+                    ? 'Non planifié'
+                    : selectedTask.status === 'todo'
+                      ? 'À faire'
+                      : selectedTask.status === 'in_progress'
+                        ? 'En cours'
+                        : selectedTask.status === 'waiting'
+                          ? 'En attente'
+                          : selectedTask.status === 'done'
+                            ? 'Terminé'
+                            : 'Inconnu'}
+                </span>
+                <button
+                  onClick={() => setSelectedTask(null)}
+                  className="p-2 hover:bg-card-hover rounded"
+                >
+                  <X size={20} className="text-secondary" />
+                </button>
+              </div>
+            </div>
+            <div className="flex-1 overflow-auto p-4 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-primary mb-1">
+                    Date de début
+                  </label>
+                  <input
+                    type="date"
+                    value={selectedTask.start_date ? selectedTask.start_date.split('T')[0] : ''}
+                    onChange={e => {
+                      const newStartDate = e.target.value;
+                      const duration = selectedTask.duration_days;
+                      setSelectedTask({
+                        ...selectedTask,
+                        start_date: newStartDate,
+                        due_date:
+                          newStartDate && duration
+                            ? addBusinessDays(newStartDate, duration)
+                            : selectedTask.due_date,
+                      });
+                      updateSubcategory(selectedTask.id, {
+                        start_date: newStartDate || null,
+                        due_date:
+                          newStartDate && duration
+                            ? addBusinessDays(newStartDate, duration)
+                            : selectedTask.due_date,
+                      });
+                    }}
+                    className="w-full px-3 py-2 bg-input border border-std rounded-lg text-primary text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-primary mb-1">
+                    Durée (jours)
+                  </label>
+                  <input
+                    type="number"
+                    value={selectedTask.duration_days || ''}
+                    onChange={e => {
+                      const duration = parseInt(e.target.value) || 1;
+                      setSelectedTask({ ...selectedTask, duration_days: duration });
+                      updateSubcategory(selectedTask.id, { duration_days: duration });
+                      if (selectedTask.start_date) {
+                        const newDueDate = addBusinessDays(selectedTask.start_date, duration);
+                        setSelectedTask(prev => ({ ...prev, due_date: newDueDate }));
+                        updateSubcategory(selectedTask.id, { due_date: newDueDate });
+                      }
+                    }}
+                    className="w-full px-3 py-2 bg-input border border-std rounded-lg text-primary text-sm"
+                    min="1"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-primary mb-1">
+                    Date d'échéance
+                  </label>
+                  <input
+                    type="date"
+                    value={selectedTask.due_date ? selectedTask.due_date.split('T')[0] : ''}
+                    onChange={e => {
+                      const newDueDate = e.target.value;
+                      setSelectedTask({ ...selectedTask, due_date: newDueDate });
+                      updateSubcategory(selectedTask.id, {
+                        due_date: newDueDate || null,
+                      });
+                    }}
+                    className="w-full px-3 py-2 bg-input border border-std rounded-lg text-primary text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-primary mb-1">Priorité</label>
+                  <select
+                    value={selectedTask.priority || 'normal'}
+                    onChange={e => {
+                      setSelectedTask({ ...selectedTask, priority: e.target.value });
+                      updateSubcategory(selectedTask.id, { priority: e.target.value });
+                    }}
+                    className="w-full px-3 py-2 bg-input border border-std rounded-lg text-primary text-sm"
+                  >
+                    <option value="urgent">Urgent</option>
+                    <option value="high">Haute</option>
+                    <option value="normal">Normale</option>
+                    <option value="low">Basse</option>
+                  </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-primary mb-1">Statut</label>
+                  <select
+                    value={selectedTask.status || 'todo'}
+                    onChange={e => {
+                      setSelectedTask({ ...selectedTask, status: e.target.value });
+                      updateSubcategory(selectedTask.id, { status: e.target.value });
+                    }}
+                    className="w-full px-3 py-2 bg-input border border-std rounded-lg text-primary text-sm"
+                  >
+                    <option value="todo">À faire</option>
+                    <option value="in_progress">En cours</option>
+                    <option value="waiting">En attente</option>
+                    <option value="done">Terminé</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-primary mb-1">Assigné à</label>
+                  <input
+                    type="text"
+                    value={selectedTask.assignee || ''}
+                    onChange={e => {
+                      setSelectedTask({ ...selectedTask, assignee: e.target.value });
+                      updateSubcategory(selectedTask.id, { assignee: e.target.value });
+                    }}
+                    className="w-full px-3 py-2 bg-input border border-std rounded-lg text-primary text-sm"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-primary mb-1">Description</label>
+                <textarea
+                  value={selectedTask.description || ''}
+                  onChange={e => {
+                    setSelectedTask({ ...selectedTask, description: e.target.value });
+                    updateSubcategory(selectedTask.id, {
+                      description: e.target.value,
+                    });
+                  }}
+                  className="w-full px-3 py-2 bg-input border border-std rounded-lg text-primary text-sm"
+                  rows={3}
+                />
+              </div>
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-medium text-primary">Jalons</label>
+                  <button
+                    onClick={() => {
+                      const newMilestone = prompt('Nom du jalon:');
+                      if (newMilestone) {
+                        const sorted = [
+                          ...(selectedTask.milestones || []),
+                          { id: Date.now(), title: newMilestone, done: false },
+                        ].sort((a, b) => {
+                          if (a.done !== b.done) return a.done ? 1 : -1;
+                          return 0;
+                        });
+                        setSelectedTask({ ...selectedTask, milestones: sorted });
+                        updateSubcategory(selectedTask.id, { milestones: sorted });
+                      }
+                    }}
+                    className="text-xs text-accent hover:underline"
+                  >
+                    + Jalon
+                  </button>
+                </div>
+                {(selectedTask.milestones || []).map((milestone, idx) => (
+                  <div
+                    key={milestone.id}
+                    className="flex items-center gap-2 p-2 bg-card-hover rounded"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={milestone.done}
+                      onChange={e => {
+                        const newMilestones = [...(selectedTask.milestones || [])];
+                        newMilestones[idx] = {
+                          ...milestone,
+                          done: e.target.checked,
+                        };
+                        setSelectedTask({
+                          ...selectedTask,
+                          milestones: newMilestones,
+                        });
+                        updateSubcategory(selectedTask.id, {
+                          milestones: newMilestones,
+                        });
+                      }}
+                      className="w-4 h-4 rounded border-std text-accent"
+                    />
+                    <span
+                      className={`flex-1 text-sm ${
+                        milestone.done ? 'line-through text-muted' : 'text-primary'
+                      }`}
+                    >
+                      {milestone.title}
+                    </span>
+                    <button
+                      onClick={() => {
+                        const newMilestones = (selectedTask.milestones || []).filter(
+                          (_, i) => i !== idx
+                        );
+                        setSelectedTask({
+                          ...selectedTask,
+                          milestones: newMilestones,
+                        });
+                        updateSubcategory(selectedTask.id, {
+                          milestones: newMilestones,
+                        });
+                      }}
+                      className="p-1 text-muted hover:text-urgent rounded"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <div className="p-2 bg-stone-700 border border-stone-500 rounded text-stone-300 text-sm font-medium text-center">
+                {selectedTask.duration_days || '-'} jour(s)
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {activeTab === 'planning' && (
         <div className="flex-1 flex flex-col overflow-hidden">
           <div className="p-4 border-b border-std flex items-center justify-between bg-card">
@@ -2231,33 +2333,148 @@ function Board2() {
                 </div>
               </div>
             ) : (
-              <div className="flex">
+              <div className="flex flex-1 overflow-auto">
                 <div className="w-64 shrink-0 border-r border-std bg-card">
-                  <div className="sticky top-0 bg-card border-b border-std p-2 font-semibold text-sm text-primary">
+                  <div className="sticky top-0 h-8 bg-card border-b border-std p-2 font-semibold text-sm text-primary flex items-center z-10">
                     Tâche
                   </div>
-                  {getSortedTasks().map(task => (
-                    <div
-                      key={task.id}
-                      className="p-2 border-b border-std hover:bg-card-hover text-sm"
-                    >
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={`w-2 h-2 rounded-full ${getTaskStatusColor(task.status)}`}
-                        ></span>
-                        <span className="text-primary truncate" title={task.title}>
-                          {task.title}
-                        </span>
-                      </div>
-                      {task.category && (
-                        <div className="text-xs text-muted mt-1">{task.category.title}</div>
-                      )}
-                    </div>
-                  ))}
+                  {(() => {
+                    const grouped = getGroupedTasks();
+                    return Object.entries(grouped).map(([chapter, cards]) => {
+                      const chapterKey = chapter;
+                      const isChapterExpanded = expandedPlanningChapters.has(chapterKey);
+                      const chapterTaskCount = Object.values(cards).reduce(
+                        (sum, c) =>
+                          sum +
+                          Object.values(c.categories).reduce((s, cat) => s + cat.tasks.length, 0),
+                        0
+                      );
+
+                      return (
+                        <div key={chapterKey}>
+                          <div
+                            className="h-8 flex items-center px-2 border-b border-std hover:bg-card-hover text-sm cursor-pointer font-medium text-primary"
+                            onClick={() => {
+                              const isExpanded = expandedPlanningChapters.has(chapterKey);
+                              setExpandedPlanningChapters(prev => {
+                                const next = new Set(prev);
+                                if (isExpanded) next.delete(chapterKey);
+                                else next.add(chapterKey);
+                                return next;
+                              });
+                              savePlanningExpandedState('chapters', chapterKey, !isExpanded);
+                            }}
+                          >
+                            <span className="mr-1 text-xs">{isChapterExpanded ? '▼' : '▶'}</span>
+                            <span className="truncate">{chapterKey}</span>
+                            <span className="ml-1 text-xs text-muted">({chapterTaskCount})</span>
+                          </div>
+                          {isChapterExpanded &&
+                            Object.entries(cards).map(([cardId, cardData]) => {
+                              const cardKey = `${chapterKey}|${cardId}`;
+                              const isCardExpanded = expandedPlanningCards.has(cardKey);
+                              const cardTaskCount = Object.values(cardData.categories).reduce(
+                                (sum, cat) => sum + cat.tasks.length,
+                                0
+                              );
+
+                              return (
+                                <div key={cardKey}>
+                                  <div
+                                    className="h-8 flex items-center px-2 pl-6 border-b border-std hover:bg-card-hover text-sm cursor-pointer text-secondary"
+                                    onClick={() => {
+                                      const isExpanded = expandedPlanningCards.has(cardKey);
+                                      setExpandedPlanningCards(prev => {
+                                        const next = new Set(prev);
+                                        if (isExpanded) next.delete(cardKey);
+                                        else next.add(cardKey);
+                                        return next;
+                                      });
+                                      savePlanningExpandedState('cards', cardKey, !isExpanded);
+                                    }}
+                                  >
+                                    <span className="mr-1 text-xs">
+                                      {isCardExpanded ? '▼' : '▶'}
+                                    </span>
+                                    <span className="truncate">
+                                      {cardData.card?.title || 'Sans titre'}
+                                    </span>
+                                    <span className="ml-1 text-xs text-muted">
+                                      ({cardTaskCount})
+                                    </span>
+                                  </div>
+                                  {isCardExpanded &&
+                                    Object.entries(cardData.categories).map(([catId, catData]) => {
+                                      const catKey = `${cardKey}|${catId}`;
+                                      const isCatExpanded = expandedPlanningCategories.has(catKey);
+
+                                      return (
+                                        <div key={catKey}>
+                                          <div
+                                            className="h-8 flex items-center px-2 pl-10 border-b border-std hover:bg-card-hover text-sm cursor-pointer text-muted"
+                                            onClick={() => {
+                                              const isExpanded =
+                                                expandedPlanningCategories.has(catKey);
+                                              setExpandedPlanningCategories(prev => {
+                                                const next = new Set(prev);
+                                                if (isExpanded) next.delete(catKey);
+                                                else next.add(catKey);
+                                                return next;
+                                              });
+                                              savePlanningExpandedState(
+                                                'categories',
+                                                catKey,
+                                                !isExpanded
+                                              );
+                                            }}
+                                          >
+                                            <span className="mr-1 text-xs">
+                                              {isCatExpanded ? '▼' : '▶'}
+                                            </span>
+                                            <span className="truncate">
+                                              {catData.category?.title || 'Sans catégorie'}
+                                            </span>
+                                            <span className="ml-1 text-xs text-muted">
+                                              ({catData.tasks.length})
+                                            </span>
+                                          </div>
+                                          {isCatExpanded &&
+                                            catData.tasks.map(task => (
+                                              <div
+                                                key={task.id}
+                                                className="h-8 flex items-center px-2 pl-14 border-b border-std hover:bg-card-hover text-sm"
+                                              >
+                                                <div className="flex items-center gap-2 w-full">
+                                                  <span
+                                                    className={`w-2 h-2 rounded-full shrink-0 ${getTaskStatusColor(task.status)}`}
+                                                  ></span>
+                                                  <span
+                                                    className="text-primary truncate cursor-pointer hover:underline"
+                                                    title={task.title}
+                                                    onClick={e => {
+                                                      e.stopPropagation();
+                                                      setSelectedTask(task);
+                                                    }}
+                                                  >
+                                                    {task.title}
+                                                  </span>
+                                                </div>
+                                              </div>
+                                            ))}
+                                        </div>
+                                      );
+                                    })}
+                                </div>
+                              );
+                            })}
+                        </div>
+                      );
+                    });
+                  })()}
                 </div>
-                <div className="flex-1 overflow-x-auto">
+                <div className="flex-1 min-w-0">
                   <div className="min-w-max">
-                    <div className="flex sticky top-0 bg-card border-b border-std z-10">
+                    <div className="flex sticky top-0 h-8 bg-card border-b border-std z-10">
                       {(() => {
                         const days = getGanttDays();
                         const weeks = [];
@@ -2290,8 +2507,19 @@ function Board2() {
                         const days = getGanttDays();
                         const range = getGanttDateRange();
                         const totalDays = days.length;
+                        const flatList = getPlanningFlatList();
 
-                        return getSortedTasks().map(task => {
+                        return flatList.map(item => {
+                          if (item.type !== 'task') {
+                            return (
+                              <div
+                                key={item.key}
+                                className="h-8 border-b border-std bg-card-hover"
+                                style={{ width: `${totalDays * 30}px` }}
+                              />
+                            );
+                          }
+                          const task = item.task;
                           const pos = getTaskBarPosition(task);
                           return (
                             <div
@@ -2388,7 +2616,15 @@ function Board2() {
                                 onChange={() => togglePlanningTask(task.id)}
                                 className="w-4 h-4 rounded border-std text-accent"
                               />
-                              <span className="text-sm text-primary">{task.title}</span>
+                              <span
+                                className="text-sm text-primary hover:underline cursor-pointer"
+                                onClick={e => {
+                                  e.stopPropagation();
+                                  setSelectedTask(task);
+                                }}
+                              >
+                                {task.title}
+                              </span>
                               {task.start_date && (
                                 <span className="text-xs text-muted ml-auto">
                                   {task.start_date}

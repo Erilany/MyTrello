@@ -1466,7 +1466,6 @@ export function AppProvider({ children }) {
       ),
     };
     saveDb(newDb);
-    if (currentBoard) loadBoard(currentBoard.id);
   };
 
   const deleteSubcategory = id => {
@@ -1475,7 +1474,6 @@ export function AppProvider({ children }) {
       subcategories: db.subcategories.filter(s => Number(s.id) !== Number(id)),
     };
     saveDb(newDb);
-    if (currentBoard) loadBoard(currentBoard.id);
   };
 
   const moveSubcategory = (subcategoryId, newCategoryId, newPosition) => {
