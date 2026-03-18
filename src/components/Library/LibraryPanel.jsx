@@ -1273,7 +1273,11 @@ function LibraryPanel() {
         const categoryDuration = cat.duration_days ?? 1;
 
         const existingCat = db.categories.find(
-          c => c.title && c.title.toLowerCase() === cat.title.toLowerCase() && !c.parent_id
+          c =>
+            c.title &&
+            c.title.toLowerCase() === cat.title.toLowerCase() &&
+            !c.parent_id &&
+            boardCardIds.includes(Number(c.card_id))
         );
         if (existingCat) {
           errors.push(`Catégorie "${cat.title}": existe déjà dans ce projet`);

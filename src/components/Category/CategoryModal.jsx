@@ -10,6 +10,8 @@ function CategoryModal({ category, onClose }) {
     subcategories,
     categories,
     libraryItems,
+    currentBoard,
+    getInternalContacts,
   } = useApp();
 
   const [title, setTitle] = useState(category.title);
@@ -227,12 +229,18 @@ function CategoryModal({ category, onClose }) {
 
           <div>
             <label className="block text-sm font-medium text-secondary mb-1">Assigné à</label>
-            <input
-              type="text"
+            <select
               value={assignee}
               onChange={e => setAssignee(e.target.value)}
               className="w-full px-3 py-2 bg-input border border-std rounded-lg text-primary focus:outline-none focus:border-accent"
-            />
+            >
+              <option value="">Sélectionner...</option>
+              {getInternalContacts(currentBoard?.id).map(contact => (
+                <option key={contact.id} value={contact.name || contact.title}>
+                  {contact.name || contact.title}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="pt-4 border-t border-std">

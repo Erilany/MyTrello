@@ -471,9 +471,7 @@ export function AppProvider({ children }) {
   };
 
   const getWeekKey = (date = new Date()) => {
-    const year = date.getFullYear();
-    const week = getWeekNumber(date);
-    return `${year}-W${week}`;
+    return getWeekNumber(date);
   };
 
   const getWeekNumberFromKey = weekKey => {
@@ -486,6 +484,30 @@ export function AppProvider({ children }) {
     return weekKey;
   };
 
+  const getInternalContacts = boardId => {
+    const defaultContacts = [
+      { id: 1, title: 'Manager de projets' },
+      { id: 2, title: 'Chargé(e) de Concertation' },
+      { id: 3, title: "Chargé(e) d'Etudes LA" },
+      { id: 4, title: "Chargé(e) d'Etudes LS" },
+      { id: 5, title: "Chargé(e) d'Etudes Poste HT" },
+      { id: 6, title: "Chargé(e) d'Etudes Poste BT et CC" },
+      { id: 7, title: "Chargé(e) d'Etudes SPC" },
+      { id: 8, title: 'Contrôleur Travaux' },
+      { id: 9, title: 'Assistant(e) Etudes' },
+    ];
+    if (!boardId) return defaultContacts;
+    const saved = localStorage.getItem(`board-${boardId}-internalContacts`);
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        return defaultContacts;
+      }
+    }
+    return defaultContacts;
+  };
+
   const addProjectTime = (projectId, seconds) => {
     const week = getWeekKey();
     const data = loadProjectTime();
@@ -496,9 +518,9 @@ export function AppProvider({ children }) {
   };
 
   const getProjectTime = (projectId, week = null) => {
-    const w = week ? getWeekKey(new Date()) : getWeekKey();
+    const w = week ? week : getWeekKey();
     const data = loadProjectTime();
-    return data[w]?.[projectId] || 0;
+    return data[w]?.[String(projectId)] || 0;
   };
 
   const getAllProjectTime = (week = null) => {
@@ -535,10 +557,22 @@ export function AppProvider({ children }) {
   useEffect(() => {
     if (currentBoard) {
       const now = new Date();
-      setProjectTimer({
-        activeProjectId: String(currentBoard.id),
-        startTime: now,
-        intervals: {},
+      setProjectTimer(prev => {
+        if (
+          prev.activeProjectId &&
+          prev.startTime &&
+          prev.activeProjectId !== String(currentBoard.id)
+        ) {
+          const elapsed = Math.floor((now - prev.startTime) / 1000);
+          if (elapsed > 0) {
+            addProjectTime(prev.activeProjectId, elapsed);
+          }
+        }
+        return {
+          activeProjectId: String(currentBoard.id),
+          startTime: now,
+          intervals: {},
+        };
       });
     }
   }, [currentBoard?.id]);
@@ -1497,6 +1531,9 @@ export function AppProvider({ children }) {
       subcategories: db.subcategories.filter(s => Number(s.id) !== Number(id)),
     };
     saveDb(newDb);
+    if (currentBoard) {
+      setTimeout(() => loadBoard(currentBoard.id), 100);
+    }
   };
 
   const moveSubcategory = (subcategoryId, newCategoryId, newPosition) => {
@@ -1796,8 +1833,10 @@ export function AppProvider({ children }) {
     getWorkingDaysBetween,
     getProjectTime,
     getAllProjectTime,
+    loadProjectTime,
     getWeekNumber,
     projectTimer,
+    getInternalContacts,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

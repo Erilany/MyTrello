@@ -5,7 +5,13 @@ import 'react-quill/dist/quill.snow.css';
 import { X, Bookmark, Trash2 } from 'lucide-react';
 
 function SubCategoryModal({ subcategory, onClose }) {
-  const { updateSubcategory, saveToLibrary, categories: contextCategories } = useApp();
+  const {
+    updateSubcategory,
+    saveToLibrary,
+    categories: contextCategories,
+    currentBoard,
+    getInternalContacts,
+  } = useApp();
 
   // Load data directly from localStorage for consistency
   const [libraryItems, setLibraryItems] = useState([]);
@@ -361,12 +367,18 @@ function SubCategoryModal({ subcategory, onClose }) {
             </div>
             <div>
               <label className="block text-sm font-medium text-primary mb-1">Assigné à</label>
-              <input
-                type="text"
+              <select
                 value={assignee}
                 onChange={e => setAssignee(e.target.value)}
                 className="w-full px-3 py-2 bg-input border border-std rounded-lg text-primary focus:outline-none focus:border-accent"
-              />
+              >
+                <option value="">Sélectionner...</option>
+                {getInternalContacts(currentBoard?.id).map(contact => (
+                  <option key={contact.id} value={contact.name || contact.title}>
+                    {contact.name || contact.title}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 

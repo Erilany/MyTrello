@@ -60,6 +60,22 @@ function Board2() {
     }
   }, []);
 
+  useEffect(() => {
+    if (selectedCategoryForTasks && subcategories) {
+      const updatedSubcats = subcategories.filter(
+        s => s.category_id === selectedCategoryForTasks.category.id
+      );
+      if (
+        JSON.stringify(updatedSubcats) !== JSON.stringify(selectedCategoryForTasks.subcategories)
+      ) {
+        setSelectedCategoryForTasks(prev => ({
+          ...prev,
+          subcategories: updatedSubcats,
+        }));
+      }
+    }
+  }, [subcategories]);
+
   const [selectedChapter, setSelectedChapter] = useState(null);
   const [selectedCategoryForTasks, setSelectedCategoryForTasks] = useState(null);
   const [newTaskTitle, setNewTaskTitle] = useState('');
@@ -537,18 +553,29 @@ function Board2() {
                                 return (
                                   <div key={cat.id} className="pl-3 border-l-2 border-accent">
                                     <div className="flex items-center justify-between">
-                                      <h4
-                                        onClick={() =>
-                                          setSelectedCategoryForTasks({
-                                            card,
-                                            category: cat,
-                                            subcategories: catSubcats,
-                                          })
-                                        }
-                                        className="text-sm font-medium text-secondary cursor-pointer hover:text-accent hover:underline"
-                                      >
-                                        {cat.title}
-                                      </h4>
+                                      <div className="flex-1">
+                                        <h4
+                                          onClick={() =>
+                                            setSelectedCategoryForTasks({
+                                              card,
+                                              category: cat,
+                                              subcategories: catSubcats,
+                                            })
+                                          }
+                                          className="text-sm font-medium text-secondary cursor-pointer hover:text-accent hover:underline"
+                                        >
+                                          {cat.title}
+                                        </h4>
+                                        <div className="flex items-center gap-2 text-xs text-muted mt-0.5">
+                                          {cat.assignee && <span>👤 {cat.assignee}</span>}
+                                          {cat.due_date && (
+                                            <span>
+                                              📅{' '}
+                                              {new Date(cat.due_date).toLocaleDateString('fr-FR')}
+                                            </span>
+                                          )}
+                                        </div>
+                                      </div>
                                       <button
                                         onClick={e =>
                                           toggleCategoryFavorite(e, cat.id, card.id, cat.title)
@@ -707,6 +734,18 @@ function Board2() {
                                   >
                                     <Trash2 size={14} />
                                   </button>
+                                </div>
+                                <div className="flex items-center gap-3 mt-1 text-xs text-muted pl-7">
+                                  {subcat.assignee && (
+                                    <span className="flex items-center gap-1">
+                                      👤 {subcat.assignee}
+                                    </span>
+                                  )}
+                                  {subcat.due_date && (
+                                    <span className="flex items-center gap-1">
+                                      📅 {new Date(subcat.due_date).toLocaleDateString('fr-FR')}
+                                    </span>
+                                  )}
                                 </div>
                               </div>
                             );
