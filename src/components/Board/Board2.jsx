@@ -3,6 +3,9 @@ import { useApp } from '../../context/AppContext';
 import { usePlanning } from '../../hooks/usePlanning';
 import Exchange from '../Exchange/Exchange';
 import { libraryTemplates } from '../../data/libraryData';
+import { loadGMRData } from '../../data/GMRData';
+import { loadPriorityData } from '../../data/PriorityData';
+import { loadZonesData } from '../../data/ZonesData';
 import {
   getGanttDateRange as utilsGetGanttDateRange,
   getGanttDays as utilsGetGanttDays,
@@ -272,7 +275,7 @@ function Board2() {
   const [newLink, setNewLink] = useState({ title: '', url: '', type: 'web', color: '#22C55E' });
 
   const [eotpLines, setEotpLines] = useState([]);
-  const [internalContacts, setInternalContacts] = useState([
+  const defaultInternalContacts = [
     { id: 1, title: 'Manager de projets' },
     { id: 2, title: 'Chargé(e) de Concertation' },
     { id: 3, title: "Chargé(e) d'Etudes LA" },
@@ -282,10 +285,14 @@ function Board2() {
     { id: 7, title: "Chargé(e) d'Etudes SPC" },
     { id: 8, title: 'Contrôleur Travaux' },
     { id: 9, title: 'Assistant(e) Etudes' },
-  ]);
+  ];
+  const [internalContacts, setInternalContacts] = useState(defaultInternalContacts);
   const [showAddInternal, setShowAddInternal] = useState(false);
   const [newInternalTitle, setNewInternalTitle] = useState('');
   const [externalContacts, setExternalContacts] = useState([]);
+  const [boardGMR, setBoardGMR] = useState('');
+  const [boardPriority, setBoardPriority] = useState('');
+  const [boardZone, setBoardZone] = useState('');
 
   const [commandes, setCommandes] = useState([]);
   const [selectedCommande, setSelectedCommande] = useState(null);
@@ -299,26 +306,41 @@ function Board2() {
       const savedLinks = localStorage.getItem(`board-${currentBoard.id}-links`);
       if (savedLinks) {
         setLinks(JSON.parse(savedLinks));
+      } else {
+        setLinks([]);
       }
       const savedCommandes = localStorage.getItem(`board-${currentBoard.id}-commandes`);
       if (savedCommandes) {
         setCommandes(JSON.parse(savedCommandes));
+      } else {
+        setCommandes([]);
       }
       const savedEotp = localStorage.getItem(`board-${currentBoard.id}-eotp`);
       if (savedEotp) {
         setEotpLines(JSON.parse(savedEotp));
+      } else {
+        setEotpLines([]);
       }
       const savedInternal = localStorage.getItem(`board-${currentBoard.id}-internalContacts`);
       if (savedInternal) {
         const parsed = JSON.parse(savedInternal);
         if (parsed.length > 0) {
           setInternalContacts(parsed);
+        } else {
+          setInternalContacts(defaultInternalContacts);
         }
+      } else {
+        setInternalContacts(defaultInternalContacts);
       }
       const savedExternal = localStorage.getItem(`board-${currentBoard.id}-externalContacts`);
       if (savedExternal) {
         setExternalContacts(JSON.parse(savedExternal));
+      } else {
+        setExternalContacts([]);
       }
+      setBoardGMR(localStorage.getItem(`board-${currentBoard.id}-gmr`) || '');
+      setBoardPriority(localStorage.getItem(`board-${currentBoard.id}-priority`) || '');
+      setBoardZone(localStorage.getItem(`board-${currentBoard.id}-zone`) || '');
     }
   }, [currentBoard]);
 
@@ -357,6 +379,71 @@ function Board2() {
       );
     }
   }, [externalContacts, currentBoard]);
+
+  useEffect(() => {
+    if (currentBoard) {
+      localStorage.setItem(`board-${currentBoard.id}-gmr`, boardGMR);
+    }
+  }, [boardGMR, currentBoard]);
+
+  useEffect(() => {
+    if (currentBoard) {
+      localStorage.setItem(`board-${currentBoard.id}-priority`, boardPriority);
+    }
+  }, [boardPriority, currentBoard]);
+
+  useEffect(() => {
+    if (currentBoard) {
+      localStorage.setItem(`board-${currentBoard.id}-zone`, boardZone);
+    }
+  }, [boardZone, currentBoard]);
+
+  const saveAllProjectData = () => {
+    if (!currentBoard) return;
+    localStorage.setItem(`board-${currentBoard.id}-links`, JSON.stringify(links));
+    localStorage.setItem(`board-${currentBoard.id}-commandes`, JSON.stringify(commandes));
+    localStorage.setItem(`board-${currentBoard.id}-eotp`, JSON.stringify(eotpLines));
+    localStorage.setItem(
+      `board-${currentBoard.id}-internalContacts`,
+      JSON.stringify(internalContacts)
+    );
+    localStorage.setItem(
+      `board-${currentBoard.id}-externalContacts`,
+      JSON.stringify(externalContacts)
+    );
+    localStorage.setItem(`board-${currentBoard.id}-gmr`, boardGMR);
+    localStorage.setItem(`board-${currentBoard.id}-priority`, boardPriority);
+    localStorage.setItem(`board-${currentBoard.id}-zone`, boardZone);
+  };
+
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      saveAllProjectData();
+    };
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        saveAllProjectData();
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('pagehide', handleBeforeUnload);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('pagehide', handleBeforeUnload);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [
+    currentBoard,
+    links,
+    commandes,
+    eotpLines,
+    internalContacts,
+    externalContacts,
+    boardGMR,
+    boardPriority,
+    boardZone,
+  ]);
 
   const toggleCardExpanded = cardId => {
     setExpandedCards(prev => ({ ...prev, [cardId]: !prev[cardId] }));
@@ -1197,6 +1284,60 @@ function Board2() {
 
       {activeTab === 'informations' && (
         <div className="flex-1 overflow-y-auto">
+          <div className="mb-6 p-4 bg-card rounded-lg border border-std">
+            <h3 className="text-sm font-semibold text-primary mb-4 flex items-center">
+              <Info size={16} className="mr-2" />
+              Paramètres du projet
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs text-secondary mb-1">GMR</label>
+                <select
+                  value={boardGMR}
+                  onChange={e => setBoardGMR(e.target.value)}
+                  className="w-full px-3 py-2 text-sm bg-input border border-std rounded text-primary focus:outline-none focus:border-accent"
+                >
+                  <option value="">-- Sélectionner --</option>
+                  {loadGMRData().map(gmr => (
+                    <option key={gmr.code} value={gmr.code}>
+                      {gmr.code} - {gmr.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs text-secondary mb-1">Priorité du projet</label>
+                <select
+                  value={boardPriority}
+                  onChange={e => setBoardPriority(e.target.value)}
+                  className="w-full px-3 py-2 text-sm bg-input border border-std rounded text-primary focus:outline-none focus:border-accent"
+                >
+                  <option value="">-- Sélectionner --</option>
+                  {loadPriorityData().map(priority => (
+                    <option key={priority.code} value={priority.code}>
+                      {priority.code} - {priority.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs text-secondary mb-1">Zone</label>
+                <select
+                  value={boardZone}
+                  onChange={e => setBoardZone(e.target.value)}
+                  className="w-full px-3 py-2 text-sm bg-input border border-std rounded text-primary focus:outline-none focus:border-accent"
+                >
+                  <option value="">-- Sélectionner --</option>
+                  {loadZonesData().map(zone => (
+                    <option key={zone.id} value={zone.label}>
+                      {zone.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+
           <div className="mb-6">
             <h3 className="text-sm font-semibold text-primary mb-3 flex items-center">
               <ExternalLink size={16} className="mr-2" />

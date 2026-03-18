@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { X, Bookmark } from 'lucide-react';
+import { loadTagsData } from '../../data/TagsData';
 
 function CategoryModal({ category, onClose }) {
   const {
@@ -13,6 +14,10 @@ function CategoryModal({ category, onClose }) {
     currentBoard,
     getInternalContacts,
   } = useApp();
+
+  const tag = category.tag || null;
+  const allTags = loadTagsData();
+  const tagInfo = tag ? allTags.find(t => t.name === tag) : null;
 
   const [title, setTitle] = useState(category.title);
   const [description, setDescription] = useState(category.description || '');
@@ -242,6 +247,19 @@ function CategoryModal({ category, onClose }) {
               ))}
             </select>
           </div>
+
+          {tag && (
+            <div>
+              <label className="block text-sm font-medium text-secondary mb-1">Tag</label>
+              <div
+                className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-white"
+                style={{ backgroundColor: tagInfo?.color || '#6B7280' }}
+              >
+                {tag}
+              </div>
+              <p className="text-xs text-muted mt-1">Tag assigné par l'administrateur</p>
+            </div>
+          )}
 
           <div className="pt-4 border-t border-std">
             <h4 className="text-sm font-medium text-secondary mb-3">Planning MS Project</h4>

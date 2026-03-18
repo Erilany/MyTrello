@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
 import { useNavigate } from 'react-router-dom';
 import SubCategoryModal from '../SubCategory/SubCategoryModal';
+import ActivityReview from './ActivityReview';
 import {
   Clock,
   Calendar,
@@ -619,10 +620,14 @@ export default function Dashboard() {
       )}
 
       {activeTab === 'activity' && (
-        <div className="bg-card rounded-lg border border-std p-12 flex flex-col items-center justify-center">
-          <Activity size={64} className="text-muted mb-6" />
-          <h2 className="text-xl font-semibold text-primary mb-2">Revue d'Activité</h2>
-          <p className="text-muted">Page en cours de développement</p>
+        <div className="bg-card rounded-lg border border-std p-4">
+          <ActivityReview
+            boards={allBoards}
+            categories={allCategories}
+            subcategories={allSubcategories}
+            columns={allColumns}
+            currentUsername={currentUsername}
+          />
         </div>
       )}
     </div>

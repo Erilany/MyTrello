@@ -1,5 +1,9 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { libraryTemplates } from '../data/libraryData';
+import { loadGMRData, saveGMRData } from '../data/GMRData';
+import { loadPriorityData, savePriorityData } from '../data/PriorityData';
+import { loadZonesData, saveZonesData } from '../data/ZonesData';
+import { loadTagsData, saveTagsData } from '../data/TagsData';
 
 const STORAGE_KEY = 'mytrello_db';
 
@@ -781,6 +785,31 @@ export function AppProvider({ children }) {
     const username = localStorage.getItem('mytrello-username');
     const userRole = localStorage.getItem('mytrello-user-role');
 
+    const projectDataKeys = [
+      'links',
+      'commandes',
+      'eotp',
+      'internalContacts',
+      'externalContacts',
+      'gmr',
+      'priority',
+      'zone',
+    ];
+    const projectData = {};
+    db.boards.forEach(board => {
+      projectData[board.id] = {};
+      projectDataKeys.forEach(key => {
+        const stored = localStorage.getItem(`board-${board.id}-${key}`);
+        if (stored) {
+          try {
+            projectData[board.id][key] = JSON.parse(stored);
+          } catch {
+            projectData[board.id][key] = stored;
+          }
+        }
+      });
+    });
+
     const exportObj = {
       version: '1.0',
       exportedAt: new Date().toISOString(),
@@ -795,6 +824,13 @@ export function AppProvider({ children }) {
         username,
         userRole,
       },
+      databases: {
+        gmr: loadGMRData(),
+        priority: loadPriorityData(),
+        zones: loadZonesData(),
+        tags: loadTagsData(),
+      },
+      projectsData,
     };
     const blob = new Blob([JSON.stringify(exportObj, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -846,6 +882,56 @@ export function AppProvider({ children }) {
           if (parsed.settings.userRole) {
             localStorage.setItem('mytrello-user-role', parsed.settings.userRole);
           }
+        }
+
+        if (parsed.databases) {
+          if (parsed.databases.gmr) {
+            saveGMRData(parsed.databases.gmr);
+          }
+          if (parsed.databases.priority) {
+            savePriorityData(parsed.databases.priority);
+          }
+          if (parsed.databases.zones) {
+            saveZonesData(parsed.databases.zones);
+          }
+          if (parsed.databases.tags) {
+            saveTagsData(parsed.databases.tags);
+          }
+        }
+
+        if (parsed.projectsData) {
+          Object.entries(parsed.projectsData).forEach(([boardId, data]) => {
+            if (data.links) {
+              localStorage.setItem(`board-${boardId}-links`, JSON.stringify(data.links));
+            }
+            if (data.commandes) {
+              localStorage.setItem(`board-${boardId}-commandes`, JSON.stringify(data.commandes));
+            }
+            if (data.eotp) {
+              localStorage.setItem(`board-${boardId}-eotp`, JSON.stringify(data.eotp));
+            }
+            if (data.internalContacts) {
+              localStorage.setItem(
+                `board-${boardId}-internalContacts`,
+                JSON.stringify(data.internalContacts)
+              );
+            }
+            if (data.externalContacts) {
+              localStorage.setItem(
+                `board-${boardId}-externalContacts`,
+                JSON.stringify(data.externalContacts)
+              );
+            }
+            if (data.gmr) {
+              localStorage.setItem(`board-${boardId}-gmr`, data.gmr);
+            }
+            if (data.priority) {
+              localStorage.setItem(`board-${boardId}-priority`, data.priority);
+            }
+            if (data.zone) {
+              localStorage.setItem(`board-${boardId}-zone`, data.zone);
+            }
+          });
         }
 
         if (parsed.data.boards.length > 0) {
@@ -1318,9 +1404,10 @@ export function AppProvider({ children }) {
     assignee = '',
     parentId = null,
     durationDays = 1,
-    reloadBoardId = null
+    reloadBoardId = null,
+    tag = null
   ) => {
-    console.log('[createCategory] Called with cardId:', cardId, 'title:', title);
+    console.log('[createCategory] Called with cardId:', cardId, 'title:', title, 'tag:', tag);
 
     // Check for duplicate category title for this card
     const existingCategory = db.categories.find(
@@ -1364,6 +1451,7 @@ export function AppProvider({ children }) {
           position: maxPos + 1,
           start_date: null,
           duration_days: durationDays,
+          tag,
           created_at: new Date().toISOString(),
         };
         const newDb = {
@@ -1460,7 +1548,8 @@ export function AppProvider({ children }) {
     assignee = '',
     startDate = null,
     durationDays = 1,
-    reloadBoardId = null
+    reloadBoardId = null,
+    tag = null
   ) => {
     // Check for duplicate subcategory title for this category
     const existingSubcategory = db.subcategories.find(
@@ -1494,6 +1583,7 @@ export function AppProvider({ children }) {
           position: maxPos + 1,
           start_date: startDate,
           duration_days: durationDays,
+          tag,
           created_at: new Date().toISOString(),
           predecessors: [],
         };

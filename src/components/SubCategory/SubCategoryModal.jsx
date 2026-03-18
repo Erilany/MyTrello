@@ -3,6 +3,7 @@ import { useApp } from '../../context/AppContext';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import { X, Bookmark, Trash2 } from 'lucide-react';
+import { loadTagsData } from '../../data/TagsData';
 
 function SubCategoryModal({ subcategory, onClose }) {
   const {
@@ -12,6 +13,10 @@ function SubCategoryModal({ subcategory, onClose }) {
     currentBoard,
     getInternalContacts,
   } = useApp();
+
+  const tag = subcategory.tag || null;
+  const allTags = loadTagsData();
+  const tagInfo = tag ? allTags.find(t => t.name === tag) : null;
 
   // Load data directly from localStorage for consistency
   const [libraryItems, setLibraryItems] = useState([]);
@@ -380,6 +385,19 @@ function SubCategoryModal({ subcategory, onClose }) {
                 ))}
               </select>
             </div>
+
+            {tag && (
+              <div>
+                <label className="block text-sm font-medium text-primary mb-1">Tag</label>
+                <div
+                  className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-white"
+                  style={{ backgroundColor: tagInfo?.color || '#6B7280' }}
+                >
+                  {tag}
+                </div>
+                <p className="text-xs text-muted mt-1">Tag assigné par l'administrateur</p>
+              </div>
+            )}
           </div>
 
           <div>

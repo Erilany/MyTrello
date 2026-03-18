@@ -1,9 +1,38 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Settings as SettingsIcon, HardDrive, Database, Clock, BookOpen } from 'lucide-react';
 import LibraryEditor from './LibraryEditor';
+import { DataTable } from './DataTable';
+import {
+  loadGMRData,
+  addGMRItem,
+  updateGMRItem,
+  deleteGMRItem,
+  defaultGMRData,
+} from '../../data/GMRData';
+import {
+  loadPriorityData,
+  addPriorityItem,
+  updatePriorityItem,
+  deletePriorityItem,
+  resetPriorityData,
+} from '../../data/PriorityData';
+import { loadZonesData, addZoneItem, updateZoneItem, deleteZoneItem } from '../../data/ZonesData';
+import { loadTagsData, addTag, updateTag, deleteTag, resetTagsData } from '../../data/TagsData';
 
 function SystemSettings() {
   const [activeTab, setActiveTab] = useState('database');
+
+  const [gmrData, setGmrData] = useState([]);
+  const [priorityData, setPriorityData] = useState([]);
+  const [zonesData, setZonesData] = useState([]);
+  const [tagsData, setTagsData] = useState([]);
+
+  useEffect(() => {
+    setGmrData(loadGMRData());
+    setPriorityData(loadPriorityData());
+    setZonesData(loadZonesData());
+    setTagsData(loadTagsData());
+  }, []);
 
   const tabs = [
     { id: 'database', label: 'Base de données', icon: Database },
@@ -11,6 +40,95 @@ function SystemSettings() {
     { id: 'backup', label: 'Sauvegarde auto', icon: Clock },
     { id: 'library', label: 'Modèles Bibliothèque', icon: BookOpen },
   ];
+
+  const gmrColumns = [
+    { key: 'code', label: 'Identifiant', maxLength: 4, placeholder: '4 caractères max' },
+    { key: 'label', label: 'Libellé' },
+  ];
+
+  const priorityColumns = [
+    { key: 'code', label: 'Code', maxLength: 2, placeholder: '2 caractères' },
+    { key: 'label', label: 'Libellé' },
+  ];
+
+  const zonesColumns = [{ key: 'label', label: 'Libellé' }];
+
+  const tagsColumns = [
+    { key: 'name', label: 'Nom du tag' },
+    { key: 'color', label: 'Couleur', isColor: true },
+  ];
+
+  const handleGMRAdd = values => addGMRItem(values.code, values.label);
+  const handleGMRUpdate = (id, values) => {
+    const data = loadGMRData();
+    const item = data.find(i => (i.id || i.code) === id);
+    if (!item) return data;
+    return updateGMRItem(item.code, values.code, values.label);
+  };
+  const handleGMRDelete = code => {
+    const data = deleteGMRItem(code);
+    setGmrData(data);
+    return data;
+  };
+
+  const handlePriorityAdd = values => addPriorityItem(values.code, values.label);
+  const handlePriorityUpdate = (id, values) => {
+    const data = loadPriorityData();
+    const item = data.find(i => (i.id || i.code) === id);
+    if (!item) return data;
+    return updatePriorityItem(item.code, values.code, values.label);
+  };
+  const handlePriorityDelete = code => {
+    const data = deletePriorityItem(code);
+    setPriorityData(data);
+    return data;
+  };
+  const handlePriorityReset = () => {
+    const data = resetPriorityData();
+    setPriorityData(data);
+    return data;
+  };
+
+  const handleZoneAdd = values => addZoneItem(values.label);
+  const handleZoneUpdate = (id, values) => {
+    const data = loadZonesData();
+    const item = data.find(i => i.id === id);
+    if (!item) return data;
+    return updateZoneItem(item.id, values.label);
+  };
+  const handleZoneDelete = id => {
+    const data = deleteZoneItem(id);
+    setZonesData(data);
+    return data;
+  };
+
+  const handleTagAdd = values => {
+    const data = addTag(values.name, values.color);
+    setTagsData(data);
+    return data;
+  };
+  const handleTagUpdate = (id, values) => {
+    const data = updateTag(id, values.name, values.color);
+    setTagsData(data);
+    return data;
+  };
+  const handleTagDelete = id => {
+    const data = deleteTag(id);
+    setTagsData(data);
+    return data;
+  };
+  const handleTagReset = () => {
+    const data = resetTagsData();
+    setTagsData(data);
+    return data;
+  };
+
+  useEffect(() => {
+    setGmrData(loadGMRData());
+    setPriorityData(loadPriorityData());
+    setZonesData(loadZonesData());
+    setTagsData(loadTagsData());
+  }, [activeTab]);
 
   return (
     <div className="p-6 max-w-full">
@@ -44,22 +162,51 @@ function SystemSettings() {
         <div className="p-6">
           {activeTab === 'database' && (
             <div>
-              <div className="flex items-center gap-3 mb-4">
+              <div className="flex items-center gap-3 mb-6">
                 <Database size={24} className="text-accent" />
-                <h2 className="text-xl font-semibold text-primary">Base de données</h2>
+                <h2 className="text-xl font-semibold text-primary">Bases de données</h2>
               </div>
-              <p className="text-sm text-secondary mb-4">
-                Cette section sera disponible dans une future mise à jour.
-              </p>
-              <div className="space-y-2 opacity-50">
-                <div className="flex items-center justify-between p-3 bg-card-hover rounded">
-                  <span className="text-sm text-primary">Type de base</span>
-                  <span className="text-sm text-muted">LocalStorage</span>
-                </div>
-                <div className="flex items-center justify-between p-3 bg-card-hover rounded">
-                  <span className="text-sm text-primary">Taille utilisée</span>
-                  <span className="text-sm text-muted">-</span>
-                </div>
+
+              <div className="space-y-6">
+                <DataTable
+                  title="GMR"
+                  data={gmrData}
+                  onAdd={handleGMRAdd}
+                  onUpdate={handleGMRUpdate}
+                  onDelete={handleGMRDelete}
+                  columns={gmrColumns}
+                />
+
+                <DataTable
+                  title="Priorité des projets"
+                  data={priorityData}
+                  onAdd={handlePriorityAdd}
+                  onUpdate={handlePriorityUpdate}
+                  onDelete={handlePriorityDelete}
+                  onReset={handlePriorityReset}
+                  columns={priorityColumns}
+                  canReset={true}
+                />
+
+                <DataTable
+                  title="Zones"
+                  data={zonesData}
+                  onAdd={handleZoneAdd}
+                  onUpdate={handleZoneUpdate}
+                  onDelete={handleZoneDelete}
+                  columns={zonesColumns}
+                />
+
+                <DataTable
+                  title="Tag Revue d'activité"
+                  data={tagsData}
+                  onAdd={handleTagAdd}
+                  onUpdate={handleTagUpdate}
+                  onDelete={handleTagDelete}
+                  onReset={handleTagReset}
+                  columns={tagsColumns}
+                  canReset={true}
+                />
               </div>
             </div>
           )}

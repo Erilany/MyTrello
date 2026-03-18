@@ -10,6 +10,7 @@ import {
   FolderOpen,
 } from 'lucide-react';
 import { libraryTemplates } from '../../data/libraryData';
+import { loadTagsData } from '../../data/TagsData';
 
 const STORAGE_KEY = 'mytrello_library_editor';
 
@@ -72,9 +73,12 @@ function convertTreeToLibraryItems(treeData) {
             description: '',
             priority: 'normal',
             duration_days: node.data.temps || 0,
+            tag: node.data.systemTag || null,
             subcategories: [],
           };
           content.categories.push(category);
+        } else if (node.data.systemTag) {
+          category.tag = node.data.systemTag;
         }
 
         if (node.type === 'souscategorie' && node.data.sousCat1) {
@@ -84,6 +88,7 @@ function convertTreeToLibraryItems(treeData) {
               description: '',
               priority: 'normal',
               duration_days: node.data.temps || 0,
+              tag: node.data.systemTag || null,
             });
           }
         }
@@ -232,9 +237,9 @@ function convertLibraryDataToTree(libraryItems) {
   return tree;
 }
 
-const defaultCsvData = `N°;Chapitre;Carte;Action;Tâche;Temps;Tags 1;Tags 2
-5;Jalons;Jalons SIEPR;;;;;;PT10955H0M0S;;
-6;Jalons;Jalons SIEPR;Jalons projet;;;;;PT10955H0M0S;;
+const defaultCsvData = `N°;Chapitre;Carte;Action;Tâche;Temps;Tags 1;Tags 2;Tag Revue d'activité
+5;Jalons;Jalons SIEPR;;;;;;PT10955H0M0S;;;
+6;Jalons;Jalons SIEPR;Jalons projet;;;;;PT10955H0M0S;;;
 7;Jalons;Jalons SIEPR;Jalons projet;Signature de la DO;;;;PT0H0M0S;Projet;Projet
 8;Jalons;Jalons SIEPR;Jalons projet;Lancement projet;;;;PT0H0M0S;Projet;Projet
 9;Jalons;Jalons SIEPR;Jalons projet;Signature de la DCT;;;;PT0H0M0S;Projet;Projet
@@ -245,14 +250,14 @@ const defaultCsvData = `N°;Chapitre;Carte;Action;Tâche;Temps;Tags 1;Tags 2
 14;Jalons;Jalons SIEPR;Jalons projet;Sécurisation du foncier;;;;PT0H0M0S;Projet;Projet
 15;Jalons;Jalons SIEPR;Jalons projet;Obtention de la dernière autorisation;;;;PT0H0M0S;Projet;Projet
 16;Jalons;Jalons SIEPR;Jalons projet;Clôture;;;;PT0H0M0S;Travaux;Projet
-17;Jalons;Jalons SIEPR;Jalons OP poste;;;;;;PT9779H0M0S;;
+17;Jalons;Jalons SIEPR;Jalons OP poste;;;;;;PT9779H0M0S;;;
 18;Jalons;Jalons SIEPR;Jalons OP poste;CTF Poste validée;;;;PT0H0M0S;Processus Décisionnel;Poste
 19;Jalons;Jalons SIEPR;Jalons OP poste;Commande MCPO;;;;PT0H0M0S;;Poste
 20;Jalons;Jalons SIEPR;Jalons OP poste;Ouverture de chantier poste;;;;PT0H0M0S;Travaux;Poste
 21;Jalons;Jalons SIEPR;Jalons OP poste;Première mise en service poste;;;;PT0H0M0S;Travaux;Poste
 22;Jalons;Jalons SIEPR;Jalons OP poste;Dernière mise en service poste;;;;PT0H0M0S;Travaux;Poste
 23;Jalons;Jalons SIEPR;Jalons OP poste;Fin des travaux poste;;;;PT0H0M0S;Travaux;Poste
-24;Jalons;Jalons SIEPR;Jalons OP LA;;;;;;PT10360H0M0S;;
+24;Jalons;Jalons SIEPR;Jalons OP LA;;;;;;PT10360H0M0S;;;
 25;Jalons;Jalons SIEPR;Jalons OP LA;CTF LA validée;;;;PT0H0M0S;Processus Décisionnel;LA
 26;Jalons;Jalons SIEPR;Jalons OP LA;APO;;;;PT0H0M0S;Procédures Administratives;LA
 27;Jalons;Jalons SIEPR;Jalons OP LA;Commande études MCEL LA;;;;PT0H0M0S;Etudes;LA
@@ -261,7 +266,7 @@ const defaultCsvData = `N°;Chapitre;Carte;Action;Tâche;Temps;Tags 1;Tags 2
 30;Jalons;Jalons SIEPR;Jalons OP LA;Première mise en service LA;;;;PT0H0M0S;Travaux;LA
 31;Jalons;Jalons SIEPR;Jalons OP LA;Dernière mise en service LA;;;;PT0H0M0S;Travaux;LA
 32;Jalons;Jalons SIEPR;Jalons OP LA;Fin des travaux LA;;;;PT0H0M0S;Travaux;LA
-33;Jalons;Jalons SIEPR;Jalons OP LS;;;;;;PT8141H0M0S;;
+33;Jalons;Jalons SIEPR;Jalons OP LS;;;;;;PT8141H0M0S;;;
 34;Jalons;Jalons SIEPR;Jalons OP LS;CTF LS validée;;;;PT0H0M0S;Processus Décisionnel;LS
 35;Jalons;Jalons SIEPR;Jalons OP LS;Commande études MCEL LS;;;;PT0H0M0S;Etudes;LS
 36;Jalons;Jalons SIEPR;Jalons OP LS;Commandes travaux MCLS;;;;PT0H0M0S;Travaux;LS
@@ -269,12 +274,12 @@ const defaultCsvData = `N°;Chapitre;Carte;Action;Tâche;Temps;Tags 1;Tags 2
 38;Jalons;Jalons SIEPR;Jalons OP LS;Première mise en service LS;;;;PT0H0M0S;Travaux;LS
 39;Jalons;Jalons SIEPR;Jalons OP LS;Dernière mise en service LS;;;;PT0H0M0S;Travaux;LS
 40;Jalons;Jalons SIEPR;Jalons OP LS;Fin des travaux LS;;;;PT0H0M0S;Travaux;LS
-41;Jalons;Jalons d'interface;;;;;;;PT0H0M0S;;
-42;Jalons;Jalons d'interface;<Nouvelle tâche>;;;;;;PT0H0M0S;;
+41;Jalons;Jalons d'interface;;;;;;;PT0H0M0S;;;
+42;Jalons;Jalons d'interface;<Nouvelle tâche>;;;;;;PT0H0M0S;;;
 43;Processus décisionnels;Processus décisionnels;;;;;;PT5474H0M0S;Processus Décisionnel;
 44;Processus décisionnels;Processus DO;;;;;;PT35H0M0S;Processus Décisionnel;
 45;Processus décisionnels;Processus DO;DO - Validation et signature de la DO (dir D&I);;;;;PT0H0M0S;Processus Décisionnel;Projet
-46;Processus décisionnels;Processus DO;Nomination du manager de projet;;;;;PT0H0M0S;;
+46;Processus décisionnels;Processus DO;Nomination du manager de projet;;;;;PT0H0M0S;;;
 47;Processus décisionnels;Processus DCT;;;;;;PT1022H0M0S;Processus Décisionnel;
 48;Processus décisionnels;Processus DCT;Réalisation CTF;;;;;PT700H0M0S;Etudes;
 49;Processus décisionnels;Processus DCT;Réalisation CTF;Mise à jour du CCF;;;;PT140H0M0S;Etudes;Projet
@@ -552,6 +557,7 @@ function parseCSV(csv) {
       temps: parsePTDuration(isOldFormat ? values[7] : values[5]),
       categorieTag: isOldFormat ? values[8] || '' : values[6] || '',
       domaineTag: isOldFormat ? values[9] || '' : values[7] || '',
+      systemTag: isOldFormat ? values[10] || '' : values[8] || '',
     };
     items.push(item);
   }
@@ -656,7 +662,7 @@ function buildTree(items) {
 }
 
 function treeToCSV(nodes) {
-  let csv = 'N°;Chapitre;Carte;Action;Tâche;Temps;Tags 1;Tags 2\n';
+  let csv = "N°;Chapitre;Carte;Action;Tâche;Temps;Tags 1;Tags 2;Tag Revue d'activité\n";
   let counter = 1;
 
   const processNode = (node, chapitre = '', carte = '', categorie = '') => {
@@ -682,6 +688,7 @@ function treeToCSV(nodes) {
         formatDuration(node.data.temps || 0),
         node.data.categorieTag || '',
         node.data.domaineTag || '',
+        node.data.systemTag || '',
       ];
       csv += row.join(';') + '\n';
     }
@@ -847,6 +854,20 @@ function TreeNode({ node, onEdit, onDelete, onAddChild }) {
           className="w-28 px-2 py-1.5 text-sm bg-[var(--bg-input)] border border-[var(--border)] rounded text-[var(--txt-primary)] cursor-text"
           placeholder="Tags 2"
         />
+
+        <select
+          value={localData.systemTag || ''}
+          onChange={e => handleChange('systemTag', e.target.value)}
+          onBlur={handleBlur}
+          className="w-32 px-2 py-1.5 text-sm bg-[var(--bg-input)] border border-[var(--border)] rounded text-[var(--txt-primary)] cursor-pointer"
+        >
+          <option value="">Tag Revue d'activité...</option>
+          {loadTagsData().map(tag => (
+            <option key={tag.id} value={tag.name}>
+              {tag.name}
+            </option>
+          ))}
+        </select>
 
         {canAddChild && (
           <button
@@ -1214,6 +1235,7 @@ function LibraryEditor() {
         <span className="w-20 text-center">Temps repères</span>
         <span className="w-28">Tags 1</span>
         <span className="w-28">Tags 2</span>
+        <span className="w-32">Tag Revue d'activité</span>
         <span className="w-16"></span>
       </div>
 

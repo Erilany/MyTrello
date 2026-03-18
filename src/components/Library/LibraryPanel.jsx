@@ -957,7 +957,13 @@ function LibraryPanel() {
             cat.description || '',
             cat.priority || 'normal',
             cat.due_date || null,
-            cat.assignee || ''
+            cat.assignee || '',
+            null,
+            1,
+            null,
+            null,
+            null,
+            cat.tag || null
           );
 
           const selectedSubcats = selectedSubcategories.filter(
@@ -970,7 +976,11 @@ function LibraryPanel() {
               subcat.description || '',
               subcat.priority || 'normal',
               subcat.due_date || null,
-              subcat.assignee || ''
+              subcat.assignee || '',
+              null,
+              1,
+              null,
+              subcat.tag || cat.tag || null
             );
           });
         });
@@ -1185,7 +1195,8 @@ function LibraryPanel() {
                           subcat.assignee || '',
                           null,
                           subcatDuration,
-                          null
+                          null,
+                          subcat.tag || cat.tag || null
                         );
                         subcategoriesAdded++;
                       }
@@ -1204,7 +1215,9 @@ function LibraryPanel() {
                   cat.assignee || '',
                   null,
                   categoryDuration,
-                  null
+                  null,
+                  null,
+                  cat.tag || null
                 );
                 categoriesAdded++;
 
@@ -1240,7 +1253,8 @@ function LibraryPanel() {
                           subcat.assignee || '',
                           null,
                           subcatDuration,
-                          null
+                          null,
+                          subcat.tag || cat.tag || null
                         );
                         subcategoriesAdded++;
                       }
@@ -1293,7 +1307,9 @@ function LibraryPanel() {
           cat.assignee || '',
           null,
           categoryDuration,
-          null
+          null,
+          null,
+          cat.tag || null
         );
         categoriesAdded++;
 
@@ -1323,7 +1339,8 @@ function LibraryPanel() {
               subcat.assignee || '',
               null,
               subcatDuration,
-              null
+              null,
+              subcat.tag || cat.tag || null
             );
             subcategoriesAdded++;
           } catch (subcatErr) {
