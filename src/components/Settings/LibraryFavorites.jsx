@@ -34,6 +34,28 @@ function LibraryFavorites() {
     }
   }, []);
 
+  useEffect(() => {
+    const handleLibraryUpdate = () => {
+      const stored = localStorage.getItem(FAVORITES_KEY);
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          setFavorites(parsed);
+        } catch (e) {
+          console.error('Error reloading favorites:', e);
+        }
+      }
+    };
+
+    window.addEventListener('library-updated', handleLibraryUpdate);
+    window.addEventListener('library-favorites-updated', handleLibraryUpdate);
+
+    return () => {
+      window.removeEventListener('library-updated', handleLibraryUpdate);
+      window.removeEventListener('library-favorites-updated', handleLibraryUpdate);
+    };
+  }, []);
+
   const saveFavorites = newFavorites => {
     setFavorites(newFavorites);
     localStorage.setItem(FAVORITES_KEY, JSON.stringify(newFavorites));

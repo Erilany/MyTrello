@@ -470,8 +470,24 @@ export function AppProvider({ children }) {
     localStorage.setItem('mytrello_project_time', JSON.stringify(data));
   };
 
+  const getWeekKey = (date = new Date()) => {
+    const year = date.getFullYear();
+    const week = getWeekNumber(date);
+    return `${year}-W${week}`;
+  };
+
+  const getWeekNumberFromKey = weekKey => {
+    if (!weekKey || typeof weekKey !== 'string') return getWeekNumber(new Date());
+    const parts = weekKey.split('-W');
+    if (parts.length !== 2) return getWeekNumber(new Date());
+    const year = parseInt(parts[0]);
+    const week = parseInt(parts[1]);
+    if (isNaN(year) || isNaN(week)) return getWeekNumber(new Date());
+    return weekKey;
+  };
+
   const addProjectTime = (projectId, seconds) => {
-    const week = getWeekNumber(new Date());
+    const week = getWeekKey();
     const data = loadProjectTime();
     if (!data[week]) data[week] = {};
     if (!data[week][projectId]) data[week][projectId] = 0;
@@ -480,13 +496,13 @@ export function AppProvider({ children }) {
   };
 
   const getProjectTime = (projectId, week = null) => {
-    const w = week || getWeekNumber(new Date());
+    const w = week ? getWeekKey(new Date()) : getWeekKey();
     const data = loadProjectTime();
     return data[w]?.[projectId] || 0;
   };
 
   const getAllProjectTime = (week = null) => {
-    const w = week || getWeekNumber(new Date());
+    const w = week || getWeekKey();
     const data = loadProjectTime();
     return data[w] || {};
   };
@@ -1062,9 +1078,13 @@ export function AppProvider({ children }) {
   ) => {
     console.log('[createCard] Called with columnId:', columnId, 'title:', title);
 
-    // Check for duplicate card title in current board
+    // Check for duplicate card title in current project (same column)
     const existingCard = db.cards.find(
-      c => c.title && c.title.toLowerCase() === title.toLowerCase() && !c.is_archived
+      c =>
+        Number(c.column_id) === Number(columnId) &&
+        c.title &&
+        c.title.toLowerCase() === title.toLowerCase() &&
+        !c.is_archived
     );
     if (existingCard) {
       console.log('[createCard] Duplicate card title found:', title);
@@ -1547,6 +1567,9 @@ export function AppProvider({ children }) {
       };
       saveDb(newDb);
       loadLibrary();
+      setTimeout(() => {
+        window.dispatchEvent(new Event('library-updated'));
+      }, 100);
       return itemId;
     },
     [db, saveDb, loadLibrary]
@@ -1563,6 +1586,9 @@ export function AppProvider({ children }) {
     };
     saveDb(newDb);
     loadLibrary();
+    setTimeout(() => {
+      window.dispatchEvent(new Event('library-updated'));
+    }, 100);
   };
 
   const deleteLibraryItem = id => {
@@ -1572,6 +1598,9 @@ export function AppProvider({ children }) {
     };
     saveDb(newDb);
     loadLibrary();
+    setTimeout(() => {
+      window.dispatchEvent(new Event('library-updated'));
+    }, 100);
   };
 
   const getArchivedCards = () => {

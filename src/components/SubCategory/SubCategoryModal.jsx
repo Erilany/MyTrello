@@ -5,12 +5,18 @@ import 'react-quill/dist/quill.snow.css';
 import { X, Bookmark, Trash2 } from 'lucide-react';
 
 function SubCategoryModal({ subcategory, onClose }) {
-  const { updateSubcategory, saveToLibrary, categories: contextCategories } = useApp();
+  const {
+    updateSubcategory,
+    saveToLibrary,
+    categories: contextCategories,
+    currentBoard,
+  } = useApp();
 
   // Load data directly from localStorage for consistency
   const [libraryItems, setLibraryItems] = useState([]);
   const [cards, setCards] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [internalContacts, setInternalContacts] = useState([]);
 
   useEffect(() => {
     const data = localStorage.getItem('mytrello_db');
@@ -21,6 +27,22 @@ function SubCategoryModal({ subcategory, onClose }) {
       if (parsed.categories) setCategories(parsed.categories);
     }
   }, []);
+
+  useEffect(() => {
+    if (currentBoard) {
+      const stored = localStorage.getItem(`board-${currentBoard.id}-internalContacts`);
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setInternalContacts(parsed);
+          }
+        } catch (e) {
+          console.error('Error parsing internal contacts:', e);
+        }
+      }
+    }
+  }, [currentBoard]);
 
   const [title, setTitle] = useState(subcategory.title);
   const [description, setDescription] = useState(subcategory.description || '');
@@ -361,12 +383,20 @@ function SubCategoryModal({ subcategory, onClose }) {
             </div>
             <div>
               <label className="block text-sm font-medium text-primary mb-1">Assigné à</label>
-              <input
-                type="text"
+              <select
                 value={assignee}
                 onChange={e => setAssignee(e.target.value)}
                 className="w-full px-3 py-2 bg-input border border-std rounded-lg text-primary focus:outline-none focus:border-accent"
-              />
+              >
+                <option value="">Sélectionner un interlocuteur...</option>
+                {internalContacts
+                  .filter(contact => contact.name && contact.name.trim())
+                  .map(contact => (
+                    <option key={contact.id} value={contact.name}>
+                      {contact.name}
+                    </option>
+                  ))}
+              </select>
             </div>
           </div>
 

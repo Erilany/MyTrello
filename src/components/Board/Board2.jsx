@@ -48,6 +48,7 @@ function Board2() {
     setSelectedSubcategory,
     createSubcategory,
     deleteSubcategory,
+    deleteCard,
   } = useApp();
   const [activeTab, setActiveTab] = useState('taches');
 
@@ -122,20 +123,6 @@ function Board2() {
     { id: 'planning', label: 'Planning', icon: Calendar },
     { id: 'echanges', label: 'Échanges', icon: MessageSquare },
   ];
-
-  const [board2Data, setBoard2Data] = useState({
-    cards: [],
-  });
-
-  const [newCardTitle, setNewCardTitle] = useState('');
-  const [showAddCard, setShowAddCard] = useState(false);
-  const [editingCardId, setEditingCardId] = useState(null);
-  const [editingCardTitle, setEditingCardTitle] = useState('');
-  const [expandedCards, setExpandedCards] = useState({});
-  const [newCategoryTitle, setNewCategoryTitle] = useState('');
-  const [showAddCategory, setShowAddCategory] = useState(null);
-  const [newSubcategoryTitle, setNewSubcategoryTitle] = useState('');
-  const [showAddSubcategory, setShowAddSubcategory] = useState(null);
 
   const [favorites, setFavorites] = useState({ cards: [], categories: [], subcategories: [] });
 
@@ -320,25 +307,25 @@ function Board2() {
   }, [currentBoard]);
 
   useEffect(() => {
-    if (currentBoard && links.length > 0) {
+    if (currentBoard) {
       localStorage.setItem(`board-${currentBoard.id}-links`, JSON.stringify(links));
     }
   }, [links, currentBoard]);
 
   useEffect(() => {
-    if (currentBoard && commandes.length > 0) {
+    if (currentBoard) {
       localStorage.setItem(`board-${currentBoard.id}-commandes`, JSON.stringify(commandes));
     }
   }, [commandes, currentBoard]);
 
   useEffect(() => {
-    if (currentBoard && eotpLines.length > 0) {
+    if (currentBoard) {
       localStorage.setItem(`board-${currentBoard.id}-eotp`, JSON.stringify(eotpLines));
     }
   }, [eotpLines, currentBoard]);
 
   useEffect(() => {
-    if (currentBoard && internalContacts.length > 0) {
+    if (currentBoard) {
       localStorage.setItem(
         `board-${currentBoard.id}-internalContacts`,
         JSON.stringify(internalContacts)
@@ -347,7 +334,7 @@ function Board2() {
   }, [internalContacts, currentBoard]);
 
   useEffect(() => {
-    if (currentBoard && externalContacts.length > 0) {
+    if (currentBoard) {
       localStorage.setItem(
         `board-${currentBoard.id}-externalContacts`,
         JSON.stringify(externalContacts)
@@ -357,129 +344,6 @@ function Board2() {
 
   const toggleCardExpanded = cardId => {
     setExpandedCards(prev => ({ ...prev, [cardId]: !prev[cardId] }));
-  };
-
-  const addCardToBoard2 = cardTitle => {
-    const newCard = {
-      id: `card-${Date.now()}`,
-      title: cardTitle,
-      categories: [],
-    };
-    setBoard2Data(prev => ({
-      ...prev,
-      cards: [...prev.cards, newCard],
-    }));
-    setNewCardTitle('');
-    setShowAddCard(false);
-  };
-
-  const handleAddCard = () => {
-    if (newCardTitle.trim()) {
-      addCardToBoard2(newCardTitle.trim());
-    }
-  };
-
-  const handleDeleteCard = cardId => {
-    setBoard2Data(prev => ({
-      ...prev,
-      cards: prev.cards.filter(c => c.id !== cardId),
-    }));
-  };
-
-  const handleRenameCard = (cardId, newTitle) => {
-    setBoard2Data(prev => ({
-      ...prev,
-      cards: prev.cards.map(c => (c.id === cardId ? { ...c, title: newTitle } : c)),
-    }));
-    setEditingCardId(null);
-  };
-
-  const handleAddCategory = cardId => {
-    if (!newCategoryTitle.trim()) return;
-    setBoard2Data(prev => ({
-      ...prev,
-      cards: prev.cards.map(c => {
-        if (c.id === cardId) {
-          return {
-            ...c,
-            categories: [
-              ...(c.categories || []),
-              { id: `cat-${Date.now()}`, title: newCategoryTitle.trim(), subcategories: [] },
-            ],
-          };
-        }
-        return c;
-      }),
-    }));
-    setNewCategoryTitle('');
-    setShowAddCategory(null);
-  };
-
-  const handleDeleteCategory = (cardId, categoryId) => {
-    setBoard2Data(prev => ({
-      ...prev,
-      cards: prev.cards.map(c => {
-        if (c.id === cardId) {
-          return {
-            ...c,
-            categories: (c.categories || []).filter(cat => cat.id !== categoryId),
-          };
-        }
-        return c;
-      }),
-    }));
-  };
-
-  const handleAddSubcategory = (cardId, categoryId) => {
-    if (!newSubcategoryTitle.trim()) return;
-    setBoard2Data(prev => ({
-      ...prev,
-      cards: prev.cards.map(c => {
-        if (c.id === cardId) {
-          return {
-            ...c,
-            categories: (c.categories || []).map(cat => {
-              if (cat.id === categoryId) {
-                return {
-                  ...cat,
-                  subcategories: [
-                    ...(cat.subcategories || []),
-                    { id: `subcat-${Date.now()}`, title: newSubcategoryTitle.trim() },
-                  ],
-                };
-              }
-              return cat;
-            }),
-          };
-        }
-        return c;
-      }),
-    }));
-    setNewSubcategoryTitle('');
-    setShowAddSubcategory(null);
-  };
-
-  const handleDeleteSubcategory = (cardId, categoryId, subcategoryId) => {
-    setBoard2Data(prev => ({
-      ...prev,
-      cards: prev.cards.map(c => {
-        if (c.id === cardId) {
-          return {
-            ...c,
-            categories: (c.categories || []).map(cat => {
-              if (cat.id === categoryId) {
-                return {
-                  ...cat,
-                  subcategories: (cat.subcategories || []).filter(sub => sub.id !== subcategoryId),
-                };
-              }
-              return cat;
-            }),
-          };
-        }
-        return c;
-      }),
-    }));
   };
 
   const handleArchiveBoard = () => {
@@ -628,23 +492,42 @@ function Board2() {
                             <div className="flex items-center justify-between mb-3">
                               <h3
                                 onClick={() => setSelectedCard(card)}
-                                className="font-semibold text-primary cursor-pointer hover:text-accent"
+                                className="font-semibold text-primary cursor-pointer hover:text-accent flex-1"
                               >
                                 {card.title}
                               </h3>
-                              <button
-                                onClick={e => toggleCardFavorite(e, card.id)}
-                                className="p-1 hover:bg-card-hover rounded"
-                              >
-                                <Star
-                                  size={16}
-                                  className={
-                                    isCardFavorite(card.id)
-                                      ? 'fill-yellow-400 text-yellow-400'
-                                      : 'text-gray-400'
-                                  }
-                                />
-                              </button>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={e => toggleCardFavorite(e, card.id)}
+                                  className="p-1 hover:bg-card-hover rounded"
+                                >
+                                  <Star
+                                    size={16}
+                                    className={
+                                      isCardFavorite(card.id)
+                                        ? 'fill-yellow-400 text-yellow-400'
+                                        : 'text-gray-400'
+                                    }
+                                  />
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    const confirm1 = window.confirm(
+                                      'Êtes-vous sûr de vouloir supprimer cette carte ? Cette action est irréversible.'
+                                    );
+                                    if (!confirm1) return;
+                                    const confirm2 = window.confirm(
+                                      'Confirmez-vous définitivement la suppression ?'
+                                    );
+                                    if (!confirm2) return;
+                                    deleteCard(card.id);
+                                  }}
+                                  className="p-1 text-red-500 hover:text-red-700 rounded"
+                                  title="Supprimer la carte"
+                                >
+                                  <Trash2 size={16} />
+                                </button>
+                              </div>
                             </div>
                             <div className="space-y-2">
                               {cardCategories.map(cat => {
@@ -884,257 +767,7 @@ function Board2() {
                   </div>
                 )}
               </div>
-            ) : (
-              <div className="max-w-4xl mx-auto">
-                {showAddCard && (
-                  <div className="mb-6 bg-card rounded-lg border border-std p-4">
-                    <input
-                      type="text"
-                      placeholder="Titre de la tâche..."
-                      value={newCardTitle}
-                      onChange={e => setNewCardTitle(e.target.value)}
-                      onKeyDown={e => {
-                        if (e.key === 'Enter') handleAddCard();
-                        if (e.key === 'Escape') setShowAddCard(false);
-                      }}
-                      className="w-full px-3 py-2 bg-input border border-std rounded-lg text-primary mb-3"
-                      autoFocus
-                    />
-                    <div className="flex gap-2">
-                      <button
-                        onClick={handleAddCard}
-                        className="px-4 py-2 bg-accent text-white rounded-lg hover:opacity-90"
-                      >
-                        Ajouter
-                      </button>
-                      <button
-                        onClick={() => setShowAddCard(false)}
-                        className="px-4 py-2 text-secondary hover:text-primary"
-                      >
-                        Annuler
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                <div className="space-y-4">
-                  {board2Data.cards.map(card => (
-                    <div key={card.id} className="bg-card rounded-lg border border-std p-4">
-                      {editingCardId === card.id ? (
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="text"
-                            value={editingCardTitle}
-                            onChange={e => setEditingCardTitle(e.target.value)}
-                            onKeyDown={e => {
-                              if (e.key === 'Enter') handleRenameCard(card.id, editingCardTitle);
-                              if (e.key === 'Escape') setEditingCardId(null);
-                            }}
-                            className="flex-1 px-3 py-2 bg-input border border-std rounded-lg text-primary"
-                            autoFocus
-                          />
-                          <button
-                            onClick={() => handleRenameCard(card.id, editingCardTitle)}
-                            className="p-2 text-accent"
-                          >
-                            <Check size={18} />
-                          </button>
-                          <button onClick={() => setEditingCardId(null)} className="p-2 text-muted">
-                            <X size={18} />
-                          </button>
-                        </div>
-                      ) : (
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-center gap-3">
-                            <button
-                              onClick={() => toggleCardExpanded(card.id)}
-                              className="text-secondary hover:text-primary"
-                            >
-                              {expandedCards[card.id] ? (
-                                <ChevronDown size={20} />
-                              ) : (
-                                <ChevronRight size={20} />
-                              )}
-                            </button>
-                            <h3 className="font-semibold text-primary">{card.title}</h3>
-                            <button
-                              onClick={e => toggleCardFavorite(e, card.id, card.title)}
-                              className="p-1 hover:bg-card-hover rounded"
-                            >
-                              <Star
-                                size={16}
-                                className={
-                                  isCardFavorite(card.id)
-                                    ? 'fill-yellow-400 text-yellow-400'
-                                    : 'text-gray-400'
-                                }
-                              />
-                            </button>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <button
-                              onClick={() => {
-                                setEditingCardId(card.id);
-                                setEditingCardTitle(card.title);
-                              }}
-                              className="p-1.5 text-muted hover:text-primary rounded"
-                            >
-                              <Edit2 size={16} />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteCard(card.id)}
-                              className="p-1.5 text-muted hover:text-urgent rounded"
-                            >
-                              <Trash2 size={16} />
-                            </button>
-                          </div>
-                        </div>
-                      )}
-
-                      {expandedCards[card.id] && (
-                        <div className="ml-8 mt-4 space-y-3">
-                          {(card.categories || []).map(cat => (
-                            <div key={cat.id} className="bg-card-hover rounded-lg p-3">
-                              <div className="flex items-center justify-between mb-2">
-                                <div className="flex items-center gap-2">
-                                  <button
-                                    onClick={e =>
-                                      toggleCategoryFavorite(e, cat.id, card.id, cat.title)
-                                    }
-                                    className="p-1 hover:bg-card-hover rounded"
-                                  >
-                                    <Star
-                                      size={14}
-                                      className={
-                                        isCategoryFavorite(cat.id, card.id, cat.title)
-                                          ? 'fill-yellow-400 text-yellow-400'
-                                          : 'text-gray-400'
-                                      }
-                                    />
-                                  </button>
-                                  <h4 className="font-medium text-primary">{cat.title}</h4>
-                                </div>
-                                <button
-                                  onClick={() => handleDeleteCategory(card.id, cat.id)}
-                                  className="p-1 text-muted hover:text-urgent rounded"
-                                >
-                                  <Trash2 size={14} />
-                                </button>
-                              </div>
-                              <div className="space-y-1 ml-2">
-                                {(cat.subcategories || []).map(sub => (
-                                  <div
-                                    key={sub.id}
-                                    className="flex items-center justify-between text-sm text-secondary"
-                                  >
-                                    <div className="flex items-center gap-2">
-                                      <button
-                                        onClick={e =>
-                                          toggleSubcategoryFavorite(
-                                            e,
-                                            sub.id,
-                                            card.id,
-                                            cat.id,
-                                            sub.title,
-                                            cat.title
-                                          )
-                                        }
-                                        className="p-1 hover:bg-card-hover rounded"
-                                      >
-                                        <Star
-                                          size={12}
-                                          className={
-                                            isSubcategoryFavorite(
-                                              sub.id,
-                                              card.id,
-                                              cat.title,
-                                              sub.title
-                                            )
-                                              ? 'fill-yellow-400 text-yellow-400'
-                                              : 'text-gray-400'
-                                          }
-                                        />
-                                      </button>
-                                      <span>{sub.title}</span>
-                                    </div>
-                                    <button
-                                      onClick={() =>
-                                        handleDeleteSubcategory(card.id, cat.id, sub.id)
-                                      }
-                                      className="p-1 text-muted hover:text-urgent rounded"
-                                    >
-                                      <Trash2 size={12} />
-                                    </button>
-                                  </div>
-                                ))}
-                              </div>
-                              {showAddSubcategory === cat.id ? (
-                                <div className="mt-2 flex gap-2">
-                                  <input
-                                    type="text"
-                                    placeholder="Nouvelle sous-tâche..."
-                                    value={newSubcategoryTitle}
-                                    onChange={e => setNewSubcategoryTitle(e.target.value)}
-                                    onKeyDown={e => {
-                                      if (e.key === 'Enter') handleAddSubcategory(card.id, cat.id);
-                                      if (e.key === 'Escape') setShowAddSubcategory(null);
-                                    }}
-                                    className="flex-1 px-2 py-1 text-sm bg-input border border-std rounded text-primary"
-                                    autoFocus
-                                  />
-                                  <button
-                                    onClick={() => handleAddSubcategory(card.id, cat.id)}
-                                    className="px-2 py-1 text-sm bg-accent text-white rounded"
-                                  >
-                                    +
-                                  </button>
-                                </div>
-                              ) : (
-                                <button
-                                  onClick={() => setShowAddSubcategory(cat.id)}
-                                  className="text-xs text-accent hover:underline mt-2"
-                                >
-                                  + Sous-tâche
-                                </button>
-                              )}
-                            </div>
-                          ))}
-                          {showAddCategory === card.id ? (
-                            <div className="flex gap-2">
-                              <input
-                                type="text"
-                                placeholder="Nouvelle catégorie..."
-                                value={newCategoryTitle}
-                                onChange={e => setNewCategoryTitle(e.target.value)}
-                                onKeyDown={e => {
-                                  if (e.key === 'Enter') handleAddCategory(card.id);
-                                  if (e.key === 'Escape') setShowAddCategory(null);
-                                }}
-                                className="flex-1 px-2 py-1 text-sm bg-input border border-std rounded text-primary"
-                                autoFocus
-                              />
-                              <button
-                                onClick={() => handleAddCategory(card.id)}
-                                className="px-2 py-1 text-sm bg-accent text-white rounded"
-                              >
-                                +
-                              </button>
-                            </div>
-                          ) : (
-                            <button
-                              onClick={() => setShowAddCategory(card.id)}
-                              className="text-xs text-accent hover:underline mt-2"
-                            >
-                              + Catégorie
-                            </button>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+            ) : null}
           </div>
         </div>
       )}

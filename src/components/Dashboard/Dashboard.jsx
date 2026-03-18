@@ -82,9 +82,7 @@ function getWeekNumber(date) {
   const dayNum = d.getUTCDay() || 7;
   d.setUTCDate(d.getUTCDate() + 4 - dayNum);
   const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-  return `${d.getUTCFullYear()}-W${Math.ceil(((d - yearStart) / 86400000 + 1) / 7)
-    .toString()
-    .padStart(2, '0')}`;
+  return Math.ceil(((d - yearStart) / 86400000 + 1) / 7);
 }
 
 function getWeekRange(weekStr) {
@@ -159,6 +157,31 @@ export default function Dashboard() {
   const [showOtherTasks, setShowOtherTasks] = useState(false);
   const [selectedProjectForOthers, setSelectedProjectForOthers] = useState(null);
   const [selectedTaskDashboard, setSelectedTaskDashboard] = useState(null);
+  const [activeTab, setActiveTab] = useState('temps');
+
+  const getAppStartDate = () => {
+    const stored = localStorage.getItem('mytrello_app_start_date');
+    if (stored) return new Date(stored);
+    const now = new Date();
+    localStorage.setItem('mytrello_app_start_date', now.toISOString());
+    return now;
+  };
+
+  const resetProjectTimer = boardId => {
+    if (window.confirm('Voulez-vous vraiment réinitialiser le compteur de temps de ce projet ?')) {
+      const data = loadProjectTime();
+      if (data[selectedWeek]) {
+        delete data[selectedWeek][String(boardId)];
+        localStorage.setItem('mytrello_project_time', JSON.stringify(data));
+        window.location.reload();
+      }
+    }
+  };
+
+  const loadProjectTime = () => {
+    const stored = localStorage.getItem('mytrello_project_time');
+    return stored ? JSON.parse(stored) : {};
+  };
 
   const handleTaskClick = task => {
     setSelectedTaskDashboard(task);
@@ -185,22 +208,38 @@ export default function Dashboard() {
   const weekOptions = useMemo(() => {
     const options = [];
     const now = new Date();
-    for (let i = 0; i < 12; i++) {
-      const d = new Date(now);
-      d.setDate(d.getDate() - i * 7);
-      const week = getWeekNumber(d);
-      const range = getWeekRange(week);
-      const year = range.start.getFullYear();
+    const startDate = getAppStartDate();
+    const weekStart = getWeekNumber(startDate);
+    const yearStart = startDate.getFullYear();
+
+    let currentWeek = getWeekNumber(now);
+    let currentYear = now.getFullYear();
+    const endWeek = weekStart;
+    const endYear = yearStart;
+
+    while (currentYear > endYear || (currentYear === endYear && currentWeek >= endWeek)) {
+      const weekStr = `${currentYear}-W${currentWeek}`;
+      const range = getWeekRange(weekStr);
       const startStr = range.start.toLocaleDateString('fr-FR', {
         day: '2-digit',
         month: '2-digit',
       });
-      const endStr = range.end.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
-      options.push({
-        value: week,
-        label: `${year} - S${week.split('-W')[1]} (${startStr} - ${endStr})`,
+      const endStr = range.end.toLocaleDateString('fr-FR', {
+        day: '2-digit',
+        month: '2-digit',
       });
+      options.push({
+        value: weekStr,
+        label: `${currentYear} - S${currentWeek} (${startStr} - ${endStr})`,
+      });
+
+      currentWeek--;
+      if (currentWeek < 1) {
+        currentYear--;
+        currentWeek = 52;
+      }
     }
+
     return options;
   }, []);
 
@@ -269,7 +308,43 @@ export default function Dashboard() {
     <div className="p-6 max-w-7xl mx-auto">
       <h1 className="text-2xl font-display font-bold text-primary mb-6">Dashboard</h1>
 
-      {/* Section 1: Temps passé par projet */}
+      {/* Onglets */}
+      <div className="flex gap-2 mb-6 border-b border-std pb-2">
+        <button
+          onClick={() => setActiveTab('temps')}
+          className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors ${
+            activeTab === 'temps'
+              ? 'bg-accent text-white'
+              : 'text-secondary hover:text-primary hover:bg-card-hover'
+          }`}
+        >
+          Temps passé
+        </button>
+        <button
+          onClick={() => setActiveTab('taches')}
+          className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors ${
+            activeTab === 'taches'
+              ? 'bg-accent text-white'
+              : 'text-secondary hover:text-primary hover:bg-card-hover'
+          }`}
+        >
+          Tâches
+        </button>
+        <button
+          onClick={() => setActiveTab('activite')}
+          className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors ${
+            activeTab === 'activite'
+              ? 'bg-accent text-white'
+              : 'text-secondary hover:text-primary hover:bg-card-hover'
+          }`}
+        >
+          Revue d'activité
+        </button>
+      </div>
+
+      {activeTab === 'temps' && (
+        <div>
+          {/* Section 1: Temps passé par projet */}
       <div className="bg-card rounded-lg border border-std p-6 mb-6">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold text-primary flex items-center gap-2">
@@ -320,8 +395,12 @@ export default function Dashboard() {
           </div>
         )}
       </div>
+        </div>
+      )}
 
-      {/* Section 2 & 3: Stacked (1 column, 2 rows) */}
+      {activeTab === 'taches' && (
+        <div className="flex flex-col gap-4">
+          {/* Section 2 & 3: Stacked (1 column, 2 rows) */}
       <div className="flex flex-col gap-4">
         {/* Row 1: Mes tâches */}
         <div className={`bg-card rounded-lg border border-std p-6 ${!showMyTasks ? 'hidden' : ''}`}>
