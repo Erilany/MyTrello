@@ -249,7 +249,15 @@ export default function Dashboard() {
       .map(board => {
         const time = allTimes[String(board.id)] || 0;
         const percentage = totalTime > 0 ? (time / totalTime) * 100 : 0;
-        return { board, time, percentage };
+        const eotpData = JSON.parse(localStorage.getItem(`board-${board.id}-eotp`) || '[]');
+        const eotp =
+          eotpData.length > 0
+            ? eotpData
+                .map(l => l.ruo)
+                .filter(Boolean)
+                .join(', ')
+            : '';
+        return { board, time, percentage, eotp };
       })
       .filter(item => item.time > 0)
       .sort((a, b) => b.percentage - a.percentage);
@@ -368,9 +376,12 @@ export default function Dashboard() {
             <p className="text-secondary text-sm py-4">Aucun projet trouvé</p>
           ) : (
             <div className="space-y-3">
-              {projectTimeData.map(({ board, time, percentage }) => (
+              {projectTimeData.map(({ board, time, percentage, eotp }) => (
                 <div key={board.id} className="flex items-center gap-4">
-                  <div className="w-96 text-sm text-primary truncate" title={board.title}>
+                  <div className="w-32 text-xs font-mono text-secondary truncate" title={eotp}>
+                    {eotp || '-'}
+                  </div>
+                  <div className="w-[380px] text-sm text-primary truncate" title={board.title}>
                     {board.title}
                   </div>
                   <div className="flex-1 h-6 bg-card-hover rounded-full overflow-hidden">

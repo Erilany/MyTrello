@@ -110,21 +110,25 @@ function ActivityReview({ boards, categories, subcategories, columns, currentUse
         `[ActivityReview] Board ${board.id}: GMR=${boardGMR}, Priority=${boardPriority}, Zone=${boardZone}`
       );
 
-      const userRoles = internalContacts
-        .filter(c => c.name && c.name.toLowerCase().includes(currentUsername.toLowerCase()))
-        .map(c => c.title);
+      const userContacts = internalContacts.filter(
+        c => c.name && c.name.toLowerCase().trim() === currentUsername.toLowerCase().trim()
+      );
 
-      if (userRoles.length > 0) {
-        let activityType = userRoles
-          .map(title => ROLE_TO_ACTIVITY[title] || '')
-          .filter(Boolean)
-          .join('/');
+      if (userContacts.length > 0) {
+        const userRoleTitles = userContacts.map(c => c.title);
 
-        if (
-          userRoles.includes("Chargé(e) d'Etudes Poste HT") &&
-          userRoles.includes("Chargé(e) d'Etudes Poste BT et CC")
-        ) {
+        let activityType = '';
+
+        const hasPO = userRoleTitles.includes("Chargé(e) d'Etudes Poste HT");
+        const hasCC = userRoleTitles.includes("Chargé(e) d'Etudes Poste BT et CC");
+
+        if (hasPO && hasCC) {
           activityType = 'PO/CC';
+        } else {
+          activityType = userRoleTitles
+            .map(title => ROLE_TO_ACTIVITY[title] || '')
+            .filter(Boolean)
+            .join('/');
         }
 
         const ruo =
@@ -143,7 +147,7 @@ function ActivityReview({ boards, categories, subcategories, columns, currentUse
           zone: boardZone,
           ruo,
           activityType,
-          userRoles,
+          userRoles: userRoleTitles,
         });
       }
     }
@@ -306,22 +310,6 @@ function ActivityReview({ boards, categories, subcategories, columns, currentUse
 
   return (
     <div className="overflow-x-auto">
-      <div className="mb-6 p-4 bg-card-hover rounded-lg border border-std">
-        <h3 className="text-sm font-semibold text-primary mb-3">Phases du projet</h3>
-        <div className="flex flex-wrap gap-3">
-          {tagsUsedInProjects.length === 0 ? (
-            <span className="text-xs text-muted">Aucune phase configurée</span>
-          ) : (
-            tagsUsedInProjects.map(tag => (
-              <div key={tag.id} className="flex items-center gap-2">
-                <span className="w-4 h-4 rounded" style={{ backgroundColor: tag.color }} />
-                <span className="text-xs text-secondary">{tag.name}</span>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
-
       <div className="overflow-x-auto">
         <table className="w-full border-collapse text-sm min-w-[800px]">
           <thead>
@@ -332,7 +320,7 @@ function ActivityReview({ boards, categories, subcategories, columns, currentUse
               <th className="p-2 text-center text-muted font-medium sticky left-16 bg-card z-10 w-16">
                 GMR
               </th>
-              <th className="p-2 text-left text-muted font-medium sticky left-32 bg-card z-10 min-w-[200px]">
+              <th className="p-2 text-left text-muted font-medium sticky left-32 bg-card z-10 min-w-[120px]">
                 Projet
               </th>
               <th className="p-2 text-center text-muted font-medium sticky left-32 bg-card z-10 w-24">
@@ -389,10 +377,14 @@ function ActivityReview({ boards, categories, subcategories, columns, currentUse
           <tbody>
             {groupedByZone.map(([zone, projects]) => (
               <React.Fragment key={zone}>
-                <tr className={zone === 'Hors zone' ? 'bg-orange-50' : 'bg-accent/10'}>
+                <tr
+                  className={
+                    zone === 'Hors zone' ? 'bg-orange-100 dark:bg-orange-900/40' : 'bg-accent/10'
+                  }
+                >
                   <td
                     colSpan={4 + quarterColumns.length}
-                    className={`p-2 font-semibold ${zone === 'Hors zone' ? 'text-orange-700' : 'text-primary'}`}
+                    className={`p-2 font-semibold ${zone === 'Hors zone' ? 'text-orange-800 dark:text-orange-300' : 'text-primary'}`}
                   >
                     {zone}
                   </td>
@@ -408,8 +400,8 @@ function ActivityReview({ boards, categories, subcategories, columns, currentUse
                       <td className="p-2 text-center text-secondary sticky left-16 bg-card z-10">
                         {project.gmr || '-'}
                       </td>
-                      <td className="p-2 text-primary sticky left-32 bg-card z-10">
-                        <div className="text-xs">
+                      <td className="p-2 text-primary sticky left-32 bg-card z-10 max-w-[120px]">
+                        <div className="text-xs truncate">
                           <span className="font-mono bg-card-hover px-1 py-0.5 rounded">
                             {project.priority || '-'}
                           </span>
