@@ -914,7 +914,17 @@ function LibraryPanel() {
       return;
     }
 
-    const columnId = useFormDestination === 'board2' ? 1 : parseInt(selectedColumnId);
+    let columnId;
+    if (useFormDestination === 'board2') {
+      const boardColumns = db.columns.filter(c => Number(c.board_id) === parseInt(selectedBoardId));
+      if (boardColumns.length === 0) {
+        alert('Aucune colonne trouvée pour ce projet');
+        return;
+      }
+      columnId = boardColumns.sort((a, b) => a.position - b.position)[0].id;
+    } else {
+      columnId = parseInt(selectedColumnId);
+    }
     const boardId = parseInt(selectedBoardId);
 
     selectedCards.forEach(card => {

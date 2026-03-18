@@ -25,6 +25,7 @@ export function usePlanning(currentBoard) {
         if (data.categories) setExpandedPlanningCategories(new Set(data.categories));
         if (data.sortOrder) setPlanningSortOrder(data.sortOrder);
         if (data.ganttZoom) setGanttZoom(data.ganttZoom);
+        if (data.ganttStartDate) setGanttStartDate(data.ganttStartDate);
       }
     } catch (e) {
       console.error('Error loading planning state:', e);
@@ -43,6 +44,7 @@ export function usePlanning(currentBoard) {
       categories: [...expandedPlanningCategories],
       sortOrder: planningSortOrder,
       ganttZoom: ganttZoom,
+      ganttStartDate: ganttStartDate,
     };
 
     const prevState = prevStateRef.current;
@@ -64,6 +66,7 @@ export function usePlanning(currentBoard) {
     expandedPlanningCategories,
     planningSortOrder,
     ganttZoom,
+    ganttStartDate,
   ]);
 
   const togglePlanningTask = useCallback(taskId => {
