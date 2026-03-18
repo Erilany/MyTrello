@@ -50,6 +50,7 @@ function Library() {
     }
     setFavorites(newFavorites);
     localStorage.setItem('mytrello_library_favorites', JSON.stringify(newFavorites));
+    window.dispatchEvent(new Event('library-favorites-updated'));
   };
 
   const cardItems = libraryItems.filter(item => item.type === 'card');

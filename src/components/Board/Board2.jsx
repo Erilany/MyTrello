@@ -16,27 +16,18 @@ import { PlanningView } from '../Planning';
 
 import {
   Plus,
-  Archive,
   ListTodo,
   Calendar,
   MessageSquare,
   ShoppingCart,
   Info,
   Trash2,
-  Edit2,
-  Check,
   X,
-  ChevronDown,
-  ChevronRight,
   ExternalLink,
-  FolderOpen,
   PlusCircle,
   User,
   Building,
-  Star,
 } from 'lucide-react';
-
-const FAVORITES_KEY = 'mytrello_library_favorites';
 
 function Board2() {
   const {
@@ -156,133 +147,6 @@ function Board2() {
     { id: 'planning', label: 'Planning', icon: Calendar },
     { id: 'echanges', label: 'Échanges', icon: MessageSquare },
   ];
-
-  const [favorites, setFavorites] = useState({ cards: [], categories: [], subcategories: [] });
-
-  useEffect(() => {
-    const stored = localStorage.getItem(FAVORITES_KEY);
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored);
-        setFavorites({
-          cards: parsed.cards || [],
-          categories: parsed.categories || [],
-          subcategories: parsed.subcategories || [],
-        });
-      } catch (e) {
-        console.error('Error loading favorites:', e);
-      }
-    }
-  }, []);
-
-  useEffect(() => {
-    const handleFavoritesUpdate = () => {
-      const stored = localStorage.getItem(FAVORITES_KEY);
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored);
-          setFavorites({
-            cards: parsed.cards || [],
-            categories: parsed.categories || [],
-            subcategories: parsed.subcategories || [],
-          });
-        } catch (e) {
-          console.error('Error reloading favorites:', e);
-        }
-      }
-    };
-    window.addEventListener('library-favorites-updated', handleFavoritesUpdate);
-    return () => window.removeEventListener('library-favorites-updated', handleFavoritesUpdate);
-  }, []);
-
-  const saveFavorites = newFavorites => {
-    setFavorites(newFavorites);
-    localStorage.setItem(FAVORITES_KEY, JSON.stringify(newFavorites));
-    window.dispatchEvent(new Event('library-favorites-updated'));
-  };
-
-  const toggleCardFavorite = (e, cardId, cardTitle) => {
-    e.stopPropagation();
-    const newFavorites = { ...favorites };
-    if (newFavorites.cards.includes(cardId)) {
-      newFavorites.cards = newFavorites.cards.filter(id => id !== cardId);
-    } else {
-      newFavorites.cards.push(cardId);
-    }
-    saveFavorites(newFavorites);
-  };
-
-  const toggleCategoryFavorite = (e, categoryId, cardId, categoryTitle) => {
-    e.stopPropagation();
-    const newFavorites = { ...favorites };
-    const existing = newFavorites.categories.find(
-      c => c.cardId === cardId && c.title === categoryTitle
-    );
-    if (existing) {
-      newFavorites.categories = newFavorites.categories.filter(
-        c => !(c.cardId === cardId && c.title === categoryTitle)
-      );
-    } else {
-      const card = cards.find(c => Number(c.id) === Number(cardId));
-      newFavorites.categories.push({ cardId, cardTitle: card?.title || '', title: categoryTitle });
-      if (!newFavorites.cards.includes(cardId)) {
-        newFavorites.cards.push(cardId);
-      }
-    }
-    saveFavorites(newFavorites);
-  };
-
-  const toggleSubcategoryFavorite = (
-    e,
-    subcategoryId,
-    cardId,
-    categoryId,
-    subcategoryTitle,
-    categoryTitle
-  ) => {
-    e.stopPropagation();
-    const newFavorites = { ...favorites };
-    const card = cards.find(c => Number(c.id) === Number(cardId));
-    const existing = newFavorites.subcategories.find(
-      s => s.cardId === cardId && s.categoryTitle === categoryTitle && s.title === subcategoryTitle
-    );
-    if (existing) {
-      newFavorites.subcategories = newFavorites.subcategories.filter(
-        s =>
-          !(
-            s.cardId === cardId &&
-            s.categoryTitle === categoryTitle &&
-            s.title === subcategoryTitle
-          )
-      );
-    } else {
-      newFavorites.subcategories.push({
-        cardId,
-        cardTitle: card?.title || '',
-        categoryTitle,
-        title: subcategoryTitle,
-      });
-      if (!newFavorites.categories.find(c => c.cardId === cardId && c.title === categoryTitle)) {
-        newFavorites.categories.push({
-          cardId,
-          cardTitle: card?.title || '',
-          title: categoryTitle,
-        });
-      }
-      if (!newFavorites.cards.includes(cardId)) {
-        newFavorites.cards.push(cardId);
-      }
-    }
-    saveFavorites(newFavorites);
-  };
-
-  const isCardFavorite = cardId => favorites.cards.includes(cardId);
-  const isCategoryFavorite = (categoryId, cardId, categoryTitle) =>
-    favorites.categories.some(c => c.cardId === cardId && c.title === categoryTitle);
-  const isSubcategoryFavorite = (subcategoryId, cardId, categoryTitle, subcategoryTitle) =>
-    favorites.subcategories.some(
-      s => s.cardId === cardId && s.categoryTitle === categoryTitle && s.title === subcategoryTitle
-    );
 
   const [links, setLinks] = useState([]);
   const [showAddLink, setShowAddLink] = useState(false);
@@ -475,6 +339,18 @@ function Board2() {
     }
   };
 
+  const normalizeChapter = str => {
+    if (!str) return '';
+    return str
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/s$/, '')
+      .replace(/procèssus/gi, 'processus')
+      .replace(/proccessus/gi, 'processus')
+      .trim();
+  };
+
   return (
     <div className="h-full flex flex-col overflow-hidden">
       <div className="flex items-center justify-between mb-4">
@@ -519,7 +395,6 @@ function Board2() {
               {(() => {
                 const orderedChapters = getOrderedChapters();
                 const isSpacer = item => typeof item === 'string' && item.startsWith('__spacer_');
-                const chapters = orderedChapters.filter(c => !isSpacer(c));
 
                 return orderedChapters.map((chapter, idx) => {
                   const spacer = isSpacer(chapter);
@@ -528,13 +403,20 @@ function Board2() {
                     return <div key={chapter} className="w-12 h-8 flex-shrink-0" />;
                   }
 
-                  const hasCards = cards.some(card => card.chapter === chapter);
+                  const normalizedChapter = normalizeChapter(chapter);
+                  const hasCards = cards.some(
+                    card => card.chapter && normalizeChapter(card.chapter) === normalizedChapter
+                  );
                   const hasCategories =
                     hasCards &&
-                    categories.some(cat => {
-                      const card = cards.find(c => c.chapter === chapter);
-                      return card && Number(cat.card_id) === Number(card.id);
-                    });
+                    categories.some(cat =>
+                      cards.some(
+                        c =>
+                          c.chapter &&
+                          normalizeChapter(c.chapter) === normalizedChapter &&
+                          Number(c.id) === Number(cat.card_id)
+                      )
+                    );
                   const isEmpty = !hasCards || !hasCategories;
                   return (
                     <button
@@ -570,7 +452,11 @@ function Board2() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {cards &&
                     cards
-                      .filter(card => card.chapter === selectedChapter)
+                      .filter(
+                        card =>
+                          card.chapter &&
+                          normalizeChapter(card.chapter) === normalizeChapter(selectedChapter)
+                      )
                       .map(card => {
                         const cardCategories = categories.filter(c => c.card_id === card.id);
                         const totalSubcats = cardCategories.reduce(
@@ -591,19 +477,6 @@ function Board2() {
                                 {card.title}
                               </h3>
                               <div className="flex items-center gap-2">
-                                <button
-                                  onClick={e => toggleCardFavorite(e, card.id)}
-                                  className="p-1 hover:bg-card-hover rounded"
-                                >
-                                  <Star
-                                    size={16}
-                                    className={
-                                      isCardFavorite(card.id)
-                                        ? 'fill-yellow-400 text-yellow-400'
-                                        : 'text-gray-400'
-                                    }
-                                  />
-                                </button>
                                 <button
                                   onClick={() => {
                                     const confirm1 = window.confirm(
@@ -654,21 +527,6 @@ function Board2() {
                                           )}
                                         </div>
                                       </div>
-                                      <button
-                                        onClick={e =>
-                                          toggleCategoryFavorite(e, cat.id, card.id, cat.title)
-                                        }
-                                        className="p-1 hover:bg-card-hover rounded"
-                                      >
-                                        <Star
-                                          size={14}
-                                          className={
-                                            isCategoryFavorite(cat.id, card.id, cat.title)
-                                              ? 'fill-yellow-400 text-yellow-400'
-                                              : 'text-gray-400'
-                                          }
-                                        />
-                                      </button>
                                     </div>
                                   </div>
                                 );
@@ -700,35 +558,9 @@ function Board2() {
                     <div className="bg-card rounded-lg border border-std max-w-lg w-full max-h-[80vh] overflow-auto">
                       <div className="p-4 border-b border-std flex items-center justify-between">
                         <div>
-                          <div className="flex items-center gap-2">
-                            <h3 className="font-bold text-primary">
-                              {selectedCategoryForTasks.category.title}
-                            </h3>
-                            <button
-                              onClick={e =>
-                                toggleCategoryFavorite(
-                                  e,
-                                  selectedCategoryForTasks.category.id,
-                                  selectedCategoryForTasks.card.id,
-                                  selectedCategoryForTasks.category.title
-                                )
-                              }
-                              className="p-1 hover:bg-card-hover rounded"
-                            >
-                              <Star
-                                size={18}
-                                className={
-                                  isCategoryFavorite(
-                                    selectedCategoryForTasks.category.id,
-                                    selectedCategoryForTasks.card.id,
-                                    selectedCategoryForTasks.category.title
-                                  )
-                                    ? 'fill-yellow-400 text-yellow-400'
-                                    : 'text-gray-400'
-                                }
-                              />
-                            </button>
-                          </div>
+                          <h3 className="font-bold text-primary">
+                            {selectedCategoryForTasks.category.title}
+                          </h3>
                           <p className="text-sm text-muted">
                             {selectedCategoryForTasks.card.title}
                           </p>
@@ -764,36 +596,7 @@ function Board2() {
                                 }`}
                               >
                                 <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-2">
-                                    <button
-                                      onClick={e =>
-                                        toggleSubcategoryFavorite(
-                                          e,
-                                          subcat.id,
-                                          selectedCategoryForTasks.card.id,
-                                          selectedCategoryForTasks.category.id,
-                                          subcat.title,
-                                          selectedCategoryForTasks.category.title
-                                        )
-                                      }
-                                      className="p-1 hover:bg-white/50 rounded"
-                                    >
-                                      <Star
-                                        size={14}
-                                        className={
-                                          isSubcategoryFavorite(
-                                            subcat.id,
-                                            selectedCategoryForTasks.card.id,
-                                            selectedCategoryForTasks.category.title,
-                                            subcat.title
-                                          )
-                                            ? 'fill-yellow-400 text-yellow-400'
-                                            : 'text-gray-400'
-                                        }
-                                      />
-                                    </button>
-                                    <h4 className="font-medium text-secondary">{subcat.title}</h4>
-                                  </div>
+                                  <h4 className="font-medium text-secondary">{subcat.title}</h4>
                                   <button
                                     onClick={async e => {
                                       e.stopPropagation();

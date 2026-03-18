@@ -144,14 +144,6 @@ function ChaptersDragDrop({ chapters: propChapters, onReorder }) {
           </div>
         );
       })}
-      <button
-        onClick={() => addSpacer(chapters.length - 1)}
-        className="flex items-center gap-1 px-2 py-1 text-xs bg-card-hover border border-std rounded hover:border-accent"
-        title="Ajouter un espacement"
-      >
-        <Plus size={12} />
-        Espacement
-      </button>
     </div>
   );
 }

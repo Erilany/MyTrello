@@ -377,14 +377,10 @@ function ActivityReview({ boards, categories, subcategories, columns, currentUse
           <tbody>
             {groupedByZone.map(([zone, projects]) => (
               <React.Fragment key={zone}>
-                <tr
-                  className={
-                    zone === 'Hors zone' ? 'bg-orange-100 dark:bg-orange-900/40' : 'bg-accent/10'
-                  }
-                >
+                <tr className="bg-accent/10">
                   <td
                     colSpan={4 + quarterColumns.length}
-                    className={`p-2 font-semibold ${zone === 'Hors zone' ? 'text-orange-800 dark:text-orange-300' : 'text-primary'}`}
+                    className="p-2 font-semibold text-primary"
                   >
                     {zone}
                   </td>
