@@ -6,6 +6,7 @@ import { libraryTemplates } from '../../data/libraryData';
 import { loadGMRData } from '../../data/GMRData';
 import { loadPriorityData } from '../../data/PriorityData';
 import { loadZonesData } from '../../data/ZonesData';
+import { getOrderedChapters } from '../../data/ChaptersData';
 import {
   getGanttDateRange as utilsGetGanttDateRange,
   getGanttDays as utilsGetGanttDays,
@@ -516,37 +517,17 @@ function Board2() {
           <div className="max-w-full">
             <div className="mb-4 flex flex-wrap gap-2">
               {(() => {
-                const chaptersFromTemplates = libraryTemplates
-                  .map(item => {
-                    const tagsStr = item.tags || '';
-                    const tags = tagsStr.split(',');
-                    return tags[0];
-                  })
-                  .filter(Boolean);
-                const chaptersFromCards = cards.map(card => card.chapter).filter(Boolean);
-                const chapterOrder = [
-                  'Jalons',
-                  'Processus décisionnels',
-                  'Proccessus Décisionnel',
-                  'Etudes',
-                  'Procédures administratives',
-                  'Procédures Administratives',
-                  'Achats',
-                  'Consignations',
-                  'Travaux',
-                  'Projet',
-                ];
-                const allChapters = [
-                  ...new Set([...chaptersFromTemplates, ...chaptersFromCards]),
-                ].sort((a, b) => {
-                  const indexA = chapterOrder.indexOf(a);
-                  const indexB = chapterOrder.indexOf(b);
-                  if (indexA === -1 && indexB === -1) return a.localeCompare(b);
-                  if (indexA === -1) return 1;
-                  if (indexB === -1) return -1;
-                  return indexA - indexB;
-                });
-                return allChapters.map((chapter, idx) => {
+                const orderedChapters = getOrderedChapters();
+                const isSpacer = item => typeof item === 'string' && item.startsWith('__spacer_');
+                const chapters = orderedChapters.filter(c => !isSpacer(c));
+
+                return orderedChapters.map((chapter, idx) => {
+                  const spacer = isSpacer(chapter);
+
+                  if (spacer) {
+                    return <div key={chapter} className="w-12 h-8 flex-shrink-0" />;
+                  }
+
                   const hasCards = cards.some(card => card.chapter === chapter);
                   const hasCategories =
                     hasCards &&
@@ -555,8 +536,6 @@ function Board2() {
                       return card && Number(cat.card_id) === Number(card.id);
                     });
                   const isEmpty = !hasCards || !hasCategories;
-                  const isAfterProcessus =
-                    idx > 0 && allChapters[idx - 1]?.toLowerCase().includes('processus');
                   return (
                     <button
                       key={chapter}
@@ -568,7 +547,6 @@ function Board2() {
                             ? 'bg-card border border-std text-muted opacity-50 cursor-not-allowed'
                             : 'bg-card border border-std text-secondary hover:bg-card-hover'
                       }`}
-                      style={isAfterProcessus ? { marginLeft: '2rem' } : {}}
                       title={isEmpty ? "Ce chapitre n'a pas d'actions" : chapter}
                     >
                       {chapter}
