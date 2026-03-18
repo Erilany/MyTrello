@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
 import { usePlanning } from '../../hooks/usePlanning';
 import Exchange from '../Exchange/Exchange';
@@ -54,6 +54,8 @@ function Board2() {
     deleteCard,
   } = useApp();
   const [activeTab, setActiveTab] = useState('taches');
+  const previousActiveTabRef = useRef('taches');
+  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
     const openTab = localStorage.getItem('mytrello_open_tab');
@@ -62,6 +64,17 @@ function Board2() {
       localStorage.removeItem('mytrello_open_tab');
     }
   }, []);
+
+  useEffect(() => {
+    if (previousActiveTabRef.current !== activeTab) {
+      console.log('[Board2] Tab changed from', previousActiveTabRef.current, 'to', activeTab);
+      console.log('[Board2] Saving data before tab switch');
+      if (isInitialized) {
+        saveAllProjectData();
+      }
+      previousActiveTabRef.current = activeTab;
+    }
+  }, [activeTab, isInitialized]);
 
   useEffect(() => {
     if (selectedCategoryForTasks && subcategories) {
@@ -293,6 +306,35 @@ function Board2() {
   const [boardGMR, setBoardGMR] = useState('');
   const [boardPriority, setBoardPriority] = useState('');
   const [boardZone, setBoardZone] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  const currentBoardIdRef = useRef(null);
+
+  useEffect(() => {
+    console.log('[Board2] currentBoard changed:', currentBoard?.id);
+    if (currentBoard?.id) {
+      currentBoardIdRef.current = currentBoard.id;
+      console.log('[Board2] ref updated to:', currentBoard.id);
+    }
+  }, [currentBoard?.id]);
+
+  const saveToStorage = (key, value) => {
+    const boardId = currentBoardIdRef.current;
+    if (boardId) {
+      console.log('[Board2] Saving:', key, 'to board:', boardId, 'value:', value);
+      localStorage.setItem(`board-${boardId}-${key}`, value);
+    } else {
+      console.log('[Board2] WARNING: Cannot save, no boardId in ref');
+    }
+  };
+
+  const saveLinks = () => saveToStorage('links', JSON.stringify(links));
+  const saveCommandes = () => saveToStorage('commandes', JSON.stringify(commandes));
+  const saveEotp = () => saveToStorage('eotp', JSON.stringify(eotpLines));
+  const saveInternalContacts = () =>
+    saveToStorage('internalContacts', JSON.stringify(internalContacts));
+  const saveExternalContacts = () =>
+    saveToStorage('externalContacts', JSON.stringify(externalContacts));
 
   const [commandes, setCommandes] = useState([]);
   const [selectedCommande, setSelectedCommande] = useState(null);
@@ -303,138 +345,108 @@ function Board2() {
 
   useEffect(() => {
     if (currentBoard) {
-      const savedLinks = localStorage.getItem(`board-${currentBoard.id}-links`);
-      if (savedLinks) {
-        setLinks(JSON.parse(savedLinks));
-      } else {
-        setLinks([]);
-      }
-      const savedCommandes = localStorage.getItem(`board-${currentBoard.id}-commandes`);
-      if (savedCommandes) {
-        setCommandes(JSON.parse(savedCommandes));
-      } else {
-        setCommandes([]);
-      }
-      const savedEotp = localStorage.getItem(`board-${currentBoard.id}-eotp`);
-      if (savedEotp) {
-        setEotpLines(JSON.parse(savedEotp));
-      } else {
-        setEotpLines([]);
-      }
+      console.log('[Board2] Loading data for board:', currentBoard.id);
+      setIsInitialized(false);
+      currentBoardIdRef.current = currentBoard.id;
+      setLinks(JSON.parse(localStorage.getItem(`board-${currentBoard.id}-links`) || '[]'));
+      setCommandes(JSON.parse(localStorage.getItem(`board-${currentBoard.id}-commandes`) || '[]'));
+      setEotpLines(JSON.parse(localStorage.getItem(`board-${currentBoard.id}-eotp`) || '[]'));
       const savedInternal = localStorage.getItem(`board-${currentBoard.id}-internalContacts`);
       if (savedInternal) {
         const parsed = JSON.parse(savedInternal);
-        if (parsed.length > 0) {
-          setInternalContacts(parsed);
-        } else {
-          setInternalContacts(defaultInternalContacts);
-        }
+        setInternalContacts(parsed.length > 0 ? parsed : defaultInternalContacts);
       } else {
         setInternalContacts(defaultInternalContacts);
       }
-      const savedExternal = localStorage.getItem(`board-${currentBoard.id}-externalContacts`);
-      if (savedExternal) {
-        setExternalContacts(JSON.parse(savedExternal));
-      } else {
-        setExternalContacts([]);
-      }
-      setBoardGMR(localStorage.getItem(`board-${currentBoard.id}-gmr`) || '');
-      setBoardPriority(localStorage.getItem(`board-${currentBoard.id}-priority`) || '');
-      setBoardZone(localStorage.getItem(`board-${currentBoard.id}-zone`) || '');
-    }
-  }, [currentBoard]);
-
-  useEffect(() => {
-    if (currentBoard) {
-      localStorage.setItem(`board-${currentBoard.id}-links`, JSON.stringify(links));
-    }
-  }, [links, currentBoard]);
-
-  useEffect(() => {
-    if (currentBoard) {
-      localStorage.setItem(`board-${currentBoard.id}-commandes`, JSON.stringify(commandes));
-    }
-  }, [commandes, currentBoard]);
-
-  useEffect(() => {
-    if (currentBoard) {
-      localStorage.setItem(`board-${currentBoard.id}-eotp`, JSON.stringify(eotpLines));
-    }
-  }, [eotpLines, currentBoard]);
-
-  useEffect(() => {
-    if (currentBoard) {
-      localStorage.setItem(
-        `board-${currentBoard.id}-internalContacts`,
-        JSON.stringify(internalContacts)
+      setExternalContacts(
+        JSON.parse(localStorage.getItem(`board-${currentBoard.id}-externalContacts`) || '[]')
       );
+      const gmr = localStorage.getItem(`board-${currentBoard.id}-gmr`) || '';
+      const priority = localStorage.getItem(`board-${currentBoard.id}-priority`) || '';
+      const zone = localStorage.getItem(`board-${currentBoard.id}-zone`) || '';
+      console.log('[Board2] Loaded - GMR:', gmr, 'Priority:', priority, 'Zone:', zone);
+      setBoardGMR(gmr);
+      setBoardPriority(priority);
+      setBoardZone(zone);
+      setIsInitialized(true);
     }
-  }, [internalContacts, currentBoard]);
+  }, [currentBoard?.id]);
 
   useEffect(() => {
-    if (currentBoard) {
-      localStorage.setItem(
-        `board-${currentBoard.id}-externalContacts`,
-        JSON.stringify(externalContacts)
-      );
+    if (isInitialized) {
+      saveLinks();
     }
-  }, [externalContacts, currentBoard]);
+  }, [links, isInitialized]);
 
   useEffect(() => {
-    if (currentBoard) {
-      localStorage.setItem(`board-${currentBoard.id}-gmr`, boardGMR);
+    if (isInitialized) {
+      saveCommandes();
     }
-  }, [boardGMR, currentBoard]);
+  }, [commandes, isInitialized]);
 
   useEffect(() => {
-    if (currentBoard) {
-      localStorage.setItem(`board-${currentBoard.id}-priority`, boardPriority);
+    if (isInitialized) {
+      saveEotp();
     }
-  }, [boardPriority, currentBoard]);
+  }, [eotpLines, isInitialized]);
 
   useEffect(() => {
-    if (currentBoard) {
-      localStorage.setItem(`board-${currentBoard.id}-zone`, boardZone);
+    if (isInitialized) {
+      saveInternalContacts();
     }
-  }, [boardZone, currentBoard]);
+  }, [internalContacts, isInitialized]);
+
+  useEffect(() => {
+    if (isInitialized) {
+      saveExternalContacts();
+    }
+  }, [externalContacts, isInitialized]);
 
   const saveAllProjectData = () => {
-    if (!currentBoard) return;
-    localStorage.setItem(`board-${currentBoard.id}-links`, JSON.stringify(links));
-    localStorage.setItem(`board-${currentBoard.id}-commandes`, JSON.stringify(commandes));
-    localStorage.setItem(`board-${currentBoard.id}-eotp`, JSON.stringify(eotpLines));
-    localStorage.setItem(
-      `board-${currentBoard.id}-internalContacts`,
-      JSON.stringify(internalContacts)
-    );
-    localStorage.setItem(
-      `board-${currentBoard.id}-externalContacts`,
-      JSON.stringify(externalContacts)
-    );
-    localStorage.setItem(`board-${currentBoard.id}-gmr`, boardGMR);
-    localStorage.setItem(`board-${currentBoard.id}-priority`, boardPriority);
-    localStorage.setItem(`board-${currentBoard.id}-zone`, boardZone);
+    const boardId = currentBoardIdRef.current || currentBoard?.id;
+    if (!boardId) {
+      console.log('[Board2] saveAllProjectData: no boardId, skipping');
+      return;
+    }
+    console.log('[Board2] saveAllProjectData for board:', boardId);
+    localStorage.setItem(`board-${boardId}-links`, JSON.stringify(links));
+    localStorage.setItem(`board-${boardId}-commandes`, JSON.stringify(commandes));
+    localStorage.setItem(`board-${boardId}-eotp`, JSON.stringify(eotpLines));
+    localStorage.setItem(`board-${boardId}-internalContacts`, JSON.stringify(internalContacts));
+    localStorage.setItem(`board-${boardId}-externalContacts`, JSON.stringify(externalContacts));
+    localStorage.setItem(`board-${boardId}-gmr`, boardGMR);
+    localStorage.setItem(`board-${boardId}-priority`, boardPriority);
+    localStorage.setItem(`board-${boardId}-zone`, boardZone);
+    console.log('[Board2] saveAllProjectData completed');
   };
 
   useEffect(() => {
     const handleBeforeUnload = () => {
+      console.log('[Board2] beforeunload - saving all data');
       saveAllProjectData();
     };
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'hidden') {
+        console.log('[Board2] visibilitychange hidden - saving all data');
+        saveAllProjectData();
+      }
+    };
+    const handlePageHide = () => {
+      console.log('[Board2] pagehide - saving all data');
+      if (isInitialized) {
         saveAllProjectData();
       }
     };
     window.addEventListener('beforeunload', handleBeforeUnload);
-    window.addEventListener('pagehide', handleBeforeUnload);
+    window.addEventListener('pagehide', handlePageHide);
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => {
+      console.log('[Board2] Component unmounting');
       window.removeEventListener('beforeunload', handleBeforeUnload);
-      window.removeEventListener('pagehide', handleBeforeUnload);
+      window.removeEventListener('pagehide', handlePageHide);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [
-    currentBoard,
     links,
     commandes,
     eotpLines,
@@ -443,6 +455,7 @@ function Board2() {
     boardGMR,
     boardPriority,
     boardZone,
+    isInitialized,
   ]);
 
   const toggleCardExpanded = cardId => {
@@ -1294,7 +1307,10 @@ function Board2() {
                 <label className="block text-xs text-secondary mb-1">GMR</label>
                 <select
                   value={boardGMR}
-                  onChange={e => setBoardGMR(e.target.value)}
+                  onChange={e => {
+                    setBoardGMR(e.target.value);
+                    saveToStorage('gmr', e.target.value);
+                  }}
                   className="w-full px-3 py-2 text-sm bg-input border border-std rounded text-primary focus:outline-none focus:border-accent"
                 >
                   <option value="">-- Sélectionner --</option>
@@ -1306,16 +1322,19 @@ function Board2() {
                 </select>
               </div>
               <div>
-                <label className="block text-xs text-secondary mb-1">Priorité du projet</label>
+                <label className="block text-xs text-secondary mb-1">Catégorie du projet</label>
                 <select
                   value={boardPriority}
-                  onChange={e => setBoardPriority(e.target.value)}
+                  onChange={e => {
+                    setBoardPriority(e.target.value);
+                    saveToStorage('priority', e.target.value);
+                  }}
                   className="w-full px-3 py-2 text-sm bg-input border border-std rounded text-primary focus:outline-none focus:border-accent"
                 >
                   <option value="">-- Sélectionner --</option>
                   {loadPriorityData().map(priority => (
-                    <option key={priority.code} value={priority.code}>
-                      {priority.code} - {priority.label}
+                    <option key={priority.id} value={priority.label}>
+                      {priority.label}
                     </option>
                   ))}
                 </select>
@@ -1324,7 +1343,10 @@ function Board2() {
                 <label className="block text-xs text-secondary mb-1">Zone</label>
                 <select
                   value={boardZone}
-                  onChange={e => setBoardZone(e.target.value)}
+                  onChange={e => {
+                    setBoardZone(e.target.value);
+                    saveToStorage('zone', e.target.value);
+                  }}
                   className="w-full px-3 py-2 text-sm bg-input border border-std rounded text-primary focus:outline-none focus:border-accent"
                 >
                   <option value="">-- Sélectionner --</option>

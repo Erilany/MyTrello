@@ -1,10 +1,10 @@
 const PRIORITY_STORAGE_KEY = 'mytrello_priority_data';
 
 export const defaultPriorityData = [
-  { code: 'UR', label: 'Urgent' },
-  { code: 'HA', label: 'Haute' },
-  { code: 'NO', label: 'Normal' },
-  { code: 'BA', label: 'Basse' },
+  { id: 1, label: 'Urgent' },
+  { id: 2, label: 'Haute' },
+  { id: 3, label: 'Normal' },
+  { id: 4, label: 'Basse' },
 ];
 
 export function loadPriorityData() {
@@ -12,7 +12,7 @@ export function loadPriorityData() {
     const stored = localStorage.getItem(PRIORITY_STORAGE_KEY);
     if (stored) {
       const parsed = JSON.parse(stored);
-      return parsed.sort((a, b) => a.code.localeCompare(b.code));
+      return parsed.sort((a, b) => a.id - b.id);
     }
   } catch (e) {
     console.error('[Priority] Error loading data:', e);
@@ -28,35 +28,27 @@ export function savePriorityData(data) {
   }
 }
 
-export function addPriorityItem(code, label) {
+export function addPriorityItem(label) {
   const data = loadPriorityData();
-  if (data.some(item => item.code === code)) {
-    throw new Error('Ce code existe déjà');
-  }
-  data.push({ code: code.toUpperCase(), label });
-  data.sort((a, b) => a.code.localeCompare(b.code));
+  const maxId = Math.max(0, ...data.map(item => item.id));
+  data.push({ id: maxId + 1, label });
   savePriorityData(data);
   return data;
 }
 
-export function updatePriorityItem(oldCode, newCode, newLabel) {
+export function updatePriorityItem(id, label) {
   const data = loadPriorityData();
-  const index = data.findIndex(item => item.code === oldCode);
+  const index = data.findIndex(item => item.id === id);
   if (index === -1) return data;
 
-  if (newCode !== oldCode && data.some(item => item.code === newCode)) {
-    throw new Error('Ce code existe déjà');
-  }
-
-  data[index] = { code: newCode.toUpperCase(), label: newLabel };
-  data.sort((a, b) => a.code.localeCompare(b.code));
+  data[index] = { id, label };
   savePriorityData(data);
   return data;
 }
 
-export function deletePriorityItem(code) {
+export function deletePriorityItem(id) {
   const data = loadPriorityData();
-  const filtered = data.filter(item => item.code !== code);
+  const filtered = data.filter(item => item.id !== id);
   savePriorityData(filtered);
   return filtered;
 }

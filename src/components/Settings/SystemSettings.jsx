@@ -19,6 +19,18 @@ import {
 import { loadZonesData, addZoneItem, updateZoneItem, deleteZoneItem } from '../../data/ZonesData';
 import { loadTagsData, addTag, updateTag, deleteTag, resetTagsData } from '../../data/TagsData';
 
+const AVAILABLE_FUNCTIONS = [
+  'Manager de projets',
+  'Chargé(e) de Concertation',
+  "Chargé(e) d'Etudes LA",
+  "Chargé(e) d'Etudes LS",
+  "Chargé(e) d'Etudes Poste HT",
+  "Chargé(e) d'Etudes Poste BT et CC",
+  "Chargé(e) d'Etudes SPC",
+  'Contrôleur Travaux',
+  'Assistant(e) Etudes',
+];
+
 function SystemSettings() {
   const [activeTab, setActiveTab] = useState('database');
 
@@ -46,17 +58,19 @@ function SystemSettings() {
     { key: 'label', label: 'Libellé' },
   ];
 
-  const priorityColumns = [
-    { key: 'code', label: 'Code', maxLength: 2, placeholder: '2 caractères' },
-    { key: 'label', label: 'Libellé' },
-  ];
+  const priorityColumns = [{ key: 'label', label: 'Libellé' }];
 
   const zonesColumns = [{ key: 'label', label: 'Libellé' }];
 
   const tagsColumns = [
     { key: 'name', label: 'Nom du tag' },
     { key: 'color', label: 'Couleur', isColor: true },
+    { key: 'functions', label: 'Fonctions', isMultiSelect: true },
   ];
+
+  const tagsMultiSelectOptions = {
+    functions: AVAILABLE_FUNCTIONS,
+  };
 
   const handleGMRAdd = values => addGMRItem(values.code, values.label);
   const handleGMRUpdate = (id, values) => {
@@ -71,15 +85,15 @@ function SystemSettings() {
     return data;
   };
 
-  const handlePriorityAdd = values => addPriorityItem(values.code, values.label);
+  const handlePriorityAdd = values => addPriorityItem(values.label);
   const handlePriorityUpdate = (id, values) => {
     const data = loadPriorityData();
-    const item = data.find(i => (i.id || i.code) === id);
+    const item = data.find(i => i.id === id);
     if (!item) return data;
-    return updatePriorityItem(item.code, values.code, values.label);
+    return updatePriorityItem(item.id, values.label);
   };
-  const handlePriorityDelete = code => {
-    const data = deletePriorityItem(code);
+  const handlePriorityDelete = id => {
+    const data = deletePriorityItem(id);
     setPriorityData(data);
     return data;
   };
@@ -103,12 +117,12 @@ function SystemSettings() {
   };
 
   const handleTagAdd = values => {
-    const data = addTag(values.name, values.color);
+    const data = addTag(values.name, values.color, values.functions || []);
     setTagsData(data);
     return data;
   };
   const handleTagUpdate = (id, values) => {
-    const data = updateTag(id, values.name, values.color);
+    const data = updateTag(id, values.name, values.color, values.functions || []);
     setTagsData(data);
     return data;
   };
@@ -178,7 +192,7 @@ function SystemSettings() {
                 />
 
                 <DataTable
-                  title="Priorité des projets"
+                  title="Catégorie des projets"
                   data={priorityData}
                   onAdd={handlePriorityAdd}
                   onUpdate={handlePriorityUpdate}
@@ -206,6 +220,7 @@ function SystemSettings() {
                   onReset={handleTagReset}
                   columns={tagsColumns}
                   canReset={true}
+                  multiSelectOptions={tagsMultiSelectOptions}
                 />
               </div>
             </div>

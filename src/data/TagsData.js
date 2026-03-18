@@ -1,16 +1,20 @@
 const TAGS_STORAGE_KEY = 'mytrello_tags_data';
 
 export const defaultTagsData = [
-  { id: 1, name: 'À valider', color: '#F59E0B' },
-  { id: 2, name: 'Urgente', color: '#EF4444' },
-  { id: 3, name: 'En attente', color: '#6B7280' },
+  { id: 1, name: 'À valider', color: '#F59E0B', functions: [] },
+  { id: 2, name: 'Urgente', color: '#EF4444', functions: [] },
+  { id: 3, name: 'En attente', color: '#6B7280', functions: [] },
 ];
 
 export function loadTagsData() {
   try {
     const stored = localStorage.getItem(TAGS_STORAGE_KEY);
     if (stored) {
-      return JSON.parse(stored);
+      const data = JSON.parse(stored);
+      return data.map(tag => ({
+        ...tag,
+        functions: tag.functions || [],
+      }));
     }
   } catch (e) {
     console.error('[Tags] Error loading data:', e);
@@ -26,7 +30,7 @@ export function saveTagsData(data) {
   }
 }
 
-export function addTag(name, color) {
+export function addTag(name, color, functions = []) {
   const data = loadTagsData();
   if (data.some(tag => tag.name.toLowerCase() === name.toLowerCase())) {
     throw new Error('Ce tag existe déjà');
@@ -35,13 +39,14 @@ export function addTag(name, color) {
     id: Date.now(),
     name,
     color,
+    functions,
   };
   data.push(newTag);
   saveTagsData(data);
   return data;
 }
 
-export function updateTag(id, name, color) {
+export function updateTag(id, name, color, functions = []) {
   const data = loadTagsData();
   const index = data.findIndex(tag => tag.id === id);
   if (index === -1) return data;
@@ -50,7 +55,7 @@ export function updateTag(id, name, color) {
     throw new Error('Ce tag existe déjà');
   }
 
-  data[index] = { id, name, color };
+  data[index] = { id, name, color, functions };
   saveTagsData(data);
   return data;
 }

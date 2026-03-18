@@ -10,6 +10,7 @@ export function DataTable({
   columns = [{ key: 'label', label: 'Libellé' }],
   onReset,
   canReset = false,
+  multiSelectOptions = {},
 }) {
   const [items, setItems] = useState(data);
   const [editingId, setEditingId] = useState(null);
@@ -24,7 +25,10 @@ export function DataTable({
 
   const handleEdit = item => {
     setEditingId(item.id || item.code);
-    setEditValues(item);
+    setEditValues({
+      ...item,
+      functions: item.functions || [],
+    });
     setError(null);
   };
 
@@ -75,6 +79,65 @@ export function DataTable({
     setItems(reset);
   };
 
+  const toggleMultiSelectValue = (values, key, value) => {
+    const currentValues = values[key] || [];
+    if (currentValues.includes(value)) {
+      return currentValues.filter(v => v !== value);
+    } else {
+      return [...currentValues, value];
+    }
+  };
+
+  const renderCell = (col, item, values, setValues) => {
+    if (col.isMultiSelect) {
+      const options = multiSelectOptions[col.key] || [];
+      const currentValues = values[col.key] || [];
+      return (
+        <div className="flex flex-wrap gap-1">
+          {options.map(opt => {
+            const isSelected = currentValues.includes(opt);
+            const isEditing = editingId === (item.id || item.code);
+            return (
+              <button
+                key={opt}
+                type="button"
+                onClick={() => {
+                  if (isEditing) {
+                    setValues({
+                      ...values,
+                      [col.key]: toggleMultiSelectValue(values, col.key, opt),
+                    });
+                  }
+                }}
+                className={`px-2 py-0.5 text-xs rounded border ${
+                  isSelected
+                    ? 'bg-accent text-white border-accent'
+                    : 'bg-card-hover text-secondary border-std hover:border-accent'
+                } ${isEditing ? 'cursor-pointer' : 'cursor-default'}`}
+              >
+                {opt}
+              </button>
+            );
+          })}
+        </div>
+      );
+    }
+
+    if (col.isColor) {
+      return (
+        <div className="flex items-center gap-2">
+          <span
+            className="w-4 h-4 rounded border border-std"
+            style={{ backgroundColor: item[col.key] }}
+          />
+          <span className="text-xs">{item[col.key]}</span>
+        </div>
+      );
+    }
+
+    return item[col.key];
+  };
+
   return (
     <div className="bg-card rounded-lg border border-std p-4">
       <div className="flex items-center justify-between mb-4">
@@ -123,7 +186,32 @@ export function DataTable({
               <tr className="bg-accent/10">
                 {columns.map(col => (
                   <td key={col.key} className="py-2 px-3">
-                    {col.isColor ? (
+                    {col.isMultiSelect ? (
+                      <div className="flex flex-wrap gap-1">
+                        {(multiSelectOptions[col.key] || []).map(opt => {
+                          const isSelected = (newValues[col.key] || []).includes(opt);
+                          return (
+                            <button
+                              key={opt}
+                              type="button"
+                              onClick={() => {
+                                setNewValues({
+                                  ...newValues,
+                                  [col.key]: toggleMultiSelectValue(newValues, col.key, opt),
+                                });
+                              }}
+                              className={`px-2 py-0.5 text-xs rounded border ${
+                                isSelected
+                                  ? 'bg-accent text-white border-accent'
+                                  : 'bg-card-hover text-secondary border-std hover:border-accent'
+                              }`}
+                            >
+                              {opt}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    ) : col.isColor ? (
                       <div className="flex items-center gap-2">
                         <input
                           type="color"
@@ -190,7 +278,33 @@ export function DataTable({
                     {columns.map(col => (
                       <td key={col.key} className="py-2 px-3 text-primary">
                         {isEditing ? (
-                          col.isColor ? (
+                          col.isMultiSelect ? (
+                            <div className="flex flex-wrap gap-1">
+                              {(multiSelectOptions[col.key] || []).map(opt => {
+                                const isSelected = (editValues[col.key] || []).includes(opt);
+                                return (
+                                  <button
+                                    key={opt}
+                                    type="button"
+                                    onClick={e => {
+                                      e.stopPropagation();
+                                      setEditValues({
+                                        ...editValues,
+                                        [col.key]: toggleMultiSelectValue(editValues, col.key, opt),
+                                      });
+                                    }}
+                                    className={`px-2 py-0.5 text-xs rounded border ${
+                                      isSelected
+                                        ? 'bg-accent text-white border-accent'
+                                        : 'bg-card-hover text-secondary border-std hover:border-accent'
+                                    }`}
+                                  >
+                                    {opt}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          ) : col.isColor ? (
                             <div className="flex items-center gap-2">
                               <input
                                 type="color"
@@ -204,7 +318,7 @@ export function DataTable({
                                 type="text"
                                 value={editValues[col.key] || ''}
                                 onChange={e =>
-                                  setEditValues({ ...editValues, [col.key]: e.target.value })
+                                  setEditValues({ ...editValues, [key]: e.target.value })
                                 }
                                 maxLength={7}
                                 className="flex-1 px-2 py-1 text-sm bg-input border border-std rounded text-primary focus:outline-none focus:border-accent"
@@ -221,16 +335,8 @@ export function DataTable({
                               className="w-full px-2 py-1 text-sm bg-input border border-std rounded text-primary focus:outline-none focus:border-accent"
                             />
                           )
-                        ) : col.isColor ? (
-                          <div className="flex items-center gap-2">
-                            <span
-                              className="w-4 h-4 rounded border border-std"
-                              style={{ backgroundColor: item[col.key] }}
-                            />
-                            <span className="text-xs">{item[col.key]}</span>
-                          </div>
                         ) : (
-                          item[col.key]
+                          renderCell(col, item, item, () => {})
                         )}
                       </td>
                     ))}

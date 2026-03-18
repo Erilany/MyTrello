@@ -776,171 +776,183 @@ export function AppProvider({ children }) {
   };
 
   const exportData = () => {
-    const projectTime = localStorage.getItem('mytrello_project_time');
-    const libraryFavorites = localStorage.getItem('mytrello_library_favorites');
-    const libraryEditor = localStorage.getItem('mytrello_library_editor');
-    const libraryTemplates = localStorage.getItem('mytrello_library_templates');
-    const theme = localStorage.getItem('mytrello-theme');
-    const cardColors = localStorage.getItem('mytrello-cardColors');
-    const username = localStorage.getItem('mytrello-username');
-    const userRole = localStorage.getItem('mytrello-user-role');
+    console.log('[ExportData] Starting export...');
+    try {
+      const projectTime = localStorage.getItem('mytrello_project_time');
+      const libraryFavorites = localStorage.getItem('mytrello_library_favorites');
+      const libraryEditor = localStorage.getItem('mytrello_library_editor');
+      const libraryTemplates = localStorage.getItem('mytrello_library_templates');
+      const theme = localStorage.getItem('mytrello-theme');
+      const cardColors = localStorage.getItem('mytrello-cardColors');
+      const username = localStorage.getItem('mytrello-username');
+      const userRole = localStorage.getItem('mytrello-user-role');
 
-    const projectDataKeys = [
-      'links',
-      'commandes',
-      'eotp',
-      'internalContacts',
-      'externalContacts',
-      'gmr',
-      'priority',
-      'zone',
-    ];
-    const projectData = {};
-    db.boards.forEach(board => {
-      projectData[board.id] = {};
-      projectDataKeys.forEach(key => {
-        const stored = localStorage.getItem(`board-${board.id}-${key}`);
-        if (stored) {
-          try {
-            projectData[board.id][key] = JSON.parse(stored);
-          } catch {
-            projectData[board.id][key] = stored;
+      console.log('[ExportData] Loading databases...');
+      const gmr = loadGMRData();
+      const priority = loadPriorityData();
+      const zones = loadZonesData();
+      const tags = loadTagsData();
+      console.log('[ExportData] Databases loaded:', { gmr, priority, zones, tags });
+
+      const projectDataKeys = [
+        'links',
+        'commandes',
+        'eotp',
+        'internalContacts',
+        'externalContacts',
+        'gmr',
+        'priority',
+        'zone',
+      ];
+      const projectData = {};
+      db.boards.forEach(board => {
+        projectData[board.id] = {};
+        projectDataKeys.forEach(key => {
+          const stored = localStorage.getItem(`board-${board.id}-${key}`);
+          if (stored) {
+            try {
+              projectData[board.id][key] = JSON.parse(stored);
+            } catch {
+              projectData[board.id][key] = stored;
+            }
           }
-        }
+        });
       });
-    });
 
-    const exportObj = {
-      version: '1.0',
-      exportedAt: new Date().toISOString(),
-      data: db,
-      projectTime: projectTime ? JSON.parse(projectTime) : {},
-      libraryFavorites: libraryFavorites ? JSON.parse(libraryFavorites) : {},
-      libraryEditor: libraryEditor ? JSON.parse(libraryEditor) : null,
-      libraryTemplates: libraryTemplates ? JSON.parse(libraryTemplates) : { templates: [] },
-      settings: {
-        theme,
-        cardColors: cardColors ? JSON.parse(cardColors) : null,
-        username,
-        userRole,
-      },
-      databases: {
-        gmr: loadGMRData(),
-        priority: loadPriorityData(),
-        zones: loadZonesData(),
-        tags: loadTagsData(),
-      },
-      projectsData,
-    };
-    const blob = new Blob([JSON.stringify(exportObj, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `mytrello-backup-${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+      const exportObj = {
+        version: '1.0',
+        exportedAt: new Date().toISOString(),
+        data: db,
+        projectTime: projectTime ? JSON.parse(projectTime) : {},
+        libraryFavorites: libraryFavorites ? JSON.parse(libraryFavorites) : {},
+        libraryEditor: libraryEditor ? JSON.parse(libraryEditor) : null,
+        libraryTemplates: libraryTemplates ? JSON.parse(libraryTemplates) : { templates: [] },
+        settings: {
+          theme,
+          cardColors: cardColors ? JSON.parse(cardColors) : null,
+          username,
+          userRole,
+        },
+        databases: {
+          gmr,
+          priority,
+          zones,
+          tags,
+        },
+        projectsData: projectData,
+      };
+
+      console.log('[ExportData] Creating blob...');
+      const blob = new Blob([JSON.stringify(exportObj, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `mytrello-backup-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      console.log('[ExportData] Export completed successfully');
+    } catch (err) {
+      console.error('[ExportData] Error during export:', err);
+      throw err;
+    }
   };
 
   const importData = jsonData => {
     try {
       const parsed = typeof jsonData === 'string' ? JSON.parse(jsonData) : jsonData;
-      if (parsed.data) {
-        setDb(parsed.data);
-        saveToStorage(parsed.data);
-
-        if (parsed.projectTime) {
-          localStorage.setItem('mytrello_project_time', JSON.stringify(parsed.projectTime));
-        }
-        if (parsed.libraryFavorites) {
-          localStorage.setItem(
-            'mytrello_library_favorites',
-            JSON.stringify(parsed.libraryFavorites)
-          );
-        }
-        if (parsed.libraryEditor) {
-          localStorage.setItem('mytrello_library_editor', JSON.stringify(parsed.libraryEditor));
-        }
-        if (parsed.libraryTemplates) {
-          localStorage.setItem(
-            'mytrello_library_templates',
-            JSON.stringify(parsed.libraryTemplates)
-          );
-        }
-        if (parsed.settings) {
-          if (parsed.settings.theme) {
-            localStorage.setItem('mytrello-theme', parsed.settings.theme);
-            setTheme(parsed.settings.theme);
-          }
-          if (parsed.settings.cardColors) {
-            localStorage.setItem('mytrello-cardColors', JSON.stringify(parsed.settings.cardColors));
-          }
-          if (parsed.settings.username) {
-            localStorage.setItem('mytrello-username', parsed.settings.username);
-          }
-          if (parsed.settings.userRole) {
-            localStorage.setItem('mytrello-user-role', parsed.settings.userRole);
-          }
-        }
-
-        if (parsed.databases) {
-          if (parsed.databases.gmr) {
-            saveGMRData(parsed.databases.gmr);
-          }
-          if (parsed.databases.priority) {
-            savePriorityData(parsed.databases.priority);
-          }
-          if (parsed.databases.zones) {
-            saveZonesData(parsed.databases.zones);
-          }
-          if (parsed.databases.tags) {
-            saveTagsData(parsed.databases.tags);
-          }
-        }
-
-        if (parsed.projectsData) {
-          Object.entries(parsed.projectsData).forEach(([boardId, data]) => {
-            if (data.links) {
-              localStorage.setItem(`board-${boardId}-links`, JSON.stringify(data.links));
-            }
-            if (data.commandes) {
-              localStorage.setItem(`board-${boardId}-commandes`, JSON.stringify(data.commandes));
-            }
-            if (data.eotp) {
-              localStorage.setItem(`board-${boardId}-eotp`, JSON.stringify(data.eotp));
-            }
-            if (data.internalContacts) {
-              localStorage.setItem(
-                `board-${boardId}-internalContacts`,
-                JSON.stringify(data.internalContacts)
-              );
-            }
-            if (data.externalContacts) {
-              localStorage.setItem(
-                `board-${boardId}-externalContacts`,
-                JSON.stringify(data.externalContacts)
-              );
-            }
-            if (data.gmr) {
-              localStorage.setItem(`board-${boardId}-gmr`, data.gmr);
-            }
-            if (data.priority) {
-              localStorage.setItem(`board-${boardId}-priority`, data.priority);
-            }
-            if (data.zone) {
-              localStorage.setItem(`board-${boardId}-zone`, data.zone);
-            }
-          });
-        }
-
-        if (parsed.data.boards.length > 0) {
-          loadBoard(parsed.data.boards[0].id);
-        }
-        return { success: true };
+      if (!parsed.data) {
+        return { success: false, error: 'Format de fichier invalide: aucune donnée trouvée' };
       }
-      return { success: false, error: 'Format de fichier invalide' };
+
+      setDb(parsed.data);
+      saveToStorage(parsed.data);
+
+      if (parsed.projectTime) {
+        localStorage.setItem('mytrello_project_time', JSON.stringify(parsed.projectTime));
+      }
+      if (parsed.libraryFavorites) {
+        localStorage.setItem('mytrello_library_favorites', JSON.stringify(parsed.libraryFavorites));
+      }
+      if (parsed.libraryEditor) {
+        localStorage.setItem('mytrello_library_editor', JSON.stringify(parsed.libraryEditor));
+      }
+      if (parsed.libraryTemplates) {
+        localStorage.setItem('mytrello_library_templates', JSON.stringify(parsed.libraryTemplates));
+      }
+      if (parsed.settings) {
+        if (parsed.settings.theme) {
+          localStorage.setItem('mytrello-theme', parsed.settings.theme);
+          setTheme(parsed.settings.theme);
+        }
+        if (parsed.settings.cardColors) {
+          localStorage.setItem('mytrello-cardColors', JSON.stringify(parsed.settings.cardColors));
+        }
+        if (parsed.settings.username) {
+          localStorage.setItem('mytrello-username', parsed.settings.username);
+        }
+        if (parsed.settings.userRole) {
+          localStorage.setItem('mytrello-user-role', parsed.settings.userRole);
+        }
+      }
+
+      if (parsed.databases) {
+        if (parsed.databases.gmr) {
+          saveGMRData(parsed.databases.gmr);
+        }
+        if (parsed.databases.priority) {
+          savePriorityData(parsed.databases.priority);
+        }
+        if (parsed.databases.zones) {
+          saveZonesData(parsed.databases.zones);
+        }
+        if (parsed.databases.tags) {
+          saveTagsData(parsed.databases.tags);
+        }
+      }
+
+      if (parsed.projectsData) {
+        Object.entries(parsed.projectsData).forEach(([boardId, data]) => {
+          if (data.links) {
+            localStorage.setItem(`board-${boardId}-links`, JSON.stringify(data.links));
+          }
+          if (data.commandes) {
+            localStorage.setItem(`board-${boardId}-commandes`, JSON.stringify(data.commandes));
+          }
+          if (data.eotp) {
+            localStorage.setItem(`board-${boardId}-eotp`, JSON.stringify(data.eotp));
+          }
+          if (data.internalContacts) {
+            localStorage.setItem(
+              `board-${boardId}-internalContacts`,
+              JSON.stringify(data.internalContacts)
+            );
+          }
+          if (data.externalContacts) {
+            localStorage.setItem(
+              `board-${boardId}-externalContacts`,
+              JSON.stringify(data.externalContacts)
+            );
+          }
+          if (data.gmr) {
+            localStorage.setItem(`board-${boardId}-gmr`, data.gmr);
+          }
+          if (data.priority) {
+            localStorage.setItem(`board-${boardId}-priority`, data.priority);
+          }
+          if (data.zone) {
+            localStorage.setItem(`board-${boardId}-zone`, data.zone);
+          }
+        });
+      }
+
+      if (parsed.data.boards && parsed.data.boards.length > 0) {
+        loadBoard(parsed.data.boards[0].id);
+      }
+      return { success: true };
     } catch (e) {
+      console.error('[Import] Error:', e);
       return { success: false, error: e.message };
     }
   };

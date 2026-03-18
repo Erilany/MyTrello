@@ -51,6 +51,9 @@ function ActivityReview({ boards, categories, subcategories, columns, currentUse
   const [tags, setTags] = useState([]);
   const [zones, setZones] = useState([]);
   const [chargeResentie, setChargeResentie] = useState({});
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const currentUserRole = localStorage.getItem('mytrello-user-role') || '';
 
   useEffect(() => {
     setTags(loadTagsData());
@@ -67,7 +70,30 @@ function ActivityReview({ boards, categories, subcategories, columns, currentUse
   }, [chargeResentie]);
 
   useEffect(() => {
-    if (!boards || !currentUsername) return;
+    const handleStorageChange = () => {
+      console.log('[ActivityReview] storage event detected');
+      setRefreshKey(k => k + 1);
+    };
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('focus', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('focus', handleStorageChange);
+    };
+  }, []);
+
+  useEffect(() => {
+    console.log('[ActivityReview] Refreshing data with key:', refreshKey);
+  }, [refreshKey]);
+
+  useEffect(() => {
+    if (!boards || !currentUsername) {
+      console.log('[ActivityReview] Skipping - no boards or username');
+      return;
+    }
+
+    console.log('[ActivityReview] Loading projects data...');
 
     const projects = [];
 
@@ -79,6 +105,10 @@ function ActivityReview({ boards, categories, subcategories, columns, currentUse
       const boardPriority = localStorage.getItem(`board-${board.id}-priority`) || '';
       const boardZone = localStorage.getItem(`board-${board.id}-zone`) || '';
       const eotpLines = JSON.parse(localStorage.getItem(`board-${board.id}-eotp`) || '[]');
+
+      console.log(
+        `[ActivityReview] Board ${board.id}: GMR=${boardGMR}, Priority=${boardPriority}, Zone=${boardZone}`
+      );
 
       const userRoles = internalContacts
         .filter(c => c.name && c.name.toLowerCase().includes(currentUsername.toLowerCase()))
@@ -109,7 +139,7 @@ function ActivityReview({ boards, categories, subcategories, columns, currentUse
           id: board.id,
           title: board.title,
           gmr: boardGMR.slice(0, 4),
-          priority: boardPriority.slice(0, 2),
+          priority: boardPriority,
           zone: boardZone,
           ruo,
           activityType,
@@ -118,6 +148,7 @@ function ActivityReview({ boards, categories, subcategories, columns, currentUse
       }
     }
 
+    console.log('[ActivityReview] Setting projectsData:', projects);
     setProjectsData(projects);
 
     if (projects.length > 0) {
@@ -126,6 +157,7 @@ function ActivityReview({ boards, categories, subcategories, columns, currentUse
       let latestDate = today;
 
       const boardIds = projects.map(p => p.id);
+      const tagsWithFunctions = loadTagsData();
 
       categories.forEach(cat => {
         if (cat.tag && cat.card_id) {
@@ -133,15 +165,22 @@ function ActivityReview({ boards, categories, subcategories, columns, currentUse
           if (boardIds.includes(boardId)) {
             const board = boards.find(b => Number(b.id) === boardId);
             if (board) {
-              allItems.push({
-                ...cat,
-                type: 'category',
-                boardId: board.id,
-                boardTitle: board.title,
-              });
-              if (cat.due_date) {
-                const dueDate = new Date(cat.due_date);
-                if (dueDate > latestDate) latestDate = dueDate;
+              const tagInfo = tagsWithFunctions.find(t => t.name === cat.tag);
+              const tagFunctions = tagInfo?.functions || [];
+              const hasMatchingFunction =
+                tagFunctions.length === 0 || tagFunctions.includes(currentUserRole);
+
+              if (hasMatchingFunction) {
+                allItems.push({
+                  ...cat,
+                  type: 'category',
+                  boardId: board.id,
+                  boardTitle: board.title,
+                });
+                if (cat.due_date) {
+                  const dueDate = new Date(cat.due_date);
+                  if (dueDate > latestDate) latestDate = dueDate;
+                }
               }
             }
           }
@@ -156,15 +195,22 @@ function ActivityReview({ boards, categories, subcategories, columns, currentUse
             if (boardIds.includes(boardId)) {
               const board = boards.find(b => Number(b.id) === boardId);
               if (board) {
-                allItems.push({
-                  ...sub,
-                  type: 'subcategory',
-                  boardId: board.id,
-                  boardTitle: board.title,
-                });
-                if (sub.due_date) {
-                  const dueDate = new Date(sub.due_date);
-                  if (dueDate > latestDate) latestDate = dueDate;
+                const tagInfo = tagsWithFunctions.find(t => t.name === sub.tag);
+                const tagFunctions = tagInfo?.functions || [];
+                const hasMatchingFunction =
+                  tagFunctions.length === 0 || tagFunctions.includes(currentUserRole);
+
+                if (hasMatchingFunction) {
+                  allItems.push({
+                    ...sub,
+                    type: 'subcategory',
+                    boardId: board.id,
+                    boardTitle: board.title,
+                  });
+                  if (sub.due_date) {
+                    const dueDate = new Date(sub.due_date);
+                    if (dueDate > latestDate) latestDate = dueDate;
+                  }
                 }
               }
             }
@@ -176,7 +222,7 @@ function ActivityReview({ boards, categories, subcategories, columns, currentUse
       const cols = getQuarterColumns(today, latestDate);
       setQuarterColumns(cols);
     }
-  }, [boards, categories, subcategories, columns, currentUsername]);
+  }, [boards, categories, subcategories, columns, currentUsername, currentUserRole, refreshKey]);
 
   const groupedByZone = useMemo(() => {
     const groups = {};

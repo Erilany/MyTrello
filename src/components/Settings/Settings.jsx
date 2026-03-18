@@ -93,30 +93,47 @@ function Settings() {
   };
 
   const handleExport = () => {
-    exportData();
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    console.log('[Export] Button clicked');
+    try {
+      exportData();
+      console.log('[Export] Export completed');
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (err) {
+      console.error('[Export] Error:', err);
+      alert("Erreur lors de l'export: " + (err.message || err));
+    }
   };
 
   const handleImport = () => {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.json';
-    input.onchange = async e => {
-      const file = e.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = async event => {
-          const result = importData(event.target.result);
+    input.onchange = e => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = event => {
+        try {
+          const result = importData(event.target?.result);
           if (result.success) {
             alert('Données importées avec succès !');
             window.location.reload();
           } else {
-            alert("Erreur lors de l'importation: " + result.error);
+            alert("Erreur lors de l'importation: " + (result.error || 'Erreur inconnue'));
           }
-        };
-        reader.readAsText(file);
-      }
+        } catch (err) {
+          alert("Erreur lors de l'importation: " + (err.message || 'Erreur inconnue'));
+        }
+      };
+      reader.onerror = () => {
+        alert('Erreur lors de la lecture du fichier');
+      };
+      reader.readAsText(file);
+    };
+    input.oncancel = () => {
+      // User cancelled file selection
     };
     input.click();
   };
