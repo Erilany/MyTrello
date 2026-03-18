@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect, useRef } from 'react';
+import React, { useMemo, useEffect, useRef, useState } from 'react';
 import { getWeekNumber } from '../../utils/dateUtils';
 
 function getTaskStatusColor(status) {
@@ -26,9 +26,28 @@ export default function PlanningGantt({
   zoom = 'week',
   scrollToTask,
 }) {
-  const dayWidth = zoom === 'day' ? 60 : zoom === 'week' ? 30 : 10;
   const containerRef = useRef(null);
+  const [containerWidth, setContainerWidth] = useState(1200);
   const taskRefs = useRef({});
+
+  useEffect(() => {
+    const updateWidth = () => {
+      if (containerRef.current) {
+        setContainerWidth(containerRef.current.clientWidth);
+      }
+    };
+    updateWidth();
+    window.addEventListener('resize', updateWidth);
+    return () => window.removeEventListener('resize', updateWidth);
+  }, []);
+
+  const dayWidth = useMemo(() => {
+    if (zoom === 'day') return 60;
+    if (zoom === 'week') {
+      return Math.max(20, containerWidth / 42);
+    }
+    return Math.max(8, containerWidth / 180);
+  }, [zoom, containerWidth]);
 
   useEffect(() => {
     if (scrollToTask && taskRefs.current[scrollToTask.id] && containerRef.current) {
@@ -189,11 +208,21 @@ export default function PlanningGantt({
                   />
                 )}
                 <div
-                  className={`absolute h-5 rounded ${getTaskStatusColor(task.status)} flex items-center justify-center text-white text-xs px-1 cursor-pointer hover:opacity-80`}
-                  style={{ left: pos.left, width: pos.width, top: '6px' }}
+                  className={`absolute h-5 rounded ${getTaskStatusColor(task.status)} flex items-center justify-center text-white text-xs px-1 cursor-pointer hover:opacity-80 overflow-hidden`}
+                  style={{
+                    left: `${pos.startOffset * dayWidth}px`,
+                    width: `${pos.duration * dayWidth}px`,
+                    top: '6px',
+                  }}
                   title={`${task.title} (${task.start_date || '?'} - ${task.due_date || '?'})`}
                 >
-                  <span className="truncate">{task.title}</span>
+                  {task.progress > 0 && task.progress < 100 && (
+                    <div
+                      className="absolute inset-y-0 left-0 bg-white/30"
+                      style={{ width: `${task.progress}%` }}
+                    />
+                  )}
+                  <span className="truncate relative z-10">{task.title}</span>
                 </div>
               </div>
             );

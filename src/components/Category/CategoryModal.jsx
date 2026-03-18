@@ -3,7 +3,14 @@ import { useApp } from '../../context/AppContext';
 import { X, Bookmark } from 'lucide-react';
 
 function CategoryModal({ category, onClose }) {
-  const { updateCategory, createSubcategory, saveToLibrary, subcategories, categories } = useApp();
+  const {
+    updateCategory,
+    createSubcategory,
+    saveToLibrary,
+    subcategories,
+    categories,
+    libraryItems,
+  } = useApp();
 
   const [title, setTitle] = useState(category.title);
   const [description, setDescription] = useState(category.description || '');
@@ -17,6 +24,79 @@ function CategoryModal({ category, onClose }) {
   const [startDate, setStartDate] = useState(category.start_date || '');
   const [durationDays, setDurationDays] = useState(category.duration_days || 1);
   const [parentId, setParentId] = useState(category.parent_id || null);
+
+  // Temps repère from library (read-only)
+  const parentCard = cards?.find(c => c.id === category.card_id);
+  let tempsRepere = null;
+  if (parentCard && libraryItems) {
+    const libraryCard = libraryItems.find(
+      item => item.type === 'card' && item.title === parentCard.title
+    );
+    if (libraryCard) {
+      const content = JSON.parse(libraryCard.content_json);
+      const cat = content.categories?.find(c => c.title === category.title);
+      tempsRepere = cat?.duration_days || null;
+    }
+  }
+
+  // Helper to add working days (excluding weekends)
+  const addWorkingDays = (startDateStr, days) => {
+    if (!startDateStr || days <= 0) return '';
+    const date = new Date(startDateStr);
+    let daysAdded = 0;
+    while (daysAdded < days) {
+      date.setDate(date.getDate() + 1);
+      const dayOfWeek = date.getDay();
+      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+        daysAdded++;
+      }
+    }
+    return date.toISOString().split('T')[0];
+  };
+
+  // Helper to subtract working days
+  const subtractWorkingDays = (endDateStr, days) => {
+    if (!endDateStr || days <= 0) return '';
+    const date = new Date(endDateStr);
+    let daysSubtracted = 0;
+    while (daysSubtracted < days) {
+      date.setDate(date.getDate() - 1);
+      const dayOfWeek = date.getDay();
+      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+        daysSubtracted++;
+      }
+    }
+    return date.toISOString().split('T')[0];
+  };
+
+  const handleDurationChange = newDuration => {
+    const duration = parseInt(newDuration) || 1;
+    setDurationDays(duration);
+
+    if (startDate && !dueDate) {
+      const calculatedDueDate = addWorkingDays(startDate, duration);
+      setDueDate(calculatedDueDate);
+    } else if (dueDate && !startDate) {
+      const calculatedStartDate = subtractWorkingDays(dueDate, duration);
+      setStartDate(calculatedStartDate);
+    }
+  };
+
+  const handleStartDateChange = newStartDate => {
+    setStartDate(newStartDate);
+    if (newStartDate && durationDays > 0 && !dueDate) {
+      const calculatedDueDate = addWorkingDays(newStartDate, durationDays);
+      setDueDate(calculatedDueDate);
+    }
+  };
+
+  const handleDueDateChange = newDueDate => {
+    setDueDate(newDueDate);
+    if (newDueDate && durationDays > 0 && !startDate) {
+      const calculatedStartDate = subtractWorkingDays(newDueDate, durationDays);
+      setStartDate(calculatedStartDate);
+    }
+  };
 
   const handleSave = async () => {
     await updateCategory(category.id, {
@@ -38,7 +118,16 @@ function CategoryModal({ category, onClose }) {
       sc => Number(sc.category_id) === Number(category.id)
     );
     const content = {
-      category: { title, description, priority, due_date: dueDate, assignee, color },
+      category: {
+        title,
+        description,
+        priority,
+        due_date: dueDate,
+        assignee,
+        color,
+        start_date: startDate,
+        duration_days: durationDays,
+      },
       subcategories: categorySubcategories,
     };
 
@@ -104,7 +193,7 @@ function CategoryModal({ category, onClose }) {
             <textarea
               value={description}
               onChange={e => setDescription(e.target.value)}
-              rows={2}
+              rows={4}
               className="w-full px-3 py-2 bg-input border border-std rounded-lg text-primary focus:outline-none focus:border-accent"
             />
           </div>
@@ -130,7 +219,7 @@ function CategoryModal({ category, onClose }) {
               <input
                 type="date"
                 value={dueDate}
-                onChange={e => setDueDate(e.target.value)}
+                onChange={e => handleDueDateChange(e.target.value)}
                 className="w-full px-3 py-2 bg-card-hover border border-std rounded-lg text-secondary focus:outline-none focus:border-accent"
               />
             </div>
@@ -157,21 +246,35 @@ function CategoryModal({ category, onClose }) {
                 <input
                   type="date"
                   value={startDate}
-                  onChange={e => setStartDate(e.target.value)}
+                  onChange={e => handleStartDateChange(e.target.value)}
                   className="w-full px-3 py-2 bg-input border border-std rounded-lg text-primary focus:outline-none focus:border-accent text-sm"
                 />
               </div>
-              <div>
-                <label className="block text-xs font-medium text-secondary mb-1">
-                  Durée (jours)
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  value={durationDays}
-                  onChange={e => setDurationDays(parseInt(e.target.value) || 1)}
-                  className="w-full px-3 py-2 bg-input border border-std rounded-lg text-primary focus:outline-none focus:border-accent text-sm"
-                />
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-xs font-medium text-secondary mb-1">Durée (j)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={durationDays}
+                    onChange={e => handleDurationChange(e.target.value)}
+                    className="w-full px-2 py-2 bg-input border border-std rounded-lg text-primary focus:outline-none focus:border-accent text-sm"
+                  />
+                </div>
+                {tempsRepere && (
+                  <div>
+                    <label className="block text-xs font-medium text-secondary mb-1">
+                      Temps repère
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={tempsRepere}
+                      disabled
+                      className="w-full px-2 py-2 bg-card-hover border border-std rounded-lg text-secondary text-sm disabled:opacity-50"
+                    />
+                  </div>
+                )}
               </div>
             </div>
 

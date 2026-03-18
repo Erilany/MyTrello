@@ -158,7 +158,6 @@ function loadFromStorage() {
 function saveToStorage(data) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    console.log('[saveToStorage] Saved, cards:', data.cards?.length || 0);
   } catch (e) {
     console.error('[saveToStorage] Error:', e);
   }
@@ -407,20 +406,12 @@ export function AppProvider({ children }) {
   }, []);
 
   const loadBoard = useCallback(boardId => {
-    console.log('[loadBoard] Called with boardId:', boardId);
     const storageData = loadFromStorage();
     const board = storageData.boards.find(b => Number(b.id) === Number(boardId));
     if (board) {
-      console.log('[loadBoard] Board found, cards in storage:', storageData.cards.length);
       setCurrentBoard(board);
       const boardColumns = storageData.columns.filter(c => Number(c.board_id) === Number(boardId));
       const columnIds = boardColumns.map(c => Number(c.id));
-      console.log(
-        '[loadBoard] Board columns:',
-        boardColumns.map(c => c.id),
-        'columnIds:',
-        columnIds
-      );
       const filteredCards = storageData.cards.filter(
         c =>
           (columnIds.includes(Number(c.column_id)) ||
@@ -430,12 +421,6 @@ export function AppProvider({ children }) {
             c.column_id === 0 ||
             !c.column_id) &&
           !c.is_archived
-      );
-      console.log(
-        '[loadBoard] Filtered cards:',
-        filteredCards.length,
-        'card column_ids:',
-        filteredCards.map(c => c.column_id)
       );
       setColumns(boardColumns.sort((a, b) => a.position - b.position));
       setCards(filteredCards.sort((a, b) => a.position - b.position));
@@ -453,6 +438,15 @@ export function AppProvider({ children }) {
           .filter(s => catIds.includes(Number(s.category_id)))
           .sort((a, b) => a.position - b.position)
       );
+
+      if (selectedSubcategory) {
+        const updatedSub = storageData.subcategories.find(
+          s => Number(s.id) === Number(selectedSubcategory.id)
+        );
+        if (updatedSub) {
+          setSelectedSubcategory(updatedSub);
+        }
+      }
     }
   }, []);
 
@@ -735,6 +729,7 @@ export function AppProvider({ children }) {
     const theme = localStorage.getItem('mytrello-theme');
     const cardColors = localStorage.getItem('mytrello-cardColors');
     const username = localStorage.getItem('mytrello-username');
+    const userRole = localStorage.getItem('mytrello-user-role');
 
     const exportObj = {
       version: '1.0',
@@ -748,6 +743,7 @@ export function AppProvider({ children }) {
         theme,
         cardColors: cardColors ? JSON.parse(cardColors) : null,
         username,
+        userRole,
       },
     };
     const blob = new Blob([JSON.stringify(exportObj, null, 2)], { type: 'application/json' });
@@ -796,6 +792,9 @@ export function AppProvider({ children }) {
           }
           if (parsed.settings.username) {
             localStorage.setItem('mytrello-username', parsed.settings.username);
+          }
+          if (parsed.settings.userRole) {
+            localStorage.setItem('mytrello-user-role', parsed.settings.userRole);
           }
         }
 
@@ -1132,6 +1131,7 @@ export function AppProvider({ children }) {
   };
 
   const updateCard = (id, updates) => {
+    console.log('[AppContext] updateCard called:', id, updates);
     const newDb = {
       ...db,
       cards: db.cards.map(c =>
@@ -1466,6 +1466,9 @@ export function AppProvider({ children }) {
       ),
     };
     saveDb(newDb);
+    if (currentBoard) {
+      setTimeout(() => loadBoard(currentBoard.id), 100);
+    }
   };
 
   const deleteSubcategory = id => {

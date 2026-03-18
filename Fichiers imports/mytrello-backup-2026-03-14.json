@@ -1,0 +1,2349 @@
+{
+  "version": "1.0",
+  "exportedAt": "2026-03-14T21:56:59.697Z",
+  "data": {
+    "boards": [
+      {
+        "id": 3,
+        "title": "BAGATELLE_63KV_PTF_TOTAL_QUADRAN",
+        "description": "",
+        "created_at": "2026-03-14T16:36:33.820Z",
+        "is_archived": 0,
+        "updated_at": "2026-03-14T16:38:50.045Z"
+      },
+      {
+        "id": 2,
+        "title": "S22-171_BAGATELLE_63kV_Reconst_poste",
+        "description": "",
+        "created_at": "2026-03-14T16:32:00.453Z",
+        "is_archived": 0
+      },
+      {
+        "id": 4,
+        "title": "S22-852_BAGATELLE_ISSEL_2_63kV",
+        "description": "",
+        "created_at": "2026-03-14T16:55:32.253Z",
+        "is_archived": 0
+      },
+      {
+        "id": 5,
+        "title": "S22-541_CABARDES_PS_400_225_20_KV",
+        "description": "",
+        "created_at": "2026-03-14T16:56:10.607Z",
+        "is_archived": 0
+      },
+      {
+        "id": 6,
+        "title": "S24-137_CABARDES_225KV_Raccordement_TR612",
+        "description": "",
+        "created_at": "2026-03-14T16:56:52.104Z",
+        "is_archived": 0,
+        "updated_at": "2026-03-14T16:57:09.192Z"
+      },
+      {
+        "id": 7,
+        "title": "CERDAGNE",
+        "description": "",
+        "created_at": "2026-03-14T16:57:23.073Z",
+        "is_archived": 0
+      },
+      {
+        "id": 8,
+        "title": "S23-261_GAUDIERE_225KV_Racc_BATTERIE_PTF_AFR",
+        "description": "",
+        "created_at": "2026-03-14T16:58:16.322Z",
+        "is_archived": 0
+      },
+      {
+        "id": 9,
+        "title": "GAUDIERE_225KV_Raccord_PTF_CASTELNAU",
+        "description": "",
+        "created_at": "2026-03-14T16:59:17.435Z",
+        "is_archived": 0
+      },
+      {
+        "id": 10,
+        "title": "LA_63KV_MOREAU-VIGUIER",
+        "description": "",
+        "created_at": "2026-03-14T16:59:45.316Z",
+        "is_archived": 0
+      },
+      {
+        "id": 11,
+        "title": "S24-038_ISSEL_400_225 kV_Ext_PO_S3R",
+        "description": "",
+        "created_at": "2026-03-14T17:01:51.014Z",
+        "is_archived": 0
+      },
+      {
+        "id": 12,
+        "title": "S24-037_ISSEL_225kV_S3R_Créa_PS",
+        "description": "",
+        "created_at": "2026-03-14T17:02:47.423Z",
+        "is_archived": 0
+      },
+      {
+        "id": 13,
+        "title": "S22-573_ISSEL_REVEL_n°1_63kV_LA",
+        "description": "",
+        "created_at": "2026-03-14T17:03:28.192Z",
+        "is_archived": 0
+      },
+      {
+        "id": 14,
+        "title": "S23-070_ISSEL_63kV_Racc_VOLTALIA",
+        "description": "",
+        "created_at": "2026-03-14T17:04:05.577Z",
+        "is_archived": 0
+      },
+      {
+        "id": 15,
+        "title": "S24-036_LA_PIEGE_225kV_Créa_PS_S3R",
+        "description": "",
+        "created_at": "2026-03-14T17:04:39.338Z",
+        "is_archived": 0
+      }
+    ],
+    "columns": [
+      {
+        "id": 6,
+        "board_id": 2,
+        "title": "À faire",
+        "position": 0,
+        "color": "#4A90D9"
+      },
+      {
+        "id": 7,
+        "board_id": 2,
+        "title": "En cours",
+        "position": 1,
+        "color": "#F5A623"
+      },
+      {
+        "id": 8,
+        "board_id": 2,
+        "title": "En attente",
+        "position": 2,
+        "color": "#9CA3AF"
+      },
+      {
+        "id": 9,
+        "board_id": 2,
+        "title": "Terminée",
+        "position": 3,
+        "color": "#7ED321"
+      },
+      {
+        "id": 10,
+        "board_id": 2,
+        "title": "Archiver",
+        "position": 4,
+        "color": "#475569"
+      },
+      {
+        "id": 11,
+        "board_id": 3,
+        "title": "À faire",
+        "position": 0,
+        "color": "#4A90D9"
+      },
+      {
+        "id": 12,
+        "board_id": 3,
+        "title": "En cours",
+        "position": 1,
+        "color": "#F5A623"
+      },
+      {
+        "id": 13,
+        "board_id": 3,
+        "title": "En attente",
+        "position": 2,
+        "color": "#9CA3AF"
+      },
+      {
+        "id": 14,
+        "board_id": 3,
+        "title": "Terminée",
+        "position": 3,
+        "color": "#7ED321"
+      },
+      {
+        "id": 15,
+        "board_id": 3,
+        "title": "Archiver",
+        "position": 4,
+        "color": "#475569"
+      },
+      {
+        "id": 16,
+        "board_id": 4,
+        "title": "À faire",
+        "position": 0,
+        "color": "#4A90D9"
+      },
+      {
+        "id": 17,
+        "board_id": 4,
+        "title": "En cours",
+        "position": 1,
+        "color": "#F5A623"
+      },
+      {
+        "id": 18,
+        "board_id": 4,
+        "title": "En attente",
+        "position": 2,
+        "color": "#9CA3AF"
+      },
+      {
+        "id": 19,
+        "board_id": 4,
+        "title": "Terminée",
+        "position": 3,
+        "color": "#7ED321"
+      },
+      {
+        "id": 20,
+        "board_id": 4,
+        "title": "Archiver",
+        "position": 4,
+        "color": "#475569"
+      },
+      {
+        "id": 21,
+        "board_id": 5,
+        "title": "À faire",
+        "position": 0,
+        "color": "#4A90D9"
+      },
+      {
+        "id": 22,
+        "board_id": 5,
+        "title": "En cours",
+        "position": 1,
+        "color": "#F5A623"
+      },
+      {
+        "id": 23,
+        "board_id": 5,
+        "title": "En attente",
+        "position": 2,
+        "color": "#9CA3AF"
+      },
+      {
+        "id": 24,
+        "board_id": 5,
+        "title": "Terminée",
+        "position": 3,
+        "color": "#7ED321"
+      },
+      {
+        "id": 25,
+        "board_id": 5,
+        "title": "Archiver",
+        "position": 4,
+        "color": "#475569"
+      },
+      {
+        "id": 26,
+        "board_id": 6,
+        "title": "À faire",
+        "position": 0,
+        "color": "#4A90D9"
+      },
+      {
+        "id": 27,
+        "board_id": 6,
+        "title": "En cours",
+        "position": 1,
+        "color": "#F5A623"
+      },
+      {
+        "id": 28,
+        "board_id": 6,
+        "title": "En attente",
+        "position": 2,
+        "color": "#9CA3AF"
+      },
+      {
+        "id": 29,
+        "board_id": 6,
+        "title": "Terminée",
+        "position": 3,
+        "color": "#7ED321"
+      },
+      {
+        "id": 30,
+        "board_id": 6,
+        "title": "Archiver",
+        "position": 4,
+        "color": "#475569"
+      },
+      {
+        "id": 31,
+        "board_id": 7,
+        "title": "À faire",
+        "position": 0,
+        "color": "#4A90D9"
+      },
+      {
+        "id": 32,
+        "board_id": 7,
+        "title": "En cours",
+        "position": 1,
+        "color": "#F5A623"
+      },
+      {
+        "id": 33,
+        "board_id": 7,
+        "title": "En attente",
+        "position": 2,
+        "color": "#9CA3AF"
+      },
+      {
+        "id": 34,
+        "board_id": 7,
+        "title": "Terminée",
+        "position": 3,
+        "color": "#7ED321"
+      },
+      {
+        "id": 35,
+        "board_id": 7,
+        "title": "Archiver",
+        "position": 4,
+        "color": "#475569"
+      },
+      {
+        "id": 36,
+        "board_id": 8,
+        "title": "À faire",
+        "position": 0,
+        "color": "#4A90D9"
+      },
+      {
+        "id": 37,
+        "board_id": 8,
+        "title": "En cours",
+        "position": 1,
+        "color": "#F5A623"
+      },
+      {
+        "id": 38,
+        "board_id": 8,
+        "title": "En attente",
+        "position": 2,
+        "color": "#9CA3AF"
+      },
+      {
+        "id": 39,
+        "board_id": 8,
+        "title": "Terminée",
+        "position": 3,
+        "color": "#7ED321"
+      },
+      {
+        "id": 40,
+        "board_id": 8,
+        "title": "Archiver",
+        "position": 4,
+        "color": "#475569"
+      },
+      {
+        "id": 41,
+        "board_id": 9,
+        "title": "À faire",
+        "position": 0,
+        "color": "#4A90D9"
+      },
+      {
+        "id": 42,
+        "board_id": 9,
+        "title": "En cours",
+        "position": 1,
+        "color": "#F5A623"
+      },
+      {
+        "id": 43,
+        "board_id": 9,
+        "title": "En attente",
+        "position": 2,
+        "color": "#9CA3AF"
+      },
+      {
+        "id": 44,
+        "board_id": 9,
+        "title": "Terminée",
+        "position": 3,
+        "color": "#7ED321"
+      },
+      {
+        "id": 45,
+        "board_id": 9,
+        "title": "Archiver",
+        "position": 4,
+        "color": "#475569"
+      },
+      {
+        "id": 46,
+        "board_id": 10,
+        "title": "À faire",
+        "position": 0,
+        "color": "#4A90D9"
+      },
+      {
+        "id": 47,
+        "board_id": 10,
+        "title": "En cours",
+        "position": 1,
+        "color": "#F5A623"
+      },
+      {
+        "id": 48,
+        "board_id": 10,
+        "title": "En attente",
+        "position": 2,
+        "color": "#9CA3AF"
+      },
+      {
+        "id": 49,
+        "board_id": 10,
+        "title": "Terminée",
+        "position": 3,
+        "color": "#7ED321"
+      },
+      {
+        "id": 50,
+        "board_id": 10,
+        "title": "Archiver",
+        "position": 4,
+        "color": "#475569"
+      },
+      {
+        "id": 51,
+        "board_id": 11,
+        "title": "À faire",
+        "position": 0,
+        "color": "#4A90D9"
+      },
+      {
+        "id": 52,
+        "board_id": 11,
+        "title": "En cours",
+        "position": 1,
+        "color": "#F5A623"
+      },
+      {
+        "id": 53,
+        "board_id": 11,
+        "title": "En attente",
+        "position": 2,
+        "color": "#9CA3AF"
+      },
+      {
+        "id": 54,
+        "board_id": 11,
+        "title": "Terminée",
+        "position": 3,
+        "color": "#7ED321"
+      },
+      {
+        "id": 55,
+        "board_id": 11,
+        "title": "Archiver",
+        "position": 4,
+        "color": "#475569"
+      },
+      {
+        "id": 56,
+        "board_id": 12,
+        "title": "À faire",
+        "position": 0,
+        "color": "#4A90D9"
+      },
+      {
+        "id": 57,
+        "board_id": 12,
+        "title": "En cours",
+        "position": 1,
+        "color": "#F5A623"
+      },
+      {
+        "id": 58,
+        "board_id": 12,
+        "title": "En attente",
+        "position": 2,
+        "color": "#9CA3AF"
+      },
+      {
+        "id": 59,
+        "board_id": 12,
+        "title": "Terminée",
+        "position": 3,
+        "color": "#7ED321"
+      },
+      {
+        "id": 60,
+        "board_id": 12,
+        "title": "Archiver",
+        "position": 4,
+        "color": "#475569"
+      },
+      {
+        "id": 61,
+        "board_id": 13,
+        "title": "À faire",
+        "position": 0,
+        "color": "#4A90D9"
+      },
+      {
+        "id": 62,
+        "board_id": 13,
+        "title": "En cours",
+        "position": 1,
+        "color": "#F5A623"
+      },
+      {
+        "id": 63,
+        "board_id": 13,
+        "title": "En attente",
+        "position": 2,
+        "color": "#9CA3AF"
+      },
+      {
+        "id": 64,
+        "board_id": 13,
+        "title": "Terminée",
+        "position": 3,
+        "color": "#7ED321"
+      },
+      {
+        "id": 65,
+        "board_id": 13,
+        "title": "Archiver",
+        "position": 4,
+        "color": "#475569"
+      },
+      {
+        "id": 66,
+        "board_id": 14,
+        "title": "À faire",
+        "position": 0,
+        "color": "#4A90D9"
+      },
+      {
+        "id": 67,
+        "board_id": 14,
+        "title": "En cours",
+        "position": 1,
+        "color": "#F5A623"
+      },
+      {
+        "id": 68,
+        "board_id": 14,
+        "title": "En attente",
+        "position": 2,
+        "color": "#9CA3AF"
+      },
+      {
+        "id": 69,
+        "board_id": 14,
+        "title": "Terminée",
+        "position": 3,
+        "color": "#7ED321"
+      },
+      {
+        "id": 70,
+        "board_id": 14,
+        "title": "Archiver",
+        "position": 4,
+        "color": "#475569"
+      },
+      {
+        "id": 71,
+        "board_id": 15,
+        "title": "À faire",
+        "position": 0,
+        "color": "#4A90D9"
+      },
+      {
+        "id": 72,
+        "board_id": 15,
+        "title": "En cours",
+        "position": 1,
+        "color": "#F5A623"
+      },
+      {
+        "id": 73,
+        "board_id": 15,
+        "title": "En attente",
+        "position": 2,
+        "color": "#9CA3AF"
+      },
+      {
+        "id": 74,
+        "board_id": 15,
+        "title": "Terminée",
+        "position": 3,
+        "color": "#7ED321"
+      },
+      {
+        "id": 75,
+        "board_id": 15,
+        "title": "Archiver",
+        "position": 4,
+        "color": "#475569"
+      }
+    ],
+    "cards": [],
+    "categories": [],
+    "subcategories": [],
+    "libraryItems": [
+      {
+        "id": 1,
+        "title": "Jalons SIEPR",
+        "type": "card",
+        "tags": "Jalons",
+        "duration": 456,
+        "content_json": "{\"card\":{\"title\":\"Jalons SIEPR\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":456},\"categories\":[{\"title\":\"Jalons projet\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":456,\"subcategories\":[{\"title\":\"Signature de la DO\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Lancement projet\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Signature de la DCT\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Signature de la DI\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"PV de fin de concertation\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Dépôt de la DUP\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Signature de la DUP\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Sécurisation du foncier\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Obtention de la dernière autorisation\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Clôture\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0}]},{\"title\":\"Jalons OP poste\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":407,\"subcategories\":[{\"title\":\"CTF Poste validée\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Commande MCPO\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Ouverture de chantier poste\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Première mise en service poste\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Dernière mise en service poste\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Fin des travaux poste\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0}]},{\"title\":\"Jalons OP LA\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":431,\"subcategories\":[{\"title\":\"CTF LA validée\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"APO\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Commande études MCEL LA\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Commandes travaux MCLA\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Ouverture de chantier LA\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Première mise en service LA\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Dernière mise en service LA\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Fin des travaux LA\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0}]},{\"title\":\"Jalons OP LS\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":339,\"subcategories\":[{\"title\":\"CTF LS validée\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Commande études MCEL LS\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Commandes travaux MCLS\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Ouverture de chantier LS\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Première mise en service LS\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Dernière mise en service LS\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Fin des travaux LS\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0}]}]}"
+      },
+      {
+        "id": 2,
+        "title": "Jalons d'interface",
+        "type": "card",
+        "tags": "Jalons",
+        "duration": 0,
+        "content_json": "{\"card\":{\"title\":\"Jalons d'interface\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},\"categories\":[{\"title\":\"<Nouvelle tâche>\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0,\"subcategories\":[]}]}"
+      },
+      {
+        "id": 3,
+        "title": "Processus DO",
+        "type": "card",
+        "tags": "Processus décisionnels,Proccessus Décisionnel",
+        "duration": 1,
+        "content_json": "{\"card\":{\"title\":\"Processus DO\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":1},\"categories\":[{\"title\":\"DO - Validation et signature de la DO (dir D&I)\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0,\"subcategories\":[]},{\"title\":\"Nomination du manager de projet\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0,\"subcategories\":[]}]}"
+      },
+      {
+        "id": 4,
+        "title": "Processus DCT",
+        "type": "card",
+        "tags": "Processus décisionnels,Proccessus Décisionnel",
+        "duration": 42,
+        "content_json": "{\"card\":{\"title\":\"Processus DCT\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":42},\"categories\":[{\"title\":\"Réalisation CTF\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":29,\"subcategories\":[{\"title\":\"Mise à jour du CCF\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":5},{\"title\":\"CTF partie Postes\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":11},{\"title\":\"CTF partie BT / telecom Postes et encadrants\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":11},{\"title\":\"CTF partie Liaisons aériennes\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":11},{\"title\":\"CTF partie Liaisons souterraines\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":11},{\"title\":\"CTF partie Concertation/autorisation\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":11},{\"title\":\"Finalisation CTF de synthèse\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":5}]},{\"title\":\"Projet < 10 M€ (Facultative)\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":1,\"subcategories\":[{\"title\":\"DCT - RRR/CRP (Revue des Référents Régionaux / Comité Régional des Projets)\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":1}]},{\"title\":\"Projet < 20 M€\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":10,\"subcategories\":[{\"title\":\"DCT - RRR (Revue des Référents Régionaux)\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":1},{\"title\":\"DCT - Mise à jour des documents pour le CCE\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":2},{\"title\":\"DCT - Dépôt du dossier CCE\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"DCT - CCE - Remarques et questions\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":1},{\"title\":\"DCT - CCE - Réponses et amendements\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":1},{\"title\":\"DCT - CCE - Avis\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"DCT - CCE - Séance plénière\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"DCT - CRP (Comité Régional des Projets)\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":1},{\"title\":\"DCT - Validation directeur D&I\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":1}]},{\"title\":\"Projet > 20 M€\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":13,\"subcategories\":[{\"title\":\"DCT - RRR (Revue des Référents Régionaux)\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":1},{\"title\":\"DCT - Point d'arrêt SPC\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"DCT - Mise à jour des documents pour le CCE\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":2},{\"title\":\"DCT - Dépôt du dossier CCE\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"DCT - CCE - Remarques et questions\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":1},{\"title\":\"DCT - CCE - Réponses et amendements\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":1},{\"title\":\"DCT - CCE - Avis\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"DCT - CCE - Séance plénière\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"DCT - CRP Paris\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":1},{\"title\":\"DCT - CNI (Comité National d'Investissement)\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":1},{\"title\":\"DCT - Présentation en directoire (si montant engagé entre DCT et DI > 20 M€)\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":1},{\"title\":\"DCT - Délibération directoire (si montant engagé entre DCT et DI > 20 M€)\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":1}]},{\"title\":\"DCT - Validation et signature de la DCT\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0,\"subcategories\":[]}]}"
+      },
+      {
+        "id": 5,
+        "title": "Processus DI",
+        "type": "card",
+        "tags": "Processus décisionnels,Proccessus Décisionnel",
+        "duration": 58,
+        "content_json": "{\"card\":{\"title\":\"Processus DI\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":58},\"categories\":[{\"title\":\"APD\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":7,\"subcategories\":[{\"title\":\"APD - Finalisation du dossier\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":2},{\"title\":\"APD - Envoi dossier\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"APD - Avis\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":4},{\"title\":\"APD - Validation du dossier\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0}]},{\"title\":\"Projet < 10 M€\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":4,\"subcategories\":[{\"title\":\"DI - Finalisation du dossier\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":2},{\"title\":\"DI - RRR/CRP (Revue des Référents Régionaux / Comité Régional des Projets)\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":1}]},{\"title\":\"Projet < 20 M€\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":16,\"subcategories\":[{\"title\":\"DI - Finalisation du dossier\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":5},{\"title\":\"DI - RRR (Revue des Référents Régionaux)\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":1},{\"title\":\"DI - Point d'arrêt SPC\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"DCT - Mise à jour des documents pour le CCE\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":2},{\"title\":\"DCT - Dépôt du dossier CCE\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"DCT - CCE - Remarques et questions\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":1},{\"title\":\"DCT - CCE - Réponses et amendements\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":1},{\"title\":\"DCT - CCE - Avis\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"DCT - CCE - Séance plénière\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"DI - CRP (Comité Régional des Projets) Paris\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":1},{\"title\":\"DI - Validation directeur D&I\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":1}]},{\"title\":\"Projet > 20 M€\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":19,\"subcategories\":[{\"title\":\"DI - Finalisation du dossier\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":5},{\"title\":\"DI - RRR (Revue des Référents Régionaux)\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":1},{\"title\":\"DI - Point d'arrêt SPC\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"DCT - Mise à jour des documents pour le CCE\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":2},{\"title\":\"DCT - Dépôt du dossier CCE\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"DCT - CCE - Remarques et questions\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":1},{\"title\":\"DCT - CCE - Réponses et amendements\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":1},{\"title\":\"DCT - CCE - Avis\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"DCT - CCE - Séance plénière\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"DI - CRP Paris\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":1},{\"title\":\"DI - CNI (Comité National d'Investissement)\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":1},{\"title\":\"DI - Présentation en directoire\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":1},{\"title\":\"DI - Délibération directoire\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":1}]},{\"title\":\"Projet > 30 M€\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":19,\"subcategories\":[{\"title\":\"DI - Finalisation du dossier\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":5},{\"title\":\"DI - RRR/CRP (Revue des Référents Régionaux / Comité Régional des Projets)\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":1},{\"title\":\"DI - Point d'arrêt SPC\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"DI - Mise à jour des documents pour le CCE\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":2},{\"title\":\"DI - Dépôt du dossier CCE\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"DI - CCE - Remarques et questions\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":1},{\"title\":\"DI - CCE - Réponses et amendements\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":1},{\"title\":\"DI - CCE - Avis\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"DI - CCE - Séance plénière\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"DI - CRP Paris\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":1},{\"title\":\"DI - CNI (Comité National d'Investissement)\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":1},{\"title\":\"DI - Présentation en directoire\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":1},{\"title\":\"DI - Délibération directoire\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":1}]},{\"title\":\"Projet > 50 M€\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":38,\"subcategories\":[{\"title\":\"DI - Finalisation du dossier\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":5},{\"title\":\"DI - RRR/CRP (Revue des Référents Régionaux / Comité Régional des Projets)\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":1},{\"title\":\"DI - Point d'arrêt SPC\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"DI - Mise à jour des documents pour le CCE\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":2},{\"title\":\"DI - Dépôt du dossier CCE\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"DI - CCE - Remarques et questions\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":1},{\"title\":\"DI - CCE - Réponses et amendements\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":1},{\"title\":\"DI - CCE - Avis\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"DI - CCE - Séance plénière\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"DI - CRP Paris\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":1},{\"title\":\"DI - CNI (Comité National d'Investissement)\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":1},{\"title\":\"DI - Audit CRE\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":19},{\"title\":\"DI - Présentation en directoire\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":1},{\"title\":\"DI - Délibération directoire\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":1}]},{\"title\":\"DI - Validation et signature de la DI\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0,\"subcategories\":[]}]}"
+      },
+      {
+        "id": 6,
+        "title": "Rédaction Note d'Organisation Stratégique pour la Concertation",
+        "type": "card",
+        "tags": "Procédures administratives,Etudes,Projet",
+        "duration": 11,
+        "content_json": "{\"card\":{\"title\":\"Rédaction Note d'Organisation Stratégique pour la Concertation\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":11},\"categories\":[]}"
+      },
+      {
+        "id": 7,
+        "title": "Lag - Validation de la NOS pour sortie à l'externe",
+        "type": "card",
+        "tags": "Procédures administratives,Etudes",
+        "duration": 5,
+        "content_json": "{\"card\":{\"title\":\"Lag - Validation de la NOS pour sortie à l'externe\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":5},\"categories\":[]}"
+      },
+      {
+        "id": 8,
+        "title": "Autorisation de sortie à l'externe (si lancement concertation avant DCT)",
+        "type": "card",
+        "tags": "Procédures administratives,Etudes",
+        "duration": 0,
+        "content_json": "{\"card\":{\"title\":\"Autorisation de sortie à l'externe (si lancement concertation avant DCT)\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},\"categories\":[]}"
+      },
+      {
+        "id": 9,
+        "title": "Concertation FERRACCI",
+        "type": "card",
+        "tags": "Procédures administratives,Procédures Administratives",
+        "duration": 54,
+        "content_json": "{\"card\":{\"title\":\"Concertation FERRACCI\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":54},\"categories\":[{\"title\":\"Projet simple (pas de DUP, LA<1 km, LS<3km)\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":18,\"subcategories\":[{\"title\":\"Rédaction note d'information synthètique\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":1},{\"title\":\"Envoi note d'information à la DREAL\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Information du préfet par la DREAL\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":1},{\"title\":\"Rencontre des parties prenantes + synthèse avis (durée variable)\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":5},{\"title\":\"Elaboration DPP (Dossier de Présentation du projet)\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":8},{\"title\":\"Transmission du DPP à la DREAL\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Accusé de réception DREAL\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":5},{\"title\":\"RISQUE : Remise en cause du DPP\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Information des parties prenantes\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":4},{\"title\":\"Information par RTE du FMI/EMI retenu à la DREAL\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0}]},{\"title\":\"Projet intermédiaire (S3rENR, raccordement, LS>3km, LA>1km ou avec DUP)\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":33,\"subcategories\":[{\"title\":\"Rédaction note d'information synthètique\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":1},{\"title\":\"Envoi note d'information à la DREAL\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Information du préfet par la DREAL\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":1},{\"title\":\"Rencontre des parties prenantes + synthèse avis (durée variable)\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":5},{\"title\":\"Elaboratoin DPP (Dossier de Présentation du Projet) V1\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":5},{\"title\":\"Envoi du DPP V1\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"lag - Validation dossier par le préfet\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":5},{\"title\":\"Concertation ou consultation\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":11},{\"title\":\"Validation du FMI/EMI\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"\\\"Signature du FMI/EMI par le préfet \\\"\\\"dans les meilleurs délais\\\"\\\"\\\"\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":1}]},{\"title\":\"Projet important (400 kV, offshore, intercos)\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":54,\"subcategories\":[{\"title\":\"Rédaction note d'information synthètique\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":1},{\"title\":\"Envoi note d'information à la DGEC\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Information du préfet/ministre (?) par la DGEC\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":1},{\"title\":\"Rencontre des parties prenantes + synthèse avis (Durée variable)\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":11},{\"title\":\"Elaboration DPP (Dossier de Présentation du Projet) V0 (=DPPAE)\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":5},{\"title\":\"Envoi du DPP V0\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"lag - Validation dossier par le ministre\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":5},{\"title\":\"Concertation\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":23},{\"title\":\"Concertation - Préparation IC1\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":5},{\"title\":\"Concertation - Instance de concertation 1\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Concertation CNDP\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":5},{\"title\":\"Concertation - Elaboration DPP (Dossier de Présentation du Projet) V1\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":5},{\"title\":\"Concertation - Préparation IC2\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":5},{\"title\":\"Concertation - Instance de concertation 2\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Bilan et proposition FMI/EMI par le préfet\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":1},{\"title\":\"Validation du FMI/EMI par le ministre\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":2}]},{\"title\":\"Validation du FMI/EMI\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0,\"subcategories\":[]}]}"
+      },
+      {
+        "id": 10,
+        "title": "DUP (Déclaration d'Utilité Publique) et AE (Autorisation Environnementale)",
+        "type": "card",
+        "tags": "Procédures administratives,Procédures Administratives",
+        "duration": 131,
+        "content_json": "{\"card\":{\"title\":\"DUP (Déclaration d'Utilité Publique) et AE (Autorisation Environnementale)\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":131},\"categories\":[{\"title\":\"Examen au cas par cas (LA<15km ou <90kV, et postes) (!! Peut déboucher sur une demande d'AE)\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":35,\"subcategories\":[{\"title\":\"Cas par cas - Etudes et préparation\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":23},{\"title\":\"Cas par cas - Soumission du formulaire\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Cas par cas - Réponse de l'autorité environnementale (!! Peut déboucher sur une demande d'AE)\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":11}]},{\"title\":\"DUP et AE synchronisé sans Etude d'Impact\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":24,\"subcategories\":[{\"title\":\"Etude d'incidence environnementale\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":6},{\"title\":\"Dépôt du dossier de DUP+AE\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Consultation art. L.181-10-1\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":18}]},{\"title\":\"DUP et AE synchronisé avec Etude d'Impact\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":101,\"subcategories\":[{\"title\":\"Etude 4 saisons\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":58},{\"title\":\"Etude d'impact\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":24},{\"title\":\"Dépôt du dossier de DUP+AE\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Avis de l'Autorité environnementale\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":12},{\"title\":\"Enquête publique unique art. L123-6\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":6}]},{\"title\":\"DUP puis AE désynchronisé sans Etude d'Impact\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":24,\"subcategories\":[{\"title\":\"Dépôt du dossier de DUP\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Consultation du public en mairie art. L.323-3 Ou Enquête public art. L.110-1 si expro\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":4},{\"title\":\"Etude d'incidence environnementale\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":6},{\"title\":\"Dépôt du dossier d'Autorisation Environnementale\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Consultation art. L.181-10-1\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":18}]},{\"title\":\"DUP puis AE désynchronisé avec Etude d'Impact\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":131,\"subcategories\":[{\"title\":\"Etude 4 saisons\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":58},{\"title\":\"Etude d'impact\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":24},{\"title\":\"Dépôt du dossier de DUP\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Avis de l'Autorité environnementale\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":12},{\"title\":\"Enquête publique unique art. L123-2\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":6},{\"title\":\"Si actualisation de l'Etude d'Impact\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":30},{\"title\":\"Si actualisation de l'Etude d'Impact - Actualisation de l'Etude d'Impact\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":12},{\"title\":\"Si actualisation de l'Etude d'Impact - Dépôt du dossier d'Autorisation Environnementale\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Si actualisation de l'Etude d'Impact - Nouvel avis de l'Autorité Environnementale\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":12},{\"title\":\"Si actualisation de l'Etude d'Impact - PPVE art. L.123-19\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":6},{\"title\":\"Si pas d'actualisation de l'étude d'impact\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":18},{\"title\":\"Si pas d'actualisation de l'étude d'impact - Dépôt du dossier d'Autorisation Environnementale\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Si pas d'actualisation de l'étude d'impact - Consultation art. L.181-10-1\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":18}]},{\"title\":\"AE puis DUP désynchronisé sans Etude d'impact\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":28,\"subcategories\":[{\"title\":\"Etude d'incidence environnementale\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":6},{\"title\":\"Dépôt du dossier d'Autorisation Environnementale\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Consultation art. L.181-10-1\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":18},{\"title\":\"Dépôt du dossier de DUP\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Consultation du public en mairie art. L.323-3 Ou Enquête public art. L.110-1 si expro\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":4}]},{\"title\":\"AE puis DUP désynchronisé avec Etude d'impact\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":131,\"subcategories\":[{\"title\":\"Etude 4 saisons\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":58},{\"title\":\"Etude d'impact\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":24},{\"title\":\"Dépôt du dossier d'Autorisation Environnementale\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Consultation art. L.181-10-1 (+Avis AE)\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":18},{\"title\":\"Si actualisation de l'Etude d'Impact\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":30},{\"title\":\"Si actualisation de l'Etude d'Impact - Actualisation de l'Etude d'Impact\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":12},{\"title\":\"Si actualisation de l'Etude d'Impact - Dépôt du dossier de DUP\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Si actualisation de l'Etude d'Impact - Nouvel avis de l'Autorité Environnementale\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":12},{\"title\":\"Si actualisation de l'Etude d'Impact - PPVE art. L.123-19\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":6},{\"title\":\"Si pas d'actualisation de l'étude d'impact\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":18},{\"title\":\"Si pas d'actualisation de l'étude d'impact - Dépôt du dossier de DUP\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Si pas d'actualisation de l'étude d'impact - Consultation du public en mairie art. L.323-3\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":18}]},{\"title\":\"Obtention DUP\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0,\"subcategories\":[]},{\"title\":\"Obtention AE\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0,\"subcategories\":[]}]}"
+      },
+      {
+        "id": 11,
+        "title": "Conventionnement LS",
+        "type": "card",
+        "tags": "Procédures administratives,Procédures Administratives",
+        "duration": 48,
+        "content_json": "{\"card\":{\"title\":\"Conventionnement LS\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":48},\"categories\":[{\"title\":\"\\\"Conventionnement LS - Sollicitation de l'entreprise titulaire du marché \\\"\\\"études liaisons\\\"\\\"\\\"\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":8,\"subcategories\":[]},{\"title\":\"Conventionnement LS - Tracé de détail et identification des propriétaires\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":2,\"subcategories\":[]},{\"title\":\"Conventionnement LS - Recensement et identification des propriétaires\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0,\"subcategories\":[]},{\"title\":\"Conventionnement LS - Recherche via infoter\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":2,\"subcategories\":[]},{\"title\":\"Conventionnement LS - Sollicitations externes (notaires, impôts,)\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":5,\"subcategories\":[]},{\"title\":\"Conventionnement LS - Rencontres physiques\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":17,\"subcategories\":[]},{\"title\":\"Conventionnement LS - Envoi LRAR des conventions pour signature ou déplacement\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":23,\"subcategories\":[]},{\"title\":\"Conventionnement LS - Autorisation d'exercer les servitudes\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0,\"subcategories\":[]}]}"
+      },
+      {
+        "id": 12,
+        "title": "Conventionnement LA",
+        "type": "card",
+        "tags": "Procédures administratives,Procédures Administratives",
+        "duration": 64,
+        "content_json": "{\"card\":{\"title\":\"Conventionnement LA\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":64},\"categories\":[{\"title\":\"Conventionnement LA - Visite terrain pour définir l'implantation projetée\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":29,\"subcategories\":[]},{\"title\":\"Conventionnement LA - Obtention des avis favorables\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":29,\"subcategories\":[]},{\"title\":\"Conventionnement LA - Conventionnement\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":29,\"subcategories\":[]}]}"
+      },
+      {
+        "id": 13,
+        "title": "RISQUE - Mise en servitude",
+        "type": "card",
+        "tags": "Procédures administratives,Procédures Administratives",
+        "duration": 21,
+        "content_json": "{\"card\":{\"title\":\"RISQUE - Mise en servitude\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":21},\"categories\":[{\"title\":\"MeServitude - Dépôt de la requête (si désaccord)\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0,\"subcategories\":[]},{\"title\":\"MeServitude - Prescription enquête et désignation commissaire enquêteur\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":4,\"subcategories\":[]},{\"title\":\"MeServitude - Notification de l'arrêté et transmission aux maires\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":4,\"subcategories\":[]},{\"title\":\"MeServitude - Annonce de l'ouverture de l'enquête (affichage)\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0,\"subcategories\":[]},{\"title\":\"MeServitude - Enquête parcellaire\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":2,\"subcategories\":[]},{\"title\":\"MeServitude - Clôture, signature registre (maires) et transmission au CE\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0,\"subcategories\":[]},{\"title\":\"MeServitude - Avis CE, procès verbal et transmission au préfet\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0,\"subcategories\":[]},{\"title\":\"MeServitude - Transmission du préfet vers le pétitionnaire\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":1,\"subcategories\":[]},{\"title\":\"MeServitude - Observation RTE et modification possible du projet\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":2,\"subcategories\":[]},{\"title\":\"MeServitude - Etablissement des servitudes et notifications\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":4,\"subcategories\":[]},{\"title\":\"MeServitude - Arrêté de servitude (a relier au début des travaux concernés par la DUP)\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0,\"subcategories\":[]}]}"
+      },
+      {
+        "id": 14,
+        "title": "APO (Autorisation du Projet d'Ouvrage) (LA uniquement)",
+        "type": "card",
+        "tags": "Procédures administratives,Procédures Administratives",
+        "duration": 27,
+        "content_json": "{\"card\":{\"title\":\"APO (Autorisation du Projet d'Ouvrage) (LA uniquement)\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":27},\"categories\":[{\"title\":\"APO - Disponibilité des études de détail LA\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0,\"subcategories\":[]},{\"title\":\"APO - Dossier de demande d'APO\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":11,\"subcategories\":[]},{\"title\":\"APO - Envoi du dossier à la DREAL\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0,\"subcategories\":[]},{\"title\":\"APO - Consultation des maires et gestionnaires de DP\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":2,\"subcategories\":[]},{\"title\":\"APO - Avis des maires et gestionnaires\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":5,\"subcategories\":[]},{\"title\":\"APO - Réponse RTE aux avis\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":5,\"subcategories\":[]},{\"title\":\"APO - Transmission au préfet\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":1,\"subcategories\":[]},{\"title\":\"APO - Délivrance de l'APO\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0,\"subcategories\":[]}]}"
+      },
+      {
+        "id": 15,
+        "title": "Consultation des maires et gestionnaires par RTE (LS et Postes)",
+        "type": "card",
+        "tags": "Procédures administratives,Procédures Administratives",
+        "duration": 26,
+        "content_json": "{\"card\":{\"title\":\"Consultation des maires et gestionnaires par RTE (LS et Postes)\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":26},\"categories\":[{\"title\":\"CMG - Disponibilité des études de détail LS et Postes\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0,\"subcategories\":[]},{\"title\":\"CMG - Dossier de CMG directe par RTE\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":11,\"subcategories\":[]},{\"title\":\"CMG - CMG des maires et gestionnaires de DP et services publics\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":2,\"subcategories\":[]},{\"title\":\"CMG - Avis des maires et gestionnaires de DP et services publics\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":5,\"subcategories\":[]},{\"title\":\"CMG - Réponse de RTE aux avis\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":5,\"subcategories\":[]}]}"
+      },
+      {
+        "id": 16,
+        "title": "PC (Permis de Construire) (Postes)",
+        "type": "card",
+        "tags": "Procédures administratives,Procédures Administratives",
+        "duration": 30,
+        "content_json": "{\"card\":{\"title\":\"PC (Permis de Construire) (Postes)\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":30},\"categories\":[{\"title\":\"PC - Disponibilité des études de détail Postes\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0,\"subcategories\":[]},{\"title\":\"PC - Dossier de demande de PC\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":11,\"subcategories\":[]},{\"title\":\"PC - Dépôt du dossier\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0,\"subcategories\":[]},{\"title\":\"PC - Instruction par la DDT\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":5,\"subcategories\":[]},{\"title\":\"PC - Consultation des maires et autres\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":5,\"subcategories\":[]},{\"title\":\"PC - Avis des maires et autres\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":5,\"subcategories\":[]},{\"title\":\"PC - Transmission du PC au préfet (DDT)\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":1,\"subcategories\":[]},{\"title\":\"PC - Délivrance du permis de construire\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0,\"subcategories\":[]}]}"
+      },
+      {
+        "id": 17,
+        "title": "Etudes préliminaires",
+        "type": "card",
+        "tags": "Etudes,Etudes",
+        "duration": 11,
+        "content_json": "{\"card\":{\"title\":\"Etudes préliminaires\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":11},\"categories\":[{\"title\":\"Rédaction Note d'Organisation Projet et stratégie achats\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":11,\"subcategories\":[]},{\"title\":\"Etudes sur la consistance de la solution retenue\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":11,\"subcategories\":[{\"title\":\"Etudes préliminaires postes\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":11},{\"title\":\"Etudes préliminaires BT/telecom\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":11},{\"title\":\"Etudes préliminaires LA\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":11},{\"title\":\"Etudes préliminaires LS\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":11}]}]}"
+      },
+      {
+        "id": 18,
+        "title": "Etudes détaillées",
+        "type": "card",
+        "tags": "Etudes,Etudes",
+        "duration": 125,
+        "content_json": "{\"card\":{\"title\":\"Etudes détaillées\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":125},\"categories\":[{\"title\":\"Etudes Postes\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":115,\"subcategories\":[{\"title\":\"Etudes Hors Marché Cadre\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":15},{\"title\":\"Etudes Hors Marché Cadre - CCTP\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":2},{\"title\":\"Etudes Hors Marché Cadre - Consultation\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Etudes Hors Marché Cadre - Commande\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Etudes Hors Marché Cadre - Livrable étude\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":11},{\"title\":\"Etudes de sol\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":108},{\"title\":\"Etudes de sol - CCTP\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":2},{\"title\":\"Etudes de sol - Processus Achat\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":2},{\"title\":\"Etudes de sol - Processus Achat  - Consultation\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":2},{\"title\":\"Etudes de sol - Processus Achat - Commande\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Etudes de sol - Etudes\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":102},{\"title\":\"Etudes de sol - Etudes - Intervention sur site\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":13},{\"title\":\"Etudes de sol - Etudes - Livrables études hydro-géotechniques\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":5},{\"title\":\"Etudes de sol - Etudes - Livrable études G1-G2AVP\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":17},{\"title\":\"Etudes de sol - Etudes -  Livrable études DCE\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":5},{\"title\":\"Etudes de sol - Etudes - Livrable études G4 (MCPO)\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":2},{\"title\":\"Marché PSEM\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":85},{\"title\":\"Marché PSEM - Demande de réalisation du Marché\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Marché PSEM - Envoi du CDP au CNER\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":5},{\"title\":\"Marché PSEM - Validation du CDP par CNER\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":2},{\"title\":\"Marché PSEM - Processus achat\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":20},{\"title\":\"Marché PSEM - Processus achat - Rédaction et validation de la NSPA stratégie\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":4},{\"title\":\"Marché PSEM - Processus achat - Consultation\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":6},{\"title\":\"Marché PSEM - Processus achat - Négociation\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":6},{\"title\":\"Marché PSEM - Processus achat - Rédaction et validation de la NSPA attribution\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":2},{\"title\":\"Marché PSEM - Processus achat - Envoi de la commande d'études au fournisseur\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":1},{\"title\":\"Marché PSEM - Etudes\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":56},{\"title\":\"Marché PSEM - Etudes - Réalisation plan guide GC\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":11},{\"title\":\"Marché PSEM - Etudes - Réalisation des études\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":40},{\"title\":\"Marché PSEM - Etudes - Valildation des études\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":4},{\"title\":\"Etudes MOE (architecte)\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":74},{\"title\":\"MOE - CCTP\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":5},{\"title\":\"MOE - Processus achat\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":16},{\"title\":\"MOE - Processus achat - Consultation\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":11},{\"title\":\"MOE - Processus achat - Attribution\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":4},{\"title\":\"MOE - Etudes\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":52},{\"title\":\"MOE - Etudes - Livrables APS\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":17},{\"title\":\"MOE - Etudes - Livrables APD\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":26},{\"title\":\"MOE - Etudes - Livrables DCE\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":8},{\"title\":\"MCPO\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":108},{\"title\":\"MCPO - CCTP\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":11},{\"title\":\"MCPO - Processus achat\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":26},{\"title\":\"MCPO - Processus achat - Demande attribution entreprise\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":1},{\"title\":\"MCPO - Processus achat - Remise du CCTP au GIE + visite terrain\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":5},{\"title\":\"MCPO - Processus achat - Chiffrage marché poste\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":4},{\"title\":\"MCPO - Processus achat - Remise des prix et négociation\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":2},{\"title\":\"MCPO - Processus achat - Commande marche MCPO + commande travaux sous condition CR\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":1},{\"title\":\"MCPO - Etudes\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":81},{\"title\":\"MCPO - Etudes - lag - Délai entre signature de la commande et réunion de lancement\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":2},{\"title\":\"MCPO - Etudes - Réunion de lancement des études\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"MCPO - Etudes - livrable V1\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":35},{\"title\":\"MCPO - Etudes - livrable V2\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":29},{\"title\":\"MCPO - Etudes - livraison DTT\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":2}]},{\"title\":\"Etudes LA\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":125,\"subcategories\":[{\"title\":\"MCEL LA\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":125},{\"title\":\"MCEL LA - Rédaction du CCTP\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":5},{\"title\":\"MCEL LA - Procédure achat\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":69},{\"title\":\"MCEL LA - Procédure achat - Fiche attribution\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"MCEL LA - Procédure achat - Envoi consultation\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"MCEL LA - Procédure achat - Remise de l'offre\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":5},{\"title\":\"MCEL LA - Procédure achat - Négociation\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":2},{\"title\":\"MCEL LA - Procédure achat - Signature de la NAC et de la commande\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"MCEL LA - Etudes\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":55},{\"title\":\"MCEL LA - Etudes - lag - Délai entre signature commande et réunion de lancement\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":2},{\"title\":\"MCEL LA - Etudes - Réunion de lancement des études\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"MCEL LA - Etudes - Etudes V1\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":23},{\"title\":\"MCEL LA - Etudes - Etudes V2\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":29}]},{\"title\":\"Etudes LS\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":116,\"subcategories\":[{\"title\":\"MCEL LS\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":114},{\"title\":\"Etudes PSO\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":61}]}]}"
+      },
+      {
+        "id": 19,
+        "title": "Consultations marchés travaux",
+        "type": "card",
+        "tags": "Achats,Achats",
+        "duration": 80,
+        "content_json": "{\"card\":{\"title\":\"Consultations marchés travaux\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":80},\"categories\":[{\"title\":\"Consultations Poste\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":75,\"subcategories\":[{\"title\":\"Plateforme\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":75},{\"title\":\"Plateforme - CCTP\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":2},{\"title\":\"Plateforme - Consultation\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":11},{\"title\":\"Plateforme - Négociation\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":5},{\"title\":\"Plateforme - Commande\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Bâtiment\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":68},{\"title\":\"Bâtiment - CCTP\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":2},{\"title\":\"Bâtiment - Consultation\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":11},{\"title\":\"Bâtiment - Négociation\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":5},{\"title\":\"Bâtiment - Commande\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0}]},{\"title\":\"Consultation LA\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":58,\"subcategories\":[{\"title\":\"MCFS\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":58},{\"title\":\"MCFS - CCTP\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":2},{\"title\":\"MCFS - Consultation\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":11},{\"title\":\"MCFS - Négociations\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":5},{\"title\":\"MCFS - Commande\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"MCLA\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":58},{\"title\":\"MCLA - CCTP\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":2},{\"title\":\"MCLA - Consultation\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":11},{\"title\":\"MCLA - Négociation\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":5},{\"title\":\"MCLA - Commande\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0}]},{\"title\":\"Consultations LS\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":73,\"subcategories\":[{\"title\":\"MCLS\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":69},{\"title\":\"MCLS - CCTP\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":2},{\"title\":\"MCLS - Consultation\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":11},{\"title\":\"MCLS - Négociation\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":5},{\"title\":\"MCLS - Commande\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"FMLS\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":73},{\"title\":\"FMLS - CCTP\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":4},{\"title\":\"FMLS - consultation\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":4},{\"title\":\"FMLS - négociation\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"FMLS - Rédaction commande + signature\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":4},{\"title\":\"Marché PSO\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":70},{\"title\":\"Marché PSO - CCTP\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":1},{\"title\":\"Marché PSO - Consultation\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":7},{\"title\":\"Marché PSO - Négociation\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":1},{\"title\":\"Marché PSO - Rédaction commande travaux + signature\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":2}]},{\"title\":\"Ensemble des BPU disponibles\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0,\"subcategories\":[]}]}"
+      },
+      {
+        "id": 20,
+        "title": "Commandes fournitures",
+        "type": "card",
+        "tags": "Achats,Achats",
+        "duration": 329,
+        "content_json": "{\"card\":{\"title\":\"Commandes fournitures\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":329},\"categories\":[{\"title\":\"Fournitures Poste\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":329,\"subcategories\":[{\"title\":\"Poste - Transformateur\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":305},{\"title\":\"Poste - Transformateur - Formalisation besoin ATP\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Lag - Délai entre formalisation ATP et MADU\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":294},{\"title\":\"Poste - Transformateur - Engagement fournisseur (Besoin mandat!)\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Lag - Délai entre engagement fournisseur et MADU\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":257},{\"title\":\"Poste - Transformateur - EB\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Lag - Délai de service\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":232},{\"title\":\"Poste - Transformateur - MADU\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Lag - Délai de livraison\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":11},{\"title\":\"Poste - Transformateur - Livraison (relier avec installation lien DF)\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Poste - BIS huile\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":299},{\"title\":\"Poste - BIS huile - Formalisation besoin ATP\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Poste - BIS huile - Engagement fournisseur (Besoin mandat!)\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Poste - BIS huile - EB\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Poste - BIS huile - MADU\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Poste - BIS huile - Livraison (relier avec installation lien DF)\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Poste - BIS sèche\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":299},{\"title\":\"Poste - BIS sèche - Formalisation besoin ATP\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Poste - BIS sèche - Engagement fournisseur (Besoin mandat!)\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Poste - BIS sèche - EB\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Poste - BIS sèche - MADU\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Poste - BIS sèche - Livraison (relier avec installation lien DF)\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Poste - Disjoncteur 400\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":152},{\"title\":\"Poste - Disjoncteur 400 - Formalisation besoin ATP\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Poste - Disjoncteur 400 - Engagement fournisseur\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Poste - Disjoncteur 400 - EB\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Poste - Disjoncteur 400 - MADU\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Poste - Disjoncteur 400 - Livraison (relier avec installation lien DF)\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Poste - Disjoncteur 245\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":149},{\"title\":\"Poste - Disjoncteur 245 - Formalisation besoin ATP\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Poste - Disjoncteur 245 - Engagement fournisseur\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Poste - Disjoncteur 245 - EB\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Poste - Disjoncteur 245 - MADU\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Poste - Disjoncteur 245 - Livraison (relier avec installation lien DF)\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Poste - Disjoncteur HTB1\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":149},{\"title\":\"Poste - Disjoncteur HTB1 - Formalisation besoin ATP\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Poste - Disjoncteur HTB1 - Engagement fournisseur\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Poste - Disjoncteur HTB1 - EB\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Poste - Disjoncteur HTB1 - MADU\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Poste - Disjoncteur HTB1 - Livraison (relier avec installation lien DF)\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Poste - Câbles BT\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":113},{\"title\":\"Poste - Câbles BT - Formalisation besoin ATP\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Poste - Câbles BT - Engagement fournisseur\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Poste - Câbles BT - EB\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Poste - Câbles BT - MADU\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Poste - Câbles BT - Livraison\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0}]},{\"title\":\"Fournitures LA\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":301,\"subcategories\":[{\"title\":\"LA - Pylônes\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":152},{\"title\":\"LA - Pylônes - Formalisation besoin ATP\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Lag - Délai entre formalisation ATP et MADU\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":147},{\"title\":\"LA - Pylônes - Engagement fournisseur\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Lag - Délai entre engagement fournisseur et MADU\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":110},{\"title\":\"LA - Pylônes - EB\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Lag - Délai de service\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":49},{\"title\":\"LA - Pylônes - MADU\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Lag - Délai de livraison\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":5},{\"title\":\"LA - Pylônes - Livraison\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"LA - Câbles conducteurs et câbles de garde\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":113},{\"title\":\"LA - Câbles - Formalisation besoin ATP\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"LA - Câbles - Engagement fournisseur\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"LA - Câbles - EB\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"LA - Câbles - MADU\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"LA - Câbles - Livraison\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0}]},{\"title\":\"Fournitures LS\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":149,\"subcategories\":[{\"title\":\"LS - Câbles de puissance\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":149},{\"title\":\"LS - Câbles - Engagement trimestrielle engageante pour besoins MADU\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Lag - Délai entre enquête trimestrielle et MADU\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":147},{\"title\":\"LS - métré du câble par FMLS\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":8},{\"title\":\"LS - Câbles - EB\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Lag - Délai de service\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":55},{\"title\":\"LS - Câbles - MADU\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},{\"title\":\"Lag - Délai de livraison\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":2},{\"title\":\"LS - Câbles - Livraison\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0}]}]}"
+      },
+      {
+        "id": 21,
+        "title": "Consignation liaison XX-YY / poste",
+        "type": "card",
+        "tags": "Consignations,Consignations",
+        "duration": 0,
+        "content_json": "{\"card\":{\"title\":\"Consignation liaison XX-YY / poste\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0},\"categories\":[{\"title\":\"Début de consignation (lier en DD avec tâches sous consignation, jusqu'à validation par planif long terme)\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0,\"subcategories\":[]},{\"title\":\"Fin de consignation\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0,\"subcategories\":[]}]}"
+      },
+      {
+        "id": 22,
+        "title": "Travaux Poste (ex nouveau poste aérien)",
+        "type": "card",
+        "tags": "Travaux,Travaux",
+        "duration": 204,
+        "content_json": "{\"card\":{\"title\":\"Travaux Poste (ex nouveau poste aérien)\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":204},\"categories\":[{\"title\":\"Ouverture de chantier\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0,\"subcategories\":[]},{\"title\":\"Poste - PLATEFORME\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":81,\"subcategories\":[]},{\"title\":\"Poste - BI/BR\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":23,\"subcategories\":[{\"title\":\"Poste - BI/BR - Réalisation du BI\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":23},{\"title\":\"Poste - BI/BR - Réalisation du bâtiment UA\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":17},{\"title\":\"Poste - BI/BR - Réalisation des 4 BR\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":17}]},{\"title\":\"Poste - MCPO\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":122,\"subcategories\":[{\"title\":\"Poste - MCPO - TX COMMUN\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":99},{\"title\":\"Poste - MCPO - TX COMMUN - Cloture\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":17},{\"title\":\"Poste - MCPO - TX COMMUN - Bassin de rétention et drainage\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":11},{\"title\":\"Poste - MCPO - TX COMMUN - Réalisation des fondations spéciales\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":23},{\"title\":\"Poste - MCPO - TX COMMUN - RGT\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":11},{\"title\":\"Poste - MCPO - TX COMMUN - Réalisation des canivaux BT\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":23},{\"title\":\"Poste - MCPO - TX BT\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":52},{\"title\":\"Poste - MCPO - TX BT - Equipement BI\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":5},{\"title\":\"Poste - MCPO - TX BT - Installation et raccordement des équipements UA\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":11},{\"title\":\"Poste - MCPO - TX BT - Installation et raccordement des armoires CC\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":8},{\"title\":\"Poste - MCPO - TX BT - Différencielle de barres et CC fond de poste\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":23},{\"title\":\"Poste - MCPO - TX BT - Tirage câbles\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":5},{\"title\":\"Poste - MCPO - TX BT - Equipement Telecom\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":17},{\"title\":\"MCPO - TX BT - Equipement des BR et raccordement groupe électrogène\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":5},{\"title\":\"Poste - MCPO - TX HT\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":61},{\"title\":\"Poste - MCPO - TX HT - Pose des charpentes\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":11},{\"title\":\"Poste - MCPO - TX HT - Réalisation du circuit de terre du couplage et câbles de garde\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":11},{\"title\":\"Poste - MCPO - TX HT - Montage des équipements HT\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":11},{\"title\":\"Poste - MCPO - TX HT - Raccordement HT\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":11},{\"title\":\"Poste - MCPO - TX HT - Raccordement BT\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":11},{\"title\":\"Poste - MCPO - TX HT - Réglages\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":2}]},{\"title\":\"Poste - Mise en service du poste\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0,\"subcategories\":[]}]}"
+      },
+      {
+        "id": 23,
+        "title": "Travaux LA",
+        "type": "card",
+        "tags": "Travaux,Travaux",
+        "duration": 226,
+        "content_json": "{\"card\":{\"title\":\"Travaux LA\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":226},\"categories\":[{\"title\":\"Ouvertude de chantier LA\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0,\"subcategories\":[]},{\"title\":\"LA - Travaux MCFS\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":142,\"subcategories\":[{\"title\":\"LA - MCFS - Installation base-vie\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":2},{\"title\":\"LA - MCFS - Aménagement des pistes (150m de pistes et 300 m² PF/pylône, 2j/pyl)\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":23},{\"title\":\"LA - MCFS - Réalisation des fondations (10j/pyl)\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":116}]},{\"title\":\"LA - Travaux MCLA\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":224,\"subcategories\":[{\"title\":\"LA - MCLA - Installation base-vie\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":5},{\"title\":\"LA - MCLA - Assemblage des pylônes (4T/j, 50T/pyl = 12,5j/pyl)\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":145},{\"title\":\"LA - MCLA - Levage des pylônes (10j/pyl)\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":116},{\"title\":\"LA - MCLA - Déroulage des câbles conducteurs et cdg (20j entre 4 pylônes)\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":70}]},{\"title\":\"LA - Mise en conduite LA\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":1,\"subcategories\":[]}]}"
+      },
+      {
+        "id": 24,
+        "title": "Travaux LS",
+        "type": "card",
+        "tags": "Travaux,Travaux",
+        "duration": 133,
+        "content_json": "{\"card\":{\"title\":\"Travaux LS\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":133},\"categories\":[{\"title\":\"Ouverture de chantier LS\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0,\"subcategories\":[]},{\"title\":\"LS - Installation de base-vie\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":2,\"subcategories\":[]},{\"title\":\"MCLS - Genie civil dont PSO\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":58,\"subcategories\":[]},{\"title\":\"MCLS/FMLS - Déroulage câbles et montage jonctions\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":58,\"subcategories\":[]},{\"title\":\"FMLS - Montage extrémités\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":8,\"subcategories\":[]},{\"title\":\"FMLS - Essais\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":2,\"subcategories\":[]},{\"title\":\"DPI travaux - Contrôle avant réception des travaux LS\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":0,\"subcategories\":[]},{\"title\":\"LS - Mise en conduite LS\",\"description\":\"\",\"priority\":\"normal\",\"duration_days\":1,\"subcategories\":[]}]}"
+      }
+    ],
+    "messages": [],
+    "nextIds": {
+      "board": 16,
+      "column": 76,
+      "card": 1,
+      "category": 1,
+      "subcategory": 1,
+      "libraryItem": 1,
+      "message": 1,
+      "order": 1
+    },
+    "orders": []
+  },
+  "projectTime": {
+    "2026-W11": {
+      "1": 125,
+      "2": 950,
+      "3": 1342,
+      "7": 1,
+      "10": 14
+    }
+  },
+  "libraryFavorites": {
+    "cards": [
+      1,
+      22,
+      21,
+      20,
+      19,
+      18,
+      5,
+      4
+    ],
+    "categories": [
+      {
+        "cardId": 1,
+        "cardTitle": "Jalons SIEPR",
+        "title": "Jalons OP poste"
+      },
+      {
+        "cardId": 22,
+        "cardTitle": "Travaux Poste (ex nouveau poste aérien)",
+        "title": "Poste - MCPO"
+      },
+      {
+        "cardId": 22,
+        "cardTitle": "Travaux Poste (ex nouveau poste aérien)",
+        "title": "Poste - BI/BR"
+      },
+      {
+        "cardId": 22,
+        "cardTitle": "Travaux Poste (ex nouveau poste aérien)",
+        "title": "Poste - PLATEFORME"
+      },
+      {
+        "cardId": 22,
+        "cardTitle": "Travaux Poste (ex nouveau poste aérien)",
+        "title": "Ouverture de chantier"
+      },
+      {
+        "cardId": 22,
+        "cardTitle": "Travaux Poste (ex nouveau poste aérien)",
+        "title": "Poste - Mise en service du poste"
+      },
+      {
+        "cardId": 21,
+        "cardTitle": "Consignation liaison XX-YY / poste",
+        "title": "Début de consignation (lier en DD avec tâches sous consignation, jusqu'à validation par planif long terme)"
+      },
+      {
+        "cardId": 21,
+        "cardTitle": "Consignation liaison XX-YY / poste",
+        "title": "Fin de consignation"
+      },
+      {
+        "cardId": 20,
+        "cardTitle": "Commandes fournitures",
+        "title": "Fournitures Poste"
+      },
+      {
+        "cardId": 19,
+        "cardTitle": "Consultations marchés travaux",
+        "title": "Consultations Poste"
+      },
+      {
+        "cardId": 18,
+        "cardTitle": "Etudes détaillées",
+        "title": "Etudes Postes"
+      },
+      {
+        "cardId": 5,
+        "cardTitle": "Processus DI",
+        "title": "Projet > 30 M€"
+      },
+      {
+        "cardId": 5,
+        "cardTitle": "Processus DI",
+        "title": "Projet > 50 M€"
+      },
+      {
+        "cardId": 5,
+        "cardTitle": "Processus DI",
+        "title": "DI - Validation et signature de la DI"
+      },
+      {
+        "cardId": 5,
+        "cardTitle": "Processus DI",
+        "title": "Projet > 20 M€"
+      },
+      {
+        "cardId": 5,
+        "cardTitle": "Processus DI",
+        "title": "Projet < 20 M€"
+      },
+      {
+        "cardId": 5,
+        "cardTitle": "Processus DI",
+        "title": "Projet < 10 M€"
+      },
+      {
+        "cardId": 5,
+        "cardTitle": "Processus DI",
+        "title": "APD"
+      },
+      {
+        "cardId": 4,
+        "cardTitle": "Processus DCT",
+        "title": "DCT - Validation et signature de la DCT"
+      },
+      {
+        "cardId": 4,
+        "cardTitle": "Processus DCT",
+        "title": "Réalisation CTF"
+      },
+      {
+        "cardId": 4,
+        "cardTitle": "Processus DCT",
+        "title": "Projet < 10 M€ (Facultative)"
+      },
+      {
+        "cardId": 4,
+        "cardTitle": "Processus DCT",
+        "title": "Projet < 20 M€"
+      },
+      {
+        "cardId": 4,
+        "cardTitle": "Processus DCT",
+        "title": "Projet > 20 M€"
+      }
+    ],
+    "subcategories": [
+      {
+        "cardId": 1,
+        "cardTitle": "Jalons SIEPR",
+        "categoryTitle": "Jalons OP poste",
+        "title": "CTF Poste validée"
+      },
+      {
+        "cardId": 1,
+        "cardTitle": "Jalons SIEPR",
+        "categoryTitle": "Jalons OP poste",
+        "title": "Commande MCPO"
+      },
+      {
+        "cardId": 1,
+        "cardTitle": "Jalons SIEPR",
+        "categoryTitle": "Jalons OP poste",
+        "title": "Ouverture de chantier poste"
+      },
+      {
+        "cardId": 1,
+        "cardTitle": "Jalons SIEPR",
+        "categoryTitle": "Jalons OP poste",
+        "title": "Première mise en service poste"
+      },
+      {
+        "cardId": 1,
+        "cardTitle": "Jalons SIEPR",
+        "categoryTitle": "Jalons OP poste",
+        "title": "Dernière mise en service poste"
+      },
+      {
+        "cardId": 1,
+        "cardTitle": "Jalons SIEPR",
+        "categoryTitle": "Jalons OP poste",
+        "title": "Fin des travaux poste"
+      },
+      {
+        "cardId": 22,
+        "cardTitle": "Travaux Poste (ex nouveau poste aérien)",
+        "categoryTitle": "Poste - MCPO",
+        "title": "Poste - MCPO - TX COMMUN"
+      },
+      {
+        "cardId": 22,
+        "cardTitle": "Travaux Poste (ex nouveau poste aérien)",
+        "categoryTitle": "Poste - MCPO",
+        "title": "Poste - MCPO - TX COMMUN - Cloture"
+      },
+      {
+        "cardId": 22,
+        "cardTitle": "Travaux Poste (ex nouveau poste aérien)",
+        "categoryTitle": "Poste - MCPO",
+        "title": "Poste - MCPO - TX COMMUN - Bassin de rétention et drainage"
+      },
+      {
+        "cardId": 22,
+        "cardTitle": "Travaux Poste (ex nouveau poste aérien)",
+        "categoryTitle": "Poste - MCPO",
+        "title": "Poste - MCPO - TX COMMUN - Réalisation des fondations spéciales"
+      },
+      {
+        "cardId": 22,
+        "cardTitle": "Travaux Poste (ex nouveau poste aérien)",
+        "categoryTitle": "Poste - MCPO",
+        "title": "Poste - MCPO - TX COMMUN - RGT"
+      },
+      {
+        "cardId": 22,
+        "cardTitle": "Travaux Poste (ex nouveau poste aérien)",
+        "categoryTitle": "Poste - MCPO",
+        "title": "Poste - MCPO - TX COMMUN - Réalisation des canivaux BT"
+      },
+      {
+        "cardId": 22,
+        "cardTitle": "Travaux Poste (ex nouveau poste aérien)",
+        "categoryTitle": "Poste - MCPO",
+        "title": "Poste - MCPO - TX BT"
+      },
+      {
+        "cardId": 22,
+        "cardTitle": "Travaux Poste (ex nouveau poste aérien)",
+        "categoryTitle": "Poste - MCPO",
+        "title": "Poste - MCPO - TX BT - Equipement BI"
+      },
+      {
+        "cardId": 22,
+        "cardTitle": "Travaux Poste (ex nouveau poste aérien)",
+        "categoryTitle": "Poste - MCPO",
+        "title": "Poste - MCPO - TX BT - Installation et raccordement des équipements UA"
+      },
+      {
+        "cardId": 22,
+        "cardTitle": "Travaux Poste (ex nouveau poste aérien)",
+        "categoryTitle": "Poste - MCPO",
+        "title": "Poste - MCPO - TX BT - Installation et raccordement des armoires CC"
+      },
+      {
+        "cardId": 22,
+        "cardTitle": "Travaux Poste (ex nouveau poste aérien)",
+        "categoryTitle": "Poste - MCPO",
+        "title": "Poste - MCPO - TX BT - Différencielle de barres et CC fond de poste"
+      },
+      {
+        "cardId": 22,
+        "cardTitle": "Travaux Poste (ex nouveau poste aérien)",
+        "categoryTitle": "Poste - MCPO",
+        "title": "Poste - MCPO - TX BT - Tirage câbles"
+      },
+      {
+        "cardId": 22,
+        "cardTitle": "Travaux Poste (ex nouveau poste aérien)",
+        "categoryTitle": "Poste - MCPO",
+        "title": "Poste - MCPO - TX BT - Equipement Telecom"
+      },
+      {
+        "cardId": 22,
+        "cardTitle": "Travaux Poste (ex nouveau poste aérien)",
+        "categoryTitle": "Poste - MCPO",
+        "title": "MCPO - TX BT - Equipement des BR et raccordement groupe électrogène"
+      },
+      {
+        "cardId": 22,
+        "cardTitle": "Travaux Poste (ex nouveau poste aérien)",
+        "categoryTitle": "Poste - MCPO",
+        "title": "Poste - MCPO - TX HT"
+      },
+      {
+        "cardId": 22,
+        "cardTitle": "Travaux Poste (ex nouveau poste aérien)",
+        "categoryTitle": "Poste - MCPO",
+        "title": "Poste - MCPO - TX HT - Pose des charpentes"
+      },
+      {
+        "cardId": 22,
+        "cardTitle": "Travaux Poste (ex nouveau poste aérien)",
+        "categoryTitle": "Poste - MCPO",
+        "title": "Poste - MCPO - TX HT - Réalisation du circuit de terre du couplage et câbles de garde"
+      },
+      {
+        "cardId": 22,
+        "cardTitle": "Travaux Poste (ex nouveau poste aérien)",
+        "categoryTitle": "Poste - MCPO",
+        "title": "Poste - MCPO - TX HT - Montage des équipements HT"
+      },
+      {
+        "cardId": 22,
+        "cardTitle": "Travaux Poste (ex nouveau poste aérien)",
+        "categoryTitle": "Poste - MCPO",
+        "title": "Poste - MCPO - TX HT - Raccordement HT"
+      },
+      {
+        "cardId": 22,
+        "cardTitle": "Travaux Poste (ex nouveau poste aérien)",
+        "categoryTitle": "Poste - MCPO",
+        "title": "Poste - MCPO - TX HT - Raccordement BT"
+      },
+      {
+        "cardId": 22,
+        "cardTitle": "Travaux Poste (ex nouveau poste aérien)",
+        "categoryTitle": "Poste - MCPO",
+        "title": "Poste - MCPO - TX HT - Réglages"
+      },
+      {
+        "cardId": 22,
+        "cardTitle": "Travaux Poste (ex nouveau poste aérien)",
+        "categoryTitle": "Poste - BI/BR",
+        "title": "Poste - BI/BR - Réalisation du BI"
+      },
+      {
+        "cardId": 22,
+        "cardTitle": "Travaux Poste (ex nouveau poste aérien)",
+        "categoryTitle": "Poste - BI/BR",
+        "title": "Poste - BI/BR - Réalisation du bâtiment UA"
+      },
+      {
+        "cardId": 22,
+        "cardTitle": "Travaux Poste (ex nouveau poste aérien)",
+        "categoryTitle": "Poste - BI/BR",
+        "title": "Poste - BI/BR - Réalisation des 4 BR"
+      },
+      {
+        "cardId": 20,
+        "cardTitle": "Commandes fournitures",
+        "categoryTitle": "Fournitures Poste",
+        "title": "Poste - Transformateur"
+      },
+      {
+        "cardId": 20,
+        "cardTitle": "Commandes fournitures",
+        "categoryTitle": "Fournitures Poste",
+        "title": "Poste - Transformateur - Formalisation besoin ATP"
+      },
+      {
+        "cardId": 20,
+        "cardTitle": "Commandes fournitures",
+        "categoryTitle": "Fournitures Poste",
+        "title": "Lag - Délai entre formalisation ATP et MADU"
+      },
+      {
+        "cardId": 20,
+        "cardTitle": "Commandes fournitures",
+        "categoryTitle": "Fournitures Poste",
+        "title": "Poste - Transformateur - Engagement fournisseur (Besoin mandat!)"
+      },
+      {
+        "cardId": 20,
+        "cardTitle": "Commandes fournitures",
+        "categoryTitle": "Fournitures Poste",
+        "title": "Lag - Délai entre engagement fournisseur et MADU"
+      },
+      {
+        "cardId": 20,
+        "cardTitle": "Commandes fournitures",
+        "categoryTitle": "Fournitures Poste",
+        "title": "Poste - Transformateur - EB"
+      },
+      {
+        "cardId": 20,
+        "cardTitle": "Commandes fournitures",
+        "categoryTitle": "Fournitures Poste",
+        "title": "Lag - Délai de service"
+      },
+      {
+        "cardId": 20,
+        "cardTitle": "Commandes fournitures",
+        "categoryTitle": "Fournitures Poste",
+        "title": "Poste - Transformateur - MADU"
+      },
+      {
+        "cardId": 20,
+        "cardTitle": "Commandes fournitures",
+        "categoryTitle": "Fournitures Poste",
+        "title": "Lag - Délai de livraison"
+      },
+      {
+        "cardId": 20,
+        "cardTitle": "Commandes fournitures",
+        "categoryTitle": "Fournitures Poste",
+        "title": "Poste - Transformateur - Livraison (relier avec installation lien DF)"
+      },
+      {
+        "cardId": 20,
+        "cardTitle": "Commandes fournitures",
+        "categoryTitle": "Fournitures Poste",
+        "title": "Poste - BIS huile"
+      },
+      {
+        "cardId": 20,
+        "cardTitle": "Commandes fournitures",
+        "categoryTitle": "Fournitures Poste",
+        "title": "Poste - BIS huile - Formalisation besoin ATP"
+      },
+      {
+        "cardId": 20,
+        "cardTitle": "Commandes fournitures",
+        "categoryTitle": "Fournitures Poste",
+        "title": "Poste - BIS huile - Engagement fournisseur (Besoin mandat!)"
+      },
+      {
+        "cardId": 20,
+        "cardTitle": "Commandes fournitures",
+        "categoryTitle": "Fournitures Poste",
+        "title": "Poste - BIS huile - EB"
+      },
+      {
+        "cardId": 20,
+        "cardTitle": "Commandes fournitures",
+        "categoryTitle": "Fournitures Poste",
+        "title": "Poste - BIS huile - MADU"
+      },
+      {
+        "cardId": 20,
+        "cardTitle": "Commandes fournitures",
+        "categoryTitle": "Fournitures Poste",
+        "title": "Poste - BIS huile - Livraison (relier avec installation lien DF)"
+      },
+      {
+        "cardId": 20,
+        "cardTitle": "Commandes fournitures",
+        "categoryTitle": "Fournitures Poste",
+        "title": "Poste - BIS sèche"
+      },
+      {
+        "cardId": 20,
+        "cardTitle": "Commandes fournitures",
+        "categoryTitle": "Fournitures Poste",
+        "title": "Poste - BIS sèche - Formalisation besoin ATP"
+      },
+      {
+        "cardId": 20,
+        "cardTitle": "Commandes fournitures",
+        "categoryTitle": "Fournitures Poste",
+        "title": "Poste - BIS sèche - Engagement fournisseur (Besoin mandat!)"
+      },
+      {
+        "cardId": 20,
+        "cardTitle": "Commandes fournitures",
+        "categoryTitle": "Fournitures Poste",
+        "title": "Poste - BIS sèche - EB"
+      },
+      {
+        "cardId": 20,
+        "cardTitle": "Commandes fournitures",
+        "categoryTitle": "Fournitures Poste",
+        "title": "Poste - BIS sèche - MADU"
+      },
+      {
+        "cardId": 20,
+        "cardTitle": "Commandes fournitures",
+        "categoryTitle": "Fournitures Poste",
+        "title": "Poste - BIS sèche - Livraison (relier avec installation lien DF)"
+      },
+      {
+        "cardId": 20,
+        "cardTitle": "Commandes fournitures",
+        "categoryTitle": "Fournitures Poste",
+        "title": "Poste - Disjoncteur 400"
+      },
+      {
+        "cardId": 20,
+        "cardTitle": "Commandes fournitures",
+        "categoryTitle": "Fournitures Poste",
+        "title": "Poste - Disjoncteur 400 - Formalisation besoin ATP"
+      },
+      {
+        "cardId": 20,
+        "cardTitle": "Commandes fournitures",
+        "categoryTitle": "Fournitures Poste",
+        "title": "Poste - Disjoncteur 400 - Engagement fournisseur"
+      },
+      {
+        "cardId": 20,
+        "cardTitle": "Commandes fournitures",
+        "categoryTitle": "Fournitures Poste",
+        "title": "Poste - Disjoncteur 400 - EB"
+      },
+      {
+        "cardId": 20,
+        "cardTitle": "Commandes fournitures",
+        "categoryTitle": "Fournitures Poste",
+        "title": "Poste - Disjoncteur 400 - MADU"
+      },
+      {
+        "cardId": 20,
+        "cardTitle": "Commandes fournitures",
+        "categoryTitle": "Fournitures Poste",
+        "title": "Poste - Disjoncteur 400 - Livraison (relier avec installation lien DF)"
+      },
+      {
+        "cardId": 20,
+        "cardTitle": "Commandes fournitures",
+        "categoryTitle": "Fournitures Poste",
+        "title": "Poste - Disjoncteur 245"
+      },
+      {
+        "cardId": 20,
+        "cardTitle": "Commandes fournitures",
+        "categoryTitle": "Fournitures Poste",
+        "title": "Poste - Disjoncteur 245 - Formalisation besoin ATP"
+      },
+      {
+        "cardId": 20,
+        "cardTitle": "Commandes fournitures",
+        "categoryTitle": "Fournitures Poste",
+        "title": "Poste - Disjoncteur 245 - Engagement fournisseur"
+      },
+      {
+        "cardId": 20,
+        "cardTitle": "Commandes fournitures",
+        "categoryTitle": "Fournitures Poste",
+        "title": "Poste - Disjoncteur 245 - EB"
+      },
+      {
+        "cardId": 20,
+        "cardTitle": "Commandes fournitures",
+        "categoryTitle": "Fournitures Poste",
+        "title": "Poste - Disjoncteur 245 - MADU"
+      },
+      {
+        "cardId": 20,
+        "cardTitle": "Commandes fournitures",
+        "categoryTitle": "Fournitures Poste",
+        "title": "Poste - Disjoncteur 245 - Livraison (relier avec installation lien DF)"
+      },
+      {
+        "cardId": 20,
+        "cardTitle": "Commandes fournitures",
+        "categoryTitle": "Fournitures Poste",
+        "title": "Poste - Disjoncteur HTB1"
+      },
+      {
+        "cardId": 20,
+        "cardTitle": "Commandes fournitures",
+        "categoryTitle": "Fournitures Poste",
+        "title": "Poste - Disjoncteur HTB1 - Formalisation besoin ATP"
+      },
+      {
+        "cardId": 20,
+        "cardTitle": "Commandes fournitures",
+        "categoryTitle": "Fournitures Poste",
+        "title": "Poste - Disjoncteur HTB1 - Engagement fournisseur"
+      },
+      {
+        "cardId": 20,
+        "cardTitle": "Commandes fournitures",
+        "categoryTitle": "Fournitures Poste",
+        "title": "Poste - Disjoncteur HTB1 - EB"
+      },
+      {
+        "cardId": 20,
+        "cardTitle": "Commandes fournitures",
+        "categoryTitle": "Fournitures Poste",
+        "title": "Poste - Disjoncteur HTB1 - MADU"
+      },
+      {
+        "cardId": 20,
+        "cardTitle": "Commandes fournitures",
+        "categoryTitle": "Fournitures Poste",
+        "title": "Poste - Disjoncteur HTB1 - Livraison (relier avec installation lien DF)"
+      },
+      {
+        "cardId": 20,
+        "cardTitle": "Commandes fournitures",
+        "categoryTitle": "Fournitures Poste",
+        "title": "Poste - Câbles BT"
+      },
+      {
+        "cardId": 20,
+        "cardTitle": "Commandes fournitures",
+        "categoryTitle": "Fournitures Poste",
+        "title": "Poste - Câbles BT - Formalisation besoin ATP"
+      },
+      {
+        "cardId": 20,
+        "cardTitle": "Commandes fournitures",
+        "categoryTitle": "Fournitures Poste",
+        "title": "Poste - Câbles BT - Engagement fournisseur"
+      },
+      {
+        "cardId": 20,
+        "cardTitle": "Commandes fournitures",
+        "categoryTitle": "Fournitures Poste",
+        "title": "Poste - Câbles BT - EB"
+      },
+      {
+        "cardId": 20,
+        "cardTitle": "Commandes fournitures",
+        "categoryTitle": "Fournitures Poste",
+        "title": "Poste - Câbles BT - MADU"
+      },
+      {
+        "cardId": 20,
+        "cardTitle": "Commandes fournitures",
+        "categoryTitle": "Fournitures Poste",
+        "title": "Poste - Câbles BT - Livraison"
+      },
+      {
+        "cardId": 19,
+        "cardTitle": "Consultations marchés travaux",
+        "categoryTitle": "Consultations Poste",
+        "title": "Plateforme"
+      },
+      {
+        "cardId": 19,
+        "cardTitle": "Consultations marchés travaux",
+        "categoryTitle": "Consultations Poste",
+        "title": "Plateforme - CCTP"
+      },
+      {
+        "cardId": 19,
+        "cardTitle": "Consultations marchés travaux",
+        "categoryTitle": "Consultations Poste",
+        "title": "Plateforme - Consultation"
+      },
+      {
+        "cardId": 19,
+        "cardTitle": "Consultations marchés travaux",
+        "categoryTitle": "Consultations Poste",
+        "title": "Plateforme - Négociation"
+      },
+      {
+        "cardId": 19,
+        "cardTitle": "Consultations marchés travaux",
+        "categoryTitle": "Consultations Poste",
+        "title": "Plateforme - Commande"
+      },
+      {
+        "cardId": 19,
+        "cardTitle": "Consultations marchés travaux",
+        "categoryTitle": "Consultations Poste",
+        "title": "Bâtiment"
+      },
+      {
+        "cardId": 19,
+        "cardTitle": "Consultations marchés travaux",
+        "categoryTitle": "Consultations Poste",
+        "title": "Bâtiment - CCTP"
+      },
+      {
+        "cardId": 19,
+        "cardTitle": "Consultations marchés travaux",
+        "categoryTitle": "Consultations Poste",
+        "title": "Bâtiment - Consultation"
+      },
+      {
+        "cardId": 19,
+        "cardTitle": "Consultations marchés travaux",
+        "categoryTitle": "Consultations Poste",
+        "title": "Bâtiment - Négociation"
+      },
+      {
+        "cardId": 19,
+        "cardTitle": "Consultations marchés travaux",
+        "categoryTitle": "Consultations Poste",
+        "title": "Bâtiment - Commande"
+      },
+      {
+        "cardId": 18,
+        "cardTitle": "Etudes détaillées",
+        "categoryTitle": "Etudes Postes",
+        "title": "Etudes Hors Marché Cadre"
+      },
+      {
+        "cardId": 18,
+        "cardTitle": "Etudes détaillées",
+        "categoryTitle": "Etudes Postes",
+        "title": "Etudes Hors Marché Cadre - CCTP"
+      },
+      {
+        "cardId": 18,
+        "cardTitle": "Etudes détaillées",
+        "categoryTitle": "Etudes Postes",
+        "title": "Etudes Hors Marché Cadre - Consultation"
+      },
+      {
+        "cardId": 18,
+        "cardTitle": "Etudes détaillées",
+        "categoryTitle": "Etudes Postes",
+        "title": "Etudes Hors Marché Cadre - Commande"
+      },
+      {
+        "cardId": 18,
+        "cardTitle": "Etudes détaillées",
+        "categoryTitle": "Etudes Postes",
+        "title": "Etudes Hors Marché Cadre - Livrable étude"
+      },
+      {
+        "cardId": 18,
+        "cardTitle": "Etudes détaillées",
+        "categoryTitle": "Etudes Postes",
+        "title": "Etudes de sol"
+      },
+      {
+        "cardId": 18,
+        "cardTitle": "Etudes détaillées",
+        "categoryTitle": "Etudes Postes",
+        "title": "Etudes de sol - CCTP"
+      },
+      {
+        "cardId": 18,
+        "cardTitle": "Etudes détaillées",
+        "categoryTitle": "Etudes Postes",
+        "title": "Etudes de sol - Processus Achat"
+      },
+      {
+        "cardId": 18,
+        "cardTitle": "Etudes détaillées",
+        "categoryTitle": "Etudes Postes",
+        "title": "Etudes de sol - Processus Achat  - Consultation"
+      },
+      {
+        "cardId": 18,
+        "cardTitle": "Etudes détaillées",
+        "categoryTitle": "Etudes Postes",
+        "title": "Etudes de sol - Processus Achat - Commande"
+      },
+      {
+        "cardId": 18,
+        "cardTitle": "Etudes détaillées",
+        "categoryTitle": "Etudes Postes",
+        "title": "Etudes de sol - Etudes"
+      },
+      {
+        "cardId": 18,
+        "cardTitle": "Etudes détaillées",
+        "categoryTitle": "Etudes Postes",
+        "title": "Etudes de sol - Etudes - Intervention sur site"
+      },
+      {
+        "cardId": 18,
+        "cardTitle": "Etudes détaillées",
+        "categoryTitle": "Etudes Postes",
+        "title": "Etudes de sol - Etudes - Livrables études hydro-géotechniques"
+      },
+      {
+        "cardId": 18,
+        "cardTitle": "Etudes détaillées",
+        "categoryTitle": "Etudes Postes",
+        "title": "Etudes de sol - Etudes - Livrable études G1-G2AVP"
+      },
+      {
+        "cardId": 18,
+        "cardTitle": "Etudes détaillées",
+        "categoryTitle": "Etudes Postes",
+        "title": "Etudes de sol - Etudes -  Livrable études DCE"
+      },
+      {
+        "cardId": 18,
+        "cardTitle": "Etudes détaillées",
+        "categoryTitle": "Etudes Postes",
+        "title": "Etudes de sol - Etudes - Livrable études G4 (MCPO)"
+      },
+      {
+        "cardId": 18,
+        "cardTitle": "Etudes détaillées",
+        "categoryTitle": "Etudes Postes",
+        "title": "Marché PSEM"
+      },
+      {
+        "cardId": 18,
+        "cardTitle": "Etudes détaillées",
+        "categoryTitle": "Etudes Postes",
+        "title": "Marché PSEM - Demande de réalisation du Marché"
+      },
+      {
+        "cardId": 18,
+        "cardTitle": "Etudes détaillées",
+        "categoryTitle": "Etudes Postes",
+        "title": "Marché PSEM - Envoi du CDP au CNER"
+      },
+      {
+        "cardId": 18,
+        "cardTitle": "Etudes détaillées",
+        "categoryTitle": "Etudes Postes",
+        "title": "Marché PSEM - Validation du CDP par CNER"
+      },
+      {
+        "cardId": 18,
+        "cardTitle": "Etudes détaillées",
+        "categoryTitle": "Etudes Postes",
+        "title": "Marché PSEM - Processus achat"
+      },
+      {
+        "cardId": 18,
+        "cardTitle": "Etudes détaillées",
+        "categoryTitle": "Etudes Postes",
+        "title": "Marché PSEM - Processus achat - Rédaction et validation de la NSPA stratégie"
+      },
+      {
+        "cardId": 18,
+        "cardTitle": "Etudes détaillées",
+        "categoryTitle": "Etudes Postes",
+        "title": "Marché PSEM - Processus achat - Consultation"
+      },
+      {
+        "cardId": 18,
+        "cardTitle": "Etudes détaillées",
+        "categoryTitle": "Etudes Postes",
+        "title": "Marché PSEM - Processus achat - Négociation"
+      },
+      {
+        "cardId": 18,
+        "cardTitle": "Etudes détaillées",
+        "categoryTitle": "Etudes Postes",
+        "title": "Marché PSEM - Processus achat - Rédaction et validation de la NSPA attribution"
+      },
+      {
+        "cardId": 18,
+        "cardTitle": "Etudes détaillées",
+        "categoryTitle": "Etudes Postes",
+        "title": "Marché PSEM - Processus achat - Envoi de la commande d'études au fournisseur"
+      },
+      {
+        "cardId": 18,
+        "cardTitle": "Etudes détaillées",
+        "categoryTitle": "Etudes Postes",
+        "title": "Marché PSEM - Etudes"
+      },
+      {
+        "cardId": 18,
+        "cardTitle": "Etudes détaillées",
+        "categoryTitle": "Etudes Postes",
+        "title": "Marché PSEM - Etudes - Réalisation plan guide GC"
+      },
+      {
+        "cardId": 18,
+        "cardTitle": "Etudes détaillées",
+        "categoryTitle": "Etudes Postes",
+        "title": "Marché PSEM - Etudes - Réalisation des études"
+      },
+      {
+        "cardId": 18,
+        "cardTitle": "Etudes détaillées",
+        "categoryTitle": "Etudes Postes",
+        "title": "Marché PSEM - Etudes - Valildation des études"
+      },
+      {
+        "cardId": 18,
+        "cardTitle": "Etudes détaillées",
+        "categoryTitle": "Etudes Postes",
+        "title": "Etudes MOE (architecte)"
+      },
+      {
+        "cardId": 18,
+        "cardTitle": "Etudes détaillées",
+        "categoryTitle": "Etudes Postes",
+        "title": "MOE - CCTP"
+      },
+      {
+        "cardId": 18,
+        "cardTitle": "Etudes détaillées",
+        "categoryTitle": "Etudes Postes",
+        "title": "MOE - Processus achat"
+      },
+      {
+        "cardId": 18,
+        "cardTitle": "Etudes détaillées",
+        "categoryTitle": "Etudes Postes",
+        "title": "MOE - Processus achat - Consultation"
+      },
+      {
+        "cardId": 18,
+        "cardTitle": "Etudes détaillées",
+        "categoryTitle": "Etudes Postes",
+        "title": "MOE - Processus achat - Attribution"
+      },
+      {
+        "cardId": 18,
+        "cardTitle": "Etudes détaillées",
+        "categoryTitle": "Etudes Postes",
+        "title": "MOE - Etudes"
+      },
+      {
+        "cardId": 18,
+        "cardTitle": "Etudes détaillées",
+        "categoryTitle": "Etudes Postes",
+        "title": "MOE - Etudes - Livrables APS"
+      },
+      {
+        "cardId": 18,
+        "cardTitle": "Etudes détaillées",
+        "categoryTitle": "Etudes Postes",
+        "title": "MOE - Etudes - Livrables APD"
+      },
+      {
+        "cardId": 18,
+        "cardTitle": "Etudes détaillées",
+        "categoryTitle": "Etudes Postes",
+        "title": "MOE - Etudes - Livrables DCE"
+      },
+      {
+        "cardId": 18,
+        "cardTitle": "Etudes détaillées",
+        "categoryTitle": "Etudes Postes",
+        "title": "MCPO"
+      },
+      {
+        "cardId": 18,
+        "cardTitle": "Etudes détaillées",
+        "categoryTitle": "Etudes Postes",
+        "title": "MCPO - CCTP"
+      },
+      {
+        "cardId": 18,
+        "cardTitle": "Etudes détaillées",
+        "categoryTitle": "Etudes Postes",
+        "title": "MCPO - Processus achat"
+      },
+      {
+        "cardId": 18,
+        "cardTitle": "Etudes détaillées",
+        "categoryTitle": "Etudes Postes",
+        "title": "MCPO - Processus achat - Demande attribution entreprise"
+      },
+      {
+        "cardId": 18,
+        "cardTitle": "Etudes détaillées",
+        "categoryTitle": "Etudes Postes",
+        "title": "MCPO - Processus achat - Remise du CCTP au GIE + visite terrain"
+      },
+      {
+        "cardId": 18,
+        "cardTitle": "Etudes détaillées",
+        "categoryTitle": "Etudes Postes",
+        "title": "MCPO - Processus achat - Chiffrage marché poste"
+      },
+      {
+        "cardId": 18,
+        "cardTitle": "Etudes détaillées",
+        "categoryTitle": "Etudes Postes",
+        "title": "MCPO - Processus achat - Remise des prix et négociation"
+      },
+      {
+        "cardId": 18,
+        "cardTitle": "Etudes détaillées",
+        "categoryTitle": "Etudes Postes",
+        "title": "MCPO - Processus achat - Commande marche MCPO + commande travaux sous condition CR"
+      },
+      {
+        "cardId": 18,
+        "cardTitle": "Etudes détaillées",
+        "categoryTitle": "Etudes Postes",
+        "title": "MCPO - Etudes"
+      },
+      {
+        "cardId": 18,
+        "cardTitle": "Etudes détaillées",
+        "categoryTitle": "Etudes Postes",
+        "title": "MCPO - Etudes - lag - Délai entre signature de la commande et réunion de lancement"
+      },
+      {
+        "cardId": 18,
+        "cardTitle": "Etudes détaillées",
+        "categoryTitle": "Etudes Postes",
+        "title": "MCPO - Etudes - Réunion de lancement des études"
+      },
+      {
+        "cardId": 18,
+        "cardTitle": "Etudes détaillées",
+        "categoryTitle": "Etudes Postes",
+        "title": "MCPO - Etudes - livrable V1"
+      },
+      {
+        "cardId": 18,
+        "cardTitle": "Etudes détaillées",
+        "categoryTitle": "Etudes Postes",
+        "title": "MCPO - Etudes - livrable V2"
+      },
+      {
+        "cardId": 18,
+        "cardTitle": "Etudes détaillées",
+        "categoryTitle": "Etudes Postes",
+        "title": "MCPO - Etudes - livraison DTT"
+      },
+      {
+        "cardId": 5,
+        "cardTitle": "Processus DI",
+        "categoryTitle": "Projet > 30 M€",
+        "title": "DI - Finalisation du dossier"
+      },
+      {
+        "cardId": 5,
+        "cardTitle": "Processus DI",
+        "categoryTitle": "Projet > 30 M€",
+        "title": "DI - RRR/CRP (Revue des Référents Régionaux / Comité Régional des Projets)"
+      },
+      {
+        "cardId": 5,
+        "cardTitle": "Processus DI",
+        "categoryTitle": "Projet > 30 M€",
+        "title": "DI - Point d'arrêt SPC"
+      },
+      {
+        "cardId": 5,
+        "cardTitle": "Processus DI",
+        "categoryTitle": "Projet > 30 M€",
+        "title": "DI - Mise à jour des documents pour le CCE"
+      },
+      {
+        "cardId": 5,
+        "cardTitle": "Processus DI",
+        "categoryTitle": "Projet > 30 M€",
+        "title": "DI - Dépôt du dossier CCE"
+      },
+      {
+        "cardId": 5,
+        "cardTitle": "Processus DI",
+        "categoryTitle": "Projet > 30 M€",
+        "title": "DI - CCE - Remarques et questions"
+      },
+      {
+        "cardId": 5,
+        "cardTitle": "Processus DI",
+        "categoryTitle": "Projet > 30 M€",
+        "title": "DI - CCE - Réponses et amendements"
+      },
+      {
+        "cardId": 5,
+        "cardTitle": "Processus DI",
+        "categoryTitle": "Projet > 30 M€",
+        "title": "DI - CCE - Avis"
+      },
+      {
+        "cardId": 5,
+        "cardTitle": "Processus DI",
+        "categoryTitle": "Projet > 30 M€",
+        "title": "DI - CCE - Séance plénière"
+      },
+      {
+        "cardId": 5,
+        "cardTitle": "Processus DI",
+        "categoryTitle": "Projet > 30 M€",
+        "title": "DI - CRP Paris"
+      },
+      {
+        "cardId": 5,
+        "cardTitle": "Processus DI",
+        "categoryTitle": "Projet > 30 M€",
+        "title": "DI - CNI (Comité National d'Investissement)"
+      },
+      {
+        "cardId": 5,
+        "cardTitle": "Processus DI",
+        "categoryTitle": "Projet > 30 M€",
+        "title": "DI - Présentation en directoire"
+      },
+      {
+        "cardId": 5,
+        "cardTitle": "Processus DI",
+        "categoryTitle": "Projet > 30 M€",
+        "title": "DI - Délibération directoire"
+      },
+      {
+        "cardId": 5,
+        "cardTitle": "Processus DI",
+        "categoryTitle": "Projet > 50 M€",
+        "title": "DI - Finalisation du dossier"
+      },
+      {
+        "cardId": 5,
+        "cardTitle": "Processus DI",
+        "categoryTitle": "Projet > 50 M€",
+        "title": "DI - RRR/CRP (Revue des Référents Régionaux / Comité Régional des Projets)"
+      },
+      {
+        "cardId": 5,
+        "cardTitle": "Processus DI",
+        "categoryTitle": "Projet > 50 M€",
+        "title": "DI - Point d'arrêt SPC"
+      },
+      {
+        "cardId": 5,
+        "cardTitle": "Processus DI",
+        "categoryTitle": "Projet > 50 M€",
+        "title": "DI - Mise à jour des documents pour le CCE"
+      },
+      {
+        "cardId": 5,
+        "cardTitle": "Processus DI",
+        "categoryTitle": "Projet > 50 M€",
+        "title": "DI - Dépôt du dossier CCE"
+      },
+      {
+        "cardId": 5,
+        "cardTitle": "Processus DI",
+        "categoryTitle": "Projet > 50 M€",
+        "title": "DI - CCE - Remarques et questions"
+      },
+      {
+        "cardId": 5,
+        "cardTitle": "Processus DI",
+        "categoryTitle": "Projet > 50 M€",
+        "title": "DI - CCE - Réponses et amendements"
+      },
+      {
+        "cardId": 5,
+        "cardTitle": "Processus DI",
+        "categoryTitle": "Projet > 50 M€",
+        "title": "DI - CCE - Avis"
+      },
+      {
+        "cardId": 5,
+        "cardTitle": "Processus DI",
+        "categoryTitle": "Projet > 50 M€",
+        "title": "DI - CCE - Séance plénière"
+      },
+      {
+        "cardId": 5,
+        "cardTitle": "Processus DI",
+        "categoryTitle": "Projet > 50 M€",
+        "title": "DI - CRP Paris"
+      },
+      {
+        "cardId": 5,
+        "cardTitle": "Processus DI",
+        "categoryTitle": "Projet > 50 M€",
+        "title": "DI - CNI (Comité National d'Investissement)"
+      },
+      {
+        "cardId": 5,
+        "cardTitle": "Processus DI",
+        "categoryTitle": "Projet > 50 M€",
+        "title": "DI - Audit CRE"
+      },
+      {
+        "cardId": 5,
+        "cardTitle": "Processus DI",
+        "categoryTitle": "Projet > 50 M€",
+        "title": "DI - Présentation en directoire"
+      },
+      {
+        "cardId": 5,
+        "cardTitle": "Processus DI",
+        "categoryTitle": "Projet > 50 M€",
+        "title": "DI - Délibération directoire"
+      },
+      {
+        "cardId": 5,
+        "cardTitle": "Processus DI",
+        "categoryTitle": "Projet > 20 M€",
+        "title": "DI - Finalisation du dossier"
+      },
+      {
+        "cardId": 5,
+        "cardTitle": "Processus DI",
+        "categoryTitle": "Projet > 20 M€",
+        "title": "DI - RRR (Revue des Référents Régionaux)"
+      },
+      {
+        "cardId": 5,
+        "cardTitle": "Processus DI",
+        "categoryTitle": "Projet > 20 M€",
+        "title": "DI - Point d'arrêt SPC"
+      },
+      {
+        "cardId": 5,
+        "cardTitle": "Processus DI",
+        "categoryTitle": "Projet > 20 M€",
+        "title": "DCT - Mise à jour des documents pour le CCE"
+      },
+      {
+        "cardId": 5,
+        "cardTitle": "Processus DI",
+        "categoryTitle": "Projet > 20 M€",
+        "title": "DCT - Dépôt du dossier CCE"
+      },
+      {
+        "cardId": 5,
+        "cardTitle": "Processus DI",
+        "categoryTitle": "Projet > 20 M€",
+        "title": "DCT - CCE - Remarques et questions"
+      },
+      {
+        "cardId": 5,
+        "cardTitle": "Processus DI",
+        "categoryTitle": "Projet > 20 M€",
+        "title": "DCT - CCE - Réponses et amendements"
+      },
+      {
+        "cardId": 5,
+        "cardTitle": "Processus DI",
+        "categoryTitle": "Projet > 20 M€",
+        "title": "DCT - CCE - Avis"
+      },
+      {
+        "cardId": 5,
+        "cardTitle": "Processus DI",
+        "categoryTitle": "Projet > 20 M€",
+        "title": "DCT - CCE - Séance plénière"
+      },
+      {
+        "cardId": 5,
+        "cardTitle": "Processus DI",
+        "categoryTitle": "Projet > 20 M€",
+        "title": "DI - CRP Paris"
+      },
+      {
+        "cardId": 5,
+        "cardTitle": "Processus DI",
+        "categoryTitle": "Projet > 20 M€",
+        "title": "DI - CNI (Comité National d'Investissement)"
+      },
+      {
+        "cardId": 5,
+        "cardTitle": "Processus DI",
+        "categoryTitle": "Projet > 20 M€",
+        "title": "DI - Présentation en directoire"
+      },
+      {
+        "cardId": 5,
+        "cardTitle": "Processus DI",
+        "categoryTitle": "Projet > 20 M€",
+        "title": "DI - Délibération directoire"
+      },
+      {
+        "cardId": 5,
+        "cardTitle": "Processus DI",
+        "categoryTitle": "Projet < 20 M€",
+        "title": "DI - Finalisation du dossier"
+      },
+      {
+        "cardId": 5,
+        "cardTitle": "Processus DI",
+        "categoryTitle": "Projet < 20 M€",
+        "title": "DI - RRR (Revue des Référents Régionaux)"
+      },
+      {
+        "cardId": 5,
+        "cardTitle": "Processus DI",
+        "categoryTitle": "Projet < 20 M€",
+        "title": "DI - Point d'arrêt SPC"
+      },
+      {
+        "cardId": 5,
+        "cardTitle": "Processus DI",
+        "categoryTitle": "Projet < 20 M€",
+        "title": "DCT - Mise à jour des documents pour le CCE"
+      },
+      {
+        "cardId": 5,
+        "cardTitle": "Processus DI",
+        "categoryTitle": "Projet < 20 M€",
+        "title": "DCT - Dépôt du dossier CCE"
+      },
+      {
+        "cardId": 5,
+        "cardTitle": "Processus DI",
+        "categoryTitle": "Projet < 20 M€",
+        "title": "DCT - CCE - Remarques et questions"
+      },
+      {
+        "cardId": 5,
+        "cardTitle": "Processus DI",
+        "categoryTitle": "Projet < 20 M€",
+        "title": "DCT - CCE - Réponses et amendements"
+      },
+      {
+        "cardId": 5,
+        "cardTitle": "Processus DI",
+        "categoryTitle": "Projet < 20 M€",
+        "title": "DCT - CCE - Avis"
+      },
+      {
+        "cardId": 5,
+        "cardTitle": "Processus DI",
+        "categoryTitle": "Projet < 20 M€",
+        "title": "DCT - CCE - Séance plénière"
+      },
+      {
+        "cardId": 5,
+        "cardTitle": "Processus DI",
+        "categoryTitle": "Projet < 20 M€",
+        "title": "DI - CRP (Comité Régional des Projets) Paris"
+      },
+      {
+        "cardId": 5,
+        "cardTitle": "Processus DI",
+        "categoryTitle": "Projet < 20 M€",
+        "title": "DI - Validation directeur D&I"
+      },
+      {
+        "cardId": 5,
+        "cardTitle": "Processus DI",
+        "categoryTitle": "Projet < 10 M€",
+        "title": "DI - Finalisation du dossier"
+      },
+      {
+        "cardId": 5,
+        "cardTitle": "Processus DI",
+        "categoryTitle": "Projet < 10 M€",
+        "title": "DI - RRR/CRP (Revue des Référents Régionaux / Comité Régional des Projets)"
+      },
+      {
+        "cardId": 5,
+        "cardTitle": "Processus DI",
+        "categoryTitle": "APD",
+        "title": "APD - Finalisation du dossier"
+      },
+      {
+        "cardId": 5,
+        "cardTitle": "Processus DI",
+        "categoryTitle": "APD",
+        "title": "APD - Envoi dossier"
+      },
+      {
+        "cardId": 5,
+        "cardTitle": "Processus DI",
+        "categoryTitle": "APD",
+        "title": "APD - Avis"
+      },
+      {
+        "cardId": 5,
+        "cardTitle": "Processus DI",
+        "categoryTitle": "APD",
+        "title": "APD - Validation du dossier"
+      },
+      {
+        "cardId": 4,
+        "cardTitle": "Processus DCT",
+        "categoryTitle": "Réalisation CTF",
+        "title": "Mise à jour du CCF"
+      },
+      {
+        "cardId": 4,
+        "cardTitle": "Processus DCT",
+        "categoryTitle": "Réalisation CTF",
+        "title": "CTF partie Postes"
+      },
+      {
+        "cardId": 4,
+        "cardTitle": "Processus DCT",
+        "categoryTitle": "Réalisation CTF",
+        "title": "CTF partie BT / telecom Postes et encadrants"
+      },
+      {
+        "cardId": 4,
+        "cardTitle": "Processus DCT",
+        "categoryTitle": "Réalisation CTF",
+        "title": "CTF partie Liaisons aériennes"
+      },
+      {
+        "cardId": 4,
+        "cardTitle": "Processus DCT",
+        "categoryTitle": "Réalisation CTF",
+        "title": "CTF partie Liaisons souterraines"
+      },
+      {
+        "cardId": 4,
+        "cardTitle": "Processus DCT",
+        "categoryTitle": "Réalisation CTF",
+        "title": "CTF partie Concertation/autorisation"
+      },
+      {
+        "cardId": 4,
+        "cardTitle": "Processus DCT",
+        "categoryTitle": "Réalisation CTF",
+        "title": "Finalisation CTF de synthèse"
+      },
+      {
+        "cardId": 4,
+        "cardTitle": "Processus DCT",
+        "categoryTitle": "Projet < 10 M€ (Facultative)",
+        "title": "DCT - RRR/CRP (Revue des Référents Régionaux / Comité Régional des Projets)"
+      },
+      {
+        "cardId": 4,
+        "cardTitle": "Processus DCT",
+        "categoryTitle": "Projet < 20 M€",
+        "title": "DCT - RRR (Revue des Référents Régionaux)"
+      },
+      {
+        "cardId": 4,
+        "cardTitle": "Processus DCT",
+        "categoryTitle": "Projet < 20 M€",
+        "title": "DCT - Mise à jour des documents pour le CCE"
+      },
+      {
+        "cardId": 4,
+        "cardTitle": "Processus DCT",
+        "categoryTitle": "Projet < 20 M€",
+        "title": "DCT - Dépôt du dossier CCE"
+      },
+      {
+        "cardId": 4,
+        "cardTitle": "Processus DCT",
+        "categoryTitle": "Projet < 20 M€",
+        "title": "DCT - CCE - Remarques et questions"
+      },
+      {
+        "cardId": 4,
+        "cardTitle": "Processus DCT",
+        "categoryTitle": "Projet < 20 M€",
+        "title": "DCT - CCE - Réponses et amendements"
+      },
+      {
+        "cardId": 4,
+        "cardTitle": "Processus DCT",
+        "categoryTitle": "Projet < 20 M€",
+        "title": "DCT - CCE - Avis"
+      },
+      {
+        "cardId": 4,
+        "cardTitle": "Processus DCT",
+        "categoryTitle": "Projet < 20 M€",
+        "title": "DCT - CCE - Séance plénière"
+      },
+      {
+        "cardId": 4,
+        "cardTitle": "Processus DCT",
+        "categoryTitle": "Projet < 20 M€",
+        "title": "DCT - CRP (Comité Régional des Projets)"
+      },
+      {
+        "cardId": 4,
+        "cardTitle": "Processus DCT",
+        "categoryTitle": "Projet < 20 M€",
+        "title": "DCT - Validation directeur D&I"
+      },
+      {
+        "cardId": 4,
+        "cardTitle": "Processus DCT",
+        "categoryTitle": "Projet > 20 M€",
+        "title": "DCT - RRR (Revue des Référents Régionaux)"
+      },
+      {
+        "cardId": 4,
+        "cardTitle": "Processus DCT",
+        "categoryTitle": "Projet > 20 M€",
+        "title": "DCT - Point d'arrêt SPC"
+      },
+      {
+        "cardId": 4,
+        "cardTitle": "Processus DCT",
+        "categoryTitle": "Projet > 20 M€",
+        "title": "DCT - Mise à jour des documents pour le CCE"
+      },
+      {
+        "cardId": 4,
+        "cardTitle": "Processus DCT",
+        "categoryTitle": "Projet > 20 M€",
+        "title": "DCT - Dépôt du dossier CCE"
+      },
+      {
+        "cardId": 4,
+        "cardTitle": "Processus DCT",
+        "categoryTitle": "Projet > 20 M€",
+        "title": "DCT - CCE - Remarques et questions"
+      },
+      {
+        "cardId": 4,
+        "cardTitle": "Processus DCT",
+        "categoryTitle": "Projet > 20 M€",
+        "title": "DCT - CCE - Réponses et amendements"
+      },
+      {
+        "cardId": 4,
+        "cardTitle": "Processus DCT",
+        "categoryTitle": "Projet > 20 M€",
+        "title": "DCT - CCE - Avis"
+      },
+      {
+        "cardId": 4,
+        "cardTitle": "Processus DCT",
+        "categoryTitle": "Projet > 20 M€",
+        "title": "DCT - CCE - Séance plénière"
+      },
+      {
+        "cardId": 4,
+        "cardTitle": "Processus DCT",
+        "categoryTitle": "Projet > 20 M€",
+        "title": "DCT - CRP Paris"
+      },
+      {
+        "cardId": 4,
+        "cardTitle": "Processus DCT",
+        "categoryTitle": "Projet > 20 M€",
+        "title": "DCT - CNI (Comité National d'Investissement)"
+      },
+      {
+        "cardId": 4,
+        "cardTitle": "Processus DCT",
+        "categoryTitle": "Projet > 20 M€",
+        "title": "DCT - Présentation en directoire (si montant engagé entre DCT et DI > 20 M€)"
+      },
+      {
+        "cardId": 4,
+        "cardTitle": "Processus DCT",
+        "categoryTitle": "Projet > 20 M€",
+        "title": "DCT - Délibération directoire (si montant engagé entre DCT et DI > 20 M€)"
+      }
+    ]
+  },
+  "libraryEditor": null,
+  "libraryTemplates": {
+    "templates": []
+  },
+  "settings": {
+    "theme": "dark",
+    "cardColors": {
+      "etudes": {
+        "gradient": [
+          "#6366f1",
+          "#3b82f6"
+        ],
+        "keywords": [
+          "études",
+          "etudes"
+        ]
+      },
+      "enCours": {
+        "gradient": [
+          "#f59e0b",
+          "#fbbf24"
+        ],
+        "keywords": [
+          "cours",
+          "en cours"
+        ]
+      },
+      "realise": {
+        "gradient": [
+          "#22c55e",
+          "#4ade80"
+        ],
+        "keywords": [
+          "réalisé",
+          "realis",
+          "terminé"
+        ]
+      },
+      "archive": {
+        "gradient": [
+          "#475569",
+          "#475569"
+        ],
+        "keywords": [
+          "archiv"
+        ]
+      }
+    },
+    "username": "Eric"
+  }
+}

@@ -15,7 +15,6 @@ import {
   LayoutGrid,
   Home,
   Edit3,
-  Archive as ArchiveIcon,
 } from 'lucide-react';
 
 function Sidebar() {
@@ -86,7 +85,7 @@ function Sidebar() {
 
   if (!sidebarOpen) {
     return (
-      <div className="w-[60px] bg-sidebar flex flex-col items-center py-4 border-r border-std gap-2">
+      <div className="w-[80px] bg-sidebar flex flex-col items-center py-4 border-r border-std gap-2">
         <button
           onClick={() => setSidebarOpen(true)}
           className="icon-btn text-secondary hover:text-primary"
@@ -142,7 +141,7 @@ function Sidebar() {
   }
 
   return (
-    <div className="w-[220px] bg-sidebar text-primary flex flex-col h-full border-r border-std">
+    <div className="w-[240px] bg-sidebar text-primary flex flex-col h-full border-r border-std">
       <div className="p-4 flex items-center justify-between border-b border-std">
         <h1
           className="font-display text-lg font-extrabold tracking-tight"
@@ -228,7 +227,7 @@ function Sidebar() {
                           }}
                           className="flex items-center w-full px-3 py-1.5 text-sm text-primary hover:bg-card-hover"
                         >
-                          <ArchiveIcon size={12} className="mr-2" />
+                          <Archive size={12} className="mr-2" />
                           Archiver
                         </button>
                         <button

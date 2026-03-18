@@ -396,3 +396,44 @@ body {
 .light .card-hover:hover {
   box-shadow: 0 4px 24px rgba(0, 0, 0, 0.1);
 }
+
+/* ReactQuill styles */
+.ql-toolbar {
+  background: var(--bg-card-hover);
+  border: none !important;
+  border-bottom: 1px solid var(--border-strong) !important;
+  border-radius: 8px 8px 0 0;
+}
+
+.ql-container {
+  border: none !important;
+  font-family: var(--font-body);
+  font-size: 14px;
+}
+
+.ql-editor {
+  min-height: 200px;
+  color: var(--txt-primary);
+}
+
+.ql-editor.ql-blank::before {
+  color: var(--txt-muted);
+  font-style: normal;
+}
+
+.ql-snow .ql-stroke {
+  stroke: var(--txt-secondary);
+}
+
+.ql-snow .ql-fill {
+  fill: var(--txt-secondary);
+}
+
+.ql-snow .ql-picker {
+  color: var(--txt-secondary);
+}
+
+.ql-snow .ql-picker-options {
+  background: var(--bg-card);
+  border-color: var(--border-strong);
+}

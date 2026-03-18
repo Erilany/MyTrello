@@ -1,4 +1,9 @@
-export function getGanttDateRange(tasks, ganttStartDate = null) {
+export function getGanttDateRange(
+  tasks,
+  ganttStartDate = null,
+  zoom = 'week',
+  containerWidth = 1200
+) {
   if (!tasks || tasks.length === 0) {
     const today = new Date();
     return {
@@ -25,14 +30,21 @@ export function getGanttDateRange(tasks, ganttStartDate = null) {
     minDate = new Date(ganttStartDate);
   }
 
-  minDate = new Date(minDate.getTime() - 7 * 24 * 60 * 60 * 1000);
-  maxDate = new Date(maxDate.getTime() + 14 * 24 * 60 * 60 * 1000);
+  const minDays = zoom === 'day' ? 30 : zoom === 'week' ? 60 : 180;
+
+  const rangeDays = Math.ceil((maxDate - minDate) / (24 * 60 * 60 * 1000));
+  if (rangeDays < minDays) {
+    maxDate = new Date(minDate.getTime() + minDays * 24 * 60 * 60 * 1000);
+  } else {
+    minDate = new Date(minDate.getTime() - 7 * 24 * 60 * 60 * 1000);
+    maxDate = new Date(maxDate.getTime() + 14 * 24 * 60 * 60 * 1000);
+  }
 
   return { start: minDate, end: maxDate };
 }
 
-export function getGanttDays(tasks, ganttStartDate = null) {
-  const range = getGanttDateRange(tasks, ganttStartDate);
+export function getGanttDays(tasks, ganttStartDate = null, zoom = 'week') {
+  const range = getGanttDateRange(tasks, ganttStartDate, zoom);
   const days = [];
   const current = new Date(range.start);
   while (current <= range.end) {
@@ -42,8 +54,8 @@ export function getGanttDays(tasks, ganttStartDate = null) {
   return days;
 }
 
-export function getTaskBarPosition(task, tasks, ganttStartDate = null) {
-  const range = getGanttDateRange(tasks, ganttStartDate);
+export function getTaskBarPosition(task, tasks, ganttStartDate = null, zoom = 'week') {
+  const range = getGanttDateRange(tasks, ganttStartDate, zoom);
   const startDate = task.start_date ? new Date(task.start_date) : range.start;
   const endDate = task.due_date ? new Date(task.due_date) : startDate;
 
@@ -52,7 +64,8 @@ export function getTaskBarPosition(task, tasks, ganttStartDate = null) {
   const duration = Math.max(1, Math.ceil((endDate - startDate) / (24 * 60 * 60 * 1000)) + 1);
 
   return {
-    left: `${(startOffset / totalDays) * 100}%`,
-    width: `${(duration / totalDays) * 100}%`,
+    startOffset,
+    duration,
+    totalDays,
   };
 }
