@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Settings as SettingsIcon, HardDrive, Database, Clock, BookOpen } from 'lucide-react';
 import LibraryEditor from './LibraryEditor';
 import { DataTable } from './DataTable';
+import ChaptersDragDrop from './ChaptersDragDrop';
 import {
   loadGMRData,
   addGMRItem,
@@ -18,6 +19,7 @@ import {
 } from '../../data/PriorityData';
 import { loadZonesData, addZoneItem, updateZoneItem, deleteZoneItem } from '../../data/ZonesData';
 import { loadTagsData, addTag, updateTag, deleteTag, resetTagsData } from '../../data/TagsData';
+import { getOrderedChapters, saveChaptersOrder } from '../../data/ChaptersData';
 
 const AVAILABLE_FUNCTIONS = [
   'Manager de projets',
@@ -38,13 +40,34 @@ function SystemSettings() {
   const [priorityData, setPriorityData] = useState([]);
   const [zonesData, setZonesData] = useState([]);
   const [tagsData, setTagsData] = useState([]);
+  const [chaptersOrder, setChaptersOrder] = useState([]);
 
   useEffect(() => {
     setGmrData(loadGMRData());
     setPriorityData(loadPriorityData());
     setZonesData(loadZonesData());
     setTagsData(loadTagsData());
+    setChaptersOrder(getOrderedChapters());
   }, []);
+
+  useEffect(() => {
+    const handleLibraryChange = () => {
+      setChaptersOrder(getOrderedChapters());
+    };
+
+    window.addEventListener('storage', handleLibraryChange);
+    const interval = setInterval(handleLibraryChange, 2000);
+
+    return () => {
+      window.removeEventListener('storage', handleLibraryChange);
+      clearInterval(interval);
+    };
+  }, []);
+
+  const handleChaptersReorder = newOrder => {
+    saveChaptersOrder(newOrder);
+    setChaptersOrder(newOrder);
+  };
 
   const tabs = [
     { id: 'database', label: 'Base de données', icon: Database },
@@ -179,6 +202,15 @@ function SystemSettings() {
               <div className="flex items-center gap-3 mb-6">
                 <Database size={24} className="text-accent" />
                 <h2 className="text-xl font-semibold text-primary">Bases de données</h2>
+              </div>
+
+              <div className="mb-6 p-4 bg-card rounded-lg border border-std">
+                <h3 className="text-sm font-semibold text-primary mb-3">Chapitres</h3>
+                <p className="text-xs text-muted mb-3">
+                  Faites glisser les chapitres pour les réorganiser. Les modifications sont
+                  synchronisées avec la bibliothèque.
+                </p>
+                <ChaptersDragDrop chapters={chaptersOrder} onReorder={handleChaptersReorder} />
               </div>
 
               <div className="space-y-6">

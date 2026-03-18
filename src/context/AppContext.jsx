@@ -4,6 +4,7 @@ import { loadGMRData, saveGMRData } from '../data/GMRData';
 import { loadPriorityData, savePriorityData } from '../data/PriorityData';
 import { loadZonesData, saveZonesData } from '../data/ZonesData';
 import { loadTagsData, saveTagsData } from '../data/TagsData';
+import { loadChaptersOrder, saveChaptersOrder } from '../data/ChaptersData';
 
 const STORAGE_KEY = 'mytrello_db';
 
@@ -838,6 +839,7 @@ export function AppProvider({ children }) {
           priority,
           zones,
           tags,
+          chaptersOrder: loadChaptersOrder(),
         },
         projectsData: projectData,
       };
@@ -909,6 +911,9 @@ export function AppProvider({ children }) {
         }
         if (parsed.databases.tags) {
           saveTagsData(parsed.databases.tags);
+        }
+        if (parsed.databases.chaptersOrder) {
+          saveChaptersOrder(parsed.databases.chaptersOrder);
         }
       }
 
