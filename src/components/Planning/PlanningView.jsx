@@ -1,14 +1,17 @@
-import React, { useMemo, useState, useEffect, useRef } from 'react';
-import { Filter, Download } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { Filter, Download, Upload } from 'lucide-react';
 import PlanningSidebar from './PlanningSidebar';
 import PlanningGantt from './PlanningGantt';
 import PlanningTaskSelector from './PlanningTaskSelector';
+import PlanningImportCompare from './PlanningImportCompare';
 import { generateMSProjectXML } from '../../utils/xmlUtils';
 import { getGanttDateRange, getGanttDays, getTaskBarPosition } from '../../utils/ganttUtils';
 
 export default function PlanningView({
   currentBoard,
   tasks,
+  cards,
+  categories,
   selectedTaskIds,
   onToggleTask,
   onSelectAll,
@@ -31,8 +34,12 @@ export default function PlanningView({
   startDateInput,
   setStartDateInput,
   ganttStartDate,
+  onImportPlanning,
+  orderedChapters,
+  importing,
 }) {
   const [scrollToTask, setScrollToTask] = useState(null);
+  const [showImportCompare, setShowImportCompare] = useState(false);
 
   const handleCenterTask = task => {
     setScrollToTask(null);
@@ -166,6 +173,13 @@ export default function PlanningView({
             <Download size={14} className="mr-2" />
             Exporter MS Project
           </button>
+          <button
+            onClick={() => setShowImportCompare(true)}
+            className="flex items-center px-3 py-1.5 text-sm bg-[var(--bg-card)] border border-[var(--border)] text-[var(--txt-secondary)] rounded-lg hover:bg-[var(--bg-card-hover)]"
+          >
+            <Upload size={14} className="mr-2" />
+            Importer MS Project
+          </button>
         </div>
       </div>
 
@@ -186,7 +200,9 @@ export default function PlanningView({
         ) : (
           <div className="flex flex-1 min-h-0">
             <PlanningSidebar
-              tasks={selectedTasks}
+              cards={cards}
+              categories={categories}
+              subcategories={tasks}
               expandedChapters={expandedChapters}
               expandedCards={expandedCards}
               expandedCategories={expandedCategories}
@@ -195,6 +211,7 @@ export default function PlanningView({
               onToggleCategory={onToggleCategory}
               onCenterTask={handleCenterTask}
               onEditTask={onEditTask}
+              selectedTaskIds={selectedTaskIds}
             />
             <PlanningGantt
               tasks={selectedTasks}
@@ -222,6 +239,24 @@ export default function PlanningView({
           onEditTask={onEditTask}
         />
       )}
+
+      <PlanningImportCompare
+        isOpen={showImportCompare}
+        onClose={() => setShowImportCompare(false)}
+        projectData={{
+          cards: cards || [],
+          categories: categories || [],
+          subcategories: tasks || [],
+        }}
+        orderedChapters={orderedChapters || []}
+        boardTitle={currentBoard?.title || 'Projet'}
+        importing={importing}
+        onImport={async result => {
+          if (onImportPlanning) {
+            await onImportPlanning(result);
+          }
+        }}
+      />
     </div>
   );
 }

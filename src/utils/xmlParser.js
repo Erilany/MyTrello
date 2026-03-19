@@ -18,7 +18,23 @@ export function parseXmlDuration(ptString) {
   return 0;
 }
 
-export function parseMSProjectXml(xmlString) {
+function parseMsProjectDate(dateStr) {
+  if (!dateStr) return null;
+
+  const match = dateStr.match(/(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})/);
+  if (match) {
+    return `${match[1]}-${match[2]}-${match[3]}`;
+  }
+
+  const simpleMatch = dateStr.match(/(\d{4})-(\d{2})-(\d{2})/);
+  if (simpleMatch) {
+    return simpleMatch[0];
+  }
+
+  return null;
+}
+
+export function parseMSProjectXmlWithDates(xmlString) {
   const parser = new DOMParser();
   const doc = parser.parseFromString(xmlString, 'text/xml');
 
@@ -34,6 +50,8 @@ export function parseMSProjectXml(xmlString) {
     const name = task.querySelector('Name')?.textContent?.trim();
     const outlineLevel = parseInt(task.querySelector('OutlineLevel')?.textContent || '0', 10);
     const durationStr = task.querySelector('Duration')?.textContent || '';
+    const startStr = task.querySelector('Start')?.textContent || '';
+    const finishStr = task.querySelector('Finish')?.textContent || '';
 
     if (name && outlineLevel > 0) {
       allTasks.push({
@@ -44,6 +62,8 @@ export function parseMSProjectXml(xmlString) {
           .replace(/&quot;/g, '"'),
         outlineLevel,
         durationStr,
+        startStr,
+        finishStr,
       });
     }
   });
@@ -64,6 +84,8 @@ export function parseMSProjectXml(xmlString) {
         outlineLevel: task.outlineLevel,
         duration: parseXmlDuration(task.durationStr),
         rawDuration: task.durationStr,
+        start: parseMsProjectDate(task.startStr),
+        finish: parseMsProjectDate(task.finishStr),
         isSummary: task.outlineLevel === 1,
       });
     } else {
@@ -76,10 +98,16 @@ export function parseMSProjectXml(xmlString) {
         outlineLevel: 4,
         duration: parseXmlDuration(task.durationStr),
         rawDuration: task.durationStr,
+        start: parseMsProjectDate(task.startStr),
+        finish: parseMsProjectDate(task.finishStr),
         isSummary: false,
       });
     }
   });
 
   return items;
+}
+
+export function parseMSProjectXml(xmlString) {
+  return parseMSProjectXmlWithDates(xmlString);
 }

@@ -293,27 +293,26 @@ function Card({ card, isDragging, columnColor, columnTitle }) {
               }}
             >
               {cardCategories.map((category, index) => (
-                    <div
-                      key={category.id}
-                      draggable
-                      onDragStart={e => {
-                        e.dataTransfer.setData(
-                          'application/json',
-                          JSON.stringify({
-                            type: 'category',
-                            categoryId: category.id,
-                            sourceCardId: card.id,
-                          })
-                        );
-                        e.dataTransfer.effectAllowed = 'move';
-                      }}
-                      className="cursor-grab active:cursor-grabbing"
-                    >
-                      <Category category={category} />
-                    </div>
-                  ))}
+                <div
+                  key={category.id}
+                  draggable
+                  onDragStart={e => {
+                    e.dataTransfer.setData(
+                      'application/json',
+                      JSON.stringify({
+                        type: 'category',
+                        categoryId: category.id,
+                        sourceCardId: card.id,
+                      })
+                    );
+                    e.dataTransfer.effectAllowed = 'move';
+                  }}
+                  className="cursor-grab active:cursor-grabbing"
+                >
+                  <Category category={category} />
                 </div>
-              )}
+              ))}
+            </div>
           )}
         </div>
       </div>

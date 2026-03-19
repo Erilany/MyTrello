@@ -164,7 +164,7 @@ function getWorkingDaysBetween(startDate, endDate) {
   return count;
 }
 
-function loadFromStorage() {
+export function loadFromStorage() {
   const data = localStorage.getItem(STORAGE_KEY);
   if (data) {
     const parsed = JSON.parse(data);
@@ -449,6 +449,11 @@ export function AppProvider({ children }) {
       setCurrentBoard(board);
       const boardColumns = storageData.columns.filter(c => Number(c.board_id) === Number(boardId));
       const columnIds = boardColumns.map(c => Number(c.id));
+      console.log(
+        '[loadBoard] boardColumns:',
+        boardColumns.map(c => ({ id: c.id, title: c.title }))
+      );
+      console.log('[loadBoard] columnIds:', columnIds);
       const filteredCards = storageData.cards.filter(
         c =>
           (columnIds.includes(Number(c.column_id)) ||
@@ -458,6 +463,10 @@ export function AppProvider({ children }) {
             c.column_id === 0 ||
             !c.column_id) &&
           !c.is_archived
+      );
+      console.log(
+        '[loadBoard] filteredCards:',
+        filteredCards.map(c => ({ id: c.id, title: c.title, column_id: c.column_id }))
       );
       setColumns(boardColumns.sort((a, b) => a.position - b.position));
       setCards(filteredCards.sort((a, b) => a.position - b.position));

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { useApp } from '../../context/AppContext';
+import { useApp, loadFromStorage } from '../../context/AppContext';
 import { usePlanning } from '../../hooks/usePlanning';
 import Exchange from '../Exchange/Exchange';
 import { libraryTemplates } from '../../data/libraryData';
@@ -44,6 +44,9 @@ function Board2() {
     createSubcategory,
     deleteSubcategory,
     deleteCard,
+    createCard,
+    createCategory,
+    loadBoard,
   } = useApp();
   const [activeTab, setActiveTab] = useState('taches');
   const previousActiveTabRef = useRef('taches');
@@ -285,6 +288,150 @@ function Board2() {
     console.log('[Board2] saveAllProjectData completed');
   };
 
+  const [importing, setImporting] = useState(false);
+
+  const handleImportPlanning = async result => {
+    console.log('[Import] handleImportPlanning called, result:', result);
+    const { items } = result;
+
+    if (!currentBoard) {
+      alert('Aucun projet sélectionné');
+      return;
+    }
+
+    const storageData = loadFromStorage();
+    const boardColumns = storageData.columns.filter(
+      c => Number(c.board_id) === Number(currentBoard.id)
+    );
+    const firstColumn = boardColumns.length > 0 ? boardColumns[0] : null;
+
+    if (!firstColumn) {
+      alert('Aucune colonne disponible dans ce projet');
+      return;
+    }
+
+    setImporting(true);
+    console.log('[Import] Starting import with', items.length, 'items');
+    console.log(
+      '[Import] Items to import:',
+      items.map(i => ({ name: i.name, level: i.outlineLevel, chapter: i.assignedChapter }))
+    );
+
+    let cardsCreated = 0;
+    let catsCreated = 0;
+    let subcatsCreated = 0;
+
+    let currentCardId = null;
+    let currentCatId = null;
+    let currentChapter = null;
+
+    for (const item of items) {
+      const level = item.outlineLevel || 2;
+
+      if (level === 2) {
+        currentChapter = item.assignedChapter || currentChapter || 'Sans chapitre';
+        try {
+          const cardId = await createCard(
+            firstColumn.id,
+            item.name,
+            '',
+            'normal',
+            item.finish || null,
+            '',
+            item.start || null,
+            item.duration || 1,
+            null,
+            null,
+            null,
+            currentChapter
+          );
+          currentCardId = cardId;
+          currentCatId = null;
+          cardsCreated++;
+          console.log('[Import] Created card:', item.name, 'id:', cardId);
+        } catch (error) {
+          console.error('[Import] Error creating card:', error);
+        }
+      } else if (level === 3 && currentCardId) {
+        try {
+          const catId = await createCategory(
+            currentCardId, // cardId
+            item.name, // title
+            '', // description
+            'normal', // priority
+            item.finish || null, // dueDate
+            '', // assignee
+            null, // parentId
+            item.duration || 1, // durationDays
+            null, // reloadBoardId
+            null // tag
+          );
+          currentCatId = catId;
+          catsCreated++;
+          console.log(
+            '[Import] Created category:',
+            item.name,
+            'id:',
+            catId,
+            'under card:',
+            currentCardId,
+            'finish:',
+            item.finish
+          );
+        } catch (error) {
+          console.error('[Import] Error creating category:', error);
+        }
+      } else if (level >= 4 && currentCatId) {
+        try {
+          await createSubcategory(
+            currentCatId, // categoryId
+            item.name, // title
+            '', // description
+            'normal', // priority
+            item.finish || null, // dueDate
+            '', // assignee
+            item.start || null, // startDate
+            item.duration || 1 // durationDays
+          );
+          subcatsCreated++;
+          console.log(
+            '[Import] Created subcategory:',
+            item.name,
+            'finish:',
+            item.finish,
+            'start:',
+            item.start
+          );
+        } catch (error) {
+          console.error('[Import] Error creating subcategory:', error);
+        }
+      } else if (level === 3 && !currentCardId) {
+        console.log('[Import] Skipping category (no current card):', item.name);
+      } else if (level >= 4 && !currentCatId) {
+        console.log('[Import] Skipping subcategory (no current category):', item.name);
+      }
+    }
+
+    console.log(
+      '[Import] Completed:',
+      cardsCreated,
+      'cards,',
+      catsCreated,
+      'categories,',
+      subcatsCreated,
+      'subcategories'
+    );
+    setImporting(false);
+    alert(
+      `Import terminé: ${cardsCreated} carte(s), ${catsCreated} action(s), ${subcatsCreated} tâche(s)`
+    );
+
+    if (currentBoard) {
+      console.log('[Import] Reloading board data...');
+      loadBoard(currentBoard.id);
+    }
+  };
+
   useEffect(() => {
     const handleBeforeUnload = () => {
       console.log('[Board2] beforeunload - saving all data');
@@ -417,7 +564,7 @@ function Board2() {
                           Number(c.id) === Number(cat.card_id)
                       )
                     );
-                  const isEmpty = !hasCards || !hasCategories;
+                  const isEmpty = !hasCards;
                   return (
                     <button
                       key={chapter}
@@ -1048,6 +1195,8 @@ function Board2() {
         <PlanningView
           currentBoard={currentBoard}
           tasks={getProjectTasks()}
+          cards={cards}
+          categories={categories}
           selectedTaskIds={planningSelectedTasks}
           onToggleTask={togglePlanningTask}
           onSelectAll={ids => selectAllTasks(ids)}
@@ -1071,6 +1220,9 @@ function Board2() {
           startDateInput={ganttStartDateInput}
           setStartDateInput={setGanttStartDateInput}
           ganttStartDate={ganttStartDate}
+          orderedChapters={getOrderedChapters()}
+          onImportPlanning={handleImportPlanning}
+          importing={importing}
         />
       )}
 
