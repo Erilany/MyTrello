@@ -1,5 +1,6 @@
 import React, { useMemo, useEffect, useRef, useState } from 'react';
 import { getWeekNumber } from '../../utils/dateUtils';
+import { ROW_HEIGHTS_PX } from '../../utils/hierarchyUtils';
 
 function getTaskStatusColor(status) {
   switch (status) {
@@ -17,218 +18,226 @@ function getTaskStatusColor(status) {
 }
 
 export default function PlanningGantt({
-  tasks,
+  flatTaskList = [],
   ganttDays,
   getTaskBarPosition,
-  expandedChapters,
-  expandedCards,
-  expandedCategories,
   zoom = 'week',
   scrollToTask,
+  scrollToToday,
+  containerRef,
+  onScroll = null,
+  isHovering = false,
+  onMouseEnter = null,
+  onMouseLeave = null,
 }) {
-  const containerRef = useRef(null);
-  const [containerWidth, setContainerWidth] = useState(1200);
+  const dataScrollRef = useRef(null);
   const taskRefs = useRef({});
 
-  useEffect(() => {
-    const updateWidth = () => {
-      if (containerRef.current) {
-        setContainerWidth(containerRef.current.clientWidth);
-      }
-    };
-    updateWidth();
-    window.addEventListener('resize', updateWidth);
-    return () => window.removeEventListener('resize', updateWidth);
-  }, []);
+  const getRowHeight = type => ROW_HEIGHTS_PX[type] || 32;
 
   const dayWidth = useMemo(() => {
     if (zoom === 'day') return 60;
-    if (zoom === 'week') {
-      return Math.max(20, containerWidth / 42);
-    }
-    return Math.max(8, containerWidth / 180);
-  }, [zoom, containerWidth]);
+    if (zoom === 'week') return 30;
+    return 15;
+  }, [zoom]);
+
+  const totalDays = ganttDays.length;
 
   useEffect(() => {
-    if (scrollToTask && taskRefs.current[scrollToTask.id] && containerRef.current) {
-      taskRefs.current[scrollToTask.id].scrollIntoView({
+    if (scrollToTask && taskRefs.current[scrollToTask.task?.id]) {
+      const taskElement = taskRefs.current[scrollToTask.task?.id];
+      taskElement.scrollIntoView({
         behavior: 'smooth',
         block: 'center',
         inline: 'center',
       });
     }
   }, [scrollToTask]);
-  const { days, flatList } = useMemo(() => {
-    const d = ganttDays;
 
-    const grouped = {};
-    tasks.forEach(task => {
-      const card = task.card || {};
-      const category = task.category || {};
-      const chapter = card.chapter || 'Sans chapitre';
-      const cardId = card.id || 'nocard';
-      const categoryId = category.id || 'nocategory';
+  useEffect(() => {
+    if (scrollToToday && ganttDays.length > 0) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const todayIndex = ganttDays.findIndex(day => {
+        const d = new Date(day);
+        d.setHours(0, 0, 0, 0);
+        return d.getTime() === today.getTime();
+      });
 
-      if (!grouped[chapter]) {
-        grouped[chapter] = {};
+      if (todayIndex >= 0 && dataScrollRef.current) {
+        const container = dataScrollRef.current;
+        const scrollPosition = todayIndex * dayWidth - container.clientWidth / 2 + dayWidth;
+        container.scrollLeft = Math.max(0, scrollPosition);
       }
-      if (!grouped[chapter][cardId]) {
-        grouped[chapter][cardId] = {
-          card,
-          categories: {},
-        };
-      }
-      if (!grouped[chapter][cardId].categories[categoryId]) {
-        grouped[chapter][cardId].categories[categoryId] = {
-          category,
-          tasks: [],
-        };
-      }
-      grouped[chapter][cardId].categories[categoryId].tasks.push(task);
-    });
-
-    const flat = [];
-    Object.entries(grouped).forEach(([chapter, cards]) => {
-      const chapterKey = chapter;
-      const isChapterExpanded = expandedChapters.has(chapterKey);
-
-      flat.push({ type: 'chapter', key: `chapter-${chapterKey}` });
-
-      if (isChapterExpanded) {
-        Object.entries(cards).forEach(([cardId, cardData]) => {
-          const cardKey = `${chapterKey}|${cardId}`;
-          const isCardExpanded = expandedCards.has(cardKey);
-
-          flat.push({ type: 'card', key: `card-${cardId}` });
-
-          if (isCardExpanded) {
-            Object.entries(cardData.categories).forEach(([catId, catData]) => {
-              const catKey = `${cardKey}|${catId}`;
-              const isCatExpanded = expandedCategories.has(catKey);
-
-              flat.push({ type: 'category', key: `cat-${catId}`, tasks: catData.tasks });
-
-              if (isCatExpanded) {
-                catData.tasks.forEach(task => {
-                  flat.push({ type: 'task', key: `task-${task.id}`, task });
-                });
-              }
-            });
-          }
-        });
-      }
-    });
-
-    return { days: d, flatList: flat };
-  }, [tasks, ganttDays, expandedChapters, expandedCards, expandedCategories]);
+    }
+  }, [scrollToToday, ganttDays, dayWidth]);
 
   const weeks = useMemo(() => {
     const w = [];
     let currentWeek = null;
 
-    days.forEach((day, idx) => {
+    ganttDays.forEach((day, idx) => {
       const weekNum = getWeekNumber(day);
-      if (!currentWeek || currentWeek.week !== weekNum) {
+      if (!currentWeek || currentWeek.week !== weekNum || currentWeek.year !== day.getFullYear()) {
         if (currentWeek) w.push(currentWeek);
-        currentWeek = { week: weekNum, days: [], startIdx: idx };
+        currentWeek = {
+          week: weekNum,
+          year: day.getFullYear(),
+          days: [],
+          startIdx: idx,
+          key: `week-${day.getFullYear()}-${weekNum}`,
+        };
       }
       currentWeek.days.push({ day, idx });
     });
     if (currentWeek) w.push(currentWeek);
 
     return w;
-  }, [days]);
-
-  const totalDays = days.length;
+  }, [ganttDays]);
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const todayIndex = days.findIndex(day => {
+  const todayIndex = ganttDays.findIndex(day => {
     const d = new Date(day);
     d.setHours(0, 0, 0, 0);
     return d.getTime() === today.getTime();
   });
 
+  const getLevelStyles = type => {
+    switch (type) {
+      case 'chapter':
+        return `bg-blue-50 dark:bg-blue-900/20 border-l-4 border-l-blue-400 border-b border-[var(--border)]`;
+      case 'card':
+        return `bg-green-50 dark:bg-green-900/20 border-l-4 border-l-green-400 border-b border-[var(--border)]`;
+      case 'category':
+        return `bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-l-yellow-400 border-b border-[var(--border)]`;
+      default:
+        return `border-l-4 border-l-gray-300 dark:border-l-gray-600 border-b border-[var(--border)]`;
+    }
+  };
+
   return (
-    <div className="flex-1 min-w-0 overflow-x-auto" ref={containerRef}>
-      <div className="min-w-max">
-        <div className="flex sticky top-0 h-8 bg-card border-b border-std z-10">
-          {weeks.map(week => (
-            <div key={week.week} className="flex">
-              <div
-                className="text-xs text-center p-1 border-r border-std bg-card-hover font-medium text-secondary"
-                style={{ minWidth: `${week.days.length * dayWidth}px` }}
-              >
-                S{week.week}
-              </div>
+    <div
+      className="flex-1 min-w-0 flex flex-col relative"
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+    >
+      {/* Wrapper avec overflow-y scroll pour synchroniser le scroll vertical */}
+      <div
+        ref={el => {
+          dataScrollRef.current = el;
+          if (containerRef) containerRef.current = el;
+        }}
+        className="flex-1 overflow-y-auto overflow-x-auto relative"
+        onScroll={onScroll}
+      >
+        {/* Contenu total avec largeur = jours */}
+        <div style={{ width: `${totalDays * dayWidth}px`, minWidth: `${totalDays * dayWidth}px` }}>
+          {/* Header sticky */}
+          <div
+            className="sticky top-0 z-20 bg-card border-b border-std"
+            style={{ height: ROW_HEIGHTS_PX.chapter }}
+          >
+            <div className="flex h-full items-center">
+              {weeks.map((week, weekIdx) => (
+                <div key={`week-${weekIdx}-${week.key}`} className="flex h-full">
+                  <div
+                    className="text-xs text-center p-1 border-r border-std bg-card-hover font-medium text-secondary flex items-center justify-center"
+                    style={{
+                      minWidth: `${week.days.length * dayWidth}px`,
+                      height: ROW_HEIGHTS_PX.chapter,
+                    }}
+                  >
+                    S{week.week}
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-        <div className="relative">
-          {todayIndex >= 0 && (
-            <div
-              className="absolute top-0 bottom-0 w-0.5 bg-red-500 z-20"
-              style={{ left: `${todayIndex * dayWidth + dayWidth / 2}px` }}
-              title="Aujourd'hui"
-            />
-          )}
-          {flatList.map(item => {
-            if (item.type !== 'task') {
+          </div>
+
+          {/* Lignes de données */}
+          <div className="relative">
+            {todayIndex >= 0 && (
+              <div
+                className="absolute top-0 bottom-0 w-0.5 bg-red-500 z-10 pointer-events-none"
+                style={{ left: `${todayIndex * dayWidth + dayWidth / 2}px` }}
+                title="Aujourd'hui"
+              />
+            )}
+            {flatTaskList.map((item, rowIdx) => {
+              const isTask = item.type === 'task' && item.task;
+              const rowHeight = getRowHeight(item.type);
+
               return (
                 <div
-                  key={item.key}
-                  className="h-8 border-b border-std bg-card-hover"
-                  style={{ width: `${totalDays * dayWidth}px` }}
-                />
-              );
-            }
-            const task = item.task;
-            const pos = getTaskBarPosition(task);
-            return (
-              <div
-                key={task.id}
-                ref={el => (taskRefs.current[task.id] = el)}
-                className="flex items-center h-8 border-b border-std relative"
-                style={{ width: `${totalDays * dayWidth}px` }}
-              >
-                {days.map((day, idx) => {
-                  const isWeekend = day.getDay() === 0 || day.getDay() === 6;
-                  return (
-                    <div
-                      key={idx}
-                      className={`h-full border-r border-std ${isWeekend ? 'bg-gray-100 dark:bg-gray-800' : ''}`}
-                      style={{ width: `${dayWidth}px`, flexShrink: 0 }}
-                    />
-                  );
-                })}
-                {todayIndex >= 0 && (
-                  <div
-                    className="absolute top-0 bottom-0 w-0.5 bg-red-500 z-10"
-                    style={{ left: `${todayIndex * dayWidth + dayWidth / 2}px` }}
-                  />
-                )}
-                <div
-                  className={`absolute h-5 rounded ${getTaskStatusColor(task.status)} flex items-center justify-center text-white text-xs px-1 cursor-pointer hover:opacity-80 overflow-hidden`}
-                  style={{
-                    left: `${pos.startOffset * dayWidth}px`,
-                    width: `${pos.duration * dayWidth}px`,
-                    top: '6px',
-                  }}
-                  title={`${task.title} (${task.start_date || '?'} - ${task.due_date || '?'})`}
+                  key={`row-${rowIdx}-${item.key}`}
+                  className={`flex items-center relative ${getLevelStyles(item.type)}`}
+                  style={{ height: rowHeight }}
+                  ref={
+                    isTask
+                      ? el => {
+                          if (el) taskRefs.current[item.task.id] = el;
+                        }
+                      : undefined
+                  }
                 >
-                  {task.progress > 0 && task.progress < 100 && (
+                  {ganttDays.map((day, dayIdx) => {
+                    const isWeekend = day.getDay() === 0 || day.getDay() === 6;
+                    return (
+                      <div
+                        key={`${rowIdx}-day-${dayIdx}`}
+                        className={`h-full border-r border-std ${isWeekend ? 'bg-gray-100 dark:bg-gray-800' : ''}`}
+                        style={{ width: `${dayWidth}px`, flexShrink: 0 }}
+                      />
+                    );
+                  })}
+
+                  {todayIndex >= 0 && (
                     <div
-                      className="absolute inset-y-0 left-0 bg-white/30"
-                      style={{ width: `${task.progress}%` }}
+                      className="absolute top-0 bottom-0 w-0.5 bg-red-500 z-10 pointer-events-none"
+                      style={{ left: `${todayIndex * dayWidth + dayWidth / 2}px` }}
                     />
                   )}
-                  <span className="truncate relative z-10">{task.title}</span>
+
+                  {isTask && (
+                    <TaskBar
+                      task={item.task}
+                      pos={getTaskBarPosition(item.task)}
+                      rowHeight={rowHeight}
+                      dayWidth={dayWidth}
+                    />
+                  )}
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function TaskBar({ task, pos, rowHeight, dayWidth }) {
+  const barHeight = 20;
+  const topOffset = Math.max(0, (rowHeight - barHeight) / 2);
+
+  return (
+    <div
+      className={`absolute h-5 rounded ${getTaskStatusColor(task.status)} flex items-center justify-center text-white text-xs px-1 cursor-pointer hover:opacity-80 overflow-hidden`}
+      style={{
+        left: `${pos.startOffset * dayWidth}px`,
+        width: `${pos.duration * dayWidth}px`,
+        top: `${topOffset}px`,
+      }}
+      title={`${task.title} (${task.start_date || '?'} - ${task.due_date || '?'})`}
+    >
+      {task.progress > 0 && task.progress < 100 && (
+        <div
+          className="absolute inset-y-0 left-0 bg-white/30"
+          style={{ width: `${task.progress}%` }}
+        />
+      )}
+      <span className="truncate relative z-10">{task.title}</span>
     </div>
   );
 }

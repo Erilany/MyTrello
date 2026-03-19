@@ -11,6 +11,14 @@ export default function PlanningTaskSelector({
   onCenterTask,
   onEditTask,
 }) {
+  console.log('[PlanningTaskSelector] Rendering');
+  console.log('[PlanningTaskSelector] tasks.length:', tasks.length);
+  console.log(
+    '[PlanningTaskSelector] tasks:',
+    tasks.map(t => ({ id: t.id, title: t.title, card: t.card?.title, category: t.category?.title }))
+  );
+  console.log('[PlanningTaskSelector] selectedTaskIds:', selectedTaskIds);
+
   const groupedTasks = useMemo(() => {
     const grouped = {};
 
@@ -70,8 +78,8 @@ export default function PlanningTaskSelector({
                   >
                     <input
                       type="checkbox"
-                      checked={selectedTaskIds.includes(task.id)}
-                      onChange={() => onToggleTask(task.id)}
+                      checked={selectedTaskIds.some(id => Number(id) === Number(task.id))}
+                      onChange={() => onToggleTask(task.id, task)}
                       className="w-4 h-4 rounded border-std text-accent"
                     />
                     <span

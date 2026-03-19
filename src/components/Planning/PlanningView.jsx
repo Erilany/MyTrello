@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useCallback, useRef, useEffect } from 'react';
 import { Filter, Download, Upload } from 'lucide-react';
 import PlanningSidebar from './PlanningSidebar';
 import PlanningGantt from './PlanningGantt';
@@ -6,6 +6,7 @@ import PlanningTaskSelector from './PlanningTaskSelector';
 import PlanningImportCompare from './PlanningImportCompare';
 import { generateMSProjectXML } from '../../utils/xmlUtils';
 import { getGanttDateRange, getGanttDays, getTaskBarPosition } from '../../utils/ganttUtils';
+import { getFlatTaskList } from '../../utils/hierarchyUtils';
 
 export default function PlanningView({
   currentBoard,
@@ -24,15 +25,13 @@ export default function PlanningView({
   onToggleChapter,
   onToggleCard,
   onToggleCategory,
+  onExpandAll,
   onCenterTask,
   onEditTask,
   sortOrder,
   setSortOrder,
   zoom,
   setZoom,
-  setStartDate,
-  startDateInput,
-  setStartDateInput,
   ganttStartDate,
   onImportPlanning,
   orderedChapters,
@@ -40,16 +39,102 @@ export default function PlanningView({
 }) {
   const [scrollToTask, setScrollToTask] = useState(null);
   const [showImportCompare, setShowImportCompare] = useState(false);
+  const [scrollToToday, setScrollToToday] = useState(false);
+  const [isHoveringGantt, setIsHoveringGantt] = useState(false);
+  const [isAllExpanded, setIsAllExpanded] = useState(true);
+  const ganttContainerRef = useRef(null);
+  const sidebarContainerRef = useRef(null);
 
-  const handleCenterTask = task => {
-    setScrollToTask(null);
-    onCenterTask(task);
-    setTimeout(() => setScrollToTask(task), 100);
-  };
+  useEffect(() => {
+    if (!importing && showImportCompare) {
+      setShowImportCompare(false);
+    }
+  }, [importing, showImportCompare]);
 
-  const getSelectedTasks = () => {
-    let result =
-      selectedTaskIds.length === 0 ? tasks : tasks.filter(t => selectedTaskIds.includes(t.id));
+  const handleToggleAll = useCallback(() => {
+    if (isAllExpanded) {
+      if (onExpandAll) {
+        onExpandAll(new Set(), new Set(), new Set());
+      }
+    } else {
+      const allChapters = new Set();
+      const allCards = new Set();
+      const allCategories = new Set();
+      const selectedIdsSet = new Set(selectedTaskIds.map(id => Number(id)));
+
+      tasks.forEach(task => {
+        if (selectedIdsSet.has(Number(task.id))) {
+          const card = task.card || {};
+          const category = task.category || {};
+          const chapter = card.chapter || 'Sans chapitre';
+          const cardId = card.id;
+          const categoryId = category.id;
+
+          allChapters.add(chapter);
+          if (cardId) {
+            allCards.add(`${chapter}|${cardId}`);
+          }
+          if (categoryId && cardId) {
+            allCategories.add(`${chapter}|${cardId}|${categoryId}`);
+          }
+        }
+      });
+
+      if (onExpandAll) {
+        onExpandAll(allChapters, allCards, allCategories);
+      }
+    }
+    setIsAllExpanded(!isAllExpanded);
+  }, [isAllExpanded, tasks, selectedTaskIds, onExpandAll]);
+
+  const handleGanttScroll = useCallback(e => {
+    if (sidebarContainerRef.current) {
+      sidebarContainerRef.current.scrollTop = e.target.scrollTop;
+    }
+  }, []);
+
+  const handleSidebarScroll = useCallback(e => {
+    if (ganttContainerRef.current) {
+      ganttContainerRef.current.scrollTop = e.target.scrollTop;
+    }
+  }, []);
+
+  console.log(
+    '[PlanningView] RENDER, tasks.length:',
+    tasks?.length,
+    'selectedTaskIds:',
+    selectedTaskIds
+  );
+
+  const handleCenterTask = useCallback(
+    task => {
+      setScrollToTask(null);
+      onCenterTask(task);
+      setTimeout(() => setScrollToTask(task), 100);
+    },
+    [onCenterTask]
+  );
+
+  const selectedTasks = useMemo(() => {
+    console.log('[PlanningView] selectedTasks useMemo computing');
+    console.log('[PlanningView] selectedTaskIds:', selectedTaskIds);
+    console.log('[PlanningView] tasks.length:', tasks.length);
+
+    if (selectedTaskIds.length === 0) {
+      return [];
+    }
+
+    console.log(
+      '[PlanningView] selectedTaskIds types:',
+      selectedTaskIds.map(id => ({ id, type: typeof id }))
+    );
+    console.log('[PlanningView] tasks[0] id type:', typeof tasks[0]?.id, tasks[0]?.id);
+
+    const selectedIdsSet = new Set(selectedTaskIds.map(id => Number(id)));
+    console.log('[PlanningView] selectedIdsSet:', [...selectedIdsSet]);
+
+    let result = tasks.filter(t => selectedIdsSet.has(Number(t.id)));
+    console.log('[PlanningView] Filtered by ID, result count:', result.length);
 
     if (sortOrder === 'date') {
       result = [...result].sort((a, b) => {
@@ -59,11 +144,14 @@ export default function PlanningView({
       });
     }
 
+    console.log(
+      '[PlanningView] selectedTasks result:',
+      result.map(t => ({ id: t.id, title: t.title }))
+    );
     return result;
-  };
+  }, [tasks, selectedTaskIds, sortOrder]);
 
-  const handleExportMSProject = () => {
-    const selectedTasks = getSelectedTasks();
+  const handleExportMSProject = useCallback(() => {
     if (selectedTasks.length === 0) {
       alert('Aucune tâche sélectionnée');
       return;
@@ -83,27 +171,11 @@ export default function PlanningView({
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-  };
+  }, [currentBoard, selectedTasks]);
 
-  const handleGoToToday = () => {
-    const range = computedGanttDateRange;
-    const today = new Date();
-    const diffDays = Math.ceil((today - range.start) / (1000 * 60 * 60 * 24));
-    setStartDateInput(diffDays);
-  };
-
-  const handleSliderChange = e => {
-    const days = parseInt(e.target.value);
-    setStartDateInput(days);
-    const range = computedGanttDateRange;
-    const baseDate = new Date();
-    baseDate.setDate(
-      baseDate.getDate() + days - Math.ceil((baseDate - range.start) / (1000 * 60 * 60 * 24))
-    );
-    setStartDate(baseDate.toISOString().split('T')[0]);
-  };
-
-  const selectedTasks = getSelectedTasks();
+  const handleGoToToday = useCallback(() => {
+    setScrollToToday(prev => !prev);
+  }, []);
 
   const computedGanttDateRange = useMemo(() => {
     return getGanttDateRange(selectedTasks, ganttStartDate, zoom);
@@ -116,6 +188,55 @@ export default function PlanningView({
   const computedGetTaskBarPosition = useMemo(() => {
     return task => getTaskBarPosition(task, selectedTasks, ganttStartDate, zoom);
   }, [selectedTasks, ganttStartDate, zoom]);
+
+  const flatTaskList = useMemo(() => {
+    console.log('[PlanningView] flatTaskList computing');
+    console.log('[PlanningView] selectedTasks for flatList:', selectedTasks.length);
+    console.log(
+      '[PlanningView] selectedTasks:',
+      selectedTasks.map(t => ({
+        id: t.id,
+        title: t.title,
+        card: t.card?.title,
+        category: t.category?.title,
+      }))
+    );
+    const result = getFlatTaskList(
+      selectedTasks,
+      expandedChapters,
+      expandedCards,
+      expandedCategories
+    );
+    console.log(
+      '[PlanningView] flatTaskList result:',
+      result.map(r => ({ type: r.type, key: r.key, title: r.title, hasTask: !!r.task }))
+    );
+    return result;
+  }, [selectedTasks, expandedChapters, expandedCards, expandedCategories]);
+
+  useEffect(() => {
+    if (scrollToToday && ganttContainerRef.current) {
+      const container = ganttContainerRef.current;
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const todayIndex = computedGanttDays.findIndex(day => {
+        const d = new Date(day);
+        d.setHours(0, 0, 0, 0);
+        return d.getTime() === today.getTime();
+      });
+
+      if (todayIndex >= 0) {
+        const dayWidth =
+          zoom === 'day'
+            ? 60
+            : zoom === 'week'
+              ? Math.max(20, container.clientWidth / 42)
+              : Math.max(8, container.clientWidth / 180);
+        const scrollPosition = todayIndex * dayWidth - container.clientWidth / 2;
+        container.scrollLeft = Math.max(0, scrollPosition);
+      }
+    }
+  }, [scrollToToday, computedGanttDays, zoom]);
 
   return (
     <div className="flex-1 flex flex-col min-h-0">
@@ -157,15 +278,13 @@ export default function PlanningView({
           >
             Aujourd'hui
           </button>
-          <input
-            type="range"
-            min="-90"
-            max="365"
-            value={startDateInput}
-            onChange={handleSliderChange}
-            className="w-32 h-2 bg-std rounded-lg appearance-none cursor-pointer"
-            title={`Déplacer: ${startDateInput > 0 ? '+' : ''}${startDateInput} jours`}
-          />
+          <button
+            onClick={handleToggleAll}
+            className="px-2 py-1.5 text-sm bg-input border border-std rounded text-primary hover:bg-card-hover"
+            title={isAllExpanded ? 'Réplier tout' : 'Déplier tout'}
+          >
+            {isAllExpanded ? 'Réplier' : 'Déplier'}
+          </button>
           <button
             onClick={handleExportMSProject}
             className="flex items-center px-3 py-1.5 text-sm bg-accent text-white rounded-lg hover:opacity-90"
@@ -202,7 +321,7 @@ export default function PlanningView({
             <PlanningSidebar
               cards={cards}
               categories={categories}
-              subcategories={tasks}
+              subcategories={selectedTasks}
               expandedChapters={expandedChapters}
               expandedCards={expandedCards}
               expandedCategories={expandedCategories}
@@ -212,16 +331,21 @@ export default function PlanningView({
               onCenterTask={handleCenterTask}
               onEditTask={onEditTask}
               selectedTaskIds={selectedTaskIds}
+              scrollContainerRef={sidebarContainerRef}
+              onScroll={handleSidebarScroll}
             />
             <PlanningGantt
-              tasks={selectedTasks}
+              flatTaskList={flatTaskList}
               ganttDays={computedGanttDays}
               getTaskBarPosition={computedGetTaskBarPosition}
-              expandedChapters={expandedChapters}
-              expandedCards={expandedCards}
-              expandedCategories={expandedCategories}
               zoom={zoom}
               scrollToTask={scrollToTask}
+              scrollToToday={scrollToToday}
+              containerRef={ganttContainerRef}
+              onScroll={handleGanttScroll}
+              isHovering={isHoveringGantt}
+              onMouseEnter={() => setIsHoveringGantt(true)}
+              onMouseLeave={() => setIsHoveringGantt(false)}
             />
           </div>
         )}

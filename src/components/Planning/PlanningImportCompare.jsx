@@ -490,8 +490,18 @@ function PlanningImportCompare({
     };
 
     onImport(result);
-    onClose();
-  }, [draggedItems, onImport, onClose]);
+  }, [draggedItems, onImport]);
+
+  useEffect(() => {
+    if (!importing && xmlItems.length > 0 && draggedItems.length === 0) {
+    }
+  }, [importing, xmlItems.length, draggedItems.length, onClose]);
+
+  const handleClose = useCallback(() => {
+    if (!importing) {
+      onClose();
+    }
+  }, [importing, onClose]);
 
   const renderProjectItem = (item, level, parentChapter) => {
     const Icon = LEVEL_ICONS[level] || CheckSquare;
@@ -1076,26 +1086,77 @@ function PlanningImportCompare({
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-[var(--bg-card)] rounded-lg shadow-xl w-full max-w-7xl border border-[var(--border)] max-h-[90vh] flex flex-col">
         <div className="flex items-center justify-between p-4 border-b border-[var(--border)]">
-          <h2 className="text-lg font-semibold text-[var(--txt-primary)]">
-            Import MS Project - {boardTitle}
-          </h2>
-          <button onClick={onClose} className="p-1 hover:bg-[var(--bg-card-hover)] rounded">
-            <X size={20} className="text-[var(--txt-muted)]" />
-          </button>
-        </div>
-
-        <div className="p-4 border-b border-[var(--border)]">
-          <label className="flex items-center gap-2 px-4 py-2 bg-[var(--accent)] text-white rounded-lg cursor-pointer hover:opacity-90 w-fit">
-            <Upload size={16} />
-            <span>Sélectionner un fichier XML MS Project</span>
-            <input type="file" accept=".xml" className="hidden" onChange={handleFileSelect} />
-          </label>
-          {xmlItems.length > 0 && (
-            <span className="ml-4 text-sm text-[var(--txt-secondary)]">
-              {xmlItems.length} élément(s) - {draggedItems.length} à importer
-            </span>
+          <div className="flex items-center gap-3">
+            {importing && (
+              <svg className="animate-spin h-5 w-5 text-accent" viewBox="0 0 24 24">
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                  fill="none"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                />
+              </svg>
+            )}
+            <h2 className="text-lg font-semibold text-[var(--txt-primary)]">
+              {importing ? 'Importation en cours...' : `Import MS Project - ${boardTitle}`}
+            </h2>
+          </div>
+          {!importing && (
+            <button onClick={handleClose} className="p-1 hover:bg-[var(--bg-card-hover)] rounded">
+              <X size={20} className="text-[var(--txt-muted)]" />
+            </button>
           )}
         </div>
+
+        {importing && (
+          <div className="p-8 flex flex-col items-center justify-center">
+            <svg className="animate-spin h-12 w-12 text-accent mb-4" viewBox="0 0 24 24">
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+                fill="none"
+              />
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              />
+            </svg>
+            <p className="text-lg font-medium text-[var(--txt-primary)]">
+              Importation des tâches en cours...
+            </p>
+            <p className="text-sm text-[var(--txt-secondary)] mt-2">
+              Veuillez patienter, cela peut prendre quelques instants.
+            </p>
+          </div>
+        )}
+
+        {!importing && (
+          <div className="p-4 border-b border-[var(--border)]">
+            <label className="flex items-center gap-2 px-4 py-2 bg-[var(--accent)] text-white rounded-lg cursor-pointer hover:opacity-90 w-fit">
+              <Upload size={16} />
+              <span>Sélectionner un fichier XML MS Project</span>
+              <input type="file" accept=".xml" className="hidden" onChange={handleFileSelect} />
+            </label>
+            {xmlItems.length > 0 && (
+              <span className="ml-4 text-sm text-[var(--txt-secondary)]">
+                {xmlItems.length} élément(s) - {draggedItems.length} à importer
+              </span>
+            )}
+          </div>
+        )}
 
         <div className="flex flex-1 overflow-hidden">
           <div className="flex-1 border-r border-[var(--border)] flex flex-col">

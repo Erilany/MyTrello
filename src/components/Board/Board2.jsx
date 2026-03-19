@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useApp, loadFromStorage } from '../../context/AppContext';
 import { usePlanning } from '../../hooks/usePlanning';
 import Exchange from '../Exchange/Exchange';
@@ -48,6 +48,16 @@ function Board2() {
     createCategory,
     loadBoard,
   } = useApp();
+
+  console.log(
+    '[Board2] RENDER, subcategories.length:',
+    subcategories?.length,
+    'categories.length:',
+    categories?.length,
+    'cards.length:',
+    cards?.length
+  );
+
   const [activeTab, setActiveTab] = useState('taches');
   const previousActiveTabRef = useRef('taches');
   const [isInitialized, setIsInitialized] = useState(false);
@@ -111,29 +121,20 @@ function Board2() {
     toggleCard,
     toggleCategory,
     centerGanttOnTask,
-  } = usePlanning(currentBoard);
+  } = usePlanning(currentBoard, subcategories);
 
-  const getProjectTasks = () => {
-    const boardColumns = columns.filter(col => Number(col.board_id) === Number(currentBoard?.id));
-    const boardColumnIds = boardColumns.map(col => col.id);
-
-    const projectSubcategories = subcategories.filter(sub => {
-      const category = categories.find(c => Number(c.id) === Number(sub.category_id));
-      if (!category) return false;
-      const card = cards.find(c => Number(c.id) === Number(category.card_id));
-      if (!card) return false;
-      return (
-        boardColumnIds.includes(Number(card.column_id)) ||
-        !card.column_id ||
-        card.column_id === null
-      );
-    });
-    return projectSubcategories.map(sub => {
+  const getProjectTasks = useCallback(() => {
+    return subcategories.map(sub => {
       const category = categories.find(c => Number(c.id) === Number(sub.category_id));
       const card = category ? cards.find(c => Number(c.id) === Number(category.card_id)) : null;
       return { ...sub, category, card };
     });
-  };
+  }, [subcategories, categories, cards]);
+
+  const projectTasks = useMemo(() => {
+    console.log('[Board2] projectTasks useMemo computing');
+    return getProjectTasks();
+  }, [getProjectTasks]);
 
   const getSelectedTasks = () => {
     const allTasks = getProjectTasks();
@@ -324,6 +325,7 @@ function Board2() {
     let currentCardId = null;
     let currentCatId = null;
     let currentChapter = null;
+    const createdCategories = [];
 
     for (const item of items) {
       const level = item.outlineLevel || 2;
@@ -355,18 +357,25 @@ function Board2() {
       } else if (level === 3 && currentCardId) {
         try {
           const catId = await createCategory(
-            currentCardId, // cardId
-            item.name, // title
-            '', // description
-            'normal', // priority
-            item.finish || null, // dueDate
-            '', // assignee
-            null, // parentId
-            item.duration || 1, // durationDays
-            null, // reloadBoardId
-            null // tag
+            currentCardId,
+            item.name,
+            '',
+            'normal',
+            item.finish || null,
+            '',
+            null,
+            item.duration || 1,
+            null,
+            null
           );
           currentCatId = catId;
+          createdCategories.push({
+            id: catId,
+            name: item.name,
+            start: item.start,
+            finish: item.finish,
+            duration: item.duration || 1,
+          });
           catsCreated++;
           console.log(
             '[Import] Created category:',
@@ -384,14 +393,14 @@ function Board2() {
       } else if (level >= 4 && currentCatId) {
         try {
           await createSubcategory(
-            currentCatId, // categoryId
-            item.name, // title
-            '', // description
-            'normal', // priority
-            item.finish || null, // dueDate
-            '', // assignee
-            item.start || null, // startDate
-            item.duration || 1 // durationDays
+            currentCatId,
+            item.name,
+            '',
+            'normal',
+            item.finish || null,
+            '',
+            item.start || null,
+            item.duration || 1
           );
           subcatsCreated++;
           console.log(
@@ -409,6 +418,62 @@ function Board2() {
         console.log('[Import] Skipping category (no current card):', item.name);
       } else if (level >= 4 && !currentCatId) {
         console.log('[Import] Skipping subcategory (no current category):', item.name);
+      }
+    }
+
+    const catsWithSubcats = new Set();
+    for (const item of items) {
+      if (item.outlineLevel === 3 && item.hasChildren) {
+        const catIndex = items.indexOf(item);
+        let hasChild = false;
+        for (let i = catIndex + 1; i < items.length; i++) {
+          if (items[i].outlineLevel > 3) {
+            hasChild = true;
+            break;
+          } else if (items[i].outlineLevel <= 3) {
+            break;
+          }
+        }
+        if (hasChild) {
+          let catIdToMark = null;
+          for (const cat of createdCategories) {
+            if (cat.name === item.name) {
+              catIdToMark = cat.id;
+              break;
+            }
+          }
+          if (catIdToMark) {
+            catsWithSubcats.add(catIdToMark);
+          }
+        }
+      }
+    }
+
+    const catsWithoutSubcats = createdCategories.filter(cat => !catsWithSubcats.has(cat.id));
+    console.log('[Import] Categories without subcategories:', catsWithoutSubcats.length);
+    for (const cat of catsWithoutSubcats) {
+      try {
+        await createSubcategory(
+          cat.id,
+          cat.name,
+          '',
+          'normal',
+          cat.finish || null,
+          '',
+          cat.start || null,
+          cat.duration || 1
+        );
+        subcatsCreated++;
+        console.log(
+          '[Import] Created task from empty category:',
+          cat.name,
+          'start:',
+          cat.start,
+          'finish:',
+          cat.finish
+        );
+      } catch (error) {
+        console.error('[Import] Error creating task for empty category:', error);
       }
     }
 
@@ -1194,7 +1259,7 @@ function Board2() {
       {activeTab === 'planning' && (
         <PlanningView
           currentBoard={currentBoard}
-          tasks={getProjectTasks()}
+          tasks={projectTasks}
           cards={cards}
           categories={categories}
           selectedTaskIds={planningSelectedTasks}
@@ -1209,16 +1274,17 @@ function Board2() {
           onToggleChapter={toggleChapter}
           onToggleCard={toggleCard}
           onToggleCategory={toggleCategory}
+          onExpandAll={(chapters, cards, cats) => {
+            setExpandedPlanningChapters(chapters);
+            setExpandedPlanningCards(cards);
+            setExpandedPlanningCategories(cats);
+          }}
           onCenterTask={centerGanttOnTask}
           onEditTask={task => setSelectedSubcategory(task)}
           sortOrder={planningSortOrder}
           setSortOrder={setPlanningSortOrder}
           zoom={ganttZoom}
           setZoom={setGanttZoom}
-          startDate={ganttStartDate}
-          setStartDate={setGanttStartDate}
-          startDateInput={ganttStartDateInput}
-          setStartDateInput={setGanttStartDateInput}
           ganttStartDate={ganttStartDate}
           orderedChapters={getOrderedChapters()}
           onImportPlanning={handleImportPlanning}

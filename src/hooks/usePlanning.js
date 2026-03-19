@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 
-export function usePlanning(currentBoard) {
+export function usePlanning(currentBoard, tasks = []) {
   const [planningSelectedTasks, setPlanningSelectedTasks] = useState([]);
   const [expandedPlanningChapters, setExpandedPlanningChapters] = useState(new Set());
   const [expandedPlanningCards, setExpandedPlanningCards] = useState(new Set());
@@ -69,14 +69,61 @@ export function usePlanning(currentBoard) {
     ganttStartDate,
   ]);
 
-  const togglePlanningTask = useCallback(taskId => {
-    setPlanningSelectedTasks(prev =>
-      prev.includes(taskId) ? prev.filter(id => id !== taskId) : [...prev, taskId]
-    );
+  const togglePlanningTask = useCallback((taskId, task) => {
+    const numericId = Number(taskId);
+
+    setPlanningSelectedTasks(prev => {
+      const alreadySelected = prev.some(id => Number(id) === numericId);
+
+      if (!alreadySelected && task) {
+        const chapter = task.card?.chapter || 'Sans chapitre';
+        const cardId = task.card?.id;
+        const categoryId = task.category?.id;
+
+        setExpandedPlanningChapters(prevChap => {
+          if (!prevChap.has(chapter)) {
+            const next = new Set(prevChap);
+            next.add(chapter);
+            return next;
+          }
+          return prevChap;
+        });
+
+        if (cardId) {
+          const cardKey = `${chapter}|${cardId}`;
+          setExpandedPlanningCards(prevCard => {
+            if (!prevCard.has(cardKey)) {
+              const next = new Set(prevCard);
+              next.add(cardKey);
+              return next;
+            }
+            return prevCard;
+          });
+        }
+
+        if (categoryId && cardId) {
+          const catKey = `${chapter}|${cardId}|${categoryId}`;
+          setExpandedPlanningCategories(prevCat => {
+            if (!prevCat.has(catKey)) {
+              const next = new Set(prevCat);
+              next.add(catKey);
+              return next;
+            }
+            return prevCat;
+          });
+        }
+      }
+
+      if (alreadySelected) {
+        return prev.filter(id => Number(id) !== numericId);
+      } else {
+        return [...prev, numericId];
+      }
+    });
   }, []);
 
   const selectAllTasks = useCallback(taskIds => {
-    setPlanningSelectedTasks(taskIds);
+    setPlanningSelectedTasks(taskIds.map(id => Number(id)));
   }, []);
 
   const deselectAllTasks = useCallback(() => {
@@ -129,31 +176,52 @@ export function usePlanning(currentBoard) {
     }
   }, []);
 
-  return {
-    planningSelectedTasks,
-    setPlanningSelectedTasks,
-    expandedPlanningChapters,
-    setExpandedPlanningChapters,
-    expandedPlanningCards,
-    setExpandedPlanningCards,
-    expandedPlanningCategories,
-    setExpandedPlanningCategories,
-    planningSortOrder,
-    setPlanningSortOrder,
-    ganttZoom,
-    setGanttZoom,
-    ganttStartDate,
-    setGanttStartDate,
-    ganttStartDateInput,
-    setGanttStartDateInput,
-    togglePlanningTask,
-    selectAllTasks,
-    deselectAllTasks,
-    toggleChapter,
-    toggleCard,
-    toggleCategory,
-    centerGanttOnTask,
-  };
+  const returnValue = useMemo(
+    () => ({
+      planningSelectedTasks,
+      setPlanningSelectedTasks,
+      expandedPlanningChapters,
+      setExpandedPlanningChapters,
+      expandedPlanningCards,
+      setExpandedPlanningCards,
+      expandedPlanningCategories,
+      setExpandedPlanningCategories,
+      planningSortOrder,
+      setPlanningSortOrder,
+      ganttZoom,
+      setGanttZoom,
+      ganttStartDate,
+      setGanttStartDate,
+      ganttStartDateInput,
+      setGanttStartDateInput,
+      togglePlanningTask,
+      selectAllTasks,
+      deselectAllTasks,
+      toggleChapter,
+      toggleCard,
+      toggleCategory,
+      centerGanttOnTask,
+    }),
+    [
+      planningSelectedTasks,
+      expandedPlanningChapters,
+      expandedPlanningCards,
+      expandedPlanningCategories,
+      planningSortOrder,
+      ganttZoom,
+      ganttStartDate,
+      ganttStartDateInput,
+      togglePlanningTask,
+      selectAllTasks,
+      deselectAllTasks,
+      toggleChapter,
+      toggleCard,
+      toggleCategory,
+      centerGanttOnTask,
+    ]
+  );
+
+  return returnValue;
 }
 
 export default usePlanning;

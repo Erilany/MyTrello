@@ -4,16 +4,17 @@ export function getGanttDateRange(
   zoom = 'week',
   containerWidth = 1200
 ) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
   if (!tasks || tasks.length === 0) {
-    const today = new Date();
-    return {
-      start: today,
-      end: new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000),
-    };
+    const start = new Date(today);
+    const end = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000);
+    return { start, end };
   }
 
-  let minDate = new Date('2099-01-01');
-  let maxDate = new Date('1970-01-01');
+  let minDate = new Date(today);
+  let maxDate = new Date(today);
 
   tasks.forEach(task => {
     if (task.start_date) {
@@ -28,16 +29,6 @@ export function getGanttDateRange(
 
   if (ganttStartDate) {
     minDate = new Date(ganttStartDate);
-  }
-
-  const minDays = zoom === 'day' ? 30 : zoom === 'week' ? 60 : 180;
-
-  const rangeDays = Math.ceil((maxDate - minDate) / (24 * 60 * 60 * 1000));
-  if (rangeDays < minDays) {
-    maxDate = new Date(minDate.getTime() + minDays * 24 * 60 * 60 * 1000);
-  } else {
-    minDate = new Date(minDate.getTime() - 7 * 24 * 60 * 60 * 1000);
-    maxDate = new Date(maxDate.getTime() + 14 * 24 * 60 * 60 * 1000);
   }
 
   return { start: minDate, end: maxDate };

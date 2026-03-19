@@ -1,4 +1,12 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+} from 'react';
 import { libraryTemplates } from '../data/libraryData';
 import { loadGMRData, saveGMRData } from '../data/GMRData';
 import { loadPriorityData, savePriorityData } from '../data/PriorityData';
@@ -356,11 +364,6 @@ export function AppProvider({ children }) {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState(null);
   const [unreadMentions, setUnreadMentions] = useState({});
-  const [projectTimer, setProjectTimer] = useState({
-    activeProjectId: null,
-    startTime: null,
-    intervals: {},
-  });
   const [cardColors, setCardColors] = useState({
     etudes: { gradient: ['#6366f1', '#3b82f6'], keywords: ['études', 'etudes'] },
     enCours: { gradient: ['#f59e0b', '#fbbf24'], keywords: ['cours', 'en cours'] },
@@ -574,54 +577,6 @@ export function AppProvider({ children }) {
     const data = loadProjectTime();
     return data[w] || {};
   };
-
-  const clearProjectTimer = () => {
-    setProjectTimer({ activeProjectId: null, startTime: null, intervals: {} });
-  };
-
-  // Timer effect - runs every second when a project is active
-  useEffect(() => {
-    let interval = null;
-
-    if (projectTimer.activeProjectId && projectTimer.startTime) {
-      interval = setInterval(() => {
-        const now = new Date();
-        const elapsed = Math.floor((now - projectTimer.startTime) / 1000);
-        if (elapsed >= 1) {
-          addProjectTime(projectTimer.activeProjectId, elapsed);
-          setProjectTimer(prev => ({ ...prev, startTime: now }));
-        }
-      }, 1000);
-    }
-
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [projectTimer.activeProjectId, projectTimer.startTime]);
-
-  // Update timer when currentBoard changes
-  useEffect(() => {
-    if (currentBoard) {
-      const now = new Date();
-      setProjectTimer(prev => {
-        if (
-          prev.activeProjectId &&
-          prev.startTime &&
-          prev.activeProjectId !== String(currentBoard.id)
-        ) {
-          const elapsed = Math.floor((now - prev.startTime) / 1000);
-          if (elapsed > 0) {
-            addProjectTime(prev.activeProjectId, elapsed);
-          }
-        }
-        return {
-          activeProjectId: String(currentBoard.id),
-          startTime: now,
-          intervals: {},
-        };
-      });
-    }
-  }, [currentBoard?.id]);
 
   // Ensure libraryItems has data - always check library editor first
   const forceLibraryItems = () => {
@@ -1992,17 +1947,88 @@ export function AppProvider({ children }) {
     getAllProjectTime,
     loadProjectTime,
     getWeekNumber,
-    projectTimer,
     getInternalContacts,
   };
 
-  return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
+  return (
+    <AppContext.Provider value={value}>
+      <TimerProvider currentBoard={currentBoard} addProjectTime={addProjectTime}>
+        {children}
+      </TimerProvider>
+    </AppContext.Provider>
+  );
 }
 
 export function useApp() {
   const context = useContext(AppContext);
   if (!context) {
     throw new Error('useApp must be used within an AppProvider');
+  }
+  return context;
+}
+
+const TimerContext = createContext(null);
+
+function TimerProvider({ children, currentBoard, addProjectTime }) {
+  const [projectTimer, setProjectTimer] = useState({
+    activeProjectId: null,
+    startTime: null,
+    intervals: {},
+  });
+
+  useEffect(() => {
+    let interval = null;
+
+    if (projectTimer.activeProjectId && projectTimer.startTime) {
+      interval = setInterval(() => {
+        const now = new Date();
+        const elapsed = Math.floor((now - projectTimer.startTime) / 1000);
+        if (elapsed >= 1) {
+          addProjectTime(projectTimer.activeProjectId, elapsed);
+          setProjectTimer(prev => ({ ...prev, startTime: now }));
+        }
+      }, 1000);
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [projectTimer.activeProjectId, projectTimer.startTime, addProjectTime]);
+
+  useEffect(() => {
+    if (currentBoard) {
+      const now = new Date();
+      setProjectTimer(prev => {
+        if (
+          prev.activeProjectId &&
+          prev.startTime &&
+          prev.activeProjectId !== String(currentBoard.id)
+        ) {
+          const elapsed = Math.floor((now - prev.startTime) / 1000);
+          if (elapsed > 0) {
+            addProjectTime(prev.activeProjectId, elapsed);
+          }
+        }
+        return {
+          activeProjectId: String(currentBoard.id),
+          startTime: now,
+          intervals: {},
+        };
+      });
+    }
+  }, [currentBoard?.id, addProjectTime]);
+
+  return (
+    <TimerContext.Provider value={{ projectTimer, setProjectTimer }}>
+      {children}
+    </TimerContext.Provider>
+  );
+}
+
+export function useProjectTimer() {
+  const context = useContext(TimerContext);
+  if (!context) {
+    throw new Error('useProjectTimer must be used within a TimerProvider');
   }
   return context;
 }
