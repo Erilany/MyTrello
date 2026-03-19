@@ -51,9 +51,15 @@ function LibraryEventListener() {
       }
     };
 
+    const handleLibraryRefresh = () => {
+      loadLibrary();
+    };
+
     window.addEventListener('library-save', handleLibrarySave);
+    window.addEventListener('library-refreshed', handleLibraryRefresh);
     return () => {
       window.removeEventListener('library-save', handleLibrarySave);
+      window.removeEventListener('library-refreshed', handleLibraryRefresh);
     };
   }, [saveToLibrary, loadLibrary]);
 
@@ -1104,9 +1110,15 @@ function LibraryPanel() {
       try {
         const content = JSON.parse(card.content_json);
         const cardDuration = content.card?.duration_days ?? card.duration ?? 1;
-        const cardTitle = content.card?.title || card.title;
+        const cardTitle =
+          content.card?.title ||
+          content.category?.title ||
+          content.subcategory?.title ||
+          card.title;
 
         let cardId;
+        let isNewCard = false;
+
         // Only check for existing card in the selected board
         const existingCard = db.cards.find(c => {
           if (!c.title || c.title.toLowerCase() !== cardTitle.toLowerCase() || c.is_archived)
@@ -1128,7 +1140,10 @@ function LibraryPanel() {
           cardId = await createCard(
             firstColumnId,
             cardTitle,
-            content.card?.description || '',
+            content.card?.description ||
+              content.category?.description ||
+              content.subcategory?.description ||
+              '',
             content.card?.priority || 'normal',
             content.card?.due_date || null,
             content.card?.assignee || '',
@@ -1139,133 +1154,139 @@ function LibraryPanel() {
             null,
             chapter
           );
-          cardsAdded++;
+          isNewCard = true;
         }
 
-        const cardCategories = content.categories || [];
-        for (const cat of cardCategories) {
-          const isCatSelected = selectedCategories.some(
-            sc => sc.title === cat.title && sc.cardTitle === cardTitle
-          );
-          if (isCatSelected && cardId) {
-            try {
-              const categoryDuration = cat.duration_days ?? 1;
+        if (cardId) {
+          if (isNewCard) {
+            cardsAdded++;
+          }
 
-              const existingCatsForCard = db.categories.filter(
-                c => Number(c.card_id) === cardId && !c.parent_id
-              );
-              const existingCat = existingCatsForCard.find(
-                c => c.title && c.title.toLowerCase() === cat.title.toLowerCase()
-              );
+          const cardCategories = content.categories || [];
+          for (const cat of cardCategories) {
+            const isCatSelected = selectedCategories.some(
+              sc => sc.title === cat.title && sc.cardTitle === cardTitle
+            );
+            if (isCatSelected && cardId) {
+              try {
+                const categoryDuration = cat.duration_days ?? 1;
 
-              if (existingCat) {
-                errors.push(`Catégorie "${cat.title}": existe déjà pour la carte "${cardTitle}"`);
-
-                // Catégorie existe, on ajoute quand même les sous-catégories non existantes
-                const categoryId = existingCat.id;
-                const catSubcategories = cat.subcategories || [];
-                for (const subcat of catSubcategories) {
-                  const isSubcatSelected = selectedSubcategories.some(
-                    ss =>
-                      ss.title === subcat.title &&
-                      ss.categoryTitle === cat.title &&
-                      ss.cardTitle === cardTitle
-                  );
-                  if (isSubcatSelected) {
-                    try {
-                      const existingSubcats = db.subcategories.filter(
-                        s => Number(s.category_id) === categoryId
-                      );
-                      const existingSubcat = existingSubcats.find(
-                        s => s.title && s.title.toLowerCase() === subcat.title.toLowerCase()
-                      );
-
-                      if (existingSubcat) {
-                        errors.push(
-                          `Sous-catégorie "${subcat.title}": existe déjà dans la catégorie "${cat.title}"`
-                        );
-                      } else {
-                        const subcatDuration = subcat.duration_days ?? 1;
-                        await createSubcategory(
-                          categoryId,
-                          subcat.title,
-                          subcat.description || '',
-                          subcat.priority || 'normal',
-                          subcat.due_date || null,
-                          subcat.assignee || '',
-                          null,
-                          subcatDuration,
-                          null,
-                          subcat.tag || cat.tag || null
-                        );
-                        subcategoriesAdded++;
-                      }
-                    } catch (subcatErr) {
-                      errors.push(`Sous-catégorie "${subcat.title}": ${subcatErr.message}`);
-                    }
-                  }
-                }
-              } else {
-                const categoryId = await createCategory(
-                  cardId,
-                  cat.title,
-                  cat.description || '',
-                  cat.priority || 'normal',
-                  cat.due_date || null,
-                  cat.assignee || '',
-                  null,
-                  categoryDuration,
-                  null,
-                  null,
-                  cat.tag || null
+                const existingCatsForCard = db.categories.filter(
+                  c => Number(c.card_id) === cardId && !c.parent_id
                 );
-                categoriesAdded++;
+                const existingCat = existingCatsForCard.find(
+                  c => c.title && c.title.toLowerCase() === cat.title.toLowerCase()
+                );
 
-                const catSubcategories = cat.subcategories || [];
-                for (const subcat of catSubcategories) {
-                  const isSubcatSelected = selectedSubcategories.some(
-                    ss =>
-                      ss.title === subcat.title &&
-                      ss.categoryTitle === cat.title &&
-                      ss.cardTitle === cardTitle
-                  );
-                  if (isSubcatSelected) {
-                    try {
-                      const existingSubcats = db.subcategories.filter(
-                        s => Number(s.category_id) === categoryId
-                      );
-                      const existingSubcat = existingSubcats.find(
-                        s => s.title && s.title.toLowerCase() === subcat.title.toLowerCase()
-                      );
+                if (existingCat) {
+                  errors.push(`Catégorie "${cat.title}": existe déjà pour la carte "${cardTitle}"`);
 
-                      if (existingSubcat) {
-                        errors.push(
-                          `Sous-catégorie "${subcat.title}": existe déjà dans la catégorie "${cat.title}"`
+                  // Catégorie existe, on ajoute quand même les sous-catégories non existantes
+                  const categoryId = existingCat.id;
+                  const catSubcategories = cat.subcategories || [];
+                  for (const subcat of catSubcategories) {
+                    const isSubcatSelected = selectedSubcategories.some(
+                      ss =>
+                        ss.title === subcat.title &&
+                        ss.categoryTitle === cat.title &&
+                        ss.cardTitle === cardTitle
+                    );
+                    if (isSubcatSelected) {
+                      try {
+                        const existingSubcats = db.subcategories.filter(
+                          s => Number(s.category_id) === categoryId
                         );
-                      } else {
-                        const subcatDuration = subcat.duration_days ?? 1;
-                        await createSubcategory(
-                          categoryId,
-                          subcat.title,
-                          subcat.description || '',
-                          subcat.priority || 'normal',
-                          subcat.due_date || null,
-                          subcat.assignee || '',
-                          null,
-                          subcatDuration,
-                          null,
-                          subcat.tag || cat.tag || null
+                        const existingSubcat = existingSubcats.find(
+                          s => s.title && s.title.toLowerCase() === subcat.title.toLowerCase()
                         );
-                        subcategoriesAdded++;
+
+                        if (existingSubcat) {
+                          errors.push(
+                            `Sous-catégorie "${subcat.title}": existe déjà dans la catégorie "${cat.title}"`
+                          );
+                        } else {
+                          const subcatDuration = subcat.duration_days ?? 1;
+                          await createSubcategory(
+                            categoryId,
+                            subcat.title,
+                            subcat.description || '',
+                            subcat.priority || 'normal',
+                            subcat.due_date || null,
+                            subcat.assignee || '',
+                            null,
+                            subcatDuration,
+                            null,
+                            subcat.tag || cat.tag || null
+                          );
+                          subcategoriesAdded++;
+                        }
+                      } catch (subcatErr) {
+                        errors.push(`Sous-catégorie "${subcat.title}": ${subcatErr.message}`);
                       }
-                    } catch (subcatErr) {
-                      errors.push(`Sous-catégorie "${subcat.title}": ${subcatErr.message}`);
+                    }
+                  }
+                } else {
+                  const categoryId = await createCategory(
+                    cardId,
+                    cat.title,
+                    cat.description || '',
+                    cat.priority || 'normal',
+                    cat.due_date || null,
+                    cat.assignee || '',
+                    null,
+                    categoryDuration,
+                    null,
+                    null,
+                    cat.tag || null
+                  );
+                  categoriesAdded++;
+
+                  const catSubcategories = cat.subcategories || [];
+                  for (const subcat of catSubcategories) {
+                    const isSubcatSelected = selectedSubcategories.some(
+                      ss =>
+                        ss.title === subcat.title &&
+                        ss.categoryTitle === cat.title &&
+                        ss.cardTitle === cardTitle
+                    );
+                    if (isSubcatSelected) {
+                      try {
+                        const existingSubcats = db.subcategories.filter(
+                          s => Number(s.category_id) === categoryId
+                        );
+                        const existingSubcat = existingSubcats.find(
+                          s => s.title && s.title.toLowerCase() === subcat.title.toLowerCase()
+                        );
+
+                        if (existingSubcat) {
+                          errors.push(
+                            `Sous-catégorie "${subcat.title}": existe déjà dans la catégorie "${cat.title}"`
+                          );
+                        } else {
+                          const subcatDuration = subcat.duration_days ?? 1;
+                          await createSubcategory(
+                            categoryId,
+                            subcat.title,
+                            subcat.description || '',
+                            subcat.priority || 'normal',
+                            subcat.due_date || null,
+                            subcat.assignee || '',
+                            null,
+                            subcatDuration,
+                            null,
+                            subcat.tag || cat.tag || null
+                          );
+                          subcategoriesAdded++;
+                        }
+                      } catch (subcatErr) {
+                        errors.push(`Sous-catégorie "${subcat.title}": ${subcatErr.message}`);
+                      }
                     }
                   }
                 }
+              } catch (catErr) {
+                errors.push(`Catégorie "${cat.title}": ${catErr.message}`);
               }
-            } catch (catErr) {
-              errors.push(`Catégorie "${cat.title}": ${catErr.message}`);
             }
           }
         }
@@ -1363,23 +1384,34 @@ function LibraryPanel() {
       setIsUseFormLoading(false);
 
       let message = '';
+      const hasNewCards = cardsAdded > 0;
+      const hasNewCategories = categoriesAdded > 0;
+      const hasNewSubcats = subcategoriesAdded > 0;
+
       if (errors.length === 0) {
-        message = `Opération terminée !\n${cardsAdded} carte(s) créée(s)`;
-        if (categoriesAdded > 0) {
-          message += `\n${categoriesAdded} catégorie(s) créée(s)`;
-        }
-        if (subcategoriesAdded > 0) {
-          message += `\n${subcategoriesAdded} sous-catégorie(s) ajoutée(s)`;
+        if (hasNewCards || hasNewCategories || hasNewSubcats) {
+          message = 'Opération terminée !';
+          if (hasNewCards) {
+            message += `\n${cardsAdded} carte(s) créée(s)`;
+          }
+          if (hasNewCategories) {
+            message += `\n${categoriesAdded} catégorie(s) créée(s)`;
+          }
+          if (hasNewSubcats) {
+            message += `\n${subcategoriesAdded} sous-catégorie(s) ajoutée(s)`;
+          }
+        } else {
+          message = 'Aucun élément nouveau à ajouter (doublons ignorés)';
         }
       } else {
-        message = `Opération terminée avec avertissements :\n`;
-        if (cardsAdded > 0) {
+        message = 'Opération terminée avec avertissements :\n';
+        if (hasNewCards) {
           message += `\n${cardsAdded} carte(s) créée(s)`;
         }
-        if (categoriesAdded > 0) {
+        if (hasNewCategories) {
           message += `\n${categoriesAdded} catégorie(s) créée(s)`;
         }
-        if (subcategoriesAdded > 0) {
+        if (hasNewSubcats) {
           message += `\n${subcategoriesAdded} sous-catégorie(s) ajoutée(s)`;
         }
         if (errors.length > 0) {

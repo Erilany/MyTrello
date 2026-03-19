@@ -72,6 +72,22 @@ function convertTreeToLibraryItems(treeData) {
           content.categories.push(category);
         }
 
+        libraryItems.push({
+          id: itemId++,
+          title: currentCategorie,
+          type: 'category',
+          tags: tags,
+          duration: node.data.temps || 0,
+          content_json: JSON.stringify({
+            category: {
+              title: currentCategorie,
+              description: '',
+              priority: 'normal',
+              duration_days: node.data.temps || 0,
+            },
+          }),
+        });
+
         if (node.type === 'souscategorie' && node.data.sousCat1) {
           if (!category.subcategories.find(s => s.title === node.data.sousCat1)) {
             category.subcategories.push({
@@ -81,6 +97,22 @@ function convertTreeToLibraryItems(treeData) {
               duration_days: node.data.temps || 0,
             });
           }
+
+          libraryItems.push({
+            id: itemId++,
+            title: node.data.sousCat1,
+            type: 'subcategory',
+            tags: tags,
+            duration: node.data.temps || 0,
+            content_json: JSON.stringify({
+              subcategory: {
+                title: node.data.sousCat1,
+                description: '',
+                priority: 'normal',
+                duration_days: node.data.temps || 0,
+              },
+            }),
+          });
         }
 
         cardItem.content_json = JSON.stringify(content);
@@ -632,9 +664,17 @@ export function AppProvider({ children }) {
         try {
           const treeData = JSON.parse(customLibrary);
           const itemsToUse = convertTreeToLibraryItems(treeData);
-          const newDb = { ...db, libraryItems: itemsToUse };
-          setDb(newDb);
-          setLibraryItems(itemsToUse);
+
+          // Update mytrello_db with the new libraryItems
+          let mainDb = localStorage.getItem('mytrello_db');
+          if (mainDb) {
+            const dbObj = JSON.parse(mainDb);
+            dbObj.libraryItems = itemsToUse;
+            localStorage.setItem('mytrello_db', JSON.stringify(dbObj));
+          }
+
+          // Force update by creating new object reference
+          setLibraryItems([...itemsToUse]);
           console.log('[AppContext] Reloaded library from editor, count:', itemsToUse.length);
         } catch (e) {
           console.error('[AppContext] Error reloading library from editor:', e);
@@ -645,13 +685,14 @@ export function AppProvider({ children }) {
         if (mainDb) {
           try {
             const updatedDb = JSON.parse(mainDb);
-            setDb(updatedDb);
-            setLibraryItems(updatedDb.libraryItems || []);
+            setLibraryItems([...(updatedDb.libraryItems || [])]);
           } catch (e) {
             console.error('[AppContext] Error reloading library:', e);
           }
         }
       }
+      // Force re-render of all components using libraryItems
+      setTimeout(() => window.dispatchEvent(new Event('library-refreshed')), 0);
     };
 
     window.addEventListener('library-updated', handleLibraryUpdate);

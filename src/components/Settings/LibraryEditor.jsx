@@ -8,9 +8,15 @@ import {
   Download,
   RotateCcw,
   FolderOpen,
+  Upload,
+  FileText,
+  List,
+  CheckSquare,
+  Folder,
 } from 'lucide-react';
 import { libraryTemplates } from '../../data/libraryData';
 import { loadTagsData } from '../../data/TagsData';
+import { parseMSProjectXml } from '../../utils/xmlParser';
 
 const STORAGE_KEY = 'mytrello_library_editor';
 
@@ -81,6 +87,22 @@ function convertTreeToLibraryItems(treeData) {
           category.tag = node.data.systemTag;
         }
 
+        libraryItems.push({
+          id: itemId++,
+          title: currentCategorie,
+          type: 'category',
+          tags: tags,
+          duration: node.data.temps || 0,
+          content_json: JSON.stringify({
+            category: {
+              title: currentCategorie,
+              description: '',
+              priority: 'normal',
+              duration_days: node.data.temps || 0,
+            },
+          }),
+        });
+
         if (node.type === 'souscategorie' && node.data.sousCat1) {
           if (!category.subcategories.find(s => s.title === node.data.sousCat1)) {
             category.subcategories.push({
@@ -91,6 +113,22 @@ function convertTreeToLibraryItems(treeData) {
               tag: node.data.systemTag || null,
             });
           }
+
+          libraryItems.push({
+            id: itemId++,
+            title: node.data.sousCat1,
+            type: 'subcategory',
+            tags: tags,
+            duration: node.data.temps || 0,
+            content_json: JSON.stringify({
+              subcategory: {
+                title: node.data.sousCat1,
+                description: '',
+                priority: 'normal',
+                duration_days: node.data.temps || 0,
+              },
+            }),
+          });
         }
 
         cardItem.content_json = JSON.stringify(content);
@@ -909,6 +947,9 @@ function LibraryEditor() {
   const [treeData, setTreeData] = useState([]);
   const [hasChanges, setHasChanges] = useState(false);
   const [treeKey, setTreeKey] = useState(0);
+  const [showXmlImportModal, setShowXmlImportModal] = useState(false);
+  const [xmlItems, setXmlItems] = useState([]);
+  const [selectedXmlItems, setSelectedXmlItems] = useState([]);
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -1138,6 +1179,147 @@ function LibraryEditor() {
     setHasChanges(false);
   }, []);
 
+  const handleXmlFileSelect = useCallback(event => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const content = e.target?.result;
+        const items = parseMSProjectXml(content);
+        setXmlItems(items);
+        setSelectedXmlItems(items.map(i => i.id));
+        setShowXmlImportModal(true);
+      } catch (error) {
+        alert(`Erreur lors du parsing XML: ${error.message}`);
+      }
+    };
+    reader.readAsText(file);
+    event.target.value = '';
+  }, []);
+
+  const toggleXmlItem = useCallback(itemId => {
+    setSelectedXmlItems(prev => {
+      if (prev.includes(itemId)) {
+        return prev.filter(id => id !== itemId);
+      }
+      return [...prev, itemId];
+    });
+  }, []);
+
+  const selectAllXmlItems = useCallback(() => {
+    setSelectedXmlItems(xmlItems.map(i => i.id));
+  }, [xmlItems]);
+
+  const deselectAllXmlItems = useCallback(() => {
+    setSelectedXmlItems([]);
+  }, []);
+
+  const handleConfirmXmlImport = useCallback(() => {
+    const selectedItems = xmlItems.filter(i => selectedXmlItems.includes(i.id));
+    if (selectedItems.length === 0) {
+      alert('Veuillez sélectionner au moins un élément à importer');
+      return;
+    }
+
+    const roundToHalf = num => Math.round(num * 2) / 2;
+
+    const convertXmlItemsToNodes = items => {
+      const rootNodes = [];
+      const stack = [];
+
+      items.forEach(item => {
+        while (stack.length > 0 && stack[stack.length - 1].outlineLevel >= item.outlineLevel) {
+          stack.pop();
+        }
+
+        let chapitre = '';
+        let carte = '';
+        let categorie = '';
+
+        if (item.outlineLevel === 1) {
+          chapitre = item.name;
+        } else if (item.outlineLevel === 2) {
+          const parent = stack.find(p => p.outlineLevel === 1);
+          chapitre = parent ? parent.name : '';
+          carte = item.name;
+        } else if (item.outlineLevel === 3) {
+          const parentChap = stack.find(p => p.outlineLevel === 1);
+          const parentCart = stack.find(p => p.outlineLevel === 2);
+          chapitre = parentChap ? parentChap.name : '';
+          carte = parentCart ? parentCart.name : '';
+          categorie = item.name;
+        } else {
+          const parentChap = stack.find(p => p.outlineLevel === 1);
+          const parentCart = stack.find(p => p.outlineLevel === 2);
+          const parentCat = stack.find(p => p.outlineLevel === 3);
+          chapitre = parentChap ? parentChap.name : '';
+          carte = parentCart ? parentCart.name : '';
+          categorie = parentCat ? parentCat.name : '';
+        }
+
+        const node = {
+          id: crypto.randomUUID(),
+          type:
+            item.outlineLevel === 1
+              ? 'chapitre'
+              : item.outlineLevel === 2
+                ? 'carte'
+                : item.outlineLevel === 3
+                  ? 'categorie'
+                  : 'souscategorie',
+          titre: item.name,
+          expanded: true,
+          children: [],
+          data: {
+            chapitre,
+            carte,
+            categorie,
+            sousCat1: item.outlineLevel >= 4 ? item.name : '',
+            temps: roundToHalf(item.duration),
+            categorieTag: item.outlineLevel === 1 ? '' : chapitre,
+            domaineTag: '',
+            tagRevue: '',
+          },
+        };
+
+        if (stack.length === 0) {
+          rootNodes.push(node);
+        } else {
+          const parent = stack[stack.length - 1];
+          if (parent.node && parent.node.children !== undefined) {
+            parent.node.children.push(node);
+          }
+        }
+
+        stack.push({ ...item, node });
+      });
+
+      return rootNodes;
+    };
+
+    const newNodes = convertXmlItemsToNodes(selectedItems);
+
+    const addNodesToTree = (existingNodes, newNodes) => {
+      newNodes.forEach(newNode => {
+        existingNodes.push(JSON.parse(JSON.stringify(newNode)));
+      });
+      return existingNodes;
+    };
+
+    setTreeData(prev => {
+      const newData = JSON.parse(JSON.stringify(prev));
+      return addNodesToTree(newData, newNodes);
+    });
+
+    setHasChanges(true);
+    setShowXmlImportModal(false);
+    setXmlItems([]);
+    setSelectedXmlItems([]);
+    alert(`${selectedItems.length} élément(s) importé(s) avec succès`);
+  }, [xmlItems, selectedXmlItems]);
+
   const expandAll = useCallback(() => {
     const expand = nodes => {
       nodes.forEach(n => {
@@ -1218,6 +1400,10 @@ function LibraryEditor() {
           >
             <Download size={16} className="mr-1" /> Exporter
           </button>
+          <label className="flex items-center px-3 py-1.5 text-sm bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border)] rounded text-[var(--txt-secondary)] cursor-pointer">
+            <Upload size={16} className="mr-1" /> Importer XML
+            <input type="file" accept=".xml" className="hidden" onChange={handleXmlFileSelect} />
+          </label>
           <button
             onClick={handleSave}
             className={`flex items-center px-3 py-1.5 text-sm rounded ${hasChanges ? 'bg-[var(--accent)] text-white hover:opacity-90' : 'bg-[var(--border)] text-[var(--txt-muted)] cursor-not-allowed'}`}
@@ -1259,6 +1445,134 @@ function LibraryEditor() {
         <div className="text-center py-8 text-[var(--txt-muted)]">
           <FolderOpen size={48} className="mx-auto mb-4 opacity-50" />
           <p>Aucune donnée. Cliquez sur &quot;Ajouter Chapitre&quot; pour commencer.</p>
+        </div>
+      )}
+
+      {showXmlImportModal && xmlItems.length > 0 && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-[var(--bg-card)] rounded-lg shadow-xl w-full max-w-4xl border border-[var(--border)] p-6 max-h-[85vh] flex flex-col">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-[var(--txt-primary)]">
+                Import XML MS Project - Sélection des éléments
+              </h3>
+              <button
+                onClick={() => {
+                  setShowXmlImportModal(false);
+                  setXmlItems([]);
+                  setSelectedXmlItems([]);
+                }}
+                className="p-1 hover:bg-[var(--bg-card-hover)] rounded"
+              >
+                <Trash2 size={20} className="text-[var(--txt-muted)]" />
+              </button>
+            </div>
+
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm text-[var(--txt-secondary)]">
+                {selectedXmlItems.length} / {xmlItems.length} élément(s) sélectionné(s)
+              </span>
+              <div className="flex gap-2">
+                <button
+                  onClick={selectAllXmlItems}
+                  className="px-3 py-1 text-xs bg-[var(--bg-card-hover)] hover:bg-[var(--border)] rounded"
+                >
+                  Tout sélectionner
+                </button>
+                <button
+                  onClick={deselectAllXmlItems}
+                  className="px-3 py-1 text-xs bg-[var(--bg-card-hover)] hover:bg-[var(--border)] rounded"
+                >
+                  Tout désélectionner
+                </button>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto border border-[var(--border)] rounded-lg mb-4">
+              <table className="w-full text-sm">
+                <thead className="bg-[var(--bg-card-hover)] sticky top-0">
+                  <tr>
+                    <th className="w-12 p-2 text-left"></th>
+                    <th className="p-2 text-left text-[var(--txt-secondary)]">Niveau</th>
+                    <th className="p-2 text-left text-[var(--txt-secondary)]">Nom</th>
+                    <th className="w-24 p-2 text-right text-[var(--txt-secondary)]">Durée (j)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {xmlItems.map(item => {
+                    const LevelIcon =
+                      item.outlineLevel === 1
+                        ? Folder
+                        : item.outlineLevel === 2
+                          ? FileText
+                          : item.outlineLevel === 3
+                            ? List
+                            : CheckSquare;
+                    const levelLabel =
+                      item.outlineLevel === 1
+                        ? 'Chapitre'
+                        : item.outlineLevel === 2
+                          ? 'Carte'
+                          : item.outlineLevel === 3
+                            ? 'Catégorie'
+                            : 'Tâche';
+                    return (
+                      <tr
+                        key={item.id}
+                        className={`border-b border-[var(--border)] hover:bg-[var(--bg-card-hover)] ${
+                          selectedXmlItems.includes(item.id) ? 'bg-[var(--accent)]/10' : ''
+                        }`}
+                      >
+                        <td className="p-2">
+                          <input
+                            type="checkbox"
+                            checked={selectedXmlItems.includes(item.id)}
+                            onChange={() => toggleXmlItem(item.id)}
+                            className="w-4 h-4 accent-[var(--accent)]"
+                          />
+                        </td>
+                        <td className="p-2">
+                          <div className="flex items-center gap-2">
+                            <LevelIcon size={16} className="text-[var(--txt-muted)]" />
+                            <span style={{ marginLeft: `${(item.outlineLevel - 1) * 16}px` }}>
+                              {levelLabel}
+                            </span>
+                          </div>
+                        </td>
+                        <td
+                          className="p-2 text-[var(--txt-primary)]"
+                          style={{ paddingLeft: `${item.outlineLevel * 16 + 8}px` }}
+                        >
+                          {item.name}
+                        </td>
+                        <td className="p-2 text-right text-[var(--txt-secondary)]">
+                          {item.duration > 0 ? `${item.duration}j` : '-'}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => {
+                  setShowXmlImportModal(false);
+                  setXmlItems([]);
+                  setSelectedXmlItems([]);
+                }}
+                className="px-4 py-2 text-[var(--txt-secondary)] hover:bg-[var(--bg-card-hover)] rounded-lg"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleConfirmXmlImport}
+                className="px-4 py-2 bg-[var(--accent)] text-white rounded-lg hover:opacity-90"
+              >
+                Importer la sélection
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

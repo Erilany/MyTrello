@@ -33,6 +33,15 @@ function Library() {
         console.error('Error loading favorites:', e);
       }
     }
+
+    const handleLibraryRefresh = () => {
+      loadLibrary();
+    };
+
+    window.addEventListener('library-refreshed', handleLibraryRefresh);
+    return () => {
+      window.removeEventListener('library-refreshed', handleLibraryRefresh);
+    };
   }, []);
 
   const isItemFavorite = itemId => {
@@ -93,46 +102,58 @@ function Library() {
         return;
       }
 
-      if (item.type === 'card' && content.card) {
-        createCard(
-          firstColumn.id,
-          content.card.title,
-          content.card.description || '',
-          content.card.priority || 'normal',
-          content.card.due_date || null,
-          content.card.assignee || ''
-        ).then(cardId => {
-          if (cardId && content.categories) {
-            content.categories.forEach((cat, catIndex) => {
-              createCategory(
-                cardId,
-                cat.title,
-                cat.description || '',
-                cat.priority || 'normal',
-                cat.due_date || null,
-                cat.assignee || ''
-              ).then(categoryId => {
-                if (categoryId && cat.subcategories) {
-                  cat.subcategories.forEach((subcat, subIndex) => {
-                    createSubcategory(
-                      categoryId,
-                      subcat.title,
-                      subcat.description || '',
-                      subcat.priority || 'normal',
-                      subcat.due_date || null,
-                      subcat.assignee || ''
-                    );
-                  });
-                }
-              });
+      let cardTitle =
+        content.card?.title || content.category?.title || content.subcategory?.title || item.title;
+
+      createCard(
+        firstColumn.id,
+        cardTitle,
+        content.card?.description ||
+          content.category?.description ||
+          content.subcategory?.description ||
+          '',
+        content.card?.priority || 'normal',
+        content.card?.due_date || null,
+        content.card?.assignee || ''
+      ).then(cardId => {
+        if (!cardId) {
+          alert('Erreur lors de la création de la carte');
+          return;
+        }
+
+        const categoriesToCreate = content.categories || [];
+
+        if (categoriesToCreate.length > 0) {
+          categoriesToCreate.forEach(cat => {
+            createCategory(
+              cardId,
+              cat.title,
+              cat.description || '',
+              cat.priority || 'normal',
+              cat.due_date || null,
+              cat.assignee || ''
+            ).then(categoryId => {
+              if (categoryId && cat.subcategories) {
+                cat.subcategories.forEach(subcat => {
+                  createSubcategory(
+                    categoryId,
+                    subcat.title,
+                    subcat.description || '',
+                    subcat.priority || 'normal',
+                    subcat.due_date || null,
+                    subcat.assignee || ''
+                  );
+                });
+              }
             });
-          }
-          if (currentBoard) {
-            loadBoard(currentBoard.id);
-          }
-        });
+          });
+        }
+
+        if (currentBoard) {
+          loadBoard(currentBoard.id);
+        }
         alert('Modèle utilisé avec succès !');
-      }
+      });
     } catch (error) {
       console.error('Error using template:', error);
       alert("Erreur lors de l'utilisation du modèle");
@@ -145,7 +166,7 @@ function Library() {
     subcategory: 'Sous-catégorie',
   };
 
-  const renderItem = (item, type) => (
+  const renderItem = item => (
     <div
       key={item.id}
       className="bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700 p-4"

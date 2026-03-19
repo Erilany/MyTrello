@@ -62,6 +62,39 @@ function LibraryFavorites() {
     window.dispatchEvent(new Event('library-favorites-updated'));
   };
 
+  const expandAll = () => {
+    const chapters = {};
+    const cards = {};
+    const categories = {};
+
+    libraryItems.forEach(item => {
+      const tags = item.tags ? item.tags.split(',') : [];
+      const chapter = tags[0] || 'Autre';
+      chapters[chapter] = true;
+
+      const cardKey = `${item.id}`;
+      cards[cardKey] = true;
+
+      try {
+        const content = JSON.parse(item.content_json);
+        (content.categories || []).forEach(cat => {
+          const catKey = `${item.id}_${cat.title}`;
+          categories[catKey] = true;
+        });
+      } catch {}
+    });
+
+    setExpandedChapters(chapters);
+    setExpandedCards(cards);
+    setExpandedCategories(categories);
+  };
+
+  const collapseAll = () => {
+    setExpandedChapters({});
+    setExpandedCards({});
+    setExpandedCategories({});
+  };
+
   const toggleCardFavorite = (cardId, cardTitle) => {
     const newFavorites = {
       cards: favorites?.cards || [],
@@ -252,6 +285,20 @@ function LibraryFavorites() {
           <span className="text-sm text-[var(--txt-muted)]">
             ({totalFavorites} éléments sélectionnés)
           </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={expandAll}
+            className="px-3 py-1.5 text-sm bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border)] rounded text-[var(--txt-secondary)]"
+          >
+            Tout déplier
+          </button>
+          <button
+            onClick={collapseAll}
+            className="px-3 py-1.5 text-sm bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border)] rounded text-[var(--txt-secondary)]"
+          >
+            Tout replier
+          </button>
         </div>
       </div>
 
