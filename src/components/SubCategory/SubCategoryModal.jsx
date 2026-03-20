@@ -51,6 +51,25 @@ function SubCategoryModal({ subcategory, onClose }) {
   // MS Project fields
   const [startDate, setStartDate] = useState(subcategory.start_date || '');
   const [durationDays, setDurationDays] = useState(subcategory.duration_days || 1);
+  const [anchorDate, setAnchorDate] = useState(
+    subcategory.start_date ? 'start' : subcategory.due_date ? 'end' : 'start'
+  );
+
+  const [anchorInitialized, setAnchorInitialized] = useState(false);
+
+  useEffect(() => {
+    if (!anchorInitialized) {
+      setAnchorInitialized(true);
+      return;
+    }
+    if (anchorDate === 'start' && startDate && durationDays > 0) {
+      const calculatedDueDate = addWorkingDays(startDate, durationDays);
+      setDueDate(calculatedDueDate);
+    } else if (anchorDate === 'end' && dueDate && durationDays > 0) {
+      const calculatedStartDate = subtractWorkingDays(dueDate, durationDays);
+      setStartDate(calculatedStartDate);
+    }
+  }, [anchorDate, anchorInitialized]);
 
   // Temps repère from library (read-only)
   const parentCategory = categories?.find(c => c.id === subcategory.category_id);
@@ -111,10 +130,10 @@ function SubCategoryModal({ subcategory, onClose }) {
     const duration = parseInt(newDuration) || 1;
     setDurationDays(duration);
 
-    if (startDate && !dueDate) {
+    if (anchorDate === 'start' && startDate) {
       const calculatedDueDate = addWorkingDays(startDate, duration);
       setDueDate(calculatedDueDate);
-    } else if (dueDate && !startDate) {
+    } else if (anchorDate === 'end' && dueDate) {
       const calculatedStartDate = subtractWorkingDays(dueDate, duration);
       setStartDate(calculatedStartDate);
     }
@@ -122,6 +141,7 @@ function SubCategoryModal({ subcategory, onClose }) {
 
   const handleStartDateChange = newStartDate => {
     setStartDate(newStartDate);
+    setAnchorDate('start');
     if (newStartDate && durationDays > 0 && !dueDate) {
       const calculatedDueDate = addWorkingDays(newStartDate, durationDays);
       setDueDate(calculatedDueDate);
@@ -130,6 +150,7 @@ function SubCategoryModal({ subcategory, onClose }) {
 
   const handleDueDateChange = newDueDate => {
     setDueDate(newDueDate);
+    setAnchorDate('end');
     if (newDueDate && durationDays > 0 && !startDate) {
       const calculatedStartDate = subtractWorkingDays(newDueDate, durationDays);
       setStartDate(calculatedStartDate);
@@ -299,21 +320,47 @@ function SubCategoryModal({ subcategory, onClose }) {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-primary mb-1">Date de début</label>
-              <input
-                type="date"
-                value={startDate}
-                onChange={e => handleStartDateChange(e.target.value)}
-                className="w-full px-3 py-2 bg-input border border-std rounded-lg text-primary focus:outline-none focus:border-accent"
-              />
+              <div className="flex items-center gap-2">
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={e => {
+                    setStartDate(e.target.value);
+                    setAnchorDate('start');
+                  }}
+                  className="flex-1 px-3 py-2 bg-input border border-std rounded-lg text-primary focus:outline-none focus:border-accent"
+                />
+                <input
+                  type="radio"
+                  name="anchorDate"
+                  checked={anchorDate === 'start'}
+                  onChange={() => setAnchorDate('start')}
+                  className="w-4 h-4 text-accent"
+                  title="Utiliser comme date de référence"
+                />
+              </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-primary mb-1">Date d'échéance</label>
-              <input
-                type="date"
-                value={dueDate}
-                onChange={e => handleDueDateChange(e.target.value)}
-                className="w-full px-3 py-2 bg-input border border-std rounded-lg text-primary focus:outline-none focus:border-accent"
-              />
+              <div className="flex items-center gap-2">
+                <input
+                  type="date"
+                  value={dueDate}
+                  onChange={e => {
+                    setDueDate(e.target.value);
+                    setAnchorDate('end');
+                  }}
+                  className="flex-1 px-3 py-2 bg-input border border-std rounded-lg text-primary focus:outline-none focus:border-accent"
+                />
+                <input
+                  type="radio"
+                  name="anchorDate"
+                  checked={anchorDate === 'end'}
+                  onChange={() => setAnchorDate('end')}
+                  className="w-4 h-4 text-accent"
+                  title="Utiliser comme date de référence"
+                />
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div>

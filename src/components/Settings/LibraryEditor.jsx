@@ -99,6 +99,7 @@ function convertTreeToLibraryItems(treeData) {
               description: '',
               priority: 'normal',
               duration_days: node.data.temps || 0,
+              tag: node.data.systemTag || null,
             },
           }),
         });
@@ -126,6 +127,7 @@ function convertTreeToLibraryItems(treeData) {
                 description: '',
                 priority: 'normal',
                 duration_days: node.data.temps || 0,
+                tag: node.data.systemTag || null,
               },
             }),
           });
@@ -1114,6 +1116,7 @@ function LibraryEditor() {
         temps: 0,
         categorieTag: '',
         domaineTag: '',
+        systemTag: '',
       },
       children: [],
       expanded: true,

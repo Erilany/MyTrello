@@ -131,7 +131,11 @@ function Library() {
               cat.description || '',
               cat.priority || 'normal',
               cat.due_date || null,
-              cat.assignee || ''
+              cat.assignee || '',
+              null,
+              1,
+              null,
+              cat.tag || null
             ).then(categoryId => {
               if (categoryId && cat.subcategories) {
                 cat.subcategories.forEach(subcat => {
@@ -141,7 +145,11 @@ function Library() {
                     subcat.description || '',
                     subcat.priority || 'normal',
                     subcat.due_date || null,
-                    subcat.assignee || ''
+                    subcat.assignee || '',
+                    null,
+                    1,
+                    null,
+                    subcat.tag || null
                   );
                 });
               }

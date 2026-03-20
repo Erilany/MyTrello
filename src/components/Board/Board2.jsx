@@ -27,6 +27,8 @@ import {
   PlusCircle,
   User,
   Building,
+  Pencil,
+  Link as LinkIcon,
 } from 'lucide-react';
 
 function Board2() {
@@ -573,6 +575,45 @@ function Board2() {
         </div>
       </div>
 
+      {links.length > 0 && (
+        <div className="flex flex-wrap gap-2 mb-4">
+          {links.map(link => (
+            <button
+              key={link.id}
+              onClick={() => {
+                if (link.url) {
+                  if (link.type === 'folder') {
+                    const folderUrl = link.url.startsWith('file://')
+                      ? link.url
+                      : `file:///${link.url.replace(/\\/g, '/')}`;
+                    window.open(folderUrl, '_blank');
+                  } else {
+                    window.open(link.url, '_blank');
+                  }
+                } else {
+                  const url = prompt(
+                    "Entrez l'URL/dossier :",
+                    link.type === 'folder' ? 'C:\\' : 'https://'
+                  );
+                  if (url) {
+                    setLinks(links.map(l => (l.id === link.id ? { ...l, url } : l)));
+                  }
+                }
+              }}
+              className="flex items-center px-3 py-1.5 bg-card hover:bg-card-hover border border-std rounded text-sm text-primary transition-std"
+              style={{ borderLeftColor: link.color, borderLeftWidth: '3px' }}
+            >
+              {link.type === 'web' ? (
+                <ExternalLink size={14} className="mr-2" style={{ color: link.color }} />
+              ) : (
+                <FolderOpen size={14} className="mr-2" style={{ color: link.color }} />
+              )}
+              {link.title}
+            </button>
+          ))}
+        </div>
+      )}
+
       <div className="flex border-b border-std mb-4">
         {tabs.map(tab => {
           const Icon = tab.icon;
@@ -629,19 +670,35 @@ function Board2() {
                           Number(c.id) === Number(cat.card_id)
                       )
                     );
-                  const isEmpty = !hasCards;
+                  const hasSubcategories =
+                    hasCategories &&
+                    subcategories.some(sub =>
+                      categories.some(
+                        cat =>
+                          cat.card_id &&
+                          cards.some(
+                            c =>
+                              c.chapter &&
+                              normalizeChapter(c.chapter) === normalizedChapter &&
+                              Number(c.id) === Number(cat.id) &&
+                              Number(sub.category_id) === Number(cat.id)
+                          )
+                      )
+                    );
+                  const hasData = hasCards;
                   return (
                     <button
                       key={chapter}
-                      onClick={() => !isEmpty && setSelectedChapter(chapter)}
+                      onClick={() => setSelectedChapter(chapter)}
+                      disabled={!hasData}
                       className={`px-3 py-1.5 text-sm rounded-lg transition-colors ${
                         selectedChapter === chapter
                           ? 'bg-accent text-white'
-                          : isEmpty
+                          : !hasData
                             ? 'bg-card border border-std text-muted opacity-50 cursor-not-allowed'
                             : 'bg-card border border-std text-secondary hover:bg-card-hover'
                       }`}
-                      title={isEmpty ? "Ce chapitre n'a pas d'actions" : chapter}
+                      title={chapter}
                     >
                       {chapter}
                     </button>
@@ -757,11 +814,24 @@ function Board2() {
                         );
                       })}
                   {(!cards ||
-                    cards.filter(card => card.chapter === selectedChapter).length === 0) && (
-                    <p className="text-sm text-muted col-span-full">
-                      Aucune carte pour ce chapitre. Utilisez le bouton "Utiliser" dans la
-                      Bibliothèque pour ajouter des cartes.
-                    </p>
+                    cards.filter(
+                      card => normalizeChapter(card.chapter) === normalizeChapter(selectedChapter)
+                    ).length === 0) && (
+                    <div className="col-span-full flex flex-col items-center justify-center py-8 text-center">
+                      <p className="text-sm text-muted mb-4">Aucune carte pour ce chapitre</p>
+                      <button
+                        onClick={() => {
+                          const title = prompt('Nom de la nouvelle carte :');
+                          if (title && title.trim()) {
+                            createCard({ title: title.trim(), chapter: selectedChapter });
+                          }
+                        }}
+                        className="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent/80 transition-colors flex items-center"
+                      >
+                        <Plus size={16} className="mr-2" />
+                        Créer une carte
+                      </button>
+                    </div>
                   )}
                 </div>
 
@@ -844,7 +914,48 @@ function Board2() {
                             );
                           })
                         ) : (
-                          <p className="text-sm text-muted">Aucune tâche pour cette action</p>
+                          <div className="text-center py-4">
+                            <p className="text-sm text-muted mb-3">
+                              Aucune tâche pour cette action
+                            </p>
+                            <div className="flex flex-col gap-2">
+                              <button
+                                onClick={async () => {
+                                  const existingSub = selectedCategoryForTasks.subcategories.find(
+                                    s =>
+                                      s.title.toLowerCase() ===
+                                      selectedCategoryForTasks.category.title.toLowerCase()
+                                  );
+                                  if (existingSub) {
+                                    setSelectedSubcategory(existingSub);
+                                    return;
+                                  }
+                                  try {
+                                    const newSubId = await createSubcategory(
+                                      selectedCategoryForTasks.category.id,
+                                      selectedCategoryForTasks.category.title
+                                    );
+                                    setSelectedCategoryForTasks({
+                                      ...selectedCategoryForTasks,
+                                      subcategories: [
+                                        ...selectedCategoryForTasks.subcategories,
+                                        {
+                                          id: newSubId,
+                                          category_id: selectedCategoryForTasks.category.id,
+                                          title: selectedCategoryForTasks.category.title,
+                                        },
+                                      ],
+                                    });
+                                  } catch (e) {
+                                    console.error(e);
+                                  }
+                                }}
+                                className="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent/80 text-sm"
+                              >
+                                + Créer une tâche "{selectedCategoryForTasks.category.title}"
+                              </button>
+                            </div>
+                          </div>
                         )}
                         <div className="mt-3 pt-3 border-t border-std">
                           <div className="flex gap-2">
@@ -1366,34 +1477,9 @@ function Board2() {
             </h3>
             <div className="flex flex-wrap gap-2">
               {links.map(link => (
-                <button
+                <div
                   key={link.id}
-                  onClick={() => {
-                    if (!link.url) {
-                      const url = prompt(
-                        "Entrez l'URL/dossier :",
-                        link.type === 'folder' ? 'C:\\' : 'https://'
-                      );
-                      if (url) {
-                        setLinks(links.map(l => (l.id === link.id ? { ...l, url } : l)));
-                      }
-                    } else if (link.type === 'folder') {
-                      const folderUrl = link.url.startsWith('file://')
-                        ? link.url
-                        : `file:///${link.url.replace(/\\/g, '/')}`;
-                      window.open(folderUrl, '_blank');
-                    } else {
-                      window.open(link.url, '_blank');
-                    }
-                  }}
-                  onContextMenu={e => {
-                    e.preventDefault();
-                    const title = prompt('Nom du lien :', link.title);
-                    if (title) {
-                      setLinks(links.map(l => (l.id === link.id ? { ...l, title } : l)));
-                    }
-                  }}
-                  className="flex items-center px-3 py-2 bg-card hover:bg-card-hover border border-std rounded text-sm text-primary transition-std"
+                  className="group relative flex items-center px-3 py-2 bg-card hover:bg-card-hover border border-std rounded text-sm text-primary transition-std"
                   style={{ borderLeftColor: link.color, borderLeftWidth: '3px' }}
                 >
                   {link.type === 'web' ? (
@@ -1401,25 +1487,142 @@ function Board2() {
                   ) : (
                     <FolderOpen size={14} className="mr-2" style={{ color: link.color }} />
                   )}
-                  {link.title}
-                  <button
-                    onClick={e => {
-                      e.stopPropagation();
-                      const color = prompt('Couleur (hex) :', link.color);
-                      if (color) {
-                        setLinks(links.map(l => (l.id === link.id ? { ...l, color } : l)));
+                  <span
+                    className="cursor-pointer"
+                    onClick={() => {
+                      if (!link.url) {
+                        const url = prompt(
+                          "Entrez l'URL/dossier :",
+                          link.type === 'folder' ? 'C:\\' : 'https://'
+                        );
+                        if (url) {
+                          setLinks(links.map(l => (l.id === link.id ? { ...l, url } : l)));
+                        }
+                      } else if (link.type === 'folder') {
+                        const folderUrl = link.url.startsWith('file://')
+                          ? link.url
+                          : `file:///${link.url.replace(/\\/g, '/')}`;
+                        window.open(folderUrl, '_blank');
+                      } else {
+                        window.open(link.url, '_blank');
                       }
                     }}
-                    className="ml-2 w-3 h-3 rounded-full"
-                    style={{ backgroundColor: link.color }}
-                  />
-                </button>
+                    onContextMenu={e => {
+                      e.preventDefault();
+                      const title = prompt('Nom du lien :', link.title);
+                      if (title) {
+                        setLinks(links.map(l => (l.id === link.id ? { ...l, title } : l)));
+                      }
+                    }}
+                  >
+                    {link.title}
+                  </span>
+                  <div className="flex items-center gap-1 ml-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={e => {
+                        e.stopPropagation();
+                        const newTitle = prompt('Modifier le nom :', link.title);
+                        if (newTitle !== null) {
+                          setLinks(
+                            links.map(l => (l.id === link.id ? { ...l, title: newTitle } : l))
+                          );
+                        }
+                      }}
+                      className="text-muted hover:text-primary p-1"
+                      title="Modifier le nom"
+                    >
+                      <Pencil size={12} />
+                    </button>
+                    <button
+                      onClick={e => {
+                        e.stopPropagation();
+                        const newUrl = prompt(
+                          "Modifier l'URL/dossier :",
+                          link.url || (link.type === 'folder' ? 'C:\\' : 'https://')
+                        );
+                        if (newUrl !== null) {
+                          setLinks(links.map(l => (l.id === link.id ? { ...l, url: newUrl } : l)));
+                        }
+                      }}
+                      className="text-muted hover:text-primary p-1"
+                      title="Modifier le lien"
+                    >
+                      <LinkIcon size={12} />
+                    </button>
+                    <div className="relative">
+                      <button
+                        onClick={e => e.stopPropagation()}
+                        className="w-3 h-3 rounded-full"
+                        style={{ backgroundColor: link.color }}
+                        title="Couleur"
+                      />
+                      <div className="hidden group-hover:flex absolute top-full left-1/2 -translate-x-1/2 mt-1 gap-1 bg-card border border-std rounded p-1 shadow-lg z-10">
+                        <button
+                          onClick={e => {
+                            e.stopPropagation();
+                            setLinks(
+                              links.map(l => (l.id === link.id ? { ...l, color: '#22C55E' } : l))
+                            );
+                          }}
+                          className={`w-5 h-5 rounded ${link.color === '#22C55E' ? 'ring-1 ring-accent' : ''}`}
+                          style={{ backgroundColor: '#22C55E' }}
+                          title="Vert"
+                        />
+                        <button
+                          onClick={e => {
+                            e.stopPropagation();
+                            setLinks(
+                              links.map(l => (l.id === link.id ? { ...l, color: '#3B82F6' } : l))
+                            );
+                          }}
+                          className={`w-5 h-5 rounded ${link.color === '#3B82F6' ? 'ring-1 ring-accent' : ''}`}
+                          style={{ backgroundColor: '#3B82F6' }}
+                          title="Bleu"
+                        />
+                        <button
+                          onClick={e => {
+                            e.stopPropagation();
+                            setLinks(
+                              links.map(l => (l.id === link.id ? { ...l, color: '#EF4444' } : l))
+                            );
+                          }}
+                          className={`w-5 h-5 rounded ${link.color === '#EF4444' ? 'ring-1 ring-accent' : ''}`}
+                          style={{ backgroundColor: '#EF4444' }}
+                          title="Rouge"
+                        />
+                        <button
+                          onClick={e => {
+                            e.stopPropagation();
+                            setLinks(
+                              links.map(l => (l.id === link.id ? { ...l, color: '#1F2937' } : l))
+                            );
+                          }}
+                          className={`w-5 h-5 rounded ${link.color === '#1F2937' ? 'ring-1 ring-accent' : ''}`}
+                          style={{ backgroundColor: '#1F2937' }}
+                          title="Noir"
+                        />
+                      </div>
+                    </div>
+                    <button
+                      onClick={e => {
+                        e.stopPropagation();
+                        if (confirm('Voulez-vous supprimer ce lien ?')) {
+                          setLinks(links.filter(l => l.id !== link.id));
+                        }
+                      }}
+                      className="text-muted hover:text-urgent p-1"
+                      title="Supprimer"
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
+                </div>
               ))}
               {showAddLink ? (
                 <div className="flex items-center gap-2 p-2 bg-card border border-std rounded">
                   <select
-                    value={ganttZoom}
-                    onChange={e => setGanttZoom(e.target.value)}
+                    value={newLink.type}
+                    onChange={e => setNewLink({ ...newLink, type: e.target.value })}
                     className="px-2 py-1.5 text-sm bg-input border border-std rounded text-primary"
                   >
                     <option value="web">Internet</option>
@@ -1434,17 +1637,37 @@ function Board2() {
                   />
                   <input
                     type="text"
-                    placeholder="URL"
+                    placeholder={newLink.type === 'folder' ? 'Chemin' : 'URL'}
                     value={newLink.url}
                     onChange={e => setNewLink({ ...newLink, url: e.target.value })}
                     className="px-2 py-1 text-sm bg-input border border-std rounded text-primary w-40"
                   />
-                  <input
-                    type="color"
-                    value={newLink.color}
-                    onChange={e => setNewLink({ ...newLink, color: e.target.value })}
-                    className="w-8 h-8 cursor-pointer"
-                  />
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => setNewLink({ ...newLink, color: '#22C55E' })}
+                      className={`w-6 h-6 rounded ${newLink.color === '#22C55E' ? 'ring-2 ring-accent' : ''}`}
+                      style={{ backgroundColor: '#22C55E' }}
+                      title="Vert"
+                    />
+                    <button
+                      onClick={() => setNewLink({ ...newLink, color: '#3B82F6' })}
+                      className={`w-6 h-6 rounded ${newLink.color === '#3B82F6' ? 'ring-2 ring-accent' : ''}`}
+                      style={{ backgroundColor: '#3B82F6' }}
+                      title="Bleu"
+                    />
+                    <button
+                      onClick={() => setNewLink({ ...newLink, color: '#EF4444' })}
+                      className={`w-6 h-6 rounded ${newLink.color === '#EF4444' ? 'ring-2 ring-accent' : ''}`}
+                      style={{ backgroundColor: '#EF4444' }}
+                      title="Rouge"
+                    />
+                    <button
+                      onClick={() => setNewLink({ ...newLink, color: '#1F2937' })}
+                      className={`w-6 h-6 rounded ${newLink.color === '#1F2937' ? 'ring-2 ring-accent' : ''}`}
+                      style={{ backgroundColor: '#1F2937' }}
+                      title="Noir"
+                    />
+                  </div>
                   <button
                     onClick={() => {
                       if (newLink.title.trim()) {
@@ -1570,10 +1793,41 @@ function Board2() {
                     placeholder="Nom et prénom"
                     value={contact.name || ''}
                     onChange={e => {
+                      const oldName = contact.name || '';
+                      const newName = e.target.value;
+
+                      // Update internal contacts
                       const updated = internalContacts.map(c =>
-                        c.id === contact.id ? { ...c, name: e.target.value } : c
+                        c.id === contact.id ? { ...c, name: newName } : c
                       );
                       setInternalContacts(updated);
+
+                      // If name changed, update all tasks assigned to this function or old name
+                      if (newName !== oldName) {
+                        // Update subcategories
+                        subcategories.forEach(sub => {
+                          if (sub.assignee === contact.title || sub.assignee === oldName) {
+                            updateSubcategory(sub.id, {
+                              ...sub,
+                              assignee: newName || contact.title,
+                            });
+                          }
+                        });
+
+                        // Update categories
+                        categories.forEach(cat => {
+                          if (cat.assignee === contact.title || cat.assignee === oldName) {
+                            updateCategory(cat.id, { ...cat, assignee: newName || contact.title });
+                          }
+                        });
+
+                        // Update cards
+                        cards.forEach(card => {
+                          if (card.assignee === contact.title || card.assignee === oldName) {
+                            updateCard(card.id, { ...card, assignee: newName || contact.title });
+                          }
+                        });
+                      }
                     }}
                     className="w-full px-2 py-1 text-sm bg-input border border-std rounded text-primary placeholder-muted focus:outline-none focus:border-accent"
                   />

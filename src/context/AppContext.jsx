@@ -1619,6 +1619,10 @@ export function AppProvider({ children }) {
       });
 
       setTimeout(() => {
+        if (currentBoard) loadBoard(currentBoard.id);
+      }, 100);
+
+      setTimeout(() => {
         resolve(subcatId);
       }, 200);
     });
@@ -1750,6 +1754,182 @@ export function AppProvider({ children }) {
     setTimeout(() => {
       window.dispatchEvent(new Event('library-updated'));
     }, 100);
+  };
+
+  const syncTagsFromLibrary = () => {
+    const treeRaw = localStorage.getItem('mytrello_library_editor');
+    console.log('[syncTagsFromLibrary] treeRaw exists:', !!treeRaw);
+    const categoriesWithTags = [];
+    const subcategoriesWithTags = [];
+
+    if (treeRaw) {
+      try {
+        const treeData = JSON.parse(treeRaw);
+        const findTagsInNodes = nodes => {
+          nodes.forEach(node => {
+            if (node.data && node.data.systemTag && node.data.systemTag.trim()) {
+              if (node.type === 'categorie' && node.data.categorie) {
+                categoriesWithTags.push({
+                  title: node.data.categorie,
+                  tag: node.data.systemTag.trim(),
+                });
+              }
+              if (node.type === 'souscategorie' && node.data.sousCat1) {
+                subcategoriesWithTags.push({
+                  title: node.data.sousCat1,
+                  tag: node.data.systemTag.trim(),
+                });
+              }
+            }
+            if (node.children) {
+              findTagsInNodes(node.children);
+            }
+          });
+        };
+        findTagsInNodes(treeData);
+      } catch (e) {
+        console.error('[syncTagsFromLibrary] Error parsing tree:', e);
+      }
+    }
+
+    const libraryItems = db.libraryItems || [];
+    libraryItems.forEach(item => {
+      if (item.type === 'category' && item.content_json) {
+        try {
+          const content = JSON.parse(item.content_json);
+          if (content.category && content.category.tag) {
+            categoriesWithTags.push({
+              title: item.title,
+              tag: content.category.tag,
+            });
+          }
+        } catch (e) {}
+      }
+      if (item.type === 'subcategory' && item.content_json) {
+        try {
+          const content = JSON.parse(item.content_json);
+          if (content.subcategory && content.subcategory.tag) {
+            subcategoriesWithTags.push({
+              title: item.title,
+              tag: content.subcategory.tag,
+            });
+          }
+        } catch (e) {}
+      }
+      if (item.type === 'card' && item.content_json) {
+        try {
+          const content = JSON.parse(item.content_json);
+          if (content.categories) {
+            content.categories.forEach(cat => {
+              if (cat.tag) {
+                categoriesWithTags.push({
+                  title: cat.title,
+                  tag: cat.tag,
+                });
+              }
+              if (cat.subcategories) {
+                cat.subcategories.forEach(subcat => {
+                  if (subcat.tag) {
+                    subcategoriesWithTags.push({
+                      title: subcat.title,
+                      tag: subcat.tag,
+                    });
+                  }
+                });
+              }
+            });
+          }
+        } catch (e) {}
+      }
+    });
+
+    console.log('[syncTagsFromLibrary] Categories from library:', categoriesWithTags);
+    console.log('[syncTagsFromLibrary] Subcategories from library:', subcategoriesWithTags);
+    console.log(
+      '[syncTagsFromLibrary] Categories in DB:',
+      db.categories.map(c => ({ id: c.id, title: c.title, tag: c.tag }))
+    );
+    console.log(
+      '[syncTagsFromLibrary] Subcategories in DB:',
+      db.subcategories.map(s => ({ id: s.id, title: s.title, tag: s.tag }))
+    );
+
+    let updatedCount = 0;
+
+    const normalizeTitle = title => (title ? title.toLowerCase().trim().replace(/\s+/g, ' ') : '');
+
+    const newCategories = db.categories.map(cat => {
+      if (cat.tag) return cat;
+      const catTitle = normalizeTitle(cat.title);
+
+      // Exact match first
+      let matchingLibraryCat = categoriesWithTags.find(lc => catTitle === normalizeTitle(lc.title));
+
+      // If no exact match, try partial match
+      if (!matchingLibraryCat) {
+        matchingLibraryCat = categoriesWithTags.find(
+          lc =>
+            catTitle.includes(normalizeTitle(lc.title)) ||
+            normalizeTitle(lc.title).includes(catTitle)
+        );
+      }
+
+      if (matchingLibraryCat) {
+        console.log(
+          '[syncTagsFromLibrary] MATCH category:',
+          cat.title,
+          '->',
+          matchingLibraryCat.tag
+        );
+        updatedCount++;
+        return { ...cat, tag: matchingLibraryCat.tag };
+      }
+      return cat;
+    });
+
+    const newSubcategories = db.subcategories.map(sub => {
+      if (sub.tag) return sub;
+      const subTitle = normalizeTitle(sub.title);
+
+      // Exact match first
+      let matchingLibrarySub = subcategoriesWithTags.find(
+        ls => subTitle === normalizeTitle(ls.title)
+      );
+
+      // If no exact match, try partial match
+      if (!matchingLibrarySub) {
+        matchingLibrarySub = subcategoriesWithTags.find(
+          ls =>
+            subTitle.includes(normalizeTitle(ls.title)) ||
+            normalizeTitle(ls.title).includes(subTitle)
+        );
+      }
+
+      if (matchingLibrarySub) {
+        console.log(
+          '[syncTagsFromLibrary] MATCH subcategory:',
+          sub.title,
+          '->',
+          matchingLibrarySub.tag
+        );
+        updatedCount++;
+        return { ...sub, tag: matchingLibrarySub.tag };
+      }
+      return sub;
+    });
+
+    const newDb = {
+      ...db,
+      categories: newCategories,
+      subcategories: newSubcategories,
+    };
+    saveDb(newDb);
+
+    if (currentBoard) {
+      setTimeout(() => loadBoard(currentBoard.id), 100);
+    }
+
+    return updatedCount;
   };
 
   const getArchivedCards = () => {
@@ -1933,6 +2113,7 @@ export function AppProvider({ children }) {
     saveToLibrary,
     updateLibraryItem,
     deleteLibraryItem,
+    syncTagsFromLibrary,
     getArchivedCards,
     getArchivedBoards,
     addComment,
