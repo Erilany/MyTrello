@@ -48,10 +48,12 @@ function LibraryFavorites() {
     };
 
     window.addEventListener('library-updated', handleLibraryUpdate);
+    window.addEventListener('library-refreshed', handleLibraryUpdate);
     window.addEventListener('library-favorites-updated', handleLibraryUpdate);
 
     return () => {
       window.removeEventListener('library-updated', handleLibraryUpdate);
+      window.removeEventListener('library-refreshed', handleLibraryUpdate);
       window.removeEventListener('library-favorites-updated', handleLibraryUpdate);
     };
   }, []);
@@ -96,11 +98,16 @@ function LibraryFavorites() {
   };
 
   const toggleCardFavorite = (cardId, cardTitle) => {
+    const existingCards = [...new Set(favorites?.cards || [])];
+    const existingCategories = [...(favorites?.categories || [])];
+    const existingSubcategories = [...(favorites?.subcategories || [])];
+
     const newFavorites = {
-      cards: favorites?.cards || [],
-      categories: favorites?.categories || [],
-      subcategories: favorites?.subcategories || [],
+      cards: [...existingCards],
+      categories: [...existingCategories],
+      subcategories: [...existingSubcategories],
     };
+
     if (newFavorites.cards.includes(cardId)) {
       newFavorites.cards = newFavorites.cards.filter(id => id !== cardId);
       newFavorites.categories = newFavorites.categories.filter(
@@ -116,12 +123,29 @@ function LibraryFavorites() {
   };
 
   const toggleCategoryFavorite = (cardId, cardTitle, categoryTitle, subcategoriesList = []) => {
-    const newFavorites = { ...favorites };
-    const isCurrentlyFavorite = newFavorites.categories.some(
+    const existingCards = [...new Set(favorites?.cards || [])];
+    const existingCategories = [...(favorites?.categories || [])];
+    const existingSubcategories = [...(favorites?.subcategories || [])];
+
+    const newFavorites = {
+      cards: existingCards,
+      categories: [
+        ...(new Set(existingCategories.map(c => `${c.cardId}_${c.title}`)).size ===
+        existingCategories.length
+          ? existingCategories
+          : existingCategories.filter(
+              (c, i, arr) => arr.findIndex(x => x.cardId === c.cardId && x.title === c.title) === i
+            )),
+      ],
+      subcategories: existingSubcategories,
+    };
+
+    const catKey = `${cardId}_${categoryTitle}`;
+    const catExists = newFavorites.categories.some(
       c => c.cardId === cardId && c.title === categoryTitle
     );
 
-    if (isCurrentlyFavorite) {
+    if (catExists) {
       newFavorites.categories = newFavorites.categories.filter(
         c => !(c.cardId === cardId && c.title === categoryTitle)
       );
@@ -141,11 +165,10 @@ function LibraryFavorites() {
 
       if (subcategoriesList && subcategoriesList.length > 0) {
         subcategoriesList.forEach(sub => {
-          if (
-            !newFavorites.subcategories.find(
-              s => s.cardId === cardId && s.categoryTitle === categoryTitle && s.title === sub.title
-            )
-          ) {
+          const subExists = newFavorites.subcategories.some(
+            s => s.cardId === cardId && s.categoryTitle === categoryTitle && s.title === sub.title
+          );
+          if (!subExists) {
             newFavorites.subcategories.push({
               cardId,
               cardTitle,
@@ -160,14 +183,22 @@ function LibraryFavorites() {
   };
 
   const toggleSubcategoryFavorite = (cardId, cardTitle, categoryTitle, subcategoryTitle) => {
-    const newFavorites = { ...favorites };
+    const existingCards = [...new Set(favorites?.cards || [])];
+    const existingCategories = [...(favorites?.categories || [])];
+    const existingSubcategories = [...(favorites?.subcategories || [])];
 
-    if (
-      newFavorites.subcategories.find(
-        s =>
-          s.cardId === cardId && s.categoryTitle === categoryTitle && s.title === subcategoryTitle
-      )
-    ) {
+    const newFavorites = {
+      cards: existingCards,
+      categories: existingCategories,
+      subcategories: existingSubcategories,
+    };
+
+    const subKey = `${cardId}_${categoryTitle}_${subcategoryTitle}`;
+    const subExists = newFavorites.subcategories.some(
+      s => s.cardId === cardId && s.categoryTitle === categoryTitle && s.title === subcategoryTitle
+    );
+
+    if (subExists) {
       newFavorites.subcategories = newFavorites.subcategories.filter(
         s =>
           !(
@@ -200,7 +231,7 @@ function LibraryFavorites() {
       if (!newFavorites.cards.includes(cardId)) {
         newFavorites.cards.push(cardId);
       }
-      if (!newFavorites.categories.find(c => c.cardId === cardId && c.title === categoryTitle)) {
+      if (!newFavorites.categories.some(c => c.cardId === cardId && c.title === categoryTitle)) {
         newFavorites.categories.push({ cardId, cardTitle, title: categoryTitle });
       }
     }

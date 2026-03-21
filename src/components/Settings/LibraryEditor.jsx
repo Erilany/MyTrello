@@ -13,6 +13,7 @@ import {
   List,
   CheckSquare,
   Folder,
+  Layers,
 } from 'lucide-react';
 import { libraryTemplates } from '../../data/libraryData';
 import { loadTagsData } from '../../data/TagsData';
@@ -28,6 +29,8 @@ function formatDuration(days) {
 function convertTreeToLibraryItems(treeData) {
   const libraryItems = [];
   const cardMap = new Map();
+  const categorySet = new Set();
+  const subcategorySet = new Set();
   let itemId = 1;
 
   const processNode = (node, chapitre = '', carte = '', categorie = '') => {
@@ -44,9 +47,10 @@ function convertTreeToLibraryItems(treeData) {
     }
 
     if (node.type === 'carte' || node.type === 'categorie' || node.type === 'souscategorie') {
-      const tags = [node.data.categorieTag || '', node.data.domaineTag || '']
-        .filter(Boolean)
-        .join(',');
+      const tags =
+        node.type === 'souscategorie'
+          ? [node.data.categorieTag || '', node.data.domaineTag || ''].filter(Boolean).join(',')
+          : '';
 
       let cardItem = cardMap.get(currentCarte);
       if (!cardItem) {
@@ -54,7 +58,7 @@ function convertTreeToLibraryItems(treeData) {
           id: itemId++,
           title: currentCarte,
           type: 'card',
-          tags: tags,
+          tags: '',
           duration: node.data.temps || 0,
           content_json: JSON.stringify({
             card: {
@@ -72,6 +76,7 @@ function convertTreeToLibraryItems(treeData) {
 
       if (node.type === 'categorie' || node.type === 'souscategorie') {
         const content = JSON.parse(cardItem.content_json);
+        const catKey = `${currentCarte}_${currentCategorie}`;
         let category = content.categories.find(c => c.title === currentCategorie);
         if (!category) {
           category = {
@@ -79,32 +84,34 @@ function convertTreeToLibraryItems(treeData) {
             description: '',
             priority: 'normal',
             duration_days: node.data.temps || 0,
-            tag: node.data.systemTag || null,
+            tag: null,
             subcategories: [],
           };
           content.categories.push(category);
-        } else if (node.data.systemTag) {
-          category.tag = node.data.systemTag;
         }
 
-        libraryItems.push({
-          id: itemId++,
-          title: currentCategorie,
-          type: 'category',
-          tags: tags,
-          duration: node.data.temps || 0,
-          content_json: JSON.stringify({
-            category: {
-              title: currentCategorie,
-              description: '',
-              priority: 'normal',
-              duration_days: node.data.temps || 0,
-              tag: node.data.systemTag || null,
-            },
-          }),
-        });
+        if (!categorySet.has(catKey)) {
+          categorySet.add(catKey);
+          libraryItems.push({
+            id: itemId++,
+            title: currentCategorie,
+            type: 'category',
+            tags: '',
+            duration: node.data.temps || 0,
+            content_json: JSON.stringify({
+              category: {
+                title: currentCategorie,
+                description: '',
+                priority: 'normal',
+                duration_days: node.data.temps || 0,
+                tag: null,
+              },
+            }),
+          });
+        }
 
         if (node.type === 'souscategorie' && node.data.sousCat1) {
+          const subCatKey = `${catKey}_${node.data.sousCat1}`;
           if (!category.subcategories.find(s => s.title === node.data.sousCat1)) {
             category.subcategories.push({
               title: node.data.sousCat1,
@@ -115,22 +122,25 @@ function convertTreeToLibraryItems(treeData) {
             });
           }
 
-          libraryItems.push({
-            id: itemId++,
-            title: node.data.sousCat1,
-            type: 'subcategory',
-            tags: tags,
-            duration: node.data.temps || 0,
-            content_json: JSON.stringify({
-              subcategory: {
-                title: node.data.sousCat1,
-                description: '',
-                priority: 'normal',
-                duration_days: node.data.temps || 0,
-                tag: node.data.systemTag || null,
-              },
-            }),
-          });
+          if (!subcategorySet.has(subCatKey)) {
+            subcategorySet.add(subCatKey);
+            libraryItems.push({
+              id: itemId++,
+              title: node.data.sousCat1,
+              type: 'subcategory',
+              tags: tags,
+              duration: node.data.temps || 0,
+              content_json: JSON.stringify({
+                subcategory: {
+                  title: node.data.sousCat1,
+                  description: '',
+                  priority: 'normal',
+                  duration_days: node.data.temps || 0,
+                  tag: node.data.systemTag || null,
+                },
+              }),
+            });
+          }
         }
 
         cardItem.content_json = JSON.stringify(content);
@@ -212,8 +222,9 @@ function convertLibraryDataToTree(libraryItems) {
             sousCat2: '',
             sousCat3: '',
             temps: item.duration || 0,
-            categorieTag: categorieTag,
-            domaineTag: domaineTag,
+            categorieTag: '',
+            domaineTag: '',
+            systemTag: '',
           },
           children: [],
           expanded: true,
@@ -237,8 +248,9 @@ function convertLibraryDataToTree(libraryItems) {
               sousCat2: '',
               sousCat3: '',
               temps: cat.duration_days || 0,
-              categorieTag: categorieTag,
-              domaineTag: domaineTag,
+              categorieTag: '',
+              domaineTag: '',
+              systemTag: '',
             },
             children: [],
             expanded: true,
@@ -258,8 +270,9 @@ function convertLibraryDataToTree(libraryItems) {
                   sousCat2: '',
                   sousCat3: '',
                   temps: subcat.duration_days || 0,
-                  categorieTag: categorieTag,
-                  domaineTag: domaineTag,
+                  categorieTag: cat.tag || categorieTag,
+                  domaineTag: '',
+                  systemTag: cat.tag || subcat.tag || '',
                 },
                 children: [],
               };
@@ -633,7 +646,15 @@ function buildTree(items) {
           id: `carte_${item.chapitre}_${item.carte}`,
           type: 'carte',
           titre: item.carte,
-          data: { ...item, sousCat1: '', sousCat2: '', sousCat3: '' },
+          data: {
+            ...item,
+            sousCat1: '',
+            sousCat2: '',
+            sousCat3: '',
+            categorieTag: '',
+            domaineTag: '',
+            systemTag: '',
+          },
           children: [],
           expanded: true,
         };
@@ -657,7 +678,7 @@ function buildTree(items) {
             id: catId,
             type: 'categorie',
             titre: item.categorie || item.sousCat1 || '(Sans catégorie)',
-            data: { ...item },
+            data: { ...item, categorieTag: '', domaineTag: '', systemTag: '' },
             children: [],
             expanded: true,
           };
@@ -877,37 +898,49 @@ function TreeNode({ node, onEdit, onDelete, onAddChild }) {
           placeholder="Temps"
         />
 
-        <input
-          type="text"
-          value={localData.categorieTag || ''}
-          onChange={e => handleChange('categorieTag', e.target.value)}
-          onBlur={handleBlur}
-          className="w-28 px-2 py-1.5 text-sm bg-[var(--bg-input)] border border-[var(--border)] rounded text-[var(--txt-primary)] cursor-text"
-          placeholder="Tags 1"
-        />
+        {node.type === 'souscategorie' && (
+          <>
+            <input
+              type="text"
+              value={localData.categorieTag || ''}
+              onChange={e => handleChange('categorieTag', e.target.value)}
+              onBlur={handleBlur}
+              className="w-28 px-2 py-1.5 text-sm bg-[var(--bg-input)] border border-[var(--border)] rounded text-[var(--txt-primary)] cursor-text"
+              placeholder="Tags 1"
+            />
 
-        <input
-          type="text"
-          value={localData.domaineTag || ''}
-          onChange={e => handleChange('domaineTag', e.target.value)}
-          onBlur={handleBlur}
-          className="w-28 px-2 py-1.5 text-sm bg-[var(--bg-input)] border border-[var(--border)] rounded text-[var(--txt-primary)] cursor-text"
-          placeholder="Tags 2"
-        />
+            <input
+              type="text"
+              value={localData.domaineTag || ''}
+              onChange={e => handleChange('domaineTag', e.target.value)}
+              onBlur={handleBlur}
+              className="w-28 px-2 py-1.5 text-sm bg-[var(--bg-input)] border border-[var(--border)] rounded text-[var(--txt-primary)] cursor-text"
+              placeholder="Tags 2"
+            />
 
-        <select
-          value={localData.systemTag || ''}
-          onChange={e => handleChange('systemTag', e.target.value)}
-          onBlur={handleBlur}
-          className="w-32 px-2 py-1.5 text-sm bg-[var(--bg-input)] border border-[var(--border)] rounded text-[var(--txt-primary)] cursor-pointer"
-        >
-          <option value="">Tag Revue d'activité...</option>
-          {loadTagsData().map(tag => (
-            <option key={tag.id} value={tag.name}>
-              {tag.name}
-            </option>
-          ))}
-        </select>
+            <select
+              value={localData.systemTag || ''}
+              onChange={e => handleChange('systemTag', e.target.value)}
+              onBlur={handleBlur}
+              className="w-32 px-2 py-1.5 text-sm bg-[var(--bg-input)] border border-[var(--border)] rounded text-[var(--txt-primary)] cursor-pointer"
+            >
+              <option value="">Tag Revue d'activité...</option>
+              {loadTagsData().map(tag => (
+                <option key={tag.id} value={tag.name}>
+                  {tag.name}
+                </option>
+              ))}
+            </select>
+          </>
+        )}
+
+        {node.type !== 'souscategorie' && (
+          <>
+            <div className="w-28"></div>
+            <div className="w-28"></div>
+            <div className="w-32"></div>
+          </>
+        )}
 
         {canAddChild && (
           <button
@@ -1029,6 +1062,9 @@ function LibraryEditor() {
           sousCat1: '',
           sousCat2: '',
           sousCat3: '',
+          categorieTag: '',
+          domaineTag: '',
+          systemTag: '',
         },
         children: [],
         expanded: true,
@@ -1044,6 +1080,9 @@ function LibraryEditor() {
           sousCat1: '',
           sousCat2: '',
           sousCat3: '',
+          categorieTag: '',
+          domaineTag: '',
+          systemTag: '',
         },
         children: [],
         expanded: true,
@@ -1281,9 +1320,9 @@ function LibraryEditor() {
             categorie,
             sousCat1: item.outlineLevel >= 4 ? item.name : '',
             temps: roundToHalf(item.duration),
-            categorieTag: item.outlineLevel === 1 ? '' : chapitre,
+            categorieTag: item.outlineLevel >= 4 ? '' : '',
             domaineTag: '',
-            tagRevue: '',
+            systemTag: '',
           },
         };
 
@@ -1353,6 +1392,91 @@ function LibraryEditor() {
     setTreeKey(k => k + 1);
   }, []);
 
+  const createCompleteChains = useCallback(() => {
+    let createdCount = 0;
+
+    const processNode = node => {
+      if (node.type === 'carte') {
+        const hasCategoryChildren =
+          node.children && node.children.some(child => child.type === 'categorie');
+        if (!hasCategoryChildren) {
+          const cardTitle = node.data.carte || node.titre;
+          node.children = node.children || [];
+          node.children.push({
+            id: `auto_cat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            type: 'categorie',
+            titre: cardTitle,
+            data: {
+              ...node.data,
+              categorie: cardTitle,
+              sousCat1: '',
+              sousCat2: '',
+              sousCat3: '',
+            },
+            children: [
+              {
+                id: `auto_sub_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                type: 'souscategorie',
+                titre: cardTitle,
+                data: {
+                  ...node.data,
+                  sousCat1: cardTitle,
+                  sousCat2: '',
+                  sousCat3: '',
+                },
+                children: [],
+                expanded: true,
+              },
+            ],
+            expanded: true,
+          });
+          createdCount++;
+        }
+      }
+
+      if (node.type === 'categorie') {
+        const hasSubcategoryChildren =
+          node.children && node.children.some(child => child.type === 'souscategorie');
+        if (!hasSubcategoryChildren) {
+          const categoryTitle = node.data.categorie || node.titre;
+          node.children = node.children || [];
+          node.children.push({
+            id: `auto_sub_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+            type: 'souscategorie',
+            titre: categoryTitle,
+            data: {
+              ...node.data,
+              sousCat1: categoryTitle,
+              sousCat2: '',
+              sousCat3: '',
+            },
+            children: [],
+            expanded: true,
+          });
+          createdCount++;
+        }
+      }
+
+      if (node.children) {
+        node.children.forEach(child => processNode(child));
+      }
+    };
+
+    setTreeData(prev => {
+      const newData = JSON.parse(JSON.stringify(prev));
+      newData.forEach(node => processNode(node));
+      return newData;
+    });
+    setTreeKey(k => k + 1);
+    setHasChanges(true);
+
+    if (createdCount > 0) {
+      alert(`✓ ${createdCount} chaîne(s) complète(s) créée(s)`);
+    } else {
+      alert('Toutes les chaînes sont déjà complètes');
+    }
+  }, []);
+
   const handleExport = useCallback(() => {
     const csv = treeToCSV(treeData);
 
@@ -1370,6 +1494,14 @@ function LibraryEditor() {
     <div className="h-full flex flex-col">
       <div className="flex items-center justify-between mb-4 pb-4 border-b border-[var(--border)]">
         <div className="flex items-center gap-2">
+          <button
+            onClick={createCompleteChains}
+            className="px-3 py-1.5 text-sm bg-green-600 hover:bg-green-700 text-white rounded flex items-center gap-1"
+            title="Crée automatiquement les catégories/sous-catégories manquantes pour compléter les chaînes"
+          >
+            <Layers size={14} />
+            Créer chaînes complètes
+          </button>
           <button
             onClick={expandAll}
             className="px-3 py-1.5 text-sm bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border)] rounded text-[var(--txt-secondary)]"
@@ -1422,9 +1554,9 @@ function LibraryEditor() {
         <span className="flex-1">Titre</span>
         <span className="flex-[2]">Tâche</span>
         <span className="w-20 text-center">Temps repères</span>
-        <span className="w-28">Tags 1</span>
-        <span className="w-28">Tags 2</span>
-        <span className="w-32">Tag Revue d'activité</span>
+        <span className="w-28 text-[var(--txt-muted)]">Tags 1</span>
+        <span className="w-28 text-[var(--txt-muted)]">Tags 2</span>
+        <span className="w-32 text-[var(--txt-muted)]">Tag Revue d'activité</span>
         <span className="w-16"></span>
       </div>
 

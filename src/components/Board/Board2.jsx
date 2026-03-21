@@ -102,6 +102,9 @@ function Board2() {
   const [selectedChapter, setSelectedChapter] = useState(null);
   const [selectedCategoryForTasks, setSelectedCategoryForTasks] = useState(null);
   const [newTaskTitle, setNewTaskTitle] = useState('');
+  const [hoveredCategoryData, setHoveredCategoryData] = useState(null);
+  const [hoverPanelVisible, setHoverPanelVisible] = useState(false);
+  const hoverTimeoutRef = useRef(null);
 
   const {
     planningSelectedTasks,
@@ -770,8 +773,33 @@ function Board2() {
                                 const catSubcats = subcategories.filter(
                                   s => s.category_id === cat.id
                                 );
+                                const isHovered = hoveredCategoryData?.category?.id === cat.id;
                                 return (
-                                  <div key={cat.id} className="pl-3 border-l-2 border-accent">
+                                  <div
+                                    key={cat.id}
+                                    className="pl-3 border-l-2 border-accent relative"
+                                    onMouseEnter={e => {
+                                      if (hoverTimeoutRef.current) {
+                                        clearTimeout(hoverTimeoutRef.current);
+                                      }
+                                      setHoveredCategoryData({
+                                        card,
+                                        category: cat,
+                                        subcategories: catSubcats,
+                                        mouseX: e.clientX,
+                                        mouseY: e.clientY,
+                                      });
+                                      hoverTimeoutRef.current = setTimeout(() => {
+                                        setHoverPanelVisible(true);
+                                      }, 100);
+                                    }}
+                                    onMouseLeave={() => {
+                                      setHoverPanelVisible(false);
+                                      hoverTimeoutRef.current = setTimeout(() => {
+                                        setHoveredCategoryData(null);
+                                      }, 300);
+                                    }}
+                                  >
                                     <div className="flex items-center justify-between">
                                       <div className="flex-1">
                                         <h4
@@ -797,6 +825,59 @@ function Board2() {
                                         </div>
                                       </div>
                                     </div>
+
+                                    {isHovered &&
+                                      hoverPanelVisible &&
+                                      hoveredCategoryData?.category?.id === cat.id &&
+                                      catSubcats.length > 0 && (
+                                        <div
+                                          className="absolute left-1/2 top-0 -translate-x-1/2 w-64 bg-[var(--bg-card)] border border-[var(--border)] rounded-lg shadow-xl z-[60] overflow-hidden"
+                                          onMouseEnter={() => {
+                                            if (hoverTimeoutRef.current) {
+                                              clearTimeout(hoverTimeoutRef.current);
+                                            }
+                                            setHoverPanelVisible(true);
+                                          }}
+                                          onMouseLeave={() => {
+                                            setHoverPanelVisible(false);
+                                            hoverTimeoutRef.current = setTimeout(() => {
+                                              setHoveredCategoryData(null);
+                                            }, 300);
+                                          }}
+                                        >
+                                          <div className="max-h-48 overflow-auto p-1">
+                                            {catSubcats.map(sub => (
+                                              <div
+                                                key={sub.id}
+                                                onClick={e => {
+                                                  e.stopPropagation();
+                                                  setSelectedSubcategory(sub);
+                                                  setHoverPanelVisible(false);
+                                                  setHoveredCategoryData(null);
+                                                }}
+                                                className="flex items-center gap-2 p-2 hover:bg-[var(--bg-card-hover)] rounded cursor-pointer transition-colors"
+                                              >
+                                                <span
+                                                  className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                                                    sub.status === 'done'
+                                                      ? 'bg-green-500'
+                                                      : sub.status === 'in_progress'
+                                                        ? 'bg-blue-500'
+                                                        : sub.status === 'blocked'
+                                                          ? 'bg-red-500'
+                                                          : sub.status === 'pending'
+                                                            ? 'bg-yellow-500'
+                                                            : 'bg-gray-400'
+                                                  }`}
+                                                />
+                                                <span className="text-xs text-[var(--txt-primary)] truncate">
+                                                  {sub.title}
+                                                </span>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      )}
                                   </div>
                                 );
                               })}

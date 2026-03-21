@@ -362,8 +362,14 @@ function ActivityReview({ boards, categories, subcategories, columns, currentUse
   };
 
   const getTagColor = tagName => {
+    if (!tagName) return '#6B7280';
     const tag = tags.find(t => t.name === tagName);
-    return tag ? tag.color : '#6B7280';
+    if (tag) return tag.color;
+    // Fallback colors based on tag name patterns
+    if (tagName.toLowerCase().includes('valid')) return '#F59E0B';
+    if (tagName.toLowerCase().includes('urgent')) return '#EF4444';
+    if (tagName.toLowerCase().includes('attente')) return '#6B7280';
+    return '#3B82F6'; // Default blue
   };
 
   const handleChargeChange = (quarterKey, level) => {
@@ -561,28 +567,31 @@ function ActivityReview({ boards, categories, subcategories, columns, currentUse
                           colSpan={quarterColumns.length}
                           className="p-1 border-l border-std min-h-[30px] align-top bg-card-hover"
                         >
-                          <div className="flex flex-wrap gap-1">
+                          <div className="flex flex-col gap-1">
                             {projectItems
                               .filter(item => {
                                 const pos = getItemPosition(item, quarterColumns);
-                                return pos;
+                                if (!pos) return false;
+                                const effectiveTag = item.tag || item.displayLabel;
+                                return effectiveTag;
                               })
                               .map((item, idx) => {
                                 const pos = getItemPosition(item, quarterColumns);
                                 if (!pos) return null;
                                 const span = pos.endIndex - pos.startIndex + 1;
                                 const cellWidth = 90;
+                                const tagValue = item.tag || item.displayLabel || 'Sans tag';
                                 return (
                                   <div
                                     key={`${item.type}-${item.id}-${idx}`}
                                     className="px-2 py-1 rounded text-white text-xs truncate"
                                     style={{
-                                      backgroundColor: getTagColor(item.displayLabel),
+                                      backgroundColor: getTagColor(tagValue),
                                       width: `calc(${span} * ${cellWidth}px - 8px)`,
                                     }}
-                                    title={`${item.displayLabel || 'Sans tag'} (${item.start_date || '?'} à ${item.due_date || '?'})`}
+                                    title={`${item.title} - Tag: ${tagValue} | item.tag: ${item.tag} | displayLabel: ${item.displayLabel} (${item.start_date || '?'} à ${item.due_date || '?'})`}
                                   >
-                                    {item.displayLabel || 'Sans tag'}
+                                    {item.title} [{tagValue}]
                                   </div>
                                 );
                               })}

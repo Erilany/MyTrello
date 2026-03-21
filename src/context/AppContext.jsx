@@ -1704,6 +1704,13 @@ export function AppProvider({ children }) {
 
   const saveToLibrary = useCallback(
     (type, title, contentJson) => {
+      const existingItems = db.libraryItems || [];
+      const existingItem = existingItems.find(item => item.type === type && item.title === title);
+      if (existingItem) {
+        console.log('[saveToLibrary] Item already exists:', type, title);
+        return existingItem.id;
+      }
+
       const itemId = db.nextIds.libraryItem++;
       const newItem = {
         id: itemId,
