@@ -179,6 +179,29 @@ body {
   animation: slideInFromRight 0.2s ease-out;
 }
 
+@keyframes slideOutToRight {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+.animate-slideOut {
+  animation: slideOutToRight 0.2s ease-in;
+}
+
+.email-drop-zone {
+  border: 2px dashed var(--border);
+  transition: all 0.2s ease;
+}
+
+.email-drop-zone.drag-over {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
 .column-anim-1 {
   animation: fadeSlide 0.4s ease 0.05s both;
 }

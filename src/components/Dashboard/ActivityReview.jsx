@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
 import { loadTagsData } from '../../data/TagsData';
-import { loadZonesData } from '../../data/ZonesData';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, ExternalLink } from 'lucide-react';
 
 const ROLE_TO_ACTIVITY = {
   'Manager de projets': 'MP',
@@ -61,52 +60,23 @@ function getItemDateRange(item) {
   return { start, end };
 }
 
-function getSystemTagFromLibrary() {
-  try {
-    const libraryRaw = localStorage.getItem('mytrello_library_editor');
-    if (!libraryRaw) return null;
-
-    const library = JSON.parse(libraryRaw);
-    if (!Array.isArray(library)) return null;
-
-    let systemTag = null;
-    const findSystemTag = nodes => {
-      for (const node of nodes) {
-        if (node.data && node.data.systemTag && node.data.systemTag.trim() !== '') {
-          systemTag = node.data.systemTag;
-          return true;
-        }
-        if (node.children) {
-          if (findSystemTag(node.children)) return true;
-        }
-      }
-      return false;
-    };
-    findSystemTag(library);
-    return systemTag;
-  } catch (e) {
-    return null;
-  }
-}
-
 function ActivityReview({ boards, categories, subcategories, columns, currentUsername }) {
   const { syncTagsFromLibrary } = useApp();
   const [projectsData, setProjectsData] = useState([]);
   const [taggedItems, setTaggedItems] = useState([]);
   const [quarterColumns, setQuarterColumns] = useState([]);
   const [tags, setTags] = useState([]);
-  const [zones, setZones] = useState([]);
   const [chargeResentie, setChargeResentie] = useState({});
   const [refreshKey, setRefreshKey] = useState(0);
-  const [scrollPosition, setScrollPosition] = useState(0);
   const [syncing, setSyncing] = useState(false);
   const [showAllUsers, setShowAllUsers] = useState(false);
+  const dataScrollRef = useRef(null);
+  const initializedRef = useRef(false);
 
   const currentUserRole = localStorage.getItem('mytrello-user-role') || '';
 
   useEffect(() => {
     setTags(loadTagsData());
-    setZones(loadZonesData());
 
     const saved = localStorage.getItem('mytrello_charge_resentie');
     if (saved) {
@@ -136,8 +106,6 @@ function ActivityReview({ boards, categories, subcategories, columns, currentUse
       return;
     }
 
-    const systemTag = getSystemTagFromLibrary();
-
     // Get all boards from storage directly to show all projects with tagged items
     const storageData = JSON.parse(localStorage.getItem('mytrello_db') || '{}');
     const allBoardsFromStorage = storageData.boards || [];
@@ -157,8 +125,9 @@ function ActivityReview({ boards, categories, subcategories, columns, currentUse
         c => c.name && c.name.toLowerCase().trim() === currentUsername.toLowerCase().trim()
       );
 
-      if (userContacts.length > 0 || true) {
-        // Show all projects to see tagged items
+      const boardLinks = JSON.parse(localStorage.getItem(`board-${board.id}-links`) || '[]');
+
+      if (userContacts.length > 0) {
         const userRoleTitles = userContacts.map(c => c.title);
 
         let activityType = '';
@@ -194,6 +163,7 @@ function ActivityReview({ boards, categories, subcategories, columns, currentUse
           ruo,
           activityType,
           userRoles: userRoleTitles,
+          links: boardLinks,
         });
       }
     }
@@ -205,23 +175,7 @@ function ActivityReview({ boards, categories, subcategories, columns, currentUse
       const today = new Date();
       let latestDate = today;
 
-      const boardIds = projects.map(p => p.id);
       const tagsWithFunctions = loadTagsData();
-
-      // Helper to check if item is assigned to current user
-      const isAssignedToUser = (item, boardId) => {
-        // Check assignee field
-        if (item.assignee && item.assignee.toLowerCase().includes(currentUsername.toLowerCase())) {
-          return true;
-        }
-        // Check internal contacts
-        const contacts = JSON.parse(
-          localStorage.getItem(`board-${boardId}-internalContacts`) || '[]'
-        );
-        return contacts.some(
-          c => c.name && c.name.toLowerCase().trim() === currentUsername.toLowerCase().trim()
-        );
-      };
 
       categories.forEach(cat => {
         // Show ONLY if has a tag AND has dates
@@ -233,11 +187,9 @@ function ActivityReview({ boards, categories, subcategories, columns, currentUse
               const tagInfo = cat.tag ? tagsWithFunctions.find(t => t.name === cat.tag) : null;
               const tagFunctions = tagInfo?.functions || [];
               const hasMatchingFunction =
-                showAllUsers || tagFunctions.length === 0 || tagFunctions.includes(currentUserRole);
+                showAllUsers || (tagFunctions.length > 0 && tagFunctions.includes(currentUserRole));
 
-              const userAssigned = showAllUsers || isAssignedToUser(cat, boardId);
-
-              if (hasMatchingFunction && userAssigned) {
+              if (hasMatchingFunction) {
                 allItems.push({
                   ...cat,
                   type: 'category',
@@ -269,11 +221,9 @@ function ActivityReview({ boards, categories, subcategories, columns, currentUse
               const tagInfo = itemTag ? tagsWithFunctions.find(t => t.name === itemTag) : null;
               const tagFunctions = tagInfo?.functions || [];
               const hasMatchingFunction =
-                showAllUsers || tagFunctions.length === 0 || tagFunctions.includes(currentUserRole);
+                showAllUsers || (tagFunctions.length > 0 && tagFunctions.includes(currentUserRole));
 
-              const userAssigned = showAllUsers || isAssignedToUser(sub, boardId);
-
-              if (hasMatchingFunction && userAssigned) {
+              if (hasMatchingFunction) {
                 allItems.push({
                   ...sub,
                   type: 'subcategory',
@@ -320,16 +270,6 @@ function ActivityReview({ boards, categories, subcategories, columns, currentUse
 
     return sortedGroups;
   }, [projectsData]);
-
-  const tagsUsedInProjects = useMemo(() => {
-    const usedTagNames = new Set();
-    taggedItems.forEach(item => {
-      if (item.tag) {
-        usedTagNames.add(item.tag);
-      }
-    });
-    return tags.filter(tag => usedTagNames.has(tag.name));
-  }, [taggedItems, tags]);
 
   const getItemPosition = (item, quarterCols) => {
     const { start, end } = getItemDateRange(item);
@@ -386,10 +326,33 @@ function ActivityReview({ boards, categories, subcategories, columns, currentUse
     return `T${q} - ${y}`;
   };
 
+  const currentQuarterKey = getCurrentQuarterKey();
+  const quarterWidth = 90;
+  const currentQuarterIdx = quarterColumns.findIndex(col => col.label === currentQuarterKey);
+
+  useEffect(() => {
+    if (dataScrollRef.current && currentQuarterIdx >= 0 && !initializedRef.current) {
+      initializedRef.current = true;
+      const container = dataScrollRef.current;
+      const containerWidth = container.clientWidth;
+      const targetCol = currentQuarterIdx - 1;
+      const scrollPosition = Math.max(
+        0,
+        targetCol * quarterWidth - containerWidth / 2 + quarterWidth
+      );
+      setTimeout(() => {
+        if (dataScrollRef.current) {
+          dataScrollRef.current.scrollLeft = scrollPosition;
+        }
+      }, 100);
+    }
+  }, [currentQuarterIdx, quarterWidth]);
+
   if (!currentUsername) {
     return (
       <div className="p-6 text-center text-secondary">
-        Veuillez configurer votre nom d'utilisateur dans les paramètres pour accéder à cette page.
+        Veuillez configurer votre nom d&apos;utilisateur dans les paramètres pour accéder à cette
+        page.
       </div>
     );
   }
@@ -397,19 +360,16 @@ function ActivityReview({ boards, categories, subcategories, columns, currentUse
   if (projectsData.length === 0) {
     return (
       <div className="p-6 text-center text-secondary">
-        Vous n'êtes actuellement assigné à aucun projet.
+        Vous n&apos;êtes actuellement assigné à aucun projet.
       </div>
     );
   }
-
-  const currentQuarterKey = getCurrentQuarterKey();
-  const quarterWidth = 90;
 
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between p-2 border-b border-std">
         <div className="flex items-center gap-4">
-          <h2 className="text-lg font-semibold text-primary">Revue d'activité</h2>
+          <h2 className="text-lg font-semibold text-primary">Revue d&apos;activité</h2>
           <span className="text-sm text-muted">({taggedItems.length} élément(s) tagué(s))</span>
         </div>
         <button
@@ -441,169 +401,243 @@ function ActivityReview({ boards, categories, subcategories, columns, currentUse
           {showAllUsers ? 'Tous les tags' : 'Mes éléments'}
         </button>
       </div>
-      <div className="flex-1 overflow-x-auto overflow-y-auto">
-        <div style={{ minWidth: `${5 * 60 + quarterColumns.length * quarterWidth}px` }}>
-          <table className="w-full border-collapse text-sm">
+      <div className="flex-1 flex overflow-hidden">
+        <div
+          className="flex-shrink-0 overflow-y-auto border-r border-std"
+          style={{ width: '553px' }}
+        >
+          <table className="w-full border-collapse text-sm table-fixed">
             <thead className="sticky top-0 z-20">
-              <tr className="bg-card border-b border-std">
-                <th className="p-2 text-center text-muted font-medium sticky left-0 bg-card z-30 w-16 border-r border-std">
+              <tr className="bg-card border-b border-std h-12">
+                <th className="p-1 text-center text-muted font-medium w-16 border-r border-std h-12">
                   Type
                 </th>
-                <th className="p-2 text-center text-muted font-medium sticky left-16 bg-card z-30 w-16 border-r border-std">
+                <th className="p-1 text-center text-muted font-medium w-12 border-r border-std h-12">
                   GMR
                 </th>
-                <th className="p-2 text-left text-muted font-medium sticky left-32 bg-card z-30 min-w-[150px] border-r border-std">
+                <th className="p-1 text-left text-muted font-medium w-[400px] border-r border-std h-12">
                   Projet
                 </th>
-                <th className="p-2 text-center text-muted font-medium sticky left-[182px] bg-card z-30 w-20 border-r border-std">
+                <th className="p-1 text-center text-muted font-medium w-15 border-r border-std h-12">
                   Lien
                 </th>
-                {quarterColumns.map((col, idx) => {
-                  const isCurrentQuarter = col.label === currentQuarterKey;
-                  return (
-                    <th
-                      key={col.label}
-                      className={`p-2 text-center text-muted font-medium min-w-[${quarterWidth}px] ${
-                        isCurrentQuarter ? 'bg-accent/20 border-b-2 border-accent' : ''
-                      }`}
-                    >
-                      <div className="flex flex-col">
-                        <span className="text-xs">{col.quarter}</span>
-                        <span className="text-[10px] text-muted">{col.year}</span>
-                      </div>
-                    </th>
-                  );
-                })}
               </tr>
-              <tr className="bg-card-hover border-b border-std">
-                <th
-                  colSpan={5}
-                  className="p-2 text-left font-medium text-primary sticky left-0 bg-card-hover z-30 border-r border-std"
-                >
+              <tr className="bg-card-hover border-b border-std h-12">
+                <td colSpan={4} className="p-1 font-medium text-primary">
                   Charge ressentie
-                </th>
-                {quarterColumns.map(col => {
-                  const isCurrentQuarter = col.label === currentQuarterKey;
-                  return (
-                    <th
-                      key={col.label}
-                      className={`p-2 text-center min-w-[${quarterWidth}px] ${isCurrentQuarter ? 'bg-accent/10' : ''}`}
-                    >
-                      <div className="flex justify-center gap-1">
-                        <button
-                          onClick={() => handleChargeChange(col.label, 'low')}
-                          className={`text-lg p-1 rounded hover:bg-green-100 ${
-                            chargeResentie[col.label] === 'low' ? 'bg-green-100' : ''
-                          }`}
-                          title={`${SMILEY_LEVELS.low.emoji} ${SMILEY_LEVELS.low.label}`}
-                        >
-                          {SMILEY_LEVELS.low.emoji}
-                        </button>
-                        <button
-                          onClick={() => handleChargeChange(col.label, 'medium')}
-                          className={`text-lg p-1 rounded hover:bg-yellow-100 ${
-                            chargeResentie[col.label] === 'medium' ? 'bg-yellow-100' : ''
-                          }`}
-                          title={`${SMILEY_LEVELS.medium.emoji} ${SMILEY_LEVELS.medium.label}`}
-                        >
-                          {SMILEY_LEVELS.medium.emoji}
-                        </button>
-                        <button
-                          onClick={() => handleChargeChange(col.label, 'high')}
-                          className={`text-lg p-1 rounded hover:bg-red-100 ${
-                            chargeResentie[col.label] === 'high' ? 'bg-red-100' : ''
-                          }`}
-                          title={`${SMILEY_LEVELS.high.emoji} ${SMILEY_LEVELS.high.label}`}
-                        >
-                          {SMILEY_LEVELS.high.emoji}
-                        </button>
-                      </div>
-                    </th>
-                  );
-                })}
+                </td>
               </tr>
             </thead>
             <tbody>
               {groupedByZone.map(([zone, projects]) => (
                 <React.Fragment key={zone}>
-                  <tr className="bg-accent/10">
-                    <td
-                      colSpan={5}
-                      className="p-2 font-semibold text-primary sticky left-0 bg-accent/10 z-10 border-r border-std"
-                    >
+                  <tr className="bg-accent/10 border-b border-std h-12">
+                    <td colSpan={4} className="p-1 font-semibold text-primary">
                       {zone}
                     </td>
-                    <td
-                      colSpan={quarterColumns.length}
-                      className="p-2 font-semibold text-primary"
-                    />
                   </tr>
-                  {projects.map(project => {
-                    const projectItems = taggedItems.filter(item => item.boardId === project.id);
-
-                    return (
-                      <tr key={project.id} className="border-b border-std hover:bg-card-hover">
-                        <td className="p-2 text-center font-medium text-accent sticky left-0 bg-card z-10 border-r border-std">
-                          {project.activityType}
-                        </td>
-                        <td className="p-2 text-center text-secondary sticky left-16 bg-card z-10 border-r border-std">
-                          {project.gmr || '-'}
-                        </td>
-                        <td className="p-2 text-primary sticky left-32 bg-card z-10 max-w-[150px] border-r border-std">
-                          <div className="text-xs truncate">
-                            <span className="font-mono bg-card-hover px-1 py-0.5 rounded">
-                              {project.priority || '-'}
-                            </span>
-                            <span className="mx-1 text-muted">|</span>
-                            <span className="font-mono text-secondary">{project.ruo || '-'}</span>
-                            <span className="mx-1 text-muted">|</span>
-                            <span className="font-medium">{project.title}</span>
+                  {projects.map(project => (
+                    <tr key={project.id} className="border-b border-std hover:bg-card-hover h-12">
+                      <td className="p-1 text-center font-medium text-accent h-12">
+                        {project.activityType}
+                      </td>
+                      <td className="p-1 text-center text-secondary h-12">{project.gmr || '-'}</td>
+                      <td className="p-1 text-primary h-12 overflow-hidden">
+                        <div className="text-xs truncate">
+                          <span className="font-mono bg-card-hover px-1 py-0.5 rounded">
+                            {project.priority || '-'}
+                          </span>
+                          <span className="mx-1 text-muted">|</span>
+                          <span className="font-mono text-secondary">{project.ruo || '-'}</span>
+                          <span className="mx-1 text-muted">|</span>
+                          <span className="font-medium">{project.title}</span>
+                        </div>
+                      </td>
+                      <td className="p-1 text-center h-12 align-middle border-r border-std">
+                        {project.links && project.links.length > 0 ? (
+                          <div className="flex flex-col items-center justify-center gap-0.5 h-full">
+                            {project.links.slice(0, 3).map((link, idx) => (
+                              <button
+                                key={idx}
+                                onClick={() => {
+                                  if (link.url) {
+                                    window.open(
+                                      link.url.startsWith('http')
+                                        ? link.url
+                                        : `https://${link.url}`,
+                                      '_blank'
+                                    );
+                                  }
+                                }}
+                                className="text-blue-500 hover:text-blue-700"
+                                title={link.title || link.url}
+                              >
+                                <ExternalLink size={12} />
+                              </button>
+                            ))}
+                            {project.links.length > 3 && (
+                              <span className="text-xs text-muted">
+                                +{project.links.length - 3}
+                              </span>
+                            )}
                           </div>
-                        </td>
-                        <td className="p-2 text-center sticky left-[182px] bg-card z-10 border-r border-std">
+                        ) : (
                           <span className="text-xs text-muted">-</span>
-                        </td>
-                        <td
-                          colSpan={quarterColumns.length}
-                          className="p-1 border-l border-std min-h-[30px] align-top bg-card-hover"
-                        >
-                          <div className="flex flex-col gap-1">
-                            {projectItems
-                              .filter(item => {
-                                const pos = getItemPosition(item, quarterColumns);
-                                if (!pos) return false;
-                                const effectiveTag = item.tag || item.displayLabel;
-                                return effectiveTag;
-                              })
-                              .map((item, idx) => {
-                                const pos = getItemPosition(item, quarterColumns);
-                                if (!pos) return null;
-                                const span = pos.endIndex - pos.startIndex + 1;
-                                const cellWidth = 90;
-                                const tagValue = item.tag || item.displayLabel || 'Sans tag';
-                                return (
-                                  <div
-                                    key={`${item.type}-${item.id}-${idx}`}
-                                    className="px-2 py-1 rounded text-white text-xs truncate"
-                                    style={{
-                                      backgroundColor: getTagColor(tagValue),
-                                      width: `calc(${span} * ${cellWidth}px - 8px)`,
-                                    }}
-                                    title={`${item.title} - Tag: ${tagValue} | item.tag: ${item.tag} | displayLabel: ${item.displayLabel} (${item.start_date || '?'} à ${item.due_date || '?'})`}
-                                  >
-                                    {item.title} [{tagValue}]
-                                  </div>
-                                );
-                              })}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
+                        )}
+                      </td>
+                    </tr>
+                  ))}
                 </React.Fragment>
               ))}
             </tbody>
           </table>
+        </div>
+        <div ref={dataScrollRef} className="flex-1 overflow-x-auto overflow-y-auto">
+          <div style={{ minWidth: `${quarterColumns.length * quarterWidth}px` }}>
+            <table className="w-full border-collapse text-sm table-fixed">
+              <thead className="sticky top-0 z-20">
+                <tr className="bg-card border-b border-std h-12">
+                  {quarterColumns.map((col, idx) => {
+                    const isCurrentQuarter = idx === currentQuarterIdx;
+                    return (
+                      <th
+                        key={col.label}
+                        className={`p-1 text-center font-medium min-w-[${quarterWidth}px] h-12 ${
+                          isCurrentQuarter
+                            ? 'bg-green-200 border-b-2 border-green-500 text-green-800 font-bold'
+                            : 'text-muted bg-card'
+                        }`}
+                      >
+                        <div className="flex flex-col">
+                          <span className={`text-xs ${isCurrentQuarter ? 'text-green-700' : ''}`}>
+                            {col.quarter}
+                          </span>
+                          <span
+                            className={`text-[10px] ${isCurrentQuarter ? 'text-green-600' : 'text-muted'}`}
+                          >
+                            {col.year}
+                          </span>
+                        </div>
+                      </th>
+                    );
+                  })}
+                </tr>
+                <tr className="bg-card-hover border-b border-std h-12">
+                  {quarterColumns.map((col, colIdx) => {
+                    const isCurrentQuarter = colIdx === currentQuarterIdx;
+                    return (
+                      <th
+                        key={col.label}
+                        className={`p-1 text-center min-w-[${quarterWidth}px] h-12 ${isCurrentQuarter ? 'bg-green-100' : ''}`}
+                      >
+                        <div className="flex justify-center items-center gap-0.5 h-full">
+                          <button
+                            onClick={() => handleChargeChange(col.label, 'low')}
+                            className={`text-sm p-0.5 rounded hover:bg-green-100 ${
+                              chargeResentie[col.label] === 'low' ? 'bg-green-100' : ''
+                            }`}
+                            title={`${SMILEY_LEVELS.low.emoji} ${SMILEY_LEVELS.low.label}`}
+                          >
+                            {SMILEY_LEVELS.low.emoji}
+                          </button>
+                          <button
+                            onClick={() => handleChargeChange(col.label, 'medium')}
+                            className={`text-sm p-0.5 rounded hover:bg-yellow-100 ${
+                              chargeResentie[col.label] === 'medium' ? 'bg-yellow-100' : ''
+                            }`}
+                            title={`${SMILEY_LEVELS.medium.emoji} ${SMILEY_LEVELS.medium.label}`}
+                          >
+                            {SMILEY_LEVELS.medium.emoji}
+                          </button>
+                          <button
+                            onClick={() => handleChargeChange(col.label, 'high')}
+                            className={`text-sm p-0.5 rounded hover:bg-red-100 ${
+                              chargeResentie[col.label] === 'high' ? 'bg-red-100' : ''
+                            }`}
+                            title={`${SMILEY_LEVELS.high.emoji} ${SMILEY_LEVELS.high.label}`}
+                          >
+                            {SMILEY_LEVELS.high.emoji}
+                          </button>
+                        </div>
+                      </th>
+                    );
+                  })}
+                </tr>
+              </thead>
+              <tbody>
+                {groupedByZone.map(([zone, projects]) => (
+                  <React.Fragment key={zone}>
+                    <tr className="bg-accent/10 border-b border-std h-12">
+                      {quarterColumns.map((col, colIdx) => {
+                        const isCurrentQuarter = colIdx === currentQuarterIdx;
+                        return (
+                          <td
+                            key={col.label}
+                            className={`p-1 text-center min-w-[${quarterWidth}px] h-12 ${isCurrentQuarter ? 'bg-green-50' : ''}`}
+                          />
+                        );
+                      })}
+                    </tr>
+                    {projects.map(project => {
+                      const projectItems = taggedItems.filter(item => item.boardId === project.id);
+
+                      return (
+                        <tr
+                          key={project.id}
+                          className="border-b border-std hover:bg-card-hover h-12"
+                        >
+                          {quarterColumns.map((_, colIdx) => {
+                            const isCurrentQuarterCol = colIdx === currentQuarterIdx;
+                            return (
+                              <td
+                                key={colIdx}
+                                className={`p-1 border-r border-std h-12 align-middle ${isCurrentQuarterCol ? 'bg-green-50' : 'bg-card-hover'}`}
+                                style={{ minWidth: `${quarterWidth}px` }}
+                              >
+                                <div className="flex flex-col gap-0.5 overflow-hidden h-full">
+                                  {projectItems
+                                    .filter(item => {
+                                      const pos = getItemPosition(item, quarterColumns);
+                                      if (!pos) return false;
+                                      const effectiveTag = item.tag || item.displayLabel;
+                                      return (
+                                        effectiveTag &&
+                                        pos.startIndex <= colIdx &&
+                                        pos.endIndex >= colIdx
+                                      );
+                                    })
+                                    .map((item, idx) => {
+                                      const pos = getItemPosition(item, quarterColumns);
+                                      if (!pos) return null;
+                                      const tagValue = item.tag || item.displayLabel || 'Sans tag';
+                                      return (
+                                        <div
+                                          key={`${item.type}-${item.id}-${idx}`}
+                                          className="px-2 py-1 rounded text-white text-xs truncate"
+                                          style={{
+                                            backgroundColor: getTagColor(tagValue),
+                                          }}
+                                          title={`${item.title} - Tag: ${tagValue} (${item.start_date || '?'} à ${item.due_date || '?'})`}
+                                        >
+                                          {item.title} [{tagValue}]{' '}
+                                          {pos.endIndex > pos.startIndex
+                                            ? `(T${quarterColumns[pos.startIndex]?.quarter})`
+                                            : ''}
+                                        </div>
+                                      );
+                                    })}
+                                </div>
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      );
+                    })}
+                  </React.Fragment>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>

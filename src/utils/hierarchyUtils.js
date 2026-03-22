@@ -39,29 +39,32 @@ export function getFlatTaskList(
     const categoryId = category.id || 'nocategory';
 
     if (!grouped[chapter]) {
-      grouped[chapter] = {};
+      grouped[chapter] = { tasks: [], cards: {} };
     }
-    if (!grouped[chapter][cardId]) {
-      grouped[chapter][cardId] = {
-        card,
-        categories: {},
-      };
+    grouped[chapter].tasks.push(task);
+
+    if (!grouped[chapter].cards[cardId]) {
+      grouped[chapter].cards[cardId] = { card, tasks: [], categories: {} };
     }
-    if (!grouped[chapter][cardId].categories[categoryId]) {
-      grouped[chapter][cardId].categories[categoryId] = {
+    grouped[chapter].cards[cardId].tasks.push(task);
+
+    if (!grouped[chapter].cards[cardId].categories[categoryId]) {
+      grouped[chapter].cards[cardId].categories[categoryId] = {
         category,
         tasks: [],
       };
     }
-    grouped[chapter][cardId].categories[categoryId].tasks.push(task);
+    grouped[chapter].cards[cardId].categories[categoryId].tasks.push(task);
   });
 
   const flatList = [];
   let rowIndex = 0;
 
-  Object.entries(grouped).forEach(([chapter, cards]) => {
+  Object.entries(grouped).forEach(([chapter, chapterData]) => {
     const chapterKey = chapter;
     const isChapterExpanded = expandedChapters.has(chapterKey);
+
+    const chapterDates = getAggregatedDates(chapterData.tasks);
 
     flatList.push({
       type: 'chapter',
@@ -69,12 +72,15 @@ export function getFlatTaskList(
       title: chapter,
       level: 0,
       rowIndex: rowIndex++,
+      aggregatedDates: chapterDates,
     });
 
     if (isChapterExpanded) {
-      Object.entries(cards).forEach(([cardId, cardData]) => {
+      Object.entries(chapterData.cards).forEach(([cardId, cardData]) => {
         const cardKey = `${chapterKey}|${cardId}`;
         const isCardExpanded = expandedCards.has(cardKey);
+
+        const cardDates = getAggregatedDates(cardData.tasks);
 
         flatList.push({
           type: 'card',
@@ -82,37 +88,73 @@ export function getFlatTaskList(
           title: cardData.card.title,
           level: 1,
           rowIndex: rowIndex++,
+          aggregatedDates: cardDates,
         });
 
-        Object.entries(cardData.categories).forEach(([catId, catData]) => {
-          const catKey = `${cardKey}|${catId}`;
-          const isCatExpanded = expandedCategories.has(catKey);
+        if (isCardExpanded) {
+          Object.entries(cardData.categories).forEach(([catId, catData]) => {
+            const catKey = `${cardKey}|${catId}`;
+            const isCatExpanded = expandedCategories.has(catKey);
 
-          flatList.push({
-            type: 'category',
-            key: `cat-${catId}`,
-            title: catData.category.title,
-            level: 2,
-            rowIndex: rowIndex++,
-          });
+            const catDates = getAggregatedDates(catData.tasks);
 
-          if (isCatExpanded) {
-            catData.tasks.forEach(task => {
-              flatList.push({
-                type: 'task',
-                key: `task-${task.id}`,
-                title: task.title,
-                task,
-                level: 3,
-                rowIndex: rowIndex++,
-              });
+            flatList.push({
+              type: 'category',
+              key: `cat-${catId}`,
+              title: catData.category.title,
+              level: 2,
+              rowIndex: rowIndex++,
+              aggregatedDates: catDates,
             });
-          }
-        });
+
+            if (isCatExpanded) {
+              catData.tasks.forEach(task => {
+                flatList.push({
+                  type: 'task',
+                  key: `task-${task.id}`,
+                  title: task.title,
+                  task,
+                  level: 3,
+                  rowIndex: rowIndex++,
+                });
+              });
+            }
+          });
+        }
       });
     }
   });
 
   console.log('[hierarchyUtils] Final flatList count:', flatList.length);
   return flatList;
+}
+
+function getAggregatedDates(tasks) {
+  if (!tasks || tasks.length === 0) {
+    return null;
+  }
+
+  let minStart = null;
+  let maxEnd = null;
+
+  tasks.forEach(task => {
+    const start = task.start_date ? new Date(task.start_date) : null;
+    const end = task.due_date ? new Date(task.due_date) : null;
+
+    if (start && (!minStart || start < minStart)) {
+      minStart = start;
+    }
+    if (end && (!maxEnd || end > maxEnd)) {
+      maxEnd = end;
+    }
+  });
+
+  if (!minStart && !maxEnd) {
+    return null;
+  }
+
+  return {
+    start: minStart,
+    end: maxEnd,
+  };
 }

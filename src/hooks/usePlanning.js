@@ -10,27 +10,77 @@ export function usePlanning(currentBoard, tasks = []) {
   const [ganttStartDate, setGanttStartDate] = useState(null);
   const [ganttStartDateInput, setGanttStartDateInput] = useState(0);
 
+  const initializedRef = useRef(false);
+  const tasksRef = useRef(tasks);
+
   const storageKey = currentBoard?.id ? `planning_${currentBoard.id}` : null;
 
+  const expandAllForTasks = useCallback(taskList => {
+    const allChapters = new Set();
+    const allCards = new Set();
+    const allCategories = new Set();
+
+    taskList.forEach(task => {
+      const card = task.card || {};
+      const category = task.category || {};
+      const chapter = card.chapter || 'Sans chapitre';
+      const cardId = card.id;
+      const categoryId = category.id;
+
+      allChapters.add(chapter);
+      if (cardId) {
+        allCards.add(`${chapter}|${cardId}`);
+      }
+      if (categoryId && cardId) {
+        allCategories.add(`${chapter}|${cardId}|${categoryId}`);
+      }
+    });
+
+    setExpandedPlanningChapters(allChapters);
+    setExpandedPlanningCards(allCards);
+    setExpandedPlanningCategories(allCategories);
+  }, []);
+
   useEffect(() => {
-    if (!storageKey) return;
+    tasksRef.current = tasks;
+  }, [tasks]);
+
+  useEffect(() => {
+    if (!storageKey || initializedRef.current) return;
 
     try {
       const saved = localStorage.getItem(storageKey);
+      const currentTasks = tasksRef.current;
+
       if (saved) {
         const data = JSON.parse(saved);
         if (data.selectedTasks) setPlanningSelectedTasks(data.selectedTasks);
-        if (data.chapters) setExpandedPlanningChapters(new Set(data.chapters));
-        if (data.cards) setExpandedPlanningCards(new Set(data.cards));
-        if (data.categories) setExpandedPlanningCategories(new Set(data.categories));
+        if (data.chapters && data.chapters.length > 0) {
+          setExpandedPlanningChapters(new Set(data.chapters));
+        } else if (currentTasks.length > 0) {
+          setTimeout(() => expandAllForTasks(currentTasks), 0);
+        }
+        if (data.cards && data.cards.length > 0) {
+          setExpandedPlanningCards(new Set(data.cards));
+        }
+        if (data.categories && data.categories.length > 0) {
+          setExpandedPlanningCategories(new Set(data.categories));
+        }
         if (data.sortOrder) setPlanningSortOrder(data.sortOrder);
         if (data.ganttZoom) setGanttZoom(data.ganttZoom);
         if (data.ganttStartDate) setGanttStartDate(data.ganttStartDate);
+      } else if (currentTasks.length > 0) {
+        setTimeout(() => expandAllForTasks(currentTasks), 0);
       }
+      initializedRef.current = true;
     } catch (e) {
       console.error('Error loading planning state:', e);
+      if (tasksRef.current.length > 0) {
+        setTimeout(() => expandAllForTasks(tasksRef.current), 0);
+      }
+      initializedRef.current = true;
     }
-  }, [storageKey]);
+  }, [storageKey, expandAllForTasks]);
 
   const prevStateRef = useRef(null);
 

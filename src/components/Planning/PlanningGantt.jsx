@@ -58,19 +58,54 @@ export default function PlanningGantt({
     if (scrollToToday && ganttDays.length > 0) {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-      const todayIndex = ganttDays.findIndex(day => {
+
+      let targetIndex = -1;
+      let minDiff = Infinity;
+
+      ganttDays.forEach((day, idx) => {
         const d = new Date(day);
         d.setHours(0, 0, 0, 0);
-        return d.getTime() === today.getTime();
+        const diff = Math.abs(d.getTime() - today.getTime());
+        if (diff < minDiff) {
+          minDiff = diff;
+          targetIndex = idx;
+        }
       });
 
-      if (todayIndex >= 0 && dataScrollRef.current) {
+      if (minDiff > 60 * 24 * 60 * 60 * 1000) {
+        return;
+      }
+
+      if (targetIndex >= 0 && dataScrollRef.current) {
         const container = dataScrollRef.current;
-        const scrollPosition = todayIndex * dayWidth - container.clientWidth / 2 + dayWidth;
+        const scrollPosition = targetIndex * dayWidth - container.clientWidth / 2 + dayWidth;
         container.scrollLeft = Math.max(0, scrollPosition);
       }
     }
   }, [scrollToToday, ganttDays, dayWidth]);
+
+  const months = useMemo(() => {
+    const m = [];
+    let currentMonth = null;
+
+    ganttDays.forEach((day, idx) => {
+      const monthKey = `${day.getFullYear()}-${day.getMonth()}`;
+      const monthName = day.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+
+      if (!currentMonth || currentMonth.key !== monthKey) {
+        if (currentMonth) m.push(currentMonth);
+        currentMonth = {
+          key: monthKey,
+          name: monthName,
+          days: [],
+          startIdx: idx,
+        };
+      }
+      currentMonth.days.push({ day, idx });
+    });
+    if (currentMonth) m.push(currentMonth);
+    return m;
+  }, [ganttDays]);
 
   const weeks = useMemo(() => {
     const w = [];
@@ -97,11 +132,21 @@ export default function PlanningGantt({
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const todayIndex = ganttDays.findIndex(day => {
+
+  let todayIndex = -1;
+  let minDiff = Infinity;
+  ganttDays.forEach((day, idx) => {
     const d = new Date(day);
     d.setHours(0, 0, 0, 0);
-    return d.getTime() === today.getTime();
+    const diff = Math.abs(d.getTime() - today.getTime());
+    if (diff < minDiff) {
+      minDiff = diff;
+      todayIndex = idx;
+    }
   });
+  if (minDiff > 60 * 24 * 60 * 60 * 1000) {
+    todayIndex = -1;
+  }
 
   const getLevelStyles = type => {
     switch (type) {
@@ -118,34 +163,53 @@ export default function PlanningGantt({
 
   return (
     <div
-      className="flex-1 min-w-0 flex flex-col relative"
+      className="flex-1 min-w-0 flex flex-col relative overflow-hidden"
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
     >
-      {/* Wrapper avec overflow-y scroll pour synchroniser le scroll vertical */}
+      {/* Header sticky pour Mois et Semaines */}
       <div
-        ref={el => {
-          dataScrollRef.current = el;
-          if (containerRef) containerRef.current = el;
-        }}
-        className="flex-1 overflow-y-auto overflow-x-auto relative"
-        onScroll={onScroll}
+        className="flex-shrink-0 bg-card border-b border-std z-20 overflow-hidden"
+        style={{ height: ROW_HEIGHTS_PX.chapter * 2 }}
       >
-        {/* Contenu total avec largeur = jours */}
-        <div style={{ width: `${totalDays * dayWidth}px`, minWidth: `${totalDays * dayWidth}px` }}>
-          {/* Header sticky */}
+        <div
+          className="h-full overflow-x-auto overflow-y-hidden"
+          ref={el => {
+            if (el && containerRef) {
+              containerRef.current = el;
+            }
+          }}
+          onScroll={e => {
+            if (dataScrollRef.current) {
+              dataScrollRef.current.scrollLeft = e.target.scrollLeft;
+            }
+            if (onScroll) onScroll(e);
+          }}
+        >
           <div
-            className="sticky top-0 z-20 bg-card border-b border-std"
-            style={{ height: ROW_HEIGHTS_PX.chapter }}
+            style={{ width: `${totalDays * dayWidth}px`, minWidth: `${totalDays * dayWidth}px` }}
           >
-            <div className="flex h-full items-center">
+            {/* Ligne Mois */}
+            <div className="flex h-6 bg-blue-50 dark:bg-blue-900/30 border-b border-std">
+              {months.map(month => (
+                <div
+                  key={month.key}
+                  className="text-xs font-bold text-blue-700 dark:text-blue-300 flex items-center justify-center border-r border-std"
+                  style={{ width: `${month.days.length * dayWidth}px` }}
+                >
+                  {month.name.charAt(0).toUpperCase() + month.name.slice(1)}
+                </div>
+              ))}
+            </div>
+            {/* Ligne Semaines */}
+            <div className="flex h-6 items-center">
               {weeks.map((week, weekIdx) => (
                 <div key={`week-${weekIdx}-${week.key}`} className="flex h-full">
                   <div
                     className="text-xs text-center p-1 border-r border-std bg-card-hover font-medium text-secondary flex items-center justify-center"
                     style={{
                       minWidth: `${week.days.length * dayWidth}px`,
-                      height: ROW_HEIGHTS_PX.chapter,
+                      height: 24,
                     }}
                   >
                     S{week.week}
@@ -154,7 +218,22 @@ export default function PlanningGantt({
               ))}
             </div>
           </div>
+        </div>
+      </div>
 
+      {/* Contenu scrollable */}
+      <div
+        ref={dataScrollRef}
+        className="flex-1 overflow-auto relative"
+        onScroll={e => {
+          if (containerRef && containerRef.current) {
+            containerRef.current.scrollLeft = e.target.scrollLeft;
+          }
+          if (onScroll) onScroll(e);
+        }}
+      >
+        {/* Contenu total avec largeur = jours */}
+        <div style={{ width: `${totalDays * dayWidth}px`, minWidth: `${totalDays * dayWidth}px` }}>
           {/* Lignes de données */}
           <div className="relative">
             {todayIndex >= 0 && (
@@ -167,6 +246,7 @@ export default function PlanningGantt({
             {flatTaskList.map((item, rowIdx) => {
               const isTask = item.type === 'task' && item.task;
               const rowHeight = getRowHeight(item.type);
+              const hasAggregatedDates = item.aggregatedDates && ganttDays.length > 0;
 
               return (
                 <div
@@ -207,6 +287,17 @@ export default function PlanningGantt({
                       dayWidth={dayWidth}
                     />
                   )}
+
+                  {!isTask && hasAggregatedDates && (
+                    <AggregatedBar
+                      dates={item.aggregatedDates}
+                      ganttDays={ganttDays}
+                      rowHeight={rowHeight}
+                      dayWidth={dayWidth}
+                      type={item.type}
+                      title={item.title}
+                    />
+                  )}
                 </div>
               );
             })}
@@ -238,6 +329,59 @@ function TaskBar({ task, pos, rowHeight, dayWidth }) {
         />
       )}
       <span className="truncate relative z-10">{task.title}</span>
+    </div>
+  );
+}
+
+function AggregatedBar({ dates, ganttDays, rowHeight, dayWidth, type, title }) {
+  if (!dates || !ganttDays || ganttDays.length === 0) return null;
+
+  const rangeStart = ganttDays[0];
+  const rangeEnd = ganttDays[ganttDays.length - 1];
+  const rangeStartTime = rangeStart.getTime();
+  const rangeEndTime = rangeEnd.getTime();
+  const totalDays = Math.ceil((rangeEndTime - rangeStartTime) / (24 * 60 * 60 * 1000)) + 1;
+
+  let startOffset = 0;
+  let duration = totalDays;
+
+  if (dates.start) {
+    const startTime = dates.start.getTime();
+    startOffset = Math.max(0, Math.ceil((startTime - rangeStartTime) / (24 * 60 * 60 * 1000)));
+  }
+
+  if (dates.end) {
+    const endTime = dates.end.getTime();
+    const endOffset = Math.ceil((endTime - rangeStartTime) / (24 * 60 * 60 * 1000));
+    duration = Math.max(1, endOffset - startOffset + 1);
+  }
+
+  const barHeight = type === 'category' ? 8 : 14;
+  const topOffset = Math.max(0, (rowHeight - barHeight) / 2);
+
+  const colorMap = {
+    chapter: 'bg-blue-400 opacity-60',
+    card: 'bg-green-400 opacity-60',
+    category: 'bg-yellow-400 opacity-60',
+  };
+
+  const barColor = colorMap[type] || 'bg-gray-400 opacity-60';
+
+  const startDateStr = dates.start ? dates.start.toLocaleDateString('fr-FR') : '?';
+  const endDateStr = dates.end ? dates.end.toLocaleDateString('fr-FR') : '?';
+
+  return (
+    <div
+      className={`absolute h-full rounded ${barColor} flex items-center text-white text-xs px-1 cursor-pointer hover:opacity-80 overflow-hidden`}
+      style={{
+        left: `${startOffset * dayWidth}px`,
+        width: `${duration * dayWidth}px`,
+        top: `${topOffset}px`,
+        height: `${barHeight}px`,
+      }}
+      title={`${title} (${startDateStr} - ${endDateStr})`}
+    >
+      <span className="truncate font-medium">{title}</span>
     </div>
   );
 }

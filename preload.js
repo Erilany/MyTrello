@@ -1,7 +1,7 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('electron', {
-  invoke: (channel, data) => {
+  invoke: (channel, ...args) => {
     const allowedChannels = [
       'db:query',
       'db:get',
@@ -17,9 +17,10 @@ contextBridge.exposeInMainWorld('electron', {
       'cardColors:get',
       'cardColors:set',
       'cardColors:reset',
+      'shell:openMsg',
     ];
     if (allowedChannels.includes(channel)) {
-      return ipcRenderer.invoke(channel, data);
+      return ipcRenderer.invoke(channel, ...args);
     }
     throw new Error(`Canal IPC non autorisé : ${channel}`);
   },

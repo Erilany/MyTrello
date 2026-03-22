@@ -13,19 +13,33 @@ export function getGanttDateRange(
     return { start, end };
   }
 
-  let minDate = new Date(today);
-  let maxDate = new Date(today);
+  let minDate = null;
+  let maxDate = null;
 
-  tasks.forEach(task => {
-    if (task.start_date) {
-      const d = new Date(task.start_date);
-      if (d < minDate) minDate = d;
+  tasks.forEach(item => {
+    if (item.aggregatedDates) {
+      if (item.aggregatedDates.start && (!minDate || item.aggregatedDates.start < minDate)) {
+        minDate = item.aggregatedDates.start;
+      }
+      if (item.aggregatedDates.end && (!maxDate || item.aggregatedDates.end > maxDate)) {
+        maxDate = item.aggregatedDates.end;
+      }
     }
-    if (task.due_date) {
-      const d = new Date(task.due_date);
-      if (d > maxDate) maxDate = d;
+
+    if (item.start_date) {
+      const d = new Date(item.start_date);
+      if (!minDate || d < minDate) minDate = d;
+    }
+    if (item.due_date) {
+      const d = new Date(item.due_date);
+      if (!maxDate || d > maxDate) maxDate = d;
     }
   });
+
+  if (!minDate || !maxDate) {
+    minDate = new Date(today);
+    maxDate = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000);
+  }
 
   if (ganttStartDate) {
     minDate = new Date(ganttStartDate);

@@ -5,6 +5,8 @@
   "main": "electron.js",
   "scripts": {
     "dev": "npx vite",
+    "electron:dev": "concurrently \"npx vite\" \"wait-on http://localhost:5175 && electron .\"",
+    "electron": "electron .",
     "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint src --ext .js,.jsx",

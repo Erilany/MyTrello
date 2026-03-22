@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { X, Upload, Folder, FileText, List, CheckSquare, GripVertical, Trash2 } from 'lucide-react';
 import { parseMSProjectXmlWithDates } from '../../utils/xmlParser';
 
@@ -43,6 +43,20 @@ function PlanningImportCompare({
   const [selectedXmlIds, setSelectedXmlIds] = useState(new Set());
   const [dragOverTarget, setDragOverTarget] = useState(null);
   const [pendingDragIds, setPendingDragIds] = useState([]);
+  const [createFullChains, setCreateFullChains] = useState(true);
+  const [expandedChapters, setExpandedChapters] = useState(new Set());
+
+  const toggleChapter = useCallback(chapterId => {
+    setExpandedChapters(prev => {
+      const next = new Set(prev);
+      if (next.has(chapterId)) {
+        next.delete(chapterId);
+      } else {
+        next.add(chapterId);
+      }
+      return next;
+    });
+  }, []);
 
   const projectChapters = useMemo(() => {
     const chapters = [];
@@ -487,15 +501,25 @@ function PlanningImportCompare({
     const result = {
       items: draggedItems,
       parentChapter: null,
+      createFullChains: createFullChains,
     };
 
     onImport(result);
-  }, [draggedItems, onImport]);
+  }, [draggedItems, onImport, createFullChains]);
+
+  const handleResetDragged = useCallback(() => {
+    setDraggedItems([]);
+    setSelectedXmlIds(new Set());
+  }, []);
+
+  const wasImporting = useRef(false);
 
   useEffect(() => {
-    if (!importing && xmlItems.length > 0 && draggedItems.length === 0) {
+    if (wasImporting.current && importing === false && xmlItems.length > 0) {
+      onClose();
     }
-  }, [importing, xmlItems.length, draggedItems.length, onClose]);
+    wasImporting.current = importing;
+  }, [importing, xmlItems.length, onClose]);
 
   const handleClose = useCallback(() => {
     if (!importing) {
@@ -947,6 +971,8 @@ function PlanningImportCompare({
       return <>{rootItems.map(dragged => renderFlatItem(dragged))}</>;
     };
 
+    const isExpanded = expandedChapters.has(chapter.id);
+
     return (
       <div key={chapter.id} className="mb-3">
         <div
@@ -961,14 +987,22 @@ function PlanningImportCompare({
             handleDrop(e, { id: chapter.id, type: 'chapter', name: chapter.name }, chapter.name)
           }
         >
+          <button
+            onClick={() => toggleChapter(chapter.id)}
+            className="flex items-center justify-center w-5 h-5 text-xs font-bold text-blue-600 bg-blue-100 hover:bg-blue-200 rounded"
+          >
+            {isExpanded ? '-' : '+'}
+          </button>
           <Folder size={16} className="text-blue-600" />
           <span className="flex-1 truncate">{chapter.name}</span>
           <span className="text-xs text-blue-500">({existingCardCount + draggedCount})</span>
         </div>
-        <div style={{ marginLeft: '16px' }}>
-          {chapter.children?.map(card => renderProjectCardWithDraggedChildren(card, 2))}
-          {renderRootDraggedItems()}
-        </div>
+        {isExpanded && (
+          <div style={{ marginLeft: '16px' }}>
+            {chapter.children?.map(card => renderProjectCardWithDraggedChildren(card, 2))}
+            {renderRootDraggedItems()}
+          </div>
+        )}
       </div>
     );
   };
@@ -1144,26 +1178,53 @@ function PlanningImportCompare({
         )}
 
         {!importing && (
-          <div className="p-4 border-b border-[var(--border)]">
+          <div className="p-4 border-b border-[var(--border)] flex items-center gap-4">
             <label className="flex items-center gap-2 px-4 py-2 bg-[var(--accent)] text-white rounded-lg cursor-pointer hover:opacity-90 w-fit">
               <Upload size={16} />
               <span>Sélectionner un fichier XML MS Project</span>
               <input type="file" accept=".xml" className="hidden" onChange={handleFileSelect} />
             </label>
             {xmlItems.length > 0 && (
-              <span className="ml-4 text-sm text-[var(--txt-secondary)]">
+              <span className="text-sm text-[var(--txt-secondary)]">
                 {xmlItems.length} élément(s) - {draggedItems.length} à importer
               </span>
+            )}
+            {draggedItems.length > 0 && (
+              <button
+                onClick={handleResetDragged}
+                className="flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 border border-red-300 rounded-lg"
+              >
+                <Trash2 size={14} />
+                Réinitialiser ({draggedItems.length})
+              </button>
             )}
           </div>
         )}
 
         <div className="flex flex-1 overflow-hidden">
           <div className="flex-1 border-r border-[var(--border)] flex flex-col">
-            <div className="p-3 bg-gray-50 dark:bg-gray-800 border-b border-[var(--border)]">
+            <div className="p-3 bg-gray-50 dark:bg-gray-800 border-b border-[var(--border)] flex items-center justify-between">
               <h3 className="font-medium text-[var(--txt-primary)]">Données du Projet</h3>
-              <p className="text-xs text-[var(--txt-muted)]">Droppez ici pour ajouter au projet</p>
+              {projectChapters.length > 0 && (
+                <button
+                  onClick={() => {
+                    if (expandedChapters.size === projectChapters.length) {
+                      setExpandedChapters(new Set());
+                    } else {
+                      setExpandedChapters(new Set(projectChapters.map(ch => ch.id)));
+                    }
+                  }}
+                  className="text-xs text-blue-600 hover:text-blue-800 px-2 py-1"
+                >
+                  {expandedChapters.size === projectChapters.length
+                    ? 'Tout réplier'
+                    : 'Tout déplier'}
+                </button>
+              )}
             </div>
+            <p className="text-xs text-[var(--txt-muted)] px-3 py-2">
+              Droppez ici pour ajouter au projet
+            </p>
             <div className="flex-1 overflow-y-auto p-2">
               {projectHierarchy.length === 0 ? (
                 <div className="text-center py-8 text-[var(--txt-muted)]">
@@ -1196,13 +1257,24 @@ function PlanningImportCompare({
         </div>
 
         <div className="p-4 border-t border-[var(--border)] flex items-center justify-between">
-          <div className="flex gap-4 text-xs text-[var(--txt-muted)]">
-            <span className="flex items-center gap-1">
-              <span className="w-3 h-3 bg-green-500 rounded"></span> Sélectionné
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="w-3 h-3 bg-gray-400 rounded opacity-50"></span> Chapitre
-            </span>
+          <div className="flex items-center gap-4">
+            <div className="flex gap-4 text-xs text-[var(--txt-muted)]">
+              <span className="flex items-center gap-1">
+                <span className="w-3 h-3 bg-green-500 rounded"></span> Sélectionné
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="w-3 h-3 bg-gray-400 rounded opacity-50"></span> Chapitre
+              </span>
+            </div>
+            <label className="flex items-center gap-2 text-xs text-[var(--txt-secondary)] cursor-pointer">
+              <input
+                type="checkbox"
+                checked={createFullChains}
+                onChange={e => setCreateFullChains(e.target.checked)}
+                className="w-4 h-4 accent-green-500"
+              />
+              Créer chaînes complètes
+            </label>
           </div>
           <div className="flex gap-2">
             <button

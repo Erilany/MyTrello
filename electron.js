@@ -1,5 +1,17 @@
-const { app, BrowserWindow, ipcMain, dialog, Menu, Tray, globalShortcut } = require('electron');
+const {
+  app,
+  BrowserWindow,
+  ipcMain,
+  dialog,
+  Menu,
+  Tray,
+  globalShortcut,
+  shell,
+} = require('electron');
 const path = require('path');
+const fs = require('fs');
+const os = require('os');
+const { exec } = require('child_process');
 const Store = require('electron-store');
 const { initDatabase } = require('./src/services/database');
 
@@ -42,7 +54,7 @@ function createWindow() {
   });
 
   if (isDev) {
-    mainWindow.loadURL('http://localhost:5174');
+    mainWindow.loadURL('http://localhost:5175');
     mainWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
       callback({
         responseHeaders: {
@@ -452,4 +464,34 @@ ipcMain.handle('cardColors:reset', async () => {
     })
   );
   return { success: true, data: store.get('cardColors') };
+});
+
+ipcMain.handle('shell:openMsg', async (event, base64Data, filename) => {
+  try {
+    console.log('[Electron] Opening MSG file:', filename);
+
+    const base64 = base64Data.replace(/^data:application\/vnd\.ms-outlook;base64,/, '');
+    const buffer = Buffer.from(base64, 'base64');
+
+    const tempDir = os.tmpdir();
+    const tempFilePath = path.join(tempDir, filename);
+
+    fs.writeFileSync(tempFilePath, buffer);
+    console.log('[Electron] Temp file created at:', tempFilePath);
+
+    return new Promise(resolve => {
+      exec(`start "" "${tempFilePath}"`, error => {
+        if (error) {
+          console.error('[Electron] Error opening MSG file:', error);
+          resolve({ success: false, error: error.message });
+        } else {
+          console.log('[Electron] MSG file opened successfully');
+          resolve({ success: true });
+        }
+      });
+    });
+  } catch (error) {
+    console.error('[Electron] Error opening MSG file:', error);
+    return { success: false, error: error.message };
+  }
 });

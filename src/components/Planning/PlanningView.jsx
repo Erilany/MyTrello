@@ -45,12 +45,6 @@ export default function PlanningView({
   const ganttContainerRef = useRef(null);
   const sidebarContainerRef = useRef(null);
 
-  useEffect(() => {
-    if (!importing && showImportCompare) {
-      setShowImportCompare(false);
-    }
-  }, [importing, showImportCompare]);
-
   const handleToggleAll = useCallback(() => {
     if (isAllExpanded) {
       if (onExpandAll) {
@@ -177,18 +171,6 @@ export default function PlanningView({
     setScrollToToday(prev => !prev);
   }, []);
 
-  const computedGanttDateRange = useMemo(() => {
-    return getGanttDateRange(selectedTasks, ganttStartDate, zoom);
-  }, [selectedTasks, ganttStartDate, zoom]);
-
-  const computedGanttDays = useMemo(() => {
-    return getGanttDays(selectedTasks, ganttStartDate, zoom);
-  }, [selectedTasks, ganttStartDate, zoom]);
-
-  const computedGetTaskBarPosition = useMemo(() => {
-    return task => getTaskBarPosition(task, selectedTasks, ganttStartDate, zoom);
-  }, [selectedTasks, ganttStartDate, zoom]);
-
   const flatTaskList = useMemo(() => {
     console.log('[PlanningView] flatTaskList computing');
     console.log('[PlanningView] selectedTasks for flatList:', selectedTasks.length);
@@ -213,6 +195,18 @@ export default function PlanningView({
     );
     return result;
   }, [selectedTasks, expandedChapters, expandedCards, expandedCategories]);
+
+  const computedGanttDateRange = useMemo(() => {
+    return getGanttDateRange(flatTaskList, ganttStartDate, zoom);
+  }, [flatTaskList, ganttStartDate, zoom]);
+
+  const computedGanttDays = useMemo(() => {
+    return getGanttDays(flatTaskList, ganttStartDate, zoom);
+  }, [flatTaskList, ganttStartDate, zoom]);
+
+  const computedGetTaskBarPosition = useMemo(() => {
+    return task => getTaskBarPosition(task, flatTaskList, ganttStartDate, zoom);
+  }, [flatTaskList, ganttStartDate, zoom]);
 
   useEffect(() => {
     if (scrollToToday && ganttContainerRef.current) {
@@ -279,13 +273,6 @@ export default function PlanningView({
             Aujourd'hui
           </button>
           <button
-            onClick={handleToggleAll}
-            className="px-2 py-1.5 text-sm bg-input border border-std rounded text-primary hover:bg-card-hover"
-            title={isAllExpanded ? 'Réplier tout' : 'Déplier tout'}
-          >
-            {isAllExpanded ? 'Réplier' : 'Déplier'}
-          </button>
-          <button
             onClick={handleExportMSProject}
             className="flex items-center px-3 py-1.5 text-sm bg-accent text-white rounded-lg hover:opacity-90"
           >
@@ -294,7 +281,7 @@ export default function PlanningView({
           </button>
           <button
             onClick={() => setShowImportCompare(true)}
-            className="flex items-center px-3 py-1.5 text-sm bg-[var(--bg-card)] border border-[var(--border)] text-[var(--txt-secondary)] rounded-lg hover:bg-[var(--bg-card-hover)]"
+            className="flex items-center px-3 py-1.5 text-sm bg-accent text-white rounded-lg hover:opacity-90"
           >
             <Upload size={14} className="mr-2" />
             Importer MS Project

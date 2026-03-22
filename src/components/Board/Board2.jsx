@@ -29,6 +29,7 @@ import {
   Building,
   Pencil,
   Link as LinkIcon,
+  FolderOpen,
 } from 'lucide-react';
 
 function Board2() {
@@ -298,7 +299,7 @@ function Board2() {
 
   const handleImportPlanning = async result => {
     console.log('[Import] handleImportPlanning called, result:', result);
-    const { items } = result;
+    const { items, createFullChains } = result;
 
     if (!currentBoard) {
       alert('Aucun projet sélectionné');
@@ -317,7 +318,12 @@ function Board2() {
     }
 
     setImporting(true);
-    console.log('[Import] Starting import with', items.length, 'items');
+    console.log(
+      '[Import] Starting import with',
+      items.length,
+      'items, createFullChains:',
+      createFullChains
+    );
     console.log(
       '[Import] Items to import:',
       items.map(i => ({ name: i.name, level: i.outlineLevel, chapter: i.assignedChapter }))
@@ -356,6 +362,44 @@ function Board2() {
           currentCatId = null;
           cardsCreated++;
           console.log('[Import] Created card:', item.name, 'id:', cardId);
+
+          if (createFullChains && cardId) {
+            const catId = await createCategory(
+              cardId,
+              item.name,
+              '',
+              'normal',
+              item.finish || null,
+              '',
+              null,
+              item.duration || 1,
+              null,
+              null
+            );
+            currentCatId = catId;
+            createdCategories.push({
+              id: catId,
+              name: item.name,
+              start: item.start,
+              finish: item.finish,
+              duration: item.duration || 1,
+            });
+            catsCreated++;
+            console.log('[Import] Created category (full chain):', item.name, 'id:', catId);
+
+            const subId = await createSubcategory(
+              catId,
+              item.name,
+              '',
+              'normal',
+              item.finish || null,
+              '',
+              item.start || null,
+              item.duration || 1
+            );
+            subcatsCreated++;
+            console.log('[Import] Created subcategory (full chain):', item.name, 'id:', subId);
+          }
         } catch (error) {
           console.error('[Import] Error creating card:', error);
         }
@@ -392,6 +436,21 @@ function Board2() {
             'finish:',
             item.finish
           );
+
+          if (createFullChains && catId) {
+            const subId = await createSubcategory(
+              catId,
+              item.name,
+              '',
+              'normal',
+              item.finish || null,
+              '',
+              item.start || null,
+              item.duration || 1
+            );
+            subcatsCreated++;
+            console.log('[Import] Created subcategory (full chain):', item.name, 'id:', subId);
+          }
         } catch (error) {
           console.error('[Import] Error creating category:', error);
         }
@@ -454,32 +513,36 @@ function Board2() {
       }
     }
 
-    const catsWithoutSubcats = createdCategories.filter(cat => !catsWithSubcats.has(cat.id));
-    console.log('[Import] Categories without subcategories:', catsWithoutSubcats.length);
-    for (const cat of catsWithoutSubcats) {
-      try {
-        await createSubcategory(
-          cat.id,
-          cat.name,
-          '',
-          'normal',
-          cat.finish || null,
-          '',
-          cat.start || null,
-          cat.duration || 1
-        );
-        subcatsCreated++;
-        console.log(
-          '[Import] Created task from empty category:',
-          cat.name,
-          'start:',
-          cat.start,
-          'finish:',
-          cat.finish
-        );
-      } catch (error) {
-        console.error('[Import] Error creating task for empty category:', error);
+    if (!createFullChains) {
+      const catsWithoutSubcats = createdCategories.filter(cat => !catsWithSubcats.has(cat.id));
+      console.log('[Import] Categories without subcategories:', catsWithoutSubcats.length);
+      for (const cat of catsWithoutSubcats) {
+        try {
+          await createSubcategory(
+            cat.id,
+            cat.name,
+            '',
+            'normal',
+            cat.finish || null,
+            '',
+            cat.start || null,
+            cat.duration || 1
+          );
+          subcatsCreated++;
+          console.log(
+            '[Import] Created task from empty category:',
+            cat.name,
+            'start:',
+            cat.start,
+            'finish:',
+            cat.finish
+          );
+        } catch (error) {
+          console.error('[Import] Error creating task for empty category:', error);
+        }
       }
+    } else {
+      console.log('[Import] Full chains enabled - skipping empty category check');
     }
 
     console.log(
@@ -491,15 +554,19 @@ function Board2() {
       subcatsCreated,
       'subcategories'
     );
+
     setImporting(false);
-    alert(
-      `Import terminé: ${cardsCreated} carte(s), ${catsCreated} action(s), ${subcatsCreated} tâche(s)`
-    );
 
     if (currentBoard) {
       console.log('[Import] Reloading board data...');
       loadBoard(currentBoard.id);
     }
+
+    setTimeout(() => {
+      alert(
+        `Import terminé: ${cardsCreated} carte(s), ${catsCreated} action(s), ${subcatsCreated} tâche(s)`
+      );
+    }, 100);
   };
 
   useEffect(() => {
@@ -870,9 +937,26 @@ function Board2() {
                                                             : 'bg-gray-400'
                                                   }`}
                                                 />
-                                                <span className="text-xs text-[var(--txt-primary)] truncate">
-                                                  {sub.title}
-                                                </span>
+                                                <div className="flex-1 min-w-0">
+                                                  <div className="text-xs text-[var(--txt-primary)] truncate">
+                                                    {sub.title}
+                                                  </div>
+                                                  <div className="flex items-center gap-2 text-xs text-[var(--txt-muted)]">
+                                                    {sub.assignee && (
+                                                      <span className="truncate">
+                                                        👤 {sub.assignee}
+                                                      </span>
+                                                    )}
+                                                    {sub.due_date && (
+                                                      <span className="whitespace-nowrap">
+                                                        📅{' '}
+                                                        {new Date(sub.due_date).toLocaleDateString(
+                                                          'fr-FR'
+                                                        )}
+                                                      </span>
+                                                    )}
+                                                  </div>
+                                                </div>
                                               </div>
                                             ))}
                                           </div>

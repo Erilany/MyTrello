@@ -188,6 +188,7 @@ export function loadFromStorage() {
     subcategories: [],
     libraryItems: [],
     messages: [],
+    subcategoryEmails: [],
     nextIds: {
       board: 1,
       column: 1,
@@ -196,6 +197,7 @@ export function loadFromStorage() {
       subcategory: 1,
       libraryItem: 1,
       message: 1,
+      email: 1,
     },
   };
 }
@@ -222,9 +224,16 @@ function initDefaultData() {
       subcategory: 1,
       libraryItem: 1,
       order: 1,
+      email: 1,
     };
   } else if (!data.nextIds.order) {
     data.nextIds.order = 1;
+  }
+  if (!data.nextIds.email) {
+    data.nextIds.email = 1;
+  }
+  if (!data.subcategoryEmails) {
+    data.subcategoryEmails = [];
   }
 
   // Ensure libraryItems has data - always check library editor first (admin defines the master data)
@@ -352,6 +361,7 @@ export function AppProvider({ children }) {
   const [subcategories, setSubcategories] = useState([]);
   const [libraryItems, setLibraryItems] = useState([]);
   const [messages, setMessages] = useState([]);
+  const [subcategoryEmails, setSubcategoryEmails] = useState([]);
   const [currentUsername, setCurrentUsername] = useState(
     () => localStorage.getItem('mytrello-username') || ''
   );
@@ -679,6 +689,10 @@ export function AppProvider({ children }) {
   useEffect(() => {
     setLibraryItems(db.libraryItems || []);
   }, [db.libraryItems]);
+
+  useEffect(() => {
+    setSubcategoryEmails(db.subcategoryEmails || []);
+  }, [db.subcategoryEmails]);
 
   const generateTestData = () => {
     if (!currentBoard && db.boards.length === 0) {
@@ -1652,6 +1666,62 @@ export function AppProvider({ children }) {
     }
   };
 
+  const addEmailToSubcategory = (subcategoryId, emailData) => {
+    const emailId = db.nextIds.email++;
+    const newEmail = {
+      id: emailId,
+      subcategory_id: Number(subcategoryId),
+      date: emailData.date,
+      subject: emailData.subject,
+      filepath: emailData.filepath,
+      filename: emailData.filename,
+      created_at: new Date().toISOString(),
+    };
+    const newDb = {
+      ...db,
+      subcategoryEmails: [...(db.subcategoryEmails || []), newEmail],
+      nextIds: { ...db.nextIds },
+    };
+    saveDb(newDb);
+    return emailId;
+  };
+
+  const removeEmailFromSubcategory = emailId => {
+    const email = db.subcategoryEmails?.find(e => Number(e.id) === Number(emailId));
+    if (email && email.filepath) {
+      localStorage.removeItem(`mytrello_email_${emailId}`);
+    }
+    const newDb = {
+      ...db,
+      subcategoryEmails: (db.subcategoryEmails || []).filter(e => Number(e.id) !== Number(emailId)),
+    };
+    saveDb(newDb);
+  };
+
+  const updateEmailSubject = (emailId, newSubject) => {
+    const newDb = {
+      ...db,
+      subcategoryEmails: (db.subcategoryEmails || []).map(e =>
+        Number(e.id) === Number(emailId) ? { ...e, subject: newSubject } : e
+      ),
+    };
+    saveDb(newDb);
+  };
+
+  const getEmailsForSubcategory = subcategoryId => {
+    return (db.subcategoryEmails || []).filter(
+      e => Number(e.subcategory_id) === Number(subcategoryId)
+    );
+  };
+
+  const saveEmailFile = (emailId, fileData) => {
+    localStorage.setItem(`mytrello_email_${emailId}`, fileData);
+  };
+
+  const getEmailFile = emailId => {
+    return localStorage.getItem(`mytrello_email_${emailId}`);
+  };
+
   const moveSubcategory = (subcategoryId, newCategoryId, newPosition) => {
     const subcategory = db.subcategories.find(s => Number(s.id) === Number(subcategoryId));
     if (!subcategory) return;
@@ -2058,6 +2128,7 @@ export function AppProvider({ children }) {
     subcategories,
     libraryItems,
     messages,
+    subcategoryEmails,
     db,
     currentUsername,
     setUsername,
@@ -2113,6 +2184,12 @@ export function AppProvider({ children }) {
     updateSubcategory,
     deleteSubcategory,
     moveSubcategory,
+    addEmailToSubcategory,
+    removeEmailFromSubcategory,
+    updateEmailSubject,
+    getEmailsForSubcategory,
+    saveEmailFile,
+    getEmailFile,
     loadLibrary,
     generateTestData,
     exportData,
