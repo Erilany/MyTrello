@@ -880,6 +880,40 @@ export function AppProvider({ children }) {
     }
   };
 
+  const deduplicateLibraryEditor = treeData => {
+    const seenCategories = new Set();
+    const seenSubcategories = new Set();
+
+    const deduplicateNode = node => {
+      if (!node.children) return;
+      node.children = node.children.filter(child => {
+        if (child.type === 'categorie') {
+          if (seenCategories.has(child.id)) return false;
+          seenCategories.add(child.id);
+        } else if (child.type === 'souscategorie') {
+          if (seenSubcategories.has(child.id)) return false;
+          seenSubcategories.add(child.id);
+        }
+        deduplicateNode(child);
+        return true;
+      });
+    };
+
+    treeData.forEach(chapter => {
+      seenCategories.clear();
+      seenSubcategories.clear();
+      if (chapter.children) {
+        chapter.children.forEach(card => {
+          seenCategories.clear();
+          seenSubcategories.clear();
+          deduplicateNode(card);
+        });
+      }
+    });
+
+    return treeData;
+  };
+
   const importData = jsonData => {
     try {
       const parsed = typeof jsonData === 'string' ? JSON.parse(jsonData) : jsonData;
@@ -897,7 +931,8 @@ export function AppProvider({ children }) {
         localStorage.setItem('mytrello_library_favorites', JSON.stringify(parsed.libraryFavorites));
       }
       if (parsed.libraryEditor) {
-        localStorage.setItem('mytrello_library_editor', JSON.stringify(parsed.libraryEditor));
+        const cleanLibraryEditor = deduplicateLibraryEditor(parsed.libraryEditor);
+        localStorage.setItem('mytrello_library_editor', JSON.stringify(cleanLibraryEditor));
       }
       if (parsed.libraryTemplates) {
         localStorage.setItem('mytrello_library_templates', JSON.stringify(parsed.libraryTemplates));

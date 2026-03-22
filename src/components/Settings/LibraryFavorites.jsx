@@ -73,69 +73,111 @@ function LibraryFavorites() {
     window.dispatchEvent(new Event('library-favorites-updated'));
   };
 
-  const removeFavorite = (type, item) => {
-    if (!item) return;
+  const regenerateAllFavorites = () => {
+    const libraryEditorRaw = localStorage.getItem('mytrello_library_editor');
+    if (!libraryEditorRaw) {
+      alert('Aucune bibliothèque trouvée');
+      return;
+    }
 
-    const itemId =
-      type === 'card' ? item.id : type === 'category' ? item.categoryId : item.subcategoryId;
-    const itemTitle = item.title;
+    try {
+      const treeData = JSON.parse(libraryEditorRaw);
+      const newFavorites = {
+        cards: [],
+        categories: [],
+        subcategories: [],
+      };
 
-    const checkExistsInLibrary = () => {
-      if (type === 'card') {
-        return libraryItems.some(i => i.type === 'card' && i.id === item.id);
-      } else if (type === 'category') {
-        return libraryItems.some(i => i.type === 'category' && i.id === item.categoryId);
-      } else {
-        return libraryItems.some(i => i.type === 'subcategory' && i.id === item.subcategoryId);
-      }
-    };
+      const processNode = node => {
+        if (node.type === 'carte') {
+          newFavorites.cards.push(node.id);
+          (node.children || []).forEach(child => {
+            if (child.type === 'categorie') {
+              newFavorites.categories.push({
+                cardId: node.id,
+                cardTitle: node.titre,
+                title: child.titre,
+              });
+              (child.children || []).forEach(sub => {
+                if (sub.type === 'souscategorie') {
+                  newFavorites.subcategories.push({
+                    cardId: node.id,
+                    cardTitle: node.titre,
+                    categoryTitle: child.titre,
+                    title: sub.titre,
+                  });
+                }
+              });
+            }
+          });
+        }
+      };
 
-    const existsInLibrary = checkExistsInLibrary();
+      treeData.forEach(chapter => {
+        (chapter.children || []).forEach(processNode);
+      });
 
-    if (existsInLibrary) {
       if (
         !window.confirm(
-          `Êtes-vous sûr de vouloir supprimer "${itemTitle}" des favoris ?\n\nCet élément existe toujours dans le Modèle Bibliothèque. Cette action ne le supprimera pas du Modèle Bibliothèque.`
+          `Régénérer tous les favoris ?\n\nCela remplacera vos favoris actuels par tous les éléments de la bibliothèque.\n\nTotal: ${newFavorites.cards.length} cartes, ${newFavorites.categories.length} catégories, ${newFavorites.subcategories.length} sous-catégories`
         )
       ) {
         return;
       }
+
+      saveFavorites(newFavorites);
+    } catch (e) {
+      console.error('[DEBUG regenerateAllFavorites] Error:', e);
+      alert('Erreur lors de la régénération des favoris');
+    }
+  };
+
+  const removeFavorite = (type, item) => {
+    if (!item) return;
+
+    const itemTitle = item.title;
+
+    if (!window.confirm(`Retirer "${itemTitle}" des favoris ?`)) {
+      return;
     }
 
     const newFavorites = {
-      cards: favorites.cards || [],
-      categories: favorites.categories || [],
-      subcategories: favorites.subcategories || [],
+      cards: [...(favorites.cards || [])],
+      categories: [...(favorites.categories || [])],
+      subcategories: [...(favorites.subcategories || [])],
     };
 
-    if (type === 'card') {
+    if (type === 'card' && item.id !== undefined) {
       newFavorites.cards = newFavorites.cards.filter(id => id !== item.id);
-      newFavorites.categories = newFavorites.categories.filter(c => c.cardId !== item.id);
-      newFavorites.subcategories = newFavorites.subcategories.filter(s => s.cardId !== item.id);
-    } else if (type === 'category') {
+    } else if (type === 'category' && item.cardId !== undefined) {
       newFavorites.categories = newFavorites.categories.filter(
-        c => c.cardId !== item.cardId || c.title !== item.title
+        c => !(c.cardId === item.cardId && c.title === item.title)
       );
       newFavorites.subcategories = newFavorites.subcategories.filter(
-        s => s.cardId !== item.cardId || s.categoryTitle !== item.title
+        s => !(s.cardId === item.cardId && s.categoryTitle === item.title)
       );
       const remainingCats = newFavorites.categories.filter(c => c.cardId === item.cardId);
       if (remainingCats.length === 0) {
-        newFavorites.cards = newFavorites.cards.filter(id => id !== item.cardId);
+        const remainingSubs = newFavorites.subcategories.filter(s => s.cardId === item.cardId);
+        if (remainingSubs.length === 0) {
+          newFavorites.cards = newFavorites.cards.filter(id => id !== item.cardId);
+        }
       }
-    } else if (type === 'subcategory') {
+    } else if (type === 'subcategory' && item.cardId !== undefined) {
       newFavorites.subcategories = newFavorites.subcategories.filter(
         s =>
-          s.cardId !== item.cardId ||
-          s.categoryTitle !== item.categoryTitle ||
-          s.title !== item.title
+          !(
+            s.cardId === item.cardId &&
+            s.categoryTitle === item.categoryTitle &&
+            s.title === item.title
+          )
       );
       const remainingSubs = newFavorites.subcategories.filter(
         s => s.cardId === item.cardId && s.categoryTitle === item.categoryTitle
       );
       if (remainingSubs.length === 0) {
         newFavorites.categories = newFavorites.categories.filter(
-          c => c.cardId !== item.cardId || c.title !== item.categoryTitle
+          c => !(c.cardId === item.cardId && c.title === item.categoryTitle)
         );
         const remainingCats = newFavorites.categories.filter(c => c.cardId === item.cardId);
         if (remainingCats.length === 0) {
@@ -480,6 +522,13 @@ function LibraryFavorites() {
             className="px-3 py-1.5 text-sm bg-[var(--bg-card)] hover:bg-[var(--bg-card-hover)] border border-[var(--border)] rounded text-[var(--txt-secondary)]"
           >
             Tout replier
+          </button>
+          <button
+            onClick={regenerateAllFavorites}
+            className="px-3 py-1.5 text-sm bg-green-600 hover:bg-green-700 border border-green-700 rounded text-white"
+            title="Régénérer tous les favoris depuis le modèle"
+          >
+            Régénérer les favoris
           </button>
         </div>
       </div>
