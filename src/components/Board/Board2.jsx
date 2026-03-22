@@ -30,7 +30,12 @@ import {
   Pencil,
   Link as LinkIcon,
   FolderOpen,
+  Mail,
+  Upload,
+  ChevronDown,
+  ChevronRight,
 } from 'lucide-react';
+import { GROUPES_MARCHANDISES, CATEGORY_KEYS } from '../../data/GroupesMarchandises';
 
 function Board2() {
   const {
@@ -217,6 +222,251 @@ function Board2() {
   const [showAddCommande, setShowAddCommande] = useState(false);
   const [newCommandeTitle, setNewCommandeTitle] = useState('');
   const [activeTabCommande, setActiveTabCommande] = useState('affectation');
+
+  const [commandeDetail, setCommandeDetail] = useState({
+    affectation: {
+      numeroAffaire: '',
+      dateReception: '',
+      dateLimite: '',
+      interlocuteur: '',
+      designation: '',
+      localisation: '',
+      maitreOuvrage: '',
+      typeIntervention: '',
+      descriptionSommaire: '',
+      surfaceVolume: '',
+    },
+    commande: {
+      numeroCommande: '',
+      dateCommande: '',
+      objet: '',
+      estimation: '',
+    },
+    groupesMarchandises: {},
+  });
+
+  const [expandedCategories, setExpandedCategories] = useState(new Set());
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importData, setImportData] = useState(null);
+
+  const toggleMarchandiseCategory = categoryKey => {
+    setExpandedCategories(prev => {
+      const next = new Set(prev);
+      if (next.has(categoryKey)) {
+        next.delete(categoryKey);
+      } else {
+        next.add(categoryKey);
+      }
+      return next;
+    });
+  };
+
+  const initializeGroupesMarchandises = () => {
+    const gm = {};
+    CATEGORY_KEYS.forEach(key => {
+      gm[key] = GROUPES_MARCHANDISES[key].items.map(item => ({
+        label: item,
+        checked: false,
+      }));
+    });
+    return gm;
+  };
+
+  const handleSelectCommande = cmd => {
+    setSelectedCommande(cmd);
+    setSelectedAvenant(null);
+    if (cmd.detail) {
+      setCommandeDetail(cmd.detail);
+    } else {
+      setCommandeDetail({
+        affectation: {
+          numeroAffaire: cmd.donnees?.numero || '',
+          dateReception: cmd.donnees?.dateReception || '',
+          dateLimite: cmd.donnees?.dateLimite || '',
+          interlocuteur: cmd.donnees?.interlocuteur || '',
+          designation: cmd.donnees?.designation || '',
+          localisation: cmd.donnees?.localisation || '',
+          maitreOuvrage: cmd.donnees?.maitreOuvrage || '',
+          typeIntervention: cmd.donnees?.typeIntervention || '',
+          descriptionSommaire: cmd.donnees?.descriptionSommaire || '',
+          surfaceVolume: cmd.donnees?.surfaceVolume || '',
+        },
+        commande: {
+          numeroCommande: cmd.donnees?.numero || '',
+          dateCommande: cmd.donnees?.dateCommande || '',
+          objet: cmd.donnees?.objet || '',
+          estimation: cmd.donnees?.estimation || '',
+        },
+        groupesMarchandises: initializeGroupesMarchandises(),
+      });
+    }
+  };
+
+  const handleUpdateAffectation = (field, value) => {
+    setCommandeDetail(prev => ({
+      ...prev,
+      affectation: { ...prev.affectation, [field]: value },
+    }));
+  };
+
+  const handleUpdateCommande = (field, value) => {
+    setCommandeDetail(prev => ({
+      ...prev,
+      commande: { ...prev.commande, [field]: value },
+    }));
+  };
+
+  const handleToggleMarchandise = (categoryKey, itemLabel) => {
+    setCommandeDetail(prev => ({
+      ...prev,
+      groupesMarchandises: {
+        ...prev.groupesMarchandises,
+        [categoryKey]: prev.groupesMarchandises[categoryKey].map(item =>
+          item.label === itemLabel ? { ...item, checked: !item.checked } : item
+        ),
+      },
+    }));
+  };
+
+  const handleSelectAllInCategory = categoryKey => {
+    const allChecked = commandeDetail.groupesMarchandises[categoryKey]?.every(i => i.checked);
+    setCommandeDetail(prev => ({
+      ...prev,
+      groupesMarchandises: {
+        ...prev.groupesMarchandises,
+        [categoryKey]: prev.groupesMarchandises[categoryKey].map(item => ({
+          ...item,
+          checked: !allChecked,
+        })),
+      },
+    }));
+  };
+
+  const getCategoryCount = categoryKey => {
+    const items = commandeDetail.groupesMarchandises[categoryKey] || [];
+    const checked = items.filter(i => i.checked).length;
+    return { checked, total: items.length };
+  };
+
+  const saveCommandeDetail = useCallback(() => {
+    if (!selectedCommande) return;
+    const updatedCommandes = commandes.map(c =>
+      c.id === selectedCommande.id ? { ...c, detail: commandeDetail } : c
+    );
+    setCommandes(updatedCommandes);
+  }, [selectedCommande, commandeDetail, commandes]);
+
+  useEffect(() => {
+    if (selectedCommande) {
+      saveCommandeDetail();
+    }
+  }, [commandeDetail]);
+
+  const handleImportFile = event => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const data = JSON.parse(e.target.result);
+        setImportData(data);
+        setShowImportModal(true);
+      } catch (error) {
+        alert('Erreur lors de la lecture du fichier JSON');
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const applyImportData = () => {
+    if (!importData || !selectedCommande) return;
+
+    const newDetail = { ...commandeDetail };
+
+    if (importData.commande) {
+      if (importData.commande.date) {
+        const [day, month, year] = importData.commande.date.split('/');
+        newDetail.commande.dateCommande = `${year}-${month}-${day}`;
+      }
+      if (importData.commande.objet) {
+        newDetail.commande.objet = importData.commande.objet;
+      }
+    }
+
+    if (importData.demandeur) {
+      newDetail.affectation.interlocuteur = importData.demandeur.responsable_projet || '';
+    }
+
+    if (importData.entreprise) {
+      newDetail.affectation.maitreOuvrage = importData.entreprise.nom || '';
+    }
+
+    if (importData.marche_cadre) {
+      newDetail.commande.numeroCommande = importData.marche_cadre.numero || '';
+    }
+
+    if (importData.groupes_marchandises) {
+      Object.keys(importData.groupes_marchandises).forEach(catKey => {
+        if (newDetail.groupesMarchandises[catKey]) {
+          const importedItems = importData.groupes_marchandises[catKey];
+          newDetail.groupesMarchandises[catKey] = newDetail.groupesMarchandises[catKey].map(
+            item => {
+              if (typeof item === 'string') {
+                return { label: item, checked: importedItems.includes(item) };
+              }
+              const isInImport = importedItems.some(
+                imp => (typeof imp === 'string' ? imp : imp.label) === item.label
+              );
+              return { ...item, checked: isInImport };
+            }
+          );
+        }
+      });
+    }
+
+    setCommandeDetail(newDetail);
+    setShowImportModal(false);
+    setImportData(null);
+  };
+
+  const handleGenerateEmail = () => {
+    if (!commandeDetail) return;
+
+    const { affectation, commande, groupesMarchandises } = commandeDetail;
+    const checkedItems = [];
+    CATEGORY_KEYS.forEach(key => {
+      const items = groupesMarchandises[key] || [];
+      items.filter(i => i.checked).forEach(i => checkedItems.push(i.label));
+    });
+
+    const subject = encodeURIComponent(
+      `Commande ${commande.numeroCommande || ''} - ${commande.objet || 'Objet à définir'}`
+    );
+
+    let body = `Bonjour,
+
+N° Commande: ${commande.numeroCommande || 'N/A'}
+Date: ${commande.dateCommande || 'N/A'}
+Objet: ${commande.objet || 'N/A'}
+Estimation: ${commande.estimation || 'N/A'}
+
+N° Affaire: ${affectation.numeroAffaire || 'N/A'}
+Date limite: ${affectation.dateLimite || 'N/A'}
+Interlocuteur: ${affectation.interlocuteur || 'N/A'}
+
+Désignation: ${affectation.designation || 'N/A'}
+Localisation: ${affectation.localisation || 'N/A'}
+Maître d'ouvrage: ${affectation.maitreOuvrage || 'N/A'}
+
+Groupes de marchandises sélectionnés:
+${checkedItems.length > 0 ? checkedItems.map(item => `- ${item}`).join('\n') : 'Aucun'}
+
+Cordialement`;
+
+    const mailtoLink = `mailto:?subject=${subject}&body=${encodeURIComponent(body)}`;
+    window.open(mailtoLink);
+  };
 
   useEffect(() => {
     if (currentBoard) {
@@ -1193,7 +1443,7 @@ function Board2() {
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => {
-                          setSelectedCommande(cmd);
+                          handleSelectCommande(cmd);
                           setSelectedAvenant(null);
                         }}
                         className={`flex-1 text-left p-2 rounded border text-sm ${
@@ -1234,7 +1484,7 @@ function Board2() {
                       <div key={av.id} className="flex items-center gap-2 ml-4">
                         <button
                           onClick={() => {
-                            setSelectedCommande(cmd);
+                            handleSelectCommande(cmd);
                             setSelectedAvenant(av);
                           }}
                           className={`flex-1 text-left p-2 rounded border text-sm ${
@@ -1310,13 +1560,35 @@ function Board2() {
                   <button
                     onClick={() => {
                       if (newCommandeTitle.trim()) {
+                        const newDetail = {
+                          affectation: {
+                            numeroAffaire: '',
+                            dateReception: '',
+                            dateLimite: '',
+                            interlocuteur: '',
+                            designation: '',
+                            localisation: '',
+                            maitreOuvrage: '',
+                            typeIntervention: '',
+                            descriptionSommaire: '',
+                            surfaceVolume: '',
+                          },
+                          commande: {
+                            numeroCommande: '',
+                            dateCommande: '',
+                            objet: '',
+                            estimation: '',
+                          },
+                          groupesMarchandises: initializeGroupesMarchandises(),
+                        };
                         const newCmd = {
                           id: Date.now(),
                           title: newCommandeTitle.trim(),
                           donnees: { numero: '', date: '', objet: '', estimation: '' },
+                          detail: newDetail,
                         };
                         setCommandes([...commandes, newCmd]);
-                        setSelectedCommande(newCmd);
+                        handleSelectCommande(newCmd);
                         setNewCommandeTitle('');
                         setShowAddCommande(false);
                       }
@@ -1386,6 +1658,8 @@ function Board2() {
                           <label className="block text-xs text-secondary mb-1">N° Affaire</label>
                           <input
                             type="text"
+                            value={commandeDetail.affectation.numeroAffaire}
+                            onChange={e => handleUpdateAffectation('numeroAffaire', e.target.value)}
                             className="w-full px-2 py-1 text-sm bg-input border border-std rounded"
                           />
                         </div>
@@ -1395,6 +1669,8 @@ function Board2() {
                           </label>
                           <input
                             type="date"
+                            value={commandeDetail.affectation.dateReception}
+                            onChange={e => handleUpdateAffectation('dateReception', e.target.value)}
                             className="w-full px-2 py-1 text-sm bg-input border border-std rounded"
                           />
                         </div>
@@ -1402,6 +1678,8 @@ function Board2() {
                           <label className="block text-xs text-secondary mb-1">Date limite</label>
                           <input
                             type="date"
+                            value={commandeDetail.affectation.dateLimite}
+                            onChange={e => handleUpdateAffectation('dateLimite', e.target.value)}
                             className="w-full px-2 py-1 text-sm bg-input border border-std rounded"
                           />
                         </div>
@@ -1409,6 +1687,8 @@ function Board2() {
                           <label className="block text-xs text-secondary mb-1">Interlocuteur</label>
                           <input
                             type="text"
+                            value={commandeDetail.affectation.interlocuteur}
+                            onChange={e => handleUpdateAffectation('interlocuteur', e.target.value)}
                             className="w-full px-2 py-1 text-sm bg-input border border-std rounded"
                           />
                         </div>
@@ -1424,6 +1704,8 @@ function Board2() {
                           <label className="block text-xs text-secondary mb-1">Désignation</label>
                           <textarea
                             rows={2}
+                            value={commandeDetail.affectation.designation}
+                            onChange={e => handleUpdateAffectation('designation', e.target.value)}
                             className="w-full px-2 py-1 text-sm bg-input border border-std rounded"
                           ></textarea>
                         </div>
@@ -1431,6 +1713,8 @@ function Board2() {
                           <label className="block text-xs text-secondary mb-1">Localisation</label>
                           <input
                             type="text"
+                            value={commandeDetail.affectation.localisation}
+                            onChange={e => handleUpdateAffectation('localisation', e.target.value)}
                             className="w-full px-2 py-1 text-sm bg-input border border-std rounded"
                           />
                         </div>
@@ -1440,6 +1724,8 @@ function Board2() {
                           </label>
                           <input
                             type="text"
+                            value={commandeDetail.affectation.maitreOuvrage}
+                            onChange={e => handleUpdateAffectation('maitreOuvrage', e.target.value)}
                             className="w-full px-2 py-1 text-sm bg-input border border-std rounded"
                           />
                         </div>
@@ -1457,6 +1743,10 @@ function Board2() {
                           </label>
                           <input
                             type="text"
+                            value={commandeDetail.affectation.typeIntervention}
+                            onChange={e =>
+                              handleUpdateAffectation('typeIntervention', e.target.value)
+                            }
                             className="w-full px-2 py-1 text-sm bg-input border border-std rounded"
                           />
                         </div>
@@ -1466,6 +1756,10 @@ function Board2() {
                           </label>
                           <textarea
                             rows={3}
+                            value={commandeDetail.affectation.descriptionSommaire}
+                            onChange={e =>
+                              handleUpdateAffectation('descriptionSommaire', e.target.value)
+                            }
                             className="w-full px-2 py-1 text-sm bg-input border border-std rounded"
                           ></textarea>
                         </div>
@@ -1475,6 +1769,8 @@ function Board2() {
                           </label>
                           <input
                             type="text"
+                            value={commandeDetail.affectation.surfaceVolume}
+                            onChange={e => handleUpdateAffectation('surfaceVolume', e.target.value)}
                             className="w-full px-2 py-1 text-sm bg-input border border-std rounded"
                           />
                         </div>
@@ -1486,12 +1782,35 @@ function Board2() {
                 {activeTabCommande === 'commande' && (
                   <div className="space-y-6">
                     <div className="p-4 bg-card rounded-lg border border-std">
-                      <h3 className="text-sm font-semibold text-primary mb-4">DONNÉES COMMANDE</h3>
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-sm font-semibold text-primary">DONNÉES COMMANDE</h3>
+                        <div className="flex gap-2">
+                          <label className="flex items-center gap-1 px-2 py-1 text-xs bg-accent text-white rounded cursor-pointer hover:opacity-90">
+                            <Upload size={12} />
+                            <span>Importer</span>
+                            <input
+                              type="file"
+                              accept=".txt,.json"
+                              className="hidden"
+                              onChange={handleImportFile}
+                            />
+                          </label>
+                          <button
+                            onClick={handleGenerateEmail}
+                            className="flex items-center gap-1 px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
+                          >
+                            <Mail size={12} />
+                            <span>Email</span>
+                          </button>
+                        </div>
+                      </div>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                           <label className="block text-xs text-secondary mb-1">N° Commande</label>
                           <input
                             type="text"
+                            value={commandeDetail.commande.numeroCommande}
+                            onChange={e => handleUpdateCommande('numeroCommande', e.target.value)}
                             className="w-full px-2 py-1 text-sm bg-input border border-std rounded"
                           />
                         </div>
@@ -1499,6 +1818,8 @@ function Board2() {
                           <label className="block text-xs text-secondary mb-1">Date</label>
                           <input
                             type="date"
+                            value={commandeDetail.commande.dateCommande}
+                            onChange={e => handleUpdateCommande('dateCommande', e.target.value)}
                             className="w-full px-2 py-1 text-sm bg-input border border-std rounded"
                           />
                         </div>
@@ -1506,6 +1827,8 @@ function Board2() {
                           <label className="block text-xs text-secondary mb-1">Objet</label>
                           <input
                             type="text"
+                            value={commandeDetail.commande.objet}
+                            onChange={e => handleUpdateCommande('objet', e.target.value)}
                             className="w-full px-2 py-1 text-sm bg-input border border-std rounded"
                           />
                         </div>
@@ -1515,9 +1838,83 @@ function Board2() {
                           </label>
                           <input
                             type="text"
+                            value={commandeDetail.commande.estimation}
+                            onChange={e => handleUpdateCommande('estimation', e.target.value)}
                             className="w-full px-2 py-1 text-sm bg-input border border-std rounded"
                           />
                         </div>
+                      </div>
+                    </div>
+
+                    <div className="p-4 bg-card rounded-lg border border-std">
+                      <h3 className="text-sm font-semibold text-primary mb-4">
+                        GROUPES DE MARCHANDISES
+                      </h3>
+                      <div className="space-y-3">
+                        {CATEGORY_KEYS.map(categoryKey => {
+                          const category = GROUPES_MARCHANDISES[categoryKey];
+                          const isExpanded = expandedCategories.has(categoryKey);
+                          const count = getCategoryCount(categoryKey);
+                          const items = commandeDetail.groupesMarchandises[categoryKey] || [];
+
+                          return (
+                            <div
+                              key={categoryKey}
+                              className={`rounded-lg border ${category.bgColor} ${category.borderColor}`}
+                            >
+                              <button
+                                onClick={() => toggleMarchandiseCategory(categoryKey)}
+                                className={`w-full flex items-center justify-between p-3 ${category.textColor}`}
+                              >
+                                <div className="flex items-center gap-2">
+                                  {isExpanded ? (
+                                    <ChevronDown size={16} />
+                                  ) : (
+                                    <ChevronRight size={16} />
+                                  )}
+                                  <span className="font-semibold">{category.label}</span>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                  <span className="text-xs font-medium">
+                                    {count.checked}/{count.total}
+                                  </span>
+                                  <button
+                                    onClick={e => {
+                                      e.stopPropagation();
+                                      handleSelectAllInCategory(categoryKey);
+                                    }}
+                                    className={`text-xs px-2 py-0.5 rounded border ${category.textColor} border-current opacity-80 hover:opacity-100`}
+                                  >
+                                    {count.checked === count.total
+                                      ? 'Tout désélectionner'
+                                      : 'Tout sélectionner'}
+                                  </button>
+                                </div>
+                              </button>
+                              {isExpanded && (
+                                <div className="px-3 pb-3 space-y-1">
+                                  {items.map((item, idx) => (
+                                    <label
+                                      key={idx}
+                                      className="flex items-center gap-2 py-1 cursor-pointer hover:opacity-80"
+                                    >
+                                      <input
+                                        type="checkbox"
+                                        checked={item.checked}
+                                        onChange={() =>
+                                          handleToggleMarchandise(categoryKey, item.label)
+                                        }
+                                        className="w-4 h-4 accent-current"
+                                        style={{ accentColor: category.color }}
+                                      />
+                                      <span className="text-xs text-secondary">{item.label}</span>
+                                    </label>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
                   </div>
@@ -1608,7 +2005,7 @@ function Board2() {
                 >
                   <option value="">-- Sélectionner --</option>
                   {loadPriorityData().map(priority => (
-                    <option key={priority.id} value={priority.label}>
+                    <option key={`priority-${priority.id}`} value={priority.label}>
                       {priority.label}
                     </option>
                   ))}
@@ -1626,7 +2023,7 @@ function Board2() {
                 >
                   <option value="">-- Sélectionner --</option>
                   {loadZonesData().map(zone => (
-                    <option key={zone.id} value={zone.label}>
+                    <option key={`zone-${zone.id}`} value={zone.label}>
                       {zone.label}
                     </option>
                   ))}
@@ -2180,6 +2577,94 @@ function Board2() {
               >
                 <PlusCircle size={16} className="mr-2" />
                 Ajouter un contact externe
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showImportModal && importData && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-[var(--bg-card)] rounded-lg shadow-xl w-full max-w-lg border border-[var(--border)]">
+            <div className="flex items-center justify-between p-4 border-b border-[var(--border)]">
+              <h2 className="text-lg font-semibold text-[var(--txt-primary)]">
+                Aperçu des données à importer
+              </h2>
+              <button
+                onClick={() => {
+                  setShowImportModal(false);
+                  setImportData(null);
+                }}
+                className="p-1 hover:bg-[var(--bg-card-hover)] rounded"
+              >
+                <X size={20} className="text-[var(--txt-muted)]" />
+              </button>
+            </div>
+            <div className="p-4 max-h-96 overflow-y-auto space-y-4">
+              {importData.commande && (
+                <div className="p-3 bg-[var(--bg-input)] rounded">
+                  <h3 className="font-semibold text-sm text-[var(--txt-primary)] mb-2">Commande</h3>
+                  <p className="text-xs text-[var(--txt-secondary)]">
+                    Date: {importData.commande.date || 'N/A'}
+                  </p>
+                  <p className="text-xs text-[var(--txt-secondary)]">
+                    Objet: {importData.commande.objet || 'N/A'}
+                  </p>
+                </div>
+              )}
+              {importData.demandeur && (
+                <div className="p-3 bg-[var(--bg-input)] rounded">
+                  <h3 className="font-semibold text-sm text-[var(--txt-primary)] mb-2">
+                    Demandeur
+                  </h3>
+                  <p className="text-xs text-[var(--txt-secondary)]">
+                    Responsable: {importData.demandeur.responsable_projet || 'N/A'}
+                  </p>
+                </div>
+              )}
+              {importData.entreprise && (
+                <div className="p-3 bg-[var(--bg-input)] rounded">
+                  <h3 className="font-semibold text-sm text-[var(--txt-primary)] mb-2">
+                    Entreprise
+                  </h3>
+                  <p className="text-xs text-[var(--txt-secondary)]">
+                    Nom: {importData.entreprise.nom || 'N/A'}
+                  </p>
+                </div>
+              )}
+              {importData.groupes_marchandises && (
+                <div className="p-3 bg-[var(--bg-input)] rounded">
+                  <h3 className="font-semibold text-sm text-[var(--txt-primary)] mb-2">
+                    Groupes de marchandises
+                  </h3>
+                  {CATEGORY_KEYS.map(key => {
+                    const items = importData.groupes_marchandises[key] || [];
+                    if (items.length === 0) return null;
+                    const count = items.filter(i => (typeof i === 'string' ? i : i.checked)).length;
+                    return (
+                      <p key={key} className="text-xs text-[var(--txt-secondary)]">
+                        {GROUPES_MARCHANDISES[key].label}: {count} élément(s)
+                      </p>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+            <div className="p-4 border-t border-[var(--border)] flex justify-end gap-2">
+              <button
+                onClick={() => {
+                  setShowImportModal(false);
+                  setImportData(null);
+                }}
+                className="px-4 py-2 text-sm text-[var(--txt-secondary)] hover:bg-[var(--bg-card-hover)] rounded"
+              >
+                Annuler
+              </button>
+              <button
+                onClick={applyImportData}
+                className="px-4 py-2 text-sm bg-[var(--accent)] text-white rounded hover:opacity-90"
+              >
+                Importer les données
               </button>
             </div>
           </div>

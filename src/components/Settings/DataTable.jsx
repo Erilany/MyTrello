@@ -183,7 +183,7 @@ export function DataTable({
           </thead>
           <tbody>
             {showAdd && (
-              <tr className="bg-accent/10">
+              <tr key="add-row" className="bg-accent/10">
                 {columns.map(col => (
                   <td key={col.key} className="py-2 px-3">
                     {col.isMultiSelect ? (

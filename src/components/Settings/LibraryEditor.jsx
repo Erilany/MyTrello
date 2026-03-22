@@ -1080,9 +1080,9 @@ function LibraryEditor() {
           sousCat1: '',
           sousCat2: '',
           sousCat3: '',
-          categorieTag: '',
-          domaineTag: '',
-          systemTag: '',
+          categorieTag: parentNode.data.categorieTag || '',
+          domaineTag: parentNode.data.domaineTag || '',
+          systemTag: parentNode.data.systemTag || '',
         },
         children: [],
         expanded: true,
@@ -1097,6 +1097,9 @@ function LibraryEditor() {
           sousCat1: 'Nouvelle tâche',
           sousCat2: '',
           sousCat3: '',
+          categorieTag: parentNode.data.categorieTag || '',
+          domaineTag: parentNode.data.domaineTag || '',
+          systemTag: parentNode.data.systemTag || '',
         },
         children: [],
         expanded: true,
@@ -1478,14 +1481,37 @@ function LibraryEditor() {
   }, []);
 
   const handleExport = useCallback(() => {
-    const csv = treeToCSV(treeData);
+    const convertToXML = (nodes, level = 0) => {
+      const indent = '  '.repeat(level);
+      return nodes
+        .map(node => {
+          let xml = `${indent}<node id="${node.id}" title="${(node.data?.title || '').replace(/"/g, '&quot;')}" type="${node.type || 'node'}"`;
 
-    // Export CSV directly
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+          if (node.data?.systemTag) {
+            xml += ` systemTag="${node.data.systemTag.replace(/"/g, '&quot;')}"`;
+          }
+
+          if (node.children && node.children.length > 0) {
+            xml += `>\n${convertToXML(node.children, level + 1)}\n${indent}</node>`;
+          } else {
+            xml += ' />';
+          }
+
+          return xml;
+        })
+        .join('\n');
+    };
+
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<library>
+${convertToXML(treeData)}
+</library>`;
+
+    const blob = new Blob([xml], { type: 'application/xml' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'library_export.csv';
+    a.download = 'library_export.xml';
     a.click();
     URL.revokeObjectURL(url);
   }, [treeData]);

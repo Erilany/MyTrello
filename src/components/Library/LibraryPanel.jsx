@@ -436,17 +436,19 @@ function LibraryPanel() {
   }, []);
 
   const isCardFavorite = cardId => {
-    // Handle both string and number comparison
+    if (!favorites || !favorites.cards) return false;
     return favorites.cards.some(id => String(id) === String(cardId));
   };
 
   const isCategoryFavorite = (cardId, categoryTitle) => {
+    if (!favorites || !favorites.categories) return false;
     return favorites.categories.some(
       c => String(c.cardId) === String(cardId) && c.title === categoryTitle
     );
   };
 
   const isSubcategoryFavorite = (cardId, categoryTitle, subcategoryTitle) => {
+    if (!favorites || !favorites.subcategories) return false;
     return favorites.subcategories.some(
       s =>
         String(s.cardId) === String(cardId) &&
@@ -459,10 +461,13 @@ function LibraryPanel() {
 
   const filteredItems = libraryItems.filter(item => {
     if (filter === 'favorites') {
+      const favCards = favorites?.cards || [];
+      const favCategories = favorites?.categories || [];
+      const favSubcategories = favorites?.subcategories || [];
       const isFav =
-        favorites.cards.some(id => String(id) === String(item.id)) ||
-        favorites.categories.some(c => String(c.cardId) === String(item.id)) ||
-        favorites.subcategories.some(s => String(s.cardId) === String(item.id));
+        favCards.some(id => String(id) === String(item.id)) ||
+        favCategories.some(c => String(c.cardId) === String(item.id)) ||
+        favSubcategories.some(s => String(s.cardId) === String(item.id));
 
       if (!isFav) return false;
     } else if (filter !== 'all') {
@@ -1483,12 +1488,16 @@ function LibraryPanel() {
   if (!libraryOpen) return null;
 
   if (libraryViewMode === 'main') {
+    const favCards = favorites?.cards || [];
+    const favCategories = favorites?.categories || [];
+    const favSubcategories = favorites?.subcategories || [];
+
     const filteredCards = cardItems.filter(item => {
       if (filter === 'favorites') {
         const isFav =
-          favorites.cards.some(id => String(id) === String(item.id)) ||
-          favorites.categories.some(c => String(c.cardId) === String(item.id)) ||
-          favorites.subcategories.some(s => String(s.cardId) === String(item.id));
+          favCards.some(id => String(id) === String(item.id)) ||
+          favCategories.some(c => String(c.cardId) === String(item.id)) ||
+          favSubcategories.some(s => String(s.cardId) === String(item.id));
 
         if (!isFav) return false;
       }
@@ -1504,18 +1513,16 @@ function LibraryPanel() {
     // Filter categories and subcategories when in favorites mode
     if (filter === 'favorites' && selectedLibraryCard) {
       const cardId = selectedLibraryCard.id;
+      const favCats = favorites?.categories || [];
+      const favSubs = favorites?.subcategories || [];
       categories = categories.filter(cat => {
         // Show only if category is favorite
-        if (
-          favorites.categories.some(
-            c => String(c.cardId) === String(cardId) && c.title === cat.title
-          )
-        )
+        if (favCats.some(c => String(c.cardId) === String(cardId) && c.title === cat.title))
           return true;
         // Show if any subcategory is favorite
         if (
           (cat.subcategories || []).some(sub =>
-            favorites.subcategories.some(
+            favSubs.some(
               s =>
                 String(s.cardId) === String(cardId) &&
                 s.categoryTitle === cat.title &&
@@ -1528,10 +1535,12 @@ function LibraryPanel() {
       });
     }
 
-    const subcategories = selectedLibraryCategory
+    const subcategories = selectedLibraryCategory;
+    const filteredSubcategories = selectedLibraryCategory
       ? getCategorySubcategories(selectedLibraryCategory).filter(sub => {
           if (filter !== 'favorites') return true;
-          return favorites.subcategories.some(
+          const favSubs = favorites?.subcategories || [];
+          return favSubs.some(
             s =>
               String(s.cardId) === String(selectedLibraryCard?.id) &&
               s.categoryTitle === selectedLibraryCategory.title &&
@@ -2472,10 +2481,12 @@ function LibraryPanel() {
                   // Filter categories when in favorites mode
                   if (filter === 'favorites') {
                     const cardId = panelSelectedCard.id;
+                    const favCats = favorites?.categories || [];
+                    const favSubs = favorites?.subcategories || [];
                     categories = categories.filter(cat => {
                       // Show only if category is favorite
                       if (
-                        favorites.categories.some(
+                        favCats.some(
                           c => String(c.cardId) === String(cardId) && c.title === cat.title
                         )
                       )
@@ -2483,7 +2494,7 @@ function LibraryPanel() {
                       // Show if any subcategory is favorite
                       if (
                         (cat.subcategories || []).some(sub =>
-                          favorites.subcategories.some(
+                          favSubs.some(
                             s =>
                               String(s.cardId) === String(cardId) &&
                               s.categoryTitle === cat.title &&
@@ -2554,11 +2565,12 @@ function LibraryPanel() {
               </div>
               {(() => {
                 let subcategories = getPanelCategorySubcategories(panelSelectedCategory);
+                const favSubs = favorites?.subcategories || [];
 
                 // Filter subcategories when in favorites mode
                 if (filter === 'favorites') {
                   subcategories = subcategories.filter(sub =>
-                    favorites.subcategories.some(
+                    favSubs.some(
                       s =>
                         String(s.cardId) === String(panelSelectedCard?.id) &&
                         s.categoryTitle === panelSelectedCategory.title &&
