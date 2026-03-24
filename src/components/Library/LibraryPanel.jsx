@@ -1088,14 +1088,31 @@ function LibraryPanel() {
   };
 
   const handleMainViewConfirmUse = async () => {
+    console.log('[DEBUG handleMainViewConfirmUse] START');
+    console.log('[DEBUG] useFormBoardId:', useFormBoardId);
+    console.log('[DEBUG] selectedCards:', selectedCards);
+    console.log('[DEBUG] selectedCategories:', selectedCategories);
+    console.log('[DEBUG] selectedSubcategories:', selectedSubcategories);
+
     if (!useFormBoardId) {
       alert('Veuillez sélectionner un projet');
+      return;
+    }
+
+    if (
+      selectedCards.length === 0 &&
+      selectedCategories.length === 0 &&
+      selectedSubcategories.length === 0
+    ) {
+      alert('Veuillez sélectionner au moins un élément dans la bibliothèque');
+      setIsUseFormLoading(false);
       return;
     }
 
     setIsUseFormLoading(true);
 
     const boardId = parseInt(useFormBoardId);
+    console.log('[DEBUG] boardId:', boardId);
 
     const errors = [];
     let cardsAdded = 0;
@@ -1104,22 +1121,30 @@ function LibraryPanel() {
 
     const boardCards = db.cards.filter(c => {
       const column = db.columns.find(col => Number(col.id) === Number(c.column_id));
-      return column && Number(column.board_id) === boardId;
+      return column && Number(col.board_id) === boardId;
     });
     const boardCardIds = boardCards.map(c => c.id);
+    console.log('[DEBUG] boardCards in project:', boardCards.length);
+    console.log('[DEBUG] boardCardIds:', boardCardIds);
 
     const boardColumns = db.columns.filter(col => Number(col.board_id) === boardId);
     const firstColumnId = boardColumns.length > 0 ? boardColumns[0].id : null;
+    console.log('[DEBUG] boardColumns:', boardColumns.length, 'firstColumnId:', firstColumnId);
+    console.log('[DEBUG] Columns board_ids:', db.columns.map(c => c.board_id).join(', '));
+    console.log('[DEBUG] Looking for boardId:', boardId, 'type:', typeof boardId);
 
+    console.log('[DEBUG] Processing selectedCards, count:', selectedCards.length);
     for (const card of selectedCards) {
       try {
         const content = JSON.parse(card.content_json);
+        console.log('[DEBUG] Card:', card.title, 'content_json parsed:', !!content);
         const cardDuration = content.card?.duration_days ?? card.duration ?? 1;
         const cardTitle =
           content.card?.title ||
           content.category?.title ||
           content.subcategory?.title ||
           card.title;
+        console.log('[DEBUG] cardTitle:', cardTitle);
 
         let cardId;
         let isNewCard = false;
@@ -1131,6 +1156,7 @@ function LibraryPanel() {
           const col = db.columns.find(col => Number(col.id) === Number(c.column_id));
           return col && Number(col.board_id) === boardId;
         });
+        console.log('[DEBUG] existingCard:', existingCard ? existingCard.id : 'none');
 
         if (existingCard) {
           // Use existing card from selected board
@@ -1160,6 +1186,9 @@ function LibraryPanel() {
             chapter
           );
           isNewCard = true;
+          console.log('[DEBUG] Created new card, cardId:', cardId, 'isNewCard:', isNewCard);
+        } else if (!firstColumnId) {
+          console.log('[DEBUG] Skipping card creation - no firstColumnId');
         }
 
         if (cardId) {
@@ -1168,10 +1197,12 @@ function LibraryPanel() {
           }
 
           const cardCategories = content.categories || [];
+          console.log('[DEBUG] cardCategories:', cardCategories.length);
           for (const cat of cardCategories) {
             const isCatSelected = selectedCategories.some(
               sc => sc.title === cat.title && sc.cardTitle === cardTitle
             );
+            console.log('[DEBUG] Category:', cat.title, 'isCatSelected:', isCatSelected);
             if (isCatSelected && cardId) {
               try {
                 const categoryDuration = cat.duration_days ?? 1;
@@ -1185,6 +1216,7 @@ function LibraryPanel() {
 
                 if (existingCat) {
                   errors.push(`Catégorie "${cat.title}": existe déjà pour la carte "${cardTitle}"`);
+                  console.log('[DEBUG] Category already exists:', cat.title);
 
                   // Catégorie existe, on ajoute quand même les sous-catégories non existantes
                   const categoryId = existingCat.id;
@@ -1388,6 +1420,16 @@ function LibraryPanel() {
       }
       setIsUseFormLoading(false);
 
+      console.log(
+        '[DEBUG] Final counts - cardsAdded:',
+        cardsAdded,
+        'categoriesAdded:',
+        categoriesAdded,
+        'subcategoriesAdded:',
+        subcategoriesAdded
+      );
+      console.log('[DEBUG] errors:', errors);
+
       let message = '';
       const hasNewCards = cardsAdded > 0;
       const hasNewCategories = categoriesAdded > 0;
@@ -1406,7 +1448,8 @@ function LibraryPanel() {
             message += `\n${subcategoriesAdded} sous-catégorie(s) ajoutée(s)`;
           }
         } else {
-          message = 'Aucun élément nouveau à ajouter (doublons ignorés)';
+          message =
+            "Aucun élément ajouté :\n- Les éléments sélectionnés existent déjà dans le projet\n- Ou aucun élément n'a été sélectionné";
         }
       } else {
         message = 'Opération terminée avec avertissements :\n';

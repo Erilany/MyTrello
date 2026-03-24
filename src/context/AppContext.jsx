@@ -921,6 +921,53 @@ export function AppProvider({ children }) {
         return { success: false, error: 'Format de fichier invalide: aucune donnée trouvée' };
       }
 
+      const existingColumnBoardIds = new Set((parsed.data.columns || []).map(c => c.board_id));
+      let nextColumnId = Math.max(0, ...(parsed.data.columns || []).map(c => c.id)) + 1;
+
+      parsed.data.boards.forEach(board => {
+        if (!existingColumnBoardIds.has(board.id)) {
+          const defaultColumns = [
+            {
+              id: nextColumnId++,
+              board_id: board.id,
+              title: 'À faire',
+              position: 0,
+              color: '#4A90D9',
+            },
+            {
+              id: nextColumnId++,
+              board_id: board.id,
+              title: 'En cours',
+              position: 1,
+              color: '#F5A623',
+            },
+            {
+              id: nextColumnId++,
+              board_id: board.id,
+              title: 'En attente',
+              position: 2,
+              color: '#9CA3AF',
+            },
+            {
+              id: nextColumnId++,
+              board_id: board.id,
+              title: 'Terminée',
+              position: 3,
+              color: '#7ED321',
+            },
+            {
+              id: nextColumnId++,
+              board_id: board.id,
+              title: 'Archiver',
+              position: 4,
+              color: '#475569',
+            },
+          ];
+          parsed.data.columns.push(...defaultColumns);
+          existingColumnBoardIds.add(board.id);
+        }
+      });
+
       setDb(parsed.data);
       saveToStorage(parsed.data);
 
