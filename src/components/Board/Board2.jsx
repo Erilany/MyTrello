@@ -195,8 +195,9 @@ function Board2() {
     if (currentBoard?.id) {
       currentBoardIdRef.current = currentBoard.id;
       console.log('[Board2] ref updated to:', currentBoard.id);
+      loadBoard(currentBoard.id);
     }
-  }, [currentBoard?.id]);
+  }, [currentBoard?.id, loadBoard]);
 
   const saveToStorage = (key, value) => {
     const boardId = currentBoardIdRef.current;

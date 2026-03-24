@@ -1481,31 +1481,141 @@ function LibraryEditor() {
   }, []);
 
   const handleExport = useCallback(() => {
-    const convertToXML = (nodes, level = 0) => {
-      const indent = '  '.repeat(level);
-      return nodes
-        .map(node => {
-          let xml = `${indent}<node id="${node.id}" title="${(node.data?.title || '').replace(/"/g, '&quot;')}" type="${node.type || 'node'}"`;
-
-          if (node.data?.systemTag) {
-            xml += ` systemTag="${node.data.systemTag.replace(/"/g, '&quot;')}"`;
-          }
-
-          if (node.children && node.children.length > 0) {
-            xml += `>\n${convertToXML(node.children, level + 1)}\n${indent}</node>`;
-          } else {
-            xml += ' />';
-          }
-
-          return xml;
-        })
-        .join('\n');
+    const escapeXml = str => {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&apos;');
     };
 
+    const today = new Date().toISOString().split('T')[0];
+    const tasks = [];
+    let uidCounter = 1;
+
+    const processNode = (node, outlineLevel = 1) => {
+      const duration = node.data?.temps || 0;
+      const durationStr = duration > 0 ? `P${duration}D` : `PT1H0M0S`;
+      const taskName = node.titre || node.data?.title || '';
+      const systemTag = node.data?.systemTag || '';
+      const categorieTag = node.data?.categorieTag || '';
+      const domaineTag = node.data?.domaineTag || '';
+      const notes = [systemTag, categorieTag, domaineTag].filter(Boolean).join(', ');
+
+      const task = {
+        UID: uidCounter++,
+        ID: uidCounter - 1,
+        Name: taskName,
+        Manual: 0,
+        Type: 1,
+        IsNull: 0,
+        CreateDate: `${today}T09:00:00`,
+        WBS: uidCounter - 1,
+        OutlineNumber: uidCounter - 1,
+        OutlineLevel: outlineLevel,
+        Priority: 500,
+        Start: `${today}T09:00:00`,
+        Finish: `${today}T10:00:00`,
+        Duration: durationStr,
+        ManualStart: `${today}T09:00:00`,
+        ManualFinish: `${today}T10:00:00`,
+        ManualDuration: durationStr,
+        DurationFormat: 7,
+        Work: durationStr,
+        PercentComplete: 0,
+        ActualDuration: 0,
+        ActualStart: '',
+        ActualFinish: '',
+        FreeSlack: 0,
+        TotalSlack: 0,
+        FixedCost: 0,
+        FixedCostAccrual: 3,
+        PercentWorkComplete: 0,
+        PhysicalPercentComplete: 0,
+        Milestone: 0,
+        Summary: node.children && node.children.length > 0 ? 1 : 0,
+        Critical: 0,
+        Notes: notes,
+      };
+      tasks.push(task);
+
+      if (node.children && node.children.length > 0) {
+        node.children.forEach(child => processNode(child, outlineLevel + 1));
+      }
+    };
+
+    treeData.forEach(node => processNode(node));
+
+    let tasksXML = '';
+    tasks.forEach(task => {
+      const actualStartXml = task.ActualStart
+        ? `<ActualStart>${task.ActualStart}</ActualStart>`
+        : '';
+      const actualFinishXml = task.ActualFinish
+        ? `<ActualFinish>${task.ActualFinish}</ActualFinish>`
+        : '';
+
+      tasksXML += `
+		<Task>
+			<UID>${task.UID}</UID>
+			<ID>${task.ID}</ID>
+			<Name>${escapeXml(task.Name)}</Name>
+			<Manual>${task.Manual}</Manual>
+			<Type>${task.Type}</Type>
+			<IsNull>${task.IsNull}</IsNull>
+			<CreateDate>${task.CreateDate}</CreateDate>
+			<WBS>${task.WBS}</WBS>
+			<OutlineNumber>${task.OutlineNumber}</OutlineNumber>
+			<OutlineLevel>${task.OutlineLevel}</OutlineLevel>
+			<Priority>${task.Priority}</Priority>
+			<Start>${task.Start}</Start>
+			<Finish>${task.Finish}</Finish>
+			<Duration>${task.Duration}</Duration>
+			<ManualStart>${task.ManualStart}</ManualStart>
+			<ManualFinish>${task.ManualFinish}</ManualFinish>
+			<ManualDuration>${task.ManualDuration}</ManualDuration>
+			<DurationFormat>${task.DurationFormat}</DurationFormat>
+			<Work>${task.Work}</Work>
+			<PercentComplete>${task.PercentComplete}</PercentComplete>
+			<ActualDuration>${task.ActualDuration}</ActualDuration>${actualStartXml}${actualFinishXml}
+			<FreeSlack>${task.FreeSlack}</FreeSlack>
+			<TotalSlack>${task.TotalSlack}</TotalSlack>
+			<FixedCost>${task.FixedCost}</FixedCost>
+			<FixedCostAccrual>${task.FixedCostAccrual}</FixedCostAccrual>
+			<PercentWorkComplete>${task.PercentWorkComplete}</PercentWorkComplete>
+			<PhysicalPercentComplete>${task.PhysicalPercentComplete}</PhysicalPercentComplete>
+			<Milestone>${task.Milestone}</Milestone>
+			<Summary>${task.Summary}</Summary>
+			<Critical>${task.Critical}</Critical>
+			<Notes>${escapeXml(task.Notes)}</Notes>
+		</Task>`;
+    });
+
     const xml = `<?xml version="1.0" encoding="UTF-8"?>
-<library>
-${convertToXML(treeData)}
-</library>`;
+<Project xmlns="http://schemas.microsoft.com/project">
+	<SaveVersion>14</SaveVersion>
+	<BuildNumber>16.0.19127.20532</BuildNumber>
+	<Name>${escapeXml('Bibliothèque')}</Name>
+	<GUID>{${Date.now().toString(16).toUpperCase()}-1320-F011-9752-D4F32D378D80}</GUID>
+	<Title>${escapeXml('Bibliothèque')}</Title>
+	<CreationDate>${today}T09:00:00</CreationDate>
+	<LastSaved>${today}T${new Date().toTimeString().split(' ')[0]}</LastSaved>
+	<ScheduleFromStart>1</ScheduleFromStart>
+	<StartDate>${today}T09:00:00</StartDate>
+	<FinishDate>${today}T18:00:00</FinishDate>
+	<DurationFormat>7</DurationFormat>
+	<WorkFormat>2</WorkFormat>
+	<DefaultStartTime>09:00:00</DefaultStartTime>
+	<DefaultFinishTime>18:00:00</DefaultFinishTime>
+	<MinutesPerDay>480</MinutesPerDay>
+	<MinutesPerWeek>2400</MinutesPerWeek>
+	<DaysPerMonth>21</DaysPerMonth>
+	<DefaultTaskType>1</DefaultTaskType>
+	<Tasks>${tasksXML}
+	</Tasks>
+</Project>`;
 
     const blob = new Blob([xml], { type: 'application/xml' });
     const url = URL.createObjectURL(blob);

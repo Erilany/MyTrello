@@ -40,7 +40,7 @@ function convertTreeToLibraryItems(treeData) {
     }
 
     if (node.type === 'carte' || node.type === 'categorie' || node.type === 'souscategorie') {
-      const tags = [node.data.categorieTag || '', node.data.domaineTag || '']
+      const tags = [currentChapitre, node.data.categorieTag || '', node.data.domaineTag || '']
         .filter(Boolean)
         .join(',');
 
@@ -455,59 +455,62 @@ export function AppProvider({ children }) {
     saveToStorage(newDb);
   }, []);
 
-  const loadBoard = useCallback(boardId => {
-    const storageData = loadFromStorage();
-    const board = storageData.boards.find(b => Number(b.id) === Number(boardId));
-    if (board) {
-      setCurrentBoard(board);
-      const boardColumns = storageData.columns.filter(c => Number(c.board_id) === Number(boardId));
-      const columnIds = boardColumns.map(c => Number(c.id));
-      console.log(
-        '[loadBoard] boardColumns:',
-        boardColumns.map(c => ({ id: c.id, title: c.title }))
-      );
-      console.log('[loadBoard] columnIds:', columnIds);
-      const filteredCards = storageData.cards.filter(
-        c =>
-          (columnIds.includes(Number(c.column_id)) ||
-            c.column_id === null ||
-            c.column_id === undefined ||
-            c.column_id === '' ||
-            c.column_id === 0 ||
-            !c.column_id) &&
-          !c.is_archived
-      );
-      console.log(
-        '[loadBoard] filteredCards:',
-        filteredCards.map(c => ({ id: c.id, title: c.title, column_id: c.column_id }))
-      );
-      setColumns(boardColumns.sort((a, b) => a.position - b.position));
-      setCards(filteredCards.sort((a, b) => a.position - b.position));
-      const cardIds = filteredCards.map(c => Number(c.id));
-      setCategories(
-        storageData.categories
-          .filter(c => cardIds.includes(Number(c.card_id)))
-          .sort((a, b) => a.position - b.position)
-      );
-      const catIds = storageData.categories
-        .filter(c => cardIds.includes(Number(c.card_id)))
-        .map(c => Number(c.id));
-      setSubcategories(
-        storageData.subcategories
-          .filter(s => catIds.includes(Number(s.category_id)))
-          .sort((a, b) => a.position - b.position)
-      );
-
-      if (selectedSubcategory) {
-        const updatedSub = storageData.subcategories.find(
-          s => Number(s.id) === Number(selectedSubcategory.id)
+  const loadBoard = useCallback(
+    (boardId, data = null) => {
+      const sourceData = data || db;
+      const board = sourceData.boards.find(b => Number(b.id) === Number(boardId));
+      if (board) {
+        setCurrentBoard(board);
+        const boardColumns = sourceData.columns.filter(c => Number(c.board_id) === Number(boardId));
+        const columnIds = boardColumns.map(c => Number(c.id));
+        console.log(
+          '[loadBoard] boardColumns:',
+          boardColumns.map(c => ({ id: c.id, title: c.title }))
         );
-        if (updatedSub) {
-          setSelectedSubcategory(updatedSub);
+        console.log('[loadBoard] columnIds:', columnIds);
+        const filteredCards = sourceData.cards.filter(
+          c =>
+            (columnIds.includes(Number(c.column_id)) ||
+              c.column_id === null ||
+              c.column_id === undefined ||
+              c.column_id === '' ||
+              c.column_id === 0 ||
+              !c.column_id) &&
+            !c.is_archived
+        );
+        console.log(
+          '[loadBoard] filteredCards:',
+          filteredCards.map(c => ({ id: c.id, title: c.title, column_id: c.column_id }))
+        );
+        setColumns(boardColumns.sort((a, b) => a.position - b.position));
+        setCards(filteredCards.sort((a, b) => a.position - b.position));
+        const cardIds = filteredCards.map(c => Number(c.id));
+        setCategories(
+          sourceData.categories
+            .filter(c => cardIds.includes(Number(c.card_id)))
+            .sort((a, b) => a.position - b.position)
+        );
+        const catIds = sourceData.categories
+          .filter(c => cardIds.includes(Number(c.card_id)))
+          .map(c => Number(c.id));
+        setSubcategories(
+          sourceData.subcategories
+            .filter(s => catIds.includes(Number(s.category_id)))
+            .sort((a, b) => a.position - b.position)
+        );
+
+        if (selectedSubcategory) {
+          const updatedSub = sourceData.subcategories.find(
+            s => Number(s.id) === Number(selectedSubcategory.id)
+          );
+          if (updatedSub) {
+            setSelectedSubcategory(updatedSub);
+          }
         }
       }
-    }
-  }, []);
+    },
+    [db, selectedSubcategory]
+  );
 
   // Project time tracking functions
   const getWeekNumber = date => {

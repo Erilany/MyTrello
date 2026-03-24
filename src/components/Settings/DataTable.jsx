@@ -264,14 +264,14 @@ export function DataTable({
               </tr>
             )}
             {items.length === 0 && !showAdd ? (
-              <tr>
+              <tr key="empty-row">
                 <td colSpan={columns.length + 1} className="py-4 text-center text-muted">
                   Aucun élément
                 </td>
               </tr>
             ) : (
-              items.map(item => {
-                const itemId = item.id || item.code;
+              items.map((item, index) => {
+                const itemId = item.id || item.code || `item-${index}`;
                 const isEditing = editingId === itemId;
                 return (
                   <tr key={itemId} className="border-b border-std hover:bg-card-hover">

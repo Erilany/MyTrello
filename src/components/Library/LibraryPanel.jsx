@@ -1121,7 +1121,7 @@ function LibraryPanel() {
 
     const boardCards = db.cards.filter(c => {
       const column = db.columns.find(col => Number(col.id) === Number(c.column_id));
-      return column && Number(col.board_id) === boardId;
+      return column && Number(column.board_id) === boardId;
     });
     const boardCardIds = boardCards.map(c => c.id);
     console.log('[DEBUG] boardCards in project:', boardCards.length);
@@ -1410,7 +1410,7 @@ function LibraryPanel() {
       }
     }
 
-    loadBoard(boardId);
+    loadBoard(boardId, db);
 
     setTimeout(() => {
       if (useFormDestination === 'board2') {
@@ -1578,7 +1578,6 @@ function LibraryPanel() {
       });
     }
 
-    const subcategories = selectedLibraryCategory;
     const filteredSubcategories = selectedLibraryCategory
       ? getCategorySubcategories(selectedLibraryCategory).filter(sub => {
           if (filter !== 'favorites') return true;
@@ -1895,10 +1894,10 @@ function LibraryPanel() {
                   <p className="text-gray-500 dark:text-gray-400 text-sm">
                     Sélectionnez une catégorie
                   </p>
-                ) : subcategories.length === 0 ? (
+                ) : filteredSubcategories.length === 0 ? (
                   <p className="text-gray-500 dark:text-gray-400 text-sm">Aucune sous-catégorie</p>
                 ) : (
-                  subcategories.map((subcat, idx) => {
+                  filteredSubcategories.map((subcat, idx) => {
                     const isSelected = selectedSubcategories.some(
                       s =>
                         s.title === subcat.title &&
