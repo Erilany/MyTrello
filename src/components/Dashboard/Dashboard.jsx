@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, Fragment } from 'react';
 import { useApp } from '../../context/AppContext';
 import { useNavigate } from 'react-router-dom';
 import SubCategoryModal from '../SubCategory/SubCategoryModal';
@@ -12,6 +12,7 @@ import {
   PlayCircle,
   Users,
   ChevronDown,
+  ChevronRight,
   BarChart3,
   ListTodo,
   Activity,
@@ -34,12 +35,14 @@ function getStatusColor(status) {
   switch (status) {
     case 'done':
       return 'bg-green-500';
-    case 'in_progress':
-      return 'bg-yellow-500';
     case 'waiting':
       return 'bg-blue-500';
     case 'todo':
-      return 'bg-orange-500';
+      return 'bg-red-500';
+    case 'in_progress':
+      return 'bg-yellow-500';
+    case 'blocked':
+      return 'bg-red-500';
     default:
       return 'bg-gray-400';
   }
@@ -197,6 +200,7 @@ export default function Dashboard() {
   const [selectedTaskDashboard, setSelectedTaskDashboard] = useState(null);
   const [activeTab, setActiveTab] = useState('time');
   const [refreshKey, setRefreshKey] = useState(0);
+  const [expandedProjects, setExpandedProjects] = useState({});
 
   const handleTaskClick = task => {
     setSelectedTaskDashboard(task);
@@ -227,8 +231,49 @@ export default function Dashboard() {
   };
 
   const getOtherTasksFiltered = () => {
-    if (!selectedProjectForOthers) return otherTasks;
-    return otherTasks.filter(t => Number(t.board?.id) === Number(selectedProjectForOthers));
+    let tasks = otherTasks;
+    if (selectedProjectForOthers) {
+      tasks = tasks.filter(t => Number(t.board?.id) === Number(selectedProjectForOthers));
+    }
+
+    const groups = {};
+    tasks.forEach(task => {
+      const boardId = task.board?.id || 'unassigned';
+      if (!groups[boardId]) {
+        groups[boardId] = {
+          board: task.board,
+          tasks: [],
+        };
+      }
+      groups[boardId].tasks.push(task);
+    });
+
+    Object.keys(groups).forEach(boardId => {
+      groups[boardId].tasks.sort((a, b) => {
+        const dateA = a.due_date ? new Date(a.due_date) : new Date('9999-12-31');
+        const dateB = b.due_date ? new Date(b.due_date) : new Date('9999-12-31');
+        return dateA - dateB;
+      });
+    });
+
+    const sortedGroups = Object.values(groups).sort((a, b) => {
+      if (!a.board) return 1;
+      if (!b.board) return -1;
+      const firstTaskA = a.tasks[0];
+      const firstTaskB = b.tasks[0];
+      const dateA = firstTaskA?.due_date ? new Date(firstTaskA.due_date) : new Date('9999-12-31');
+      const dateB = firstTaskB?.due_date ? new Date(firstTaskB.due_date) : new Date('9999-12-31');
+      return dateA - dateB;
+    });
+
+    return sortedGroups;
+  };
+
+  const toggleProject = boardId => {
+    setExpandedProjects(prev => ({
+      ...prev,
+      [boardId]: !prev[boardId],
+    }));
   };
 
   const weekOptions = useMemo(() => {
@@ -524,12 +569,10 @@ export default function Dashboard() {
                                         ? 'bg-yellow-500'
                                         : 'bg-gray-400'
                                 }`}
-                                style={{ width: `${getTaskProgress(task.status)}%` }}
+                                style={{ width: `${task.progress || 0}%` }}
                               />
                             </div>
-                            <span className="text-xs text-muted w-8">
-                              {getTaskProgress(task.status)}%
-                            </span>
+                            <span className="text-xs text-muted w-8">{task.progress || 0}%</span>
                           </div>
                         </td>
                         <td className={`py-2 px-3 font-medium ${getPriorityColor(task.priority)}`}>
@@ -613,44 +656,80 @@ export default function Dashboard() {
                       </tr>
                     </thead>
                     <tbody>
-                      {getOtherTasksFiltered().map(task => (
-                        <tr
-                          key={task.id}
-                          className="border-b border-std hover:bg-card-hover cursor-pointer"
-                          onClick={() => handleTaskClick(task)}
-                        >
-                          <td className="py-2 px-3 text-primary">{task.board?.title}</td>
-                          <td className="py-2 px-3 text-secondary">{task.category?.title}</td>
-                          <td className="py-2 px-3 text-primary font-medium">{task.title}</td>
-                          <td className="py-2 px-3 text-muted">{task.assignee || 'Non assigné'}</td>
-                          <td className="py-2 px-3">
-                            <span
-                              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs text-white ${getStatusColor(task.status)}`}
+                      {getOtherTasksFiltered().map(group => {
+                        const boardId = group.board?.id || 'unassigned';
+                        const isExpanded = expandedProjects[boardId] !== false;
+                        const taskCount = group.tasks.length;
+
+                        return (
+                          <Fragment key={boardId}>
+                            <tr
+                              className="border-b border-std bg-card-hover cursor-pointer hover:bg-std"
+                              onClick={() => toggleProject(boardId)}
                             >
-                              {task.status === 'done' ? (
-                                <CheckCircle size={12} />
-                              ) : task.status === 'in_progress' ? (
-                                <PlayCircle size={12} />
-                              ) : (
-                                <Circle size={12} />
-                              )}
-                              {getStatusLabel(task.status)}
-                            </span>
-                          </td>
-                          <td
-                            className={`py-2 px-3 font-medium ${getPriorityColor(task.priority)}`}
-                          >
-                            {getPriorityLabel(task.priority)}
-                          </td>
-                          <td
-                            className="py-2 px-3 text-muted cursor-pointer hover:text-accent"
-                            onClick={e => handleDueDateClick(e, task)}
-                            title="Cliquez pour ouvrir le planning"
-                          >
-                            {task.due_date}
-                          </td>
-                        </tr>
-                      ))}
+                              <td colSpan={7} className="py-2 px-3">
+                                <div className="flex items-center gap-2">
+                                  {isExpanded ? (
+                                    <ChevronDown size={16} className="text-muted" />
+                                  ) : (
+                                    <ChevronRight size={16} className="text-muted" />
+                                  )}
+                                  <span className="font-semibold text-primary">
+                                    {group.board?.title || 'Projet non identifié'}
+                                  </span>
+                                  <span className="text-xs text-muted">
+                                    ({taskCount} tâche{taskCount > 1 ? 's' : ''})
+                                  </span>
+                                </div>
+                              </td>
+                            </tr>
+                            {isExpanded &&
+                              group.tasks.map(task => (
+                                <tr
+                                  key={task.id}
+                                  className="border-b border-std hover:bg-card-hover cursor-pointer pl-8"
+                                  onClick={() => handleTaskClick(task)}
+                                >
+                                  <td className="py-2 px-3 pl-12 text-secondary">
+                                    {task.category?.title}
+                                  </td>
+                                  <td className="py-2 px-3 text-primary font-medium">
+                                    {task.title}
+                                  </td>
+                                  <td className="py-2 px-3 text-muted">
+                                    {task.assignee || 'Non assigné'}
+                                  </td>
+                                  <td className="py-2 px-3">
+                                    <span
+                                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs text-white ${getStatusColor(task.status)}`}
+                                    >
+                                      {task.status === 'done' ? (
+                                        <CheckCircle size={12} />
+                                      ) : task.status === 'in_progress' ? (
+                                        <PlayCircle size={12} />
+                                      ) : (
+                                        <Circle size={12} />
+                                      )}
+                                      {getStatusLabel(task.status)}
+                                    </span>
+                                  </td>
+                                  <td
+                                    className={`py-2 px-3 font-medium ${getPriorityColor(task.priority)}`}
+                                  >
+                                    {getPriorityLabel(task.priority)}
+                                  </td>
+                                  <td
+                                    className="py-2 px-3 text-muted cursor-pointer hover:text-accent"
+                                    onClick={e => handleDueDateClick(e, task)}
+                                    title="Cliquez pour ouvrir le planning"
+                                  >
+                                    {task.due_date}
+                                  </td>
+                                </tr>
+                              ))}
+                          </Fragment>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>

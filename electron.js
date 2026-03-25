@@ -466,6 +466,21 @@ ipcMain.handle('cardColors:reset', async () => {
   return { success: true, data: store.get('cardColors') };
 });
 
+ipcMain.handle('shell:openFolder', async (event, folderPath) => {
+  try {
+    console.log('[Electron] Opening folder:', folderPath);
+    const result = await shell.openPath(folderPath);
+    if (result) {
+      console.error('[Electron] Error opening folder:', result);
+      return { success: false, error: result };
+    }
+    return { success: true };
+  } catch (error) {
+    console.error('[Electron] Error opening folder:', error);
+    return { success: false, error: error.message };
+  }
+});
+
 ipcMain.handle('shell:openMsg', async (event, base64Data, filename) => {
   try {
     console.log('[Electron] Opening MSG file:', filename);

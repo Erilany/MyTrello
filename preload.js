@@ -18,6 +18,7 @@ contextBridge.exposeInMainWorld('electron', {
       'cardColors:set',
       'cardColors:reset',
       'shell:openMsg',
+      'shell:openFolder',
     ];
     if (allowedChannels.includes(channel)) {
       return ipcRenderer.invoke(channel, ...args);

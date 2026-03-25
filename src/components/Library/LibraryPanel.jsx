@@ -66,7 +66,7 @@ function LibraryEventListener() {
   return null;
 }
 
-function LibraryPanel() {
+function LibraryPanel({ standalone = false }) {
   const navigate = useNavigate();
   const {
     libraryItems,
@@ -1580,9 +1580,9 @@ function LibraryPanel() {
     subcategory: 'bg-waiting-soft text-waiting',
   };
 
-  if (!libraryOpen) return null;
+  if (!libraryOpen && !standalone) return null;
 
-  if (libraryViewMode === 'main') {
+  if (libraryViewMode === 'main' || standalone) {
     const favCards = favorites?.cards || [];
     const favCategories = favorites?.categories || [];
     const favSubcategories = favorites?.subcategories || [];
@@ -1659,10 +1659,12 @@ function LibraryPanel() {
     return (
       <>
         <LibraryEventListener />
-        <div className="p-6 h-full flex flex-col">
-          <div className="flex items-center justify-between mb-6">
-            <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Bibliothèque</h1>
-          </div>
+        <div className={standalone ? 'h-full flex flex-col' : 'p-6 h-full flex flex-col'}>
+          {!standalone && (
+            <div className="flex items-center justify-between mb-6">
+              <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Bibliothèque</h1>
+            </div>
+          )}
 
           <div className="flex items-center gap-4 mb-6">
             <button

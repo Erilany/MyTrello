@@ -262,14 +262,15 @@ function Board2() {
       signataireFinal: '',
       marcheCadre: '',
       affaire: '',
+      informations: '',
     },
     autresLignes: [],
     groupesMarchandises: {},
+    otpIdentiqueChecked: false,
+    dateReceptionUniqueChecked: false,
   });
 
   const [contracts, setContracts] = useState([]);
-  const [otpIdentiqueChecked, setOtpIdentiqueChecked] = useState(false);
-  const [dateReceptionUniqueChecked, setDateReceptionUniqueChecked] = useState(false);
   const [marcheCadreSuggestions, setMarcheCadreSuggestions] = useState([]);
 
   const [expandedCategories, setExpandedCategories] = useState(new Set());
@@ -318,14 +319,6 @@ function Board2() {
     });
   };
 
-  useEffect(() => {
-    if (otpIdentiqueChecked) syncFromLigne010('eotpId');
-  }, [otpIdentiqueChecked]);
-
-  useEffect(() => {
-    if (dateReceptionUniqueChecked) syncFromLigne010('dateReception');
-  }, [dateReceptionUniqueChecked]);
-
   const toggleMarchandiseCategory = categoryKey => {
     setExpandedCategories(prev => {
       const next = new Set(prev);
@@ -359,11 +352,24 @@ function Board2() {
       }));
   };
 
+  const getLigne010 = () => {
+    return commandeDetail.autresLignes?.find(l => l.numero === '010');
+  };
+
+  const getEotpLabelById = eotpId => {
+    const eotp = getLevel2Eotp().find(e => e.id === eotpId);
+    return eotp ? `${eotp.numero} - ${eotp.libelle}` : '';
+  };
+
   const handleSelectCommande = cmd => {
     setSelectedCommande(cmd);
     setSelectedAvenant(null);
     if (cmd.detail) {
-      setCommandeDetail(cmd.detail);
+      setCommandeDetail({
+        ...cmd.detail,
+        otpIdentiqueChecked: cmd.detail.otpIdentiqueChecked || false,
+        dateReceptionUniqueChecked: cmd.detail.dateReceptionUniqueChecked || false,
+      });
     } else {
       setCommandeDetail({
         affectation: {
@@ -385,9 +391,12 @@ function Board2() {
           signataireFinal: cmd.donnees?.signataireFinal || '',
           marcheCadre: cmd.donnees?.marcheCadre || '',
           affaire: cmd.donnees?.affaire || '',
+          informations: '',
         },
         autresLignes: cmd.donnees?.autresLignes || [],
         groupesMarchandises: initializeGroupesMarchandises(),
+        otpIdentiqueChecked: false,
+        dateReceptionUniqueChecked: false,
       });
     }
   };
@@ -412,19 +421,24 @@ function Board2() {
       if (field === 'montant') {
         newLignes[index] = { ...newLignes[index], [field]: value };
       } else if (field === 'quantite' || field === 'coutUnitaire') {
-        const qte =
+        const qteNum =
           field === 'quantite'
-            ? parseFloat(value) || 0
+            ? value === ''
+              ? 0
+              : parseFloat(value) || 0
             : parseFloat(newLignes[index].quantite) || 0;
-        const cout =
+        const coutNum =
           field === 'coutUnitaire'
-            ? parseFloat(value) || 0
+            ? value === ''
+              ? 0
+              : parseFloat(value) || 0
             : parseFloat(newLignes[index].coutUnitaire) || 0;
         newLignes[index] = {
           ...newLignes[index],
-          quantite: field === 'quantite' ? parseFloat(value) || 0 : qte,
-          coutUnitaire: field === 'coutUnitaire' ? parseFloat(value) || 0 : cout,
-          montant: qte * cout,
+          quantite: field === 'quantite' ? (value === '' ? 0 : parseFloat(value) || 0) : qteNum,
+          coutUnitaire:
+            field === 'coutUnitaire' ? (value === '' ? 0 : parseFloat(value) || 0) : coutNum,
+          montant: qteNum * coutNum,
         };
       } else {
         newLignes[index] = { ...newLignes[index], [field]: value };
@@ -481,6 +495,18 @@ function Board2() {
         ...prev.groupesMarchandises,
         [categoryKey]: prev.groupesMarchandises[categoryKey].map(item =>
           item.label === itemLabel ? { ...item, checked: !item.checked } : item
+        ),
+      },
+    }));
+  };
+
+  const handleUpdateMarchandiseLibre = (categoryKey, value) => {
+    setCommandeDetail(prev => ({
+      ...prev,
+      groupesMarchandises: {
+        ...prev.groupesMarchandises,
+        [categoryKey]: prev.groupesMarchandises[categoryKey].map(item =>
+          item.label === 'AUTRES (champ libre)' ? { ...item, libreValue: value } : item
         ),
       },
     }));
@@ -1425,13 +1451,15 @@ Affaire: ${commande.affaire || 'N/A'}
                                               className={`w-2 h-2 rounded-full flex-shrink-0 ${
                                                 sub.status === 'done'
                                                   ? 'bg-green-500'
-                                                  : sub.status === 'in_progress'
+                                                  : sub.status === 'waiting'
                                                     ? 'bg-blue-500'
-                                                    : sub.status === 'blocked'
+                                                    : sub.status === 'todo'
                                                       ? 'bg-red-500'
-                                                      : sub.status === 'pending'
+                                                      : sub.status === 'in_progress'
                                                         ? 'bg-yellow-500'
-                                                        : 'bg-gray-400'
+                                                        : sub.status === 'blocked'
+                                                          ? 'bg-red-500'
+                                                          : 'bg-gray-400'
                                               }`}
                                             />
                                             <div className="flex-1 min-w-0">
@@ -1556,13 +1584,15 @@ Affaire: ${commande.affaire || 'N/A'}
                                                       className={`w-2 h-2 rounded-full flex-shrink-0 ${
                                                         sub.status === 'done'
                                                           ? 'bg-green-500'
-                                                          : sub.status === 'in_progress'
+                                                          : sub.status === 'waiting'
                                                             ? 'bg-blue-500'
-                                                            : sub.status === 'blocked'
+                                                            : sub.status === 'todo'
                                                               ? 'bg-red-500'
-                                                              : sub.status === 'pending'
+                                                              : sub.status === 'in_progress'
                                                                 ? 'bg-yellow-500'
-                                                                : 'bg-gray-400'
+                                                                : sub.status === 'blocked'
+                                                                  ? 'bg-red-500'
+                                                                  : 'bg-gray-400'
                                                       }`}
                                                     />
                                                     <div className="flex-1 min-w-0">
@@ -2276,6 +2306,16 @@ Affaire: ${commande.affaire || 'N/A'}
                             className="w-full px-2 py-1 text-sm bg-std text-muted border border-std rounded cursor-not-allowed"
                           />
                         </div>
+                        <div>
+                          <label className="block text-xs text-secondary mb-1">Informations</label>
+                          <textarea
+                            value={commandeDetail.commande.informations || ''}
+                            onChange={e => handleUpdateCommande('informations', e.target.value)}
+                            rows={2}
+                            className="w-full px-2 py-1 text-sm bg-input border border-std rounded resize-none"
+                            placeholder="Informations complémentaires..."
+                          />
+                        </div>
                       </div>
                     </div>
 
@@ -2284,28 +2324,45 @@ Affaire: ${commande.affaire || 'N/A'}
                       <div className="flex items-center justify-between mb-4">
                         <h3 className="text-sm font-semibold text-primary">AUTRES</h3>
                         <div className="flex items-center gap-4">
-                          <label className="flex items-center gap-1 text-xs text-secondary cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={otpIdentiqueChecked}
-                              onChange={e => {
-                                setOtpIdentiqueChecked(e.target.checked);
-                                if (e.target.checked) syncFromLigne010('eotpId');
-                              }}
-                            />
-                            OTP identique pour chaque poste
-                          </label>
-                          <label className="flex items-center gap-1 text-xs text-secondary cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={dateReceptionUniqueChecked}
-                              onChange={e => {
-                                setDateReceptionUniqueChecked(e.target.checked);
-                                if (e.target.checked) syncFromLigne010('dateReception');
-                              }}
-                            />
-                            Date réception unique
-                          </label>
+                          {(() => {
+                            const ligne010 = getLigne010();
+                            const eotpSyncValue = ligne010 ? getEotpLabelById(ligne010.eotpId) : '';
+                            return (
+                              <label className="flex items-center gap-1 text-xs text-secondary cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={commandeDetail.otpIdentiqueChecked}
+                                  onChange={e => {
+                                    setCommandeDetail(prev => ({
+                                      ...prev,
+                                      otpIdentiqueChecked: e.target.checked,
+                                    }));
+                                    if (e.target.checked) syncFromLigne010('eotpId');
+                                  }}
+                                />
+                                OTP identique pour chaque poste ({eotpSyncValue || '—'})
+                              </label>
+                            );
+                          })()}
+                          {(() => {
+                            const ligne010 = getLigne010();
+                            return (
+                              <label className="flex items-center gap-1 text-xs text-secondary cursor-pointer">
+                                <input
+                                  type="checkbox"
+                                  checked={commandeDetail.dateReceptionUniqueChecked}
+                                  onChange={e => {
+                                    setCommandeDetail(prev => ({
+                                      ...prev,
+                                      dateReceptionUniqueChecked: e.target.checked,
+                                    }));
+                                    if (e.target.checked) syncFromLigne010('dateReception');
+                                  }}
+                                />
+                                Date réception unique ({ligne010?.dateReception || '—'})
+                              </label>
+                            );
+                          })()}
                           <button
                             onClick={handleAddAutresLigne}
                             className="flex items-center px-2 py-1 text-xs text-accent hover:bg-card-hover rounded"
@@ -2336,9 +2393,9 @@ Affaire: ${commande.affaire || 'N/A'}
                             <select
                               value={ligne.eotpId}
                               onChange={e => handleUpdateAutresLigne(idx, 'eotpId', e.target.value)}
-                              disabled={otpIdentiqueChecked}
+                              disabled={commandeDetail.otpIdentiqueChecked}
                               className={`flex-1 px-2 py-1 text-sm border rounded ${
-                                otpIdentiqueChecked
+                                commandeDetail.otpIdentiqueChecked
                                   ? 'bg-std text-muted cursor-not-allowed'
                                   : 'bg-input border-std'
                               }`}
@@ -2356,9 +2413,9 @@ Affaire: ${commande.affaire || 'N/A'}
                               onChange={e =>
                                 handleUpdateAutresLigne(idx, 'dateReception', e.target.value)
                               }
-                              disabled={dateReceptionUniqueChecked}
+                              disabled={commandeDetail.dateReceptionUniqueChecked}
                               className={`w-28 px-2 py-1 text-sm border rounded ${
-                                dateReceptionUniqueChecked
+                                commandeDetail.dateReceptionUniqueChecked
                                   ? 'bg-std text-muted cursor-not-allowed'
                                   : 'bg-input border-std'
                               }`}
@@ -2366,22 +2423,24 @@ Affaire: ${commande.affaire || 'N/A'}
                             <input
                               type="number"
                               placeholder="Qté"
-                              value={ligne.quantite}
-                              onChange={e =>
-                                handleUpdateAutresLigne(idx, 'quantite', e.target.value)
-                              }
-                              className="w-16 px-2 py-1 text-sm bg-input border border-std rounded scrollbar-hide"
-                              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                              value={ligne.quantite === 0 ? '' : ligne.quantite}
+                              min="0"
+                              onChange={e => {
+                                const val = e.target.value;
+                                handleUpdateAutresLigne(idx, 'quantite', val === '' ? '' : val);
+                              }}
+                              className="w-16 px-2 py-1 text-sm bg-input border border-std rounded"
                             />
                             <input
                               type="number"
                               placeholder="PU HT"
-                              value={ligne.coutUnitaire}
-                              onChange={e =>
-                                handleUpdateAutresLigne(idx, 'coutUnitaire', e.target.value)
-                              }
-                              className="w-20 px-2 py-1 text-sm bg-input border border-std rounded scrollbar-hide"
-                              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                              value={ligne.coutUnitaire === 0 ? '' : ligne.coutUnitaire}
+                              min="0"
+                              onChange={e => {
+                                const val = e.target.value;
+                                handleUpdateAutresLigne(idx, 'coutUnitaire', val === '' ? '' : val);
+                              }}
+                              className="w-20 px-2 py-1 text-sm bg-input border border-std rounded"
                             />
                             <span className="w-24 text-right text-sm font-medium text-primary">
                               {parseFloat(ligne.montant || 0).toFixed(2)} €
@@ -2453,25 +2512,74 @@ Affaire: ${commande.affaire || 'N/A'}
                                   </button>
                                 </div>
                               </button>
-                              {isExpanded && (
+                              {isExpanded ? (
                                 <div className="px-3 pb-3 space-y-1">
-                                  {items.map((item, idx) => (
-                                    <label
-                                      key={idx}
-                                      className="flex items-center gap-2 py-1 cursor-pointer hover:opacity-80"
-                                    >
-                                      <input
-                                        type="checkbox"
-                                        checked={item.checked}
-                                        onChange={() =>
-                                          handleToggleMarchandise(categoryKey, item.label)
-                                        }
-                                        className="w-4 h-4 accent-current"
-                                        style={{ accentColor: category.color }}
-                                      />
-                                      <span className="text-xs text-secondary">{item.label}</span>
-                                    </label>
-                                  ))}
+                                  {items.map((item, idx) => {
+                                    if (item.label === 'AUTRES (champ libre)') {
+                                      return (
+                                        <div key={idx} className="py-1">
+                                          <textarea
+                                            placeholder="Entrez du texte libre..."
+                                            value={item.libreValue || ''}
+                                            onChange={e =>
+                                              handleUpdateMarchandiseLibre(
+                                                categoryKey,
+                                                e.target.value
+                                              )
+                                            }
+                                            rows={2}
+                                            className="w-full px-2 py-1 text-sm bg-input border border-std rounded resize-none"
+                                          />
+                                        </div>
+                                      );
+                                    }
+                                    return (
+                                      <label
+                                        key={idx}
+                                        className="flex items-center gap-2 py-1 cursor-pointer hover:opacity-80"
+                                      >
+                                        <input
+                                          type="checkbox"
+                                          checked={item.checked}
+                                          onChange={() =>
+                                            handleToggleMarchandise(categoryKey, item.label)
+                                          }
+                                          className="w-4 h-4 accent-current"
+                                          style={{ accentColor: category.color }}
+                                        />
+                                        <span className="text-xs text-secondary">{item.label}</span>
+                                      </label>
+                                    );
+                                  })}
+                                </div>
+                              ) : (
+                                <div className="px-3 pb-2">
+                                  {items.map((item, idx) => {
+                                    if (item.label === 'AUTRES (champ libre)') {
+                                      if (item.libreValue) {
+                                        return (
+                                          <div
+                                            key={idx}
+                                            className="text-xs text-secondary italic truncate"
+                                          >
+                                            ✓ {item.libreValue}
+                                          </div>
+                                        );
+                                      }
+                                      return null;
+                                    }
+                                    if (item.checked) {
+                                      return (
+                                        <span
+                                          key={idx}
+                                          className="inline-block mr-2 text-xs text-secondary"
+                                        >
+                                          ✓ {item.label}
+                                        </span>
+                                      );
+                                    }
+                                    return null;
+                                  })}
                                 </div>
                               )}
                             </div>
@@ -2623,10 +2731,15 @@ Affaire: ${commande.affaire || 'N/A'}
                           setLinks(links.map(l => (l.id === link.id ? { ...l, url } : l)));
                         }
                       } else if (link.type === 'folder') {
-                        const folderUrl = link.url.startsWith('file://')
-                          ? link.url
-                          : `file:///${link.url.replace(/\\/g, '/')}`;
-                        window.open(folderUrl, '_blank');
+                        const folderPath = link.url;
+                        const batContent = `@echo off\nstart explorer "${folderPath}"`;
+                        const blob = new Blob([batContent], { type: 'text/plain' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = 'open_folder.bat';
+                        a.click();
+                        setTimeout(() => URL.revokeObjectURL(url), 1000);
                       } else {
                         window.open(link.url, '_blank');
                       }

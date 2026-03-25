@@ -238,26 +238,9 @@ function SubCategoryModal({ subcategory, onClose }) {
 
   // MS Project fields
   const [startDate, setStartDate] = useState(subcategory.start_date || '');
-  const [durationDays, setDurationDays] = useState(subcategory.duration_days || 1);
-  const [anchorDate, setAnchorDate] = useState(
-    subcategory.start_date ? 'start' : subcategory.due_date ? 'end' : 'start'
-  );
-
-  const [anchorInitialized, setAnchorInitialized] = useState(false);
-
-  useEffect(() => {
-    if (!anchorInitialized) {
-      setAnchorInitialized(true);
-      return;
-    }
-    if (anchorDate === 'start' && startDate && durationDays > 0) {
-      const calculatedDueDate = addWorkingDays(startDate, durationDays);
-      setDueDate(calculatedDueDate);
-    } else if (anchorDate === 'end' && dueDate && durationDays > 0) {
-      const calculatedStartDate = subtractWorkingDays(dueDate, durationDays);
-      setStartDate(calculatedStartDate);
-    }
-  }, [anchorDate, anchorInitialized]);
+  const [durationDays, setDurationDays] = useState(subcategory.duration_days || 0);
+  const [anchorOnStart, setAnchorOnStart] = useState(!!subcategory.start_date);
+  const [anchorOnEnd, setAnchorOnEnd] = useState(!!subcategory.due_date && !subcategory.start_date);
 
   // Temps repère from library (read-only)
   const parentCategory = categories?.find(c => c.id === subcategory.category_id);
@@ -286,7 +269,8 @@ function SubCategoryModal({ subcategory, onClose }) {
 
   // Helper to add working days (excluding weekends)
   const addWorkingDays = (startDateStr, days) => {
-    if (!startDateStr || days <= 0) return '';
+    if (!startDateStr || days < 0) return '';
+    if (days === 0) return startDateStr;
     const date = new Date(startDateStr);
     let daysAdded = 0;
     while (daysAdded < days) {
@@ -301,7 +285,8 @@ function SubCategoryModal({ subcategory, onClose }) {
 
   // Helper to subtract working days
   const subtractWorkingDays = (endDateStr, days) => {
-    if (!endDateStr || days <= 0) return '';
+    if (!endDateStr || days < 0) return '';
+    if (days === 0) return endDateStr;
     const date = new Date(endDateStr);
     let daysSubtracted = 0;
     while (daysSubtracted < days) {
@@ -315,13 +300,13 @@ function SubCategoryModal({ subcategory, onClose }) {
   };
 
   const handleDurationChange = newDuration => {
-    const duration = parseInt(newDuration) || 1;
+    const duration = parseInt(newDuration) || 0;
     setDurationDays(duration);
 
-    if (anchorDate === 'start' && startDate) {
+    if (anchorOnStart && startDate && duration >= 0) {
       const calculatedDueDate = addWorkingDays(startDate, duration);
       setDueDate(calculatedDueDate);
-    } else if (anchorDate === 'end' && dueDate) {
+    } else if (anchorOnEnd && dueDate && duration >= 0) {
       const calculatedStartDate = subtractWorkingDays(dueDate, duration);
       setStartDate(calculatedStartDate);
     }
@@ -329,8 +314,7 @@ function SubCategoryModal({ subcategory, onClose }) {
 
   const handleStartDateChange = newStartDate => {
     setStartDate(newStartDate);
-    setAnchorDate('start');
-    if (newStartDate && durationDays > 0 && !dueDate) {
+    if (anchorOnStart && newStartDate && durationDays >= 0) {
       const calculatedDueDate = addWorkingDays(newStartDate, durationDays);
       setDueDate(calculatedDueDate);
     }
@@ -338,10 +322,23 @@ function SubCategoryModal({ subcategory, onClose }) {
 
   const handleDueDateChange = newDueDate => {
     setDueDate(newDueDate);
-    setAnchorDate('end');
-    if (newDueDate && durationDays > 0 && !startDate) {
+    if (anchorOnEnd && newDueDate && durationDays >= 0) {
       const calculatedStartDate = subtractWorkingDays(newDueDate, durationDays);
       setStartDate(calculatedStartDate);
+    }
+  };
+
+  const handleAnchorOnStartChange = checked => {
+    setAnchorOnStart(checked);
+    if (checked) {
+      setAnchorOnEnd(false);
+    }
+  };
+
+  const handleAnchorOnEndChange = checked => {
+    setAnchorOnEnd(checked);
+    if (checked) {
+      setAnchorOnStart(false);
     }
   };
 
@@ -360,7 +357,7 @@ function SubCategoryModal({ subcategory, onClose }) {
       due_date: dueDate || null,
       assignee,
       start_date: startDate || null,
-      duration_days: durationDays || 1,
+      duration_days: durationDays || 0,
       milestones,
     });
     onClose();
@@ -522,20 +519,18 @@ function SubCategoryModal({ subcategory, onClose }) {
                   <input
                     type="date"
                     value={startDate}
-                    onChange={e => {
-                      setStartDate(e.target.value);
-                      setAnchorDate('start');
-                    }}
+                    onChange={e => handleStartDateChange(e.target.value)}
                     className="flex-1 px-3 py-2 bg-input border border-std rounded-lg text-primary focus:outline-none focus:border-accent"
                   />
-                  <input
-                    type="radio"
-                    name="anchorDate"
-                    checked={anchorDate === 'start'}
-                    onChange={() => setAnchorDate('start')}
-                    className="w-4 h-4 text-accent"
-                    title="Utiliser comme date de référence"
-                  />
+                  <label className="flex items-center gap-1 text-xs text-muted cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={anchorOnStart}
+                      onChange={e => handleAnchorOnStartChange(e.target.checked)}
+                      className="w-4 h-4 text-accent"
+                    />
+                    Ancrer
+                  </label>
                 </div>
               </div>
               <div>
@@ -546,20 +541,18 @@ function SubCategoryModal({ subcategory, onClose }) {
                   <input
                     type="date"
                     value={dueDate}
-                    onChange={e => {
-                      setDueDate(e.target.value);
-                      setAnchorDate('end');
-                    }}
+                    onChange={e => handleDueDateChange(e.target.value)}
                     className="flex-1 px-3 py-2 bg-input border border-std rounded-lg text-primary focus:outline-none focus:border-accent"
                   />
-                  <input
-                    type="radio"
-                    name="anchorDate"
-                    checked={anchorDate === 'end'}
-                    onChange={() => setAnchorDate('end')}
-                    className="w-4 h-4 text-accent"
-                    title="Utiliser comme date de référence"
-                  />
+                  <label className="flex items-center gap-1 text-xs text-muted cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={anchorOnEnd}
+                      onChange={e => handleAnchorOnEndChange(e.target.checked)}
+                      className="w-4 h-4 text-accent"
+                    />
+                    Ancrer
+                  </label>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-2">
@@ -629,6 +622,7 @@ function SubCategoryModal({ subcategory, onClose }) {
                   className="w-full px-3 py-2 bg-input border border-std rounded-lg text-primary focus:outline-none focus:border-accent"
                 >
                   <option value="">Sélectionner...</option>
+                  <option value="TEAM">Team - Tous les interlocuteurs</option>
                   {getInternalContacts(currentBoard?.id).map(contact => (
                     <option key={contact.id} value={contact.name || contact.title}>
                       {contact.name || contact.title}

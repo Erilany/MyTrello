@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import {
@@ -15,6 +15,8 @@ import {
   LayoutGrid,
   Home,
   Edit3,
+  FolderOpen,
+  ChevronUp,
 } from 'lucide-react';
 
 function Sidebar() {
@@ -39,6 +41,18 @@ function Sidebar() {
   const [showNewBoard, setShowNewBoard] = useState(false);
   const [menuOpenId, setMenuOpenId] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [showProjectsDropdown, setShowProjectsDropdown] = useState(false);
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = event => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setShowProjectsDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const isOnBoardPage =
     location.pathname === '/board' ||
@@ -85,16 +99,16 @@ function Sidebar() {
 
   if (!sidebarOpen) {
     return (
-      <div className="w-[80px] bg-sidebar flex flex-col items-center py-4 border-r border-std gap-2">
+      <div className="w-[80px] bg-sidebar flex flex-col border-r border-std">
         <button
           onClick={() => setSidebarOpen(true)}
-          className="icon-btn text-secondary hover:text-primary"
+          className="icon-btn text-secondary hover:text-primary m-2"
           title="Ouvrir le menu"
         >
           <Layout size={20} />
         </button>
 
-        <div className="border-t border-b border-std py-3 flex flex-col gap-2">
+        <div className="flex-1 overflow-y-auto flex flex-col gap-1 py-2">
           <NavLink
             to="/"
             className={({ isActive }) =>
@@ -105,13 +119,52 @@ function Sidebar() {
             <Home size={20} />
           </NavLink>
 
+          <div className="relative" ref={dropdownRef}>
+            <button
+              onClick={() => setShowProjectsDropdown(!showProjectsDropdown)}
+              className={`icon-btn ${showProjectsDropdown ? 'text-accent' : 'text-secondary hover:text-primary'}`}
+              title="Projets"
+            >
+              <FolderOpen size={20} />
+            </button>
+            {showProjectsDropdown && (
+              <div className="absolute left-full top-0 ml-2 bg-sidebar border border-std rounded-lg shadow-lg z-50 min-w-[200px] max-h-[400px] overflow-y-auto">
+                <div className="p-2 border-b border-std">
+                  <span className="text-xs font-semibold text-muted uppercase">Projets</span>
+                </div>
+                {boards.length === 0 ? (
+                  <div className="p-3 text-xs text-muted text-center">Aucun projet</div>
+                ) : (
+                  boards.map(board => (
+                    <button
+                      key={board.id}
+                      onClick={() => {
+                        loadBoard(board.id);
+                        navigate('/board');
+                        setShowProjectsDropdown(false);
+                      }}
+                      className={`w-full text-left px-3 py-2 text-sm hover:bg-card-hover flex items-center gap-2 ${
+                        currentBoard?.id === board.id
+                          ? 'text-accent bg-accent-soft'
+                          : 'text-primary'
+                      }`}
+                    >
+                      <FolderOpen size={14} className="flex-shrink-0" />
+                      <span className="truncate">{board.title}</span>
+                    </button>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
+
           <button
             onClick={() => {
               setLibraryViewMode('main');
               navigate('/library');
             }}
             className="icon-btn text-secondary hover:text-primary"
-            title="Bibliothèque"
+            title="Ressources"
           >
             <BookOpen size={20} />
           </button>
@@ -326,7 +379,7 @@ function Sidebar() {
             }
           >
             <BookOpen size={16} className="mr-2 text-secondary" />
-            <span className="text-sm">Bibliothèque</span>
+            <span className="text-sm">Ressources</span>
           </NavLink>
 
           <NavLink
