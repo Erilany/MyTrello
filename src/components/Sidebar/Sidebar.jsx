@@ -147,7 +147,7 @@ function Sidebar() {
           className="font-display text-lg font-extrabold tracking-tight"
           style={{ fontSize: '18px', letterSpacing: '-0.5px' }}
         >
-          MyTrello
+          D-ProjeT
         </h1>
         <button
           onClick={() => setSidebarOpen(false)}

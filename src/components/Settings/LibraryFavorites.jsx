@@ -429,6 +429,71 @@ function LibraryFavorites() {
     }
   };
 
+  const getCardSkipAction = cardItem => {
+    if (!cardItem || !cardItem.content_json) return false;
+    try {
+      const content = JSON.parse(cardItem.content_json);
+      return content.card?.skipAction || false;
+    } catch {
+      return false;
+    }
+  };
+
+  const getCardSubcategories = cardItem => {
+    const categories = getCardCategories(cardItem);
+    const subcategories = [];
+    categories.forEach(cat => {
+      if (cat.subcategories) {
+        cat.subcategories.forEach(subcat => {
+          subcategories.push({ ...subcat, categoryTitle: cat.title });
+        });
+      }
+    });
+    return subcategories;
+  };
+
+  const isSubcategoryFavoriteSimple = (cardId, subcategoryTitle) =>
+    favorites?.subcategories?.some(s => s.cardId === cardId && s.title === subcategoryTitle) ||
+    false;
+
+  const toggleSubcategoryDirect = (cardId, cardTitle, subcategoryTitle, categoryTitle) => {
+    const existingCards = [...new Set(favorites?.cards || [])];
+    const existingCategories = [...(favorites?.categories || [])];
+    const existingSubcategories = [...(favorites?.subcategories || [])];
+
+    const newFavorites = {
+      cards: existingCards,
+      categories: existingCategories,
+      subcategories: existingSubcategories,
+    };
+
+    const subExists = newFavorites.subcategories.some(
+      s => s.cardId === cardId && s.title === subcategoryTitle
+    );
+
+    if (subExists) {
+      newFavorites.subcategories = newFavorites.subcategories.filter(
+        s => !(s.cardId === cardId && s.title === subcategoryTitle)
+      );
+
+      const remainingSubsForCard = newFavorites.subcategories.filter(s => s.cardId === cardId);
+      if (remainingSubsForCard.length === 0) {
+        newFavorites.cards = newFavorites.cards.filter(id => id !== cardId);
+      }
+    } else {
+      newFavorites.subcategories.push({
+        cardId,
+        cardTitle,
+        title: subcategoryTitle,
+        categoryTitle: categoryTitle || '',
+      });
+      if (!newFavorites.cards.includes(cardId)) {
+        newFavorites.cards.push(cardId);
+      }
+    }
+    saveFavorites(newFavorites);
+  };
+
   const getItemChapter = item => {
     if (item.type === 'subcategory') {
       const parentCategory = libraryItems.find(
@@ -578,6 +643,7 @@ function LibraryFavorites() {
                 {items.map(item => {
                   const categories = getCardCategories(item);
                   const cardKey = `${item.id}`;
+                  const cardSkipAction = getCardSkipAction(item);
 
                   return (
                     <div key={item.id} className="ml-2">
@@ -613,6 +679,11 @@ function LibraryFavorites() {
                           <span className="text-sm font-medium text-[var(--txt-primary)]">
                             {item.title}
                           </span>
+                          {cardSkipAction && (
+                            <span className="px-1.5 py-0.5 text-xs bg-purple-100 text-purple-700 rounded dark:bg-purple-900/40 dark:text-purple-300">
+                              Tâche unique
+                            </span>
+                          )}
                         </button>
                         <button
                           onClick={e => {
@@ -627,111 +698,49 @@ function LibraryFavorites() {
                       </div>
 
                       {expandedCards[cardKey] &&
-                        categories.map(cat => {
-                          const catKey = `${item.id}_${cat.title}`;
+                        (() => {
+                          const skipAction = cardSkipAction;
+                          const allSubcategories = getCardSubcategories(item);
 
-                          return (
-                            <div key={catKey} className="ml-6">
-                              <div
-                                className={`flex items-center gap-2 px-3 py-2 rounded transition-colors ${
-                                  isCategoryFavorite(item.id, cat.title)
-                                    ? 'bg-[var(--done-soft)]'
-                                    : 'hover:bg-[var(--bg-card-hover)]'
-                                }`}
-                              >
-                                <div
-                                  className={`w-4 h-4 rounded border flex items-center justify-center transition-colors cursor-pointer ${
-                                    isCategoryFavorite(item.id, cat.title)
-                                      ? 'bg-[var(--done)] border-[var(--done)]'
-                                      : 'border-[var(--border)]'
-                                  }`}
-                                  onClick={() =>
-                                    toggleCategoryFavorite(
-                                      item.id,
-                                      item.title,
-                                      cat.title,
-                                      cat.subcategories || []
-                                    )
-                                  }
-                                >
-                                  {isCategoryFavorite(item.id, cat.title) && (
-                                    <Check size={10} className="text-white" />
-                                  )}
+                          if (skipAction) {
+                            if (allSubcategories.length === 0) {
+                              return (
+                                <div className="ml-6 py-2 text-sm text-[var(--txt-muted)] italic">
+                                  Aucune tâche disponible
                                 </div>
-                                {(cat.subcategories || []).length > 0 ? (
-                                  <button
-                                    onClick={e => {
-                                      e.stopPropagation();
-                                      toggleCategory(catKey);
-                                    }}
-                                    className="flex items-center gap-1 flex-1 text-left cursor-pointer"
-                                  >
-                                    {expandedCategories[catKey] ? (
-                                      <ChevronDown
-                                        size={14}
-                                        className="text-[var(--txt-secondary)]"
-                                      />
-                                    ) : (
-                                      <ChevronRight
-                                        size={14}
-                                        className="text-[var(--txt-secondary)]"
-                                      />
-                                    )}
-                                    <span className="text-sm text-[var(--txt-primary)]">
-                                      {cat.title}
-                                    </span>
-                                  </button>
-                                ) : (
-                                  <span className="text-sm text-[var(--txt-primary)]">
-                                    {cat.title}
-                                  </span>
-                                )}
-                                <button
-                                  onClick={e => {
-                                    e.stopPropagation();
-                                    setDeleteConfirm({
-                                      type: 'category',
-                                      item: {
-                                        cardId: item.id,
-                                        cardTitle: item.title,
-                                        categoryId: cat.id,
-                                        title: cat.title,
-                                      },
-                                    });
-                                  }}
-                                  className="p-1 text-red-500 hover:bg-red-50 rounded ml-auto"
-                                  title="Supprimer des favoris"
-                                >
-                                  <Trash2 size={12} />
-                                </button>
-                              </div>
+                              );
+                            }
 
-                              {expandedCategories[catKey] &&
-                                (cat.subcategories || []).map(sub => (
+                            return (
+                              <div className="ml-6">
+                                <div className="text-xs text-[var(--txt-muted)] px-3 py-1 mb-1">
+                                  Les tâches sont affichées ci-dessous
+                                </div>
+                                {allSubcategories.map(sub => (
                                   <div
                                     key={sub.title}
-                                    className={`flex items-center gap-2 px-3 py-2 ml-6 rounded transition-colors ${
-                                      isSubcategoryFavorite(item.id, cat.title, sub.title)
-                                        ? 'bg-yellow-50 dark:bg-yellow-900/20'
+                                    className={`flex items-center gap-2 px-3 py-2 rounded transition-colors border-l-2 border-[var(--done)] ml-2 ${
+                                      isSubcategoryFavoriteSimple(item.id, sub.title)
+                                        ? 'bg-[var(--done-soft)]'
                                         : 'hover:bg-[var(--bg-card-hover)]'
                                     }`}
                                   >
                                     <div
                                       className={`w-4 h-4 rounded border flex items-center justify-center transition-colors cursor-pointer ${
-                                        isSubcategoryFavorite(item.id, cat.title, sub.title)
-                                          ? 'bg-yellow-500 border-yellow-500'
+                                        isSubcategoryFavoriteSimple(item.id, sub.title)
+                                          ? 'bg-[var(--done)] border-[var(--done)]'
                                           : 'border-[var(--border)]'
                                       }`}
                                       onClick={() =>
-                                        toggleSubcategoryFavorite(
+                                        toggleSubcategoryDirect(
                                           item.id,
                                           item.title,
-                                          cat.title,
-                                          sub.title
+                                          sub.title,
+                                          sub.categoryTitle
                                         )
                                       }
                                     >
-                                      {isSubcategoryFavorite(item.id, cat.title, sub.title) && (
+                                      {isSubcategoryFavoriteSimple(item.id, sub.title) && (
                                         <Check size={10} className="text-white" />
                                       )}
                                     </div>
@@ -746,7 +755,7 @@ function LibraryFavorites() {
                                           item: {
                                             cardId: item.id,
                                             cardTitle: item.title,
-                                            categoryTitle: cat.title,
+                                            categoryTitle: sub.categoryTitle,
                                             subcategoryId: sub.id,
                                             title: sub.title,
                                           },
@@ -759,9 +768,146 @@ function LibraryFavorites() {
                                     </button>
                                   </div>
                                 ))}
-                            </div>
-                          );
-                        })}
+                              </div>
+                            );
+                          }
+
+                          return categories.map(cat => {
+                            const catKey = `${item.id}_${cat.title}`;
+
+                            return (
+                              <div key={catKey} className="ml-6">
+                                <div
+                                  className={`flex items-center gap-2 px-3 py-2 rounded transition-colors ${
+                                    isCategoryFavorite(item.id, cat.title)
+                                      ? 'bg-[var(--done-soft)]'
+                                      : 'hover:bg-[var(--bg-card-hover)]'
+                                  }`}
+                                >
+                                  <div
+                                    className={`w-4 h-4 rounded border flex items-center justify-center transition-colors cursor-pointer ${
+                                      isCategoryFavorite(item.id, cat.title)
+                                        ? 'bg-[var(--done)] border-[var(--done)]'
+                                        : 'border-[var(--border)]'
+                                    }`}
+                                    onClick={() =>
+                                      toggleCategoryFavorite(
+                                        item.id,
+                                        item.title,
+                                        cat.title,
+                                        cat.subcategories || []
+                                      )
+                                    }
+                                  >
+                                    {isCategoryFavorite(item.id, cat.title) && (
+                                      <Check size={10} className="text-white" />
+                                    )}
+                                  </div>
+                                  {(cat.subcategories || []).length > 0 ? (
+                                    <button
+                                      onClick={e => {
+                                        e.stopPropagation();
+                                        toggleCategory(catKey);
+                                      }}
+                                      className="flex items-center gap-1 flex-1 text-left cursor-pointer"
+                                    >
+                                      {expandedCategories[catKey] ? (
+                                        <ChevronDown
+                                          size={14}
+                                          className="text-[var(--txt-secondary)]"
+                                        />
+                                      ) : (
+                                        <ChevronRight
+                                          size={14}
+                                          className="text-[var(--txt-secondary)]"
+                                        />
+                                      )}
+                                      <span className="text-sm text-[var(--txt-primary)]">
+                                        {cat.title}
+                                      </span>
+                                    </button>
+                                  ) : (
+                                    <span className="text-sm text-[var(--txt-primary)]">
+                                      {cat.title}
+                                    </span>
+                                  )}
+                                  <button
+                                    onClick={e => {
+                                      e.stopPropagation();
+                                      setDeleteConfirm({
+                                        type: 'category',
+                                        item: {
+                                          cardId: item.id,
+                                          cardTitle: item.title,
+                                          categoryId: cat.id,
+                                          title: cat.title,
+                                        },
+                                      });
+                                    }}
+                                    className="p-1 text-red-500 hover:bg-red-50 rounded ml-auto"
+                                    title="Supprimer des favoris"
+                                  >
+                                    <Trash2 size={12} />
+                                  </button>
+                                </div>
+
+                                {expandedCategories[catKey] &&
+                                  (cat.subcategories || []).map(sub => (
+                                    <div
+                                      key={sub.title}
+                                      className={`flex items-center gap-2 px-3 py-2 ml-6 rounded transition-colors ${
+                                        isSubcategoryFavorite(item.id, cat.title, sub.title)
+                                          ? 'bg-yellow-50 dark:bg-yellow-900/20'
+                                          : 'hover:bg-[var(--bg-card-hover)]'
+                                      }`}
+                                    >
+                                      <div
+                                        className={`w-4 h-4 rounded border flex items-center justify-center transition-colors cursor-pointer ${
+                                          isSubcategoryFavorite(item.id, cat.title, sub.title)
+                                            ? 'bg-yellow-500 border-yellow-500'
+                                            : 'border-[var(--border)]'
+                                        }`}
+                                        onClick={() =>
+                                          toggleSubcategoryFavorite(
+                                            item.id,
+                                            item.title,
+                                            cat.title,
+                                            sub.title
+                                          )
+                                        }
+                                      >
+                                        {isSubcategoryFavorite(item.id, cat.title, sub.title) && (
+                                          <Check size={10} className="text-white" />
+                                        )}
+                                      </div>
+                                      <span className="text-sm text-[var(--txt-primary)] flex-1">
+                                        {sub.title}
+                                      </span>
+                                      <button
+                                        onClick={e => {
+                                          e.stopPropagation();
+                                          setDeleteConfirm({
+                                            type: 'subcategory',
+                                            item: {
+                                              cardId: item.id,
+                                              cardTitle: item.title,
+                                              categoryTitle: cat.title,
+                                              subcategoryId: sub.id,
+                                              title: sub.title,
+                                            },
+                                          });
+                                        }}
+                                        className="p-1 text-red-500 hover:bg-red-50 rounded"
+                                        title="Supprimer des favoris"
+                                      >
+                                        <Trash2 size={12} />
+                                      </button>
+                                    </div>
+                                  ))}
+                              </div>
+                            );
+                          });
+                        })()}
                     </div>
                   );
                 })}

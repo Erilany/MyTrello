@@ -58,12 +58,19 @@ function convertTreeToLibraryItems(treeData) {
               description: '',
               priority: 'normal',
               duration_days: node.data.temps || 0,
+              skipAction: node.data.skipAction || false,
             },
             categories: [],
           }),
         };
         cardMap.set(currentCarte, cardItem);
         libraryItems.push(cardItem);
+      } else {
+        if (node.type === 'carte' && node.data.skipAction !== undefined) {
+          const content = JSON.parse(cardItem.content_json);
+          content.card.skipAction = node.data.skipAction;
+          cardItem.content_json = JSON.stringify(content);
+        }
       }
 
       if (node.type === 'categorie' || node.type === 'souscategorie') {

@@ -82,6 +82,21 @@ function getPriorityLabel(priority) {
   }
 }
 
+function getTaskProgress(status) {
+  switch (status) {
+    case 'done':
+      return 100;
+    case 'in_progress':
+      return 50;
+    case 'waiting':
+      return 25;
+    case 'todo':
+      return 0;
+    default:
+      return 0;
+  }
+}
+
 function getWeekNumber(date) {
   const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
   const dayNum = d.getUTCDay() || 7;
@@ -467,6 +482,7 @@ export default function Dashboard() {
                       <th className="text-left py-2 px-3 text-muted font-medium">Action</th>
                       <th className="text-left py-2 px-3 text-muted font-medium">Tâche</th>
                       <th className="text-left py-2 px-3 text-muted font-medium">État</th>
+                      <th className="text-left py-2 px-3 text-muted font-medium">Avancement</th>
                       <th className="text-left py-2 px-3 text-muted font-medium">Priorité</th>
                       <th className="text-left py-2 px-3 text-muted font-medium">Échéance</th>
                     </tr>
@@ -494,6 +510,27 @@ export default function Dashboard() {
                             )}
                             {getStatusLabel(task.status)}
                           </span>
+                        </td>
+                        <td className="py-2 px-3">
+                          <div className="flex items-center gap-2">
+                            <div className="w-16 h-2 bg-card-hover rounded-full overflow-hidden">
+                              <div
+                                className={`h-full rounded-full ${
+                                  task.status === 'done'
+                                    ? 'bg-green-500'
+                                    : task.status === 'in_progress'
+                                      ? 'bg-blue-500'
+                                      : task.status === 'waiting'
+                                        ? 'bg-yellow-500'
+                                        : 'bg-gray-400'
+                                }`}
+                                style={{ width: `${getTaskProgress(task.status)}%` }}
+                              />
+                            </div>
+                            <span className="text-xs text-muted w-8">
+                              {getTaskProgress(task.status)}%
+                            </span>
+                          </div>
                         </td>
                         <td className={`py-2 px-3 font-medium ${getPriorityColor(task.priority)}`}>
                           {getPriorityLabel(task.priority)}

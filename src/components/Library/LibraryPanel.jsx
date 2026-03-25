@@ -457,6 +457,13 @@ function LibraryPanel() {
     );
   };
 
+  const isSubcategoryFavoriteSimple = (cardId, subcategoryTitle) => {
+    if (!favorites || !favorites.subcategories) return false;
+    return favorites.subcategories.some(
+      s => String(s.cardId) === String(cardId) && s.title === subcategoryTitle
+    );
+  };
+
   const cardItems = libraryItems.filter(item => item.type === 'card');
 
   const filteredItems = libraryItems.filter(item => {
@@ -492,6 +499,29 @@ function LibraryPanel() {
     } catch {
       return [];
     }
+  };
+
+  const getCardSkipAction = cardItem => {
+    if (!cardItem || !cardItem.content_json) return false;
+    try {
+      const content = JSON.parse(cardItem.content_json);
+      return content.card?.skipAction || false;
+    } catch {
+      return false;
+    }
+  };
+
+  const getCardSubcategories = cardItem => {
+    const categories = getCardCategories(cardItem);
+    const subcategories = [];
+    categories.forEach(cat => {
+      if (cat.subcategories) {
+        cat.subcategories.forEach(subcat => {
+          subcategories.push({ ...subcat, categoryTitle: cat.title });
+        });
+      }
+    });
+    return subcategories;
   };
 
   const getCategorySubcategories = category => {
@@ -706,6 +736,28 @@ function LibraryPanel() {
           s.categoryTitle === categoryTitle &&
           s.cardTitle === cardTitle
       );
+      const shouldSelect = forceState !== null ? forceState : !exists;
+
+      if (shouldSelect) {
+        if (exists) return prev;
+        return [...prev, subcatWithParents];
+      } else {
+        return prev.filter(
+          s =>
+            !(
+              s.title === subcategory.title &&
+              s.categoryTitle === categoryTitle &&
+              s.cardTitle === cardTitle
+            )
+        );
+      }
+    });
+  };
+
+  const toggleSubcategoryDirect = (subcategory, cardTitle, categoryTitle, forceState = null) => {
+    const subcatWithParents = { ...subcategory, cardTitle, categoryTitle: categoryTitle || '' };
+    setSelectedSubcategories(prev => {
+      const exists = prev.find(s => s.title === subcategory.title && s.cardTitle === cardTitle);
       const shouldSelect = forceState !== null ? forceState : !exists;
 
       if (shouldSelect) {
@@ -1552,6 +1604,19 @@ function LibraryPanel() {
     });
 
     let categories = selectedLibraryCard ? getCardCategories(selectedLibraryCard) : [];
+    const skipAction = selectedLibraryCard ? getCardSkipAction(selectedLibraryCard) : false;
+    let directSubcategories = [];
+
+    if (skipAction && selectedLibraryCard) {
+      directSubcategories = getCardSubcategories(selectedLibraryCard);
+      if (filter === 'favorites' && selectedLibraryCard) {
+        const cardId = selectedLibraryCard.id;
+        const favSubs = favorites?.subcategories || [];
+        directSubcategories = directSubcategories.filter(sub =>
+          favSubs.some(s => String(s.cardId) === String(cardId) && s.title === sub.title)
+        );
+      }
+    }
 
     // Filter categories and subcategories when in favorites mode
     if (filter === 'favorites' && selectedLibraryCard) {
@@ -1765,6 +1830,7 @@ function LibraryPanel() {
                 ) : (
                   filteredCards.map(item => {
                     const isSelected = selectedCards.some(c => c.id === item.id);
+                    const cardSkipAction = getCardSkipAction(item);
                     return (
                       <div
                         key={item.id}
@@ -1795,6 +1861,11 @@ function LibraryPanel() {
                             <h4 className="font-medium text-sm truncate text-gray-800 dark:text-white flex-1">
                               {item.title}
                             </h4>
+                            {cardSkipAction && (
+                              <span className="px-1.5 py-0.5 text-xs bg-purple-100 text-purple-700 rounded dark:bg-purple-900/40 dark:text-purple-300 flex-shrink-0">
+                                Tâche unique
+                              </span>
+                            )}
                             {isCardFavorite(item.id) && (
                               <Star
                                 size={14}
@@ -1822,11 +1893,69 @@ function LibraryPanel() {
 
             <div className="flex flex-col overflow-hidden">
               <h2 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">
-                Catégories
+                {skipAction ? 'Tâches' : 'Catégories'}
               </h2>
               <div className="flex-1 overflow-y-auto space-y-2 pr-2">
                 {!selectedLibraryCard ? (
                   <p className="text-gray-500 dark:text-gray-400 text-sm">Sélectionnez une carte</p>
+                ) : skipAction ? (
+                  directSubcategories.length === 0 ? (
+                    <p className="text-gray-500 dark:text-gray-400 text-sm">Aucune tâche</p>
+                  ) : (
+                    directSubcategories.map((subcat, idx) => {
+                      const isSelected = selectedSubcategories.some(
+                        s => s.title === subcat.title && s.cardTitle === selectedLibraryCard?.title
+                      );
+                      return (
+                        <div
+                          key={idx}
+                          className={`p-3 rounded-lg border cursor-pointer transition-colors flex items-start gap-2 ${
+                            isSelected
+                              ? 'bg-green-100 border-green-500 dark:bg-green-900/40 dark:border-green-500'
+                              : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 hover:border-green-300'
+                          }`}
+                        >
+                          <div
+                            className={`mt-1 w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center cursor-pointer ${
+                              isSelected
+                                ? 'bg-green-500 border-green-500'
+                                : 'border-gray-300 dark:border-gray-600'
+                            }`}
+                            onClick={e => {
+                              e.stopPropagation();
+                              toggleSubcategoryDirect(
+                                subcat,
+                                selectedLibraryCard?.title,
+                                subcat.categoryTitle
+                              );
+                            }}
+                          >
+                            {isSelected && <Check size={12} className="text-white" />}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <h4 className="font-medium text-sm text-gray-800 dark:text-white flex-1">
+                                {subcat.title}
+                              </h4>
+                              {isSubcategoryFavoriteSimple(
+                                selectedLibraryCard.id,
+                                subcat.title
+                              ) && (
+                                <Star
+                                  size={14}
+                                  className="text-yellow-500 flex-shrink-0"
+                                  fill="currentColor"
+                                />
+                              )}
+                            </div>
+                            {subcat.categoryTitle && (
+                              <p className="text-xs text-gray-500 mt-1">{subcat.categoryTitle}</p>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })
+                  )
                 ) : categories.length === 0 ? (
                   <p className="text-gray-500 dark:text-gray-400 text-sm">Aucune catégorie</p>
                 ) : (
@@ -1887,10 +2016,14 @@ function LibraryPanel() {
 
             <div className="flex flex-col overflow-hidden">
               <h2 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">
-                Sous-catégories
+                {skipAction ? '' : 'Sous-catégories'}
               </h2>
               <div className="flex-1 overflow-y-auto space-y-2 pr-2">
-                {!selectedLibraryCategory ? (
+                {skipAction ? (
+                  <p className="text-gray-500 dark:text-gray-400 text-sm">
+                    Les tâches sont affichées dans la colonne de gauche
+                  </p>
+                ) : !selectedLibraryCategory ? (
                   <p className="text-gray-500 dark:text-gray-400 text-sm">
                     Sélectionnez une catégorie
                   </p>

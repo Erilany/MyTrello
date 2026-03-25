@@ -185,7 +185,7 @@ function VoiceControl() {
   };
 
   const helpCommands = [
-    { cmd: 'Hey MyTrello / Écoute', desc: "Activer l'écoute" },
+    { cmd: 'Hey D-ProjeT / Écoute', desc: "Activer l'écoute" },
     { cmd: 'Stop / Pause', desc: "Désactiver l'écoute" },
     { cmd: 'Crée une carte [nom]', desc: 'Créer une carte' },
     { cmd: 'Crée une catégorie [nom]', desc: 'Créer une catégorie' },

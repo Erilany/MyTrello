@@ -155,12 +155,12 @@ function createMenu() {
       label: 'Aide',
       submenu: [
         {
-          label: 'À propos de MyTrello',
+          label: 'À propos de D-ProjeT',
           click: () => {
             dialog.showMessageBox(mainWindow, {
               type: 'info',
-              title: 'À propos de MyTrello',
-              message: 'MyTrello v0.1.0',
+              title: 'À propos de D-ProjeT',
+              message: 'D-ProjeT v1.1',
               detail: 'Application de gestion de projets à 3 niveaux.',
             });
           },
@@ -183,7 +183,7 @@ function createTray() {
 
     const contextMenu = Menu.buildFromTemplate([
       {
-        label: 'Ouvrir MyTrello',
+        label: 'Ouvrir D-ProjeT',
         click: () => {
           mainWindow.show();
         },
@@ -198,7 +198,7 @@ function createTray() {
       },
     ]);
 
-    tray.setToolTip('MyTrello');
+    tray.setToolTip('D-ProjeT');
     tray.setContextMenu(contextMenu);
 
     tray.on('double-click', () => {

@@ -66,12 +66,19 @@ function convertTreeToLibraryItems(treeData) {
               description: '',
               priority: 'normal',
               duration_days: node.data.temps || 0,
+              skipAction: node.data.skipAction || false,
             },
             categories: [],
           }),
         };
         cardMap.set(currentCarte, cardItem);
         libraryItems.push(cardItem);
+      } else {
+        const content = JSON.parse(cardItem.content_json);
+        if (node.data.skipAction !== undefined) {
+          content.card.skipAction = node.data.skipAction;
+          cardItem.content_json = JSON.stringify(content);
+        }
       }
 
       if (node.type === 'categorie' || node.type === 'souscategorie') {
@@ -225,6 +232,7 @@ function convertLibraryDataToTree(libraryItems) {
             categorieTag: '',
             domaineTag: '',
             systemTag: '',
+            skipAction: content.card?.skipAction || false,
           },
           children: [],
           expanded: true,
@@ -290,9 +298,9 @@ function convertLibraryDataToTree(libraryItems) {
   return tree;
 }
 
-const defaultCsvData = `N°;Chapitre;Carte;Action;Tâche;Temps;Tags 1;Tags 2;Tag Revue d'activité
-5;Jalons;Jalons SIEPR;;;;;;PT10955H0M0S;;;
-6;Jalons;Jalons SIEPR;Jalons projet;;;;;PT10955H0M0S;;;
+const defaultCsvData = `N°;Chapitre;Carte;Action;Tâche;Temps;Tags 1;Tags 2;Tag Revue d'activité;Sans Action
+5;Jalons;Jalons SIEPR;;;;;;PT10955H0M0S;;;NON
+6;Jalons;Jalons SIEPR;Jalons projet;;;;;PT10955H0M0S;;;NON
 7;Jalons;Jalons SIEPR;Jalons projet;Signature de la DO;;;;PT0H0M0S;Projet;Projet
 8;Jalons;Jalons SIEPR;Jalons projet;Lancement projet;;;;PT0H0M0S;Projet;Projet
 9;Jalons;Jalons SIEPR;Jalons projet;Signature de la DCT;;;;PT0H0M0S;Projet;Projet
@@ -611,6 +619,7 @@ function parseCSV(csv) {
       categorieTag: isOldFormat ? values[8] || '' : values[6] || '',
       domaineTag: isOldFormat ? values[9] || '' : values[7] || '',
       systemTag: isOldFormat ? values[10] || '' : values[8] || '',
+      skipAction: values.length > 9 ? values[9]?.toUpperCase() === 'OUI' : false,
     };
     items.push(item);
   }
@@ -654,6 +663,7 @@ function buildTree(items) {
             categorieTag: '',
             domaineTag: '',
             systemTag: '',
+            skipAction: item.skipAction || false,
           },
           children: [],
           expanded: true,
@@ -723,18 +733,21 @@ function buildTree(items) {
 }
 
 function treeToCSV(nodes) {
-  let csv = "N°;Chapitre;Carte;Action;Tâche;Temps;Tags 1;Tags 2;Tag Revue d'activité\n";
+  let csv = "N°;Chapitre;Carte;Action;Tâche;Temps;Tags 1;Tags 2;Tag Revue d'activité;Sans Action\n";
   let counter = 1;
+  const exportedCards = new Set();
 
-  const processNode = (node, chapitre = '', carte = '', categorie = '') => {
+  const processNode = (node, chapitre = '', carte = '', categorie = '', skipAction = false) => {
     let currentChapitre = chapitre;
     let currentCarte = carte;
     let currentCategorie = categorie;
+    let currentSkipAction = skipAction;
 
     if (node.type === 'chapitre') {
       currentChapitre = node.data.chapitre || node.titre;
     } else if (node.type === 'carte') {
       currentCarte = node.data.carte || node.titre;
+      currentSkipAction = node.data.skipAction || false;
     } else if (node.type === 'categorie') {
       currentCategorie = node.data.categorie || node.titre;
     }
@@ -750,13 +763,37 @@ function treeToCSV(nodes) {
         node.data.categorieTag || '',
         node.data.domaineTag || '',
         node.data.systemTag || '',
+        '',
       ];
       csv += row.join(';') + '\n';
     }
 
-    if (node.children) {
+    if (node.type === 'carte' && node.children && node.children.length > 0) {
+      const hasOnlySubcategories = node.children.every(c => c.type === 'souscategorie');
+      if (hasOnlySubcategories && currentSkipAction) {
+        node.children.forEach(child => {
+          const row = [
+            counter++,
+            currentChapitre,
+            currentCarte,
+            '',
+            child.data.sousCat1 || child.data.sousCat2 || child.data.sousCat3 || child.titre || '',
+            formatDuration(child.data.temps || 0),
+            child.data.categorieTag || '',
+            child.data.domaineTag || '',
+            child.data.systemTag || '',
+            'OUI',
+          ];
+          csv += row.join(';') + '\n';
+        });
+      } else {
+        node.children.forEach(child =>
+          processNode(child, currentChapitre, currentCarte, currentCategorie, currentSkipAction)
+        );
+      }
+    } else if (node.children) {
       node.children.forEach(child =>
-        processNode(child, currentChapitre, currentCarte, currentCategorie)
+        processNode(child, currentChapitre, currentCarte, currentCategorie, currentSkipAction)
       );
     }
   };
@@ -765,7 +802,7 @@ function treeToCSV(nodes) {
   return csv;
 }
 
-function TreeNode({ node, onEdit, onDelete, onAddChild }) {
+function TreeNode({ node, onEdit, onDelete, onAddChild, onToggleSkipAction }) {
   const [isExpanded, setIsExpanded] = useState(node.expanded !== false);
   const [localData, setLocalData] = useState(node.data);
   const [isEditing, setIsEditing] = useState(false);
@@ -785,6 +822,13 @@ function TreeNode({ node, onEdit, onDelete, onAddChild }) {
 
   const handleBlur = () => {
     setIsEditing(false);
+  };
+
+  const handleToggleSkipAction = () => {
+    const newSkipAction = !localData.skipAction;
+    const updatedData = { ...localData, skipAction: newSkipAction };
+    setLocalData(updatedData);
+    onToggleSkipAction(node.id, newSkipAction);
   };
 
   const typeConfig = {
@@ -852,6 +896,17 @@ function TreeNode({ node, onEdit, onDelete, onAddChild }) {
               className="flex-1 px-3 py-1.5 text-sm bg-[var(--bg-input)] border border-[var(--border)] rounded text-[var(--txt-primary)] cursor-text"
               placeholder="Nom de la carte"
             />
+            <button
+              onClick={handleToggleSkipAction}
+              className={`px-2 py-1 text-xs rounded border ${
+                localData.skipAction
+                  ? 'bg-orange-500/20 text-orange-500 border-orange-500/50 hover:bg-orange-500/30'
+                  : 'bg-std text-muted border-std hover:bg-card-hover'
+              }`}
+              title="Ignorer le niveau Action"
+            >
+              {localData.skipAction ? 'Tâche unique' : 'Multi-tâches'}
+            </button>
           </>
         )}
 
@@ -970,6 +1025,7 @@ function TreeNode({ node, onEdit, onDelete, onAddChild }) {
               onEdit={onEdit}
               onDelete={onDelete}
               onAddChild={onAddChild}
+              onToggleSkipAction={onToggleSkipAction}
             />
           ))}
         </div>
@@ -1137,6 +1193,27 @@ function LibraryEditor() {
       };
 
       findAndAdd(newData);
+      return newData;
+    });
+    setHasChanges(true);
+  }, []);
+
+  const handleToggleSkipAction = useCallback((nodeId, newSkipAction) => {
+    setTreeData(prev => {
+      const newData = JSON.parse(JSON.stringify(prev));
+
+      const findAndUpdate = nodes => {
+        for (let n of nodes) {
+          if (n.id === nodeId) {
+            n.data = { ...n.data, skipAction: newSkipAction };
+            return true;
+          }
+          if (n.children && findAndUpdate(n.children)) return true;
+        }
+        return false;
+      };
+
+      findAndUpdate(newData);
       return newData;
     });
     setHasChanges(true);
@@ -1708,6 +1785,7 @@ function LibraryEditor() {
             onEdit={handleEdit}
             onDelete={handleDelete}
             onAddChild={handleAddChild}
+            onToggleSkipAction={handleToggleSkipAction}
           />
         ))}
       </div>

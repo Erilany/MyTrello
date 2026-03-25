@@ -55,6 +55,7 @@ function Board2() {
     createCard,
     createCategory,
     loadBoard,
+    libraryItems,
   } = useApp();
 
   console.log(
@@ -104,6 +105,23 @@ function Board2() {
       }
     }
   }, [subcategories]);
+
+  const [libraryUpdateTrigger, setLibraryUpdateTrigger] = useState(0);
+
+  useEffect(() => {
+    console.log('[Board2] libraryItems changed, count:', libraryItems?.length || 0);
+    setLibraryUpdateTrigger(prev => prev + 1);
+  }, [libraryItems]);
+
+  useEffect(() => {
+    const handleLibraryUpdate = () => {
+      console.log('[Board2] Received library-updated event');
+      setLibraryUpdateTrigger(prev => prev + 1);
+    };
+
+    window.addEventListener('library-updated', handleLibraryUpdate);
+    return () => window.removeEventListener('library-updated', handleLibraryUpdate);
+  }, []);
 
   const [selectedChapter, setSelectedChapter] = useState(null);
   const [selectedCategoryForTasks, setSelectedCategoryForTasks] = useState(null);
@@ -1099,6 +1117,77 @@ Affaire: ${commande.affaire || 'N/A'}
       .trim();
   };
 
+  const normalizeString = str => {
+    if (!str) return '';
+    return str.toLowerCase().trim().replace(/\s+/g, ' ');
+  };
+
+  const getCardSkipAction = card => {
+    if (!card) {
+      console.log('[Board2] getCardSkipAction: no card provided');
+      return false;
+    }
+    if (!libraryItems || !Array.isArray(libraryItems)) {
+      console.log('[Board2] getCardSkipAction: libraryItems not available, card:', card.title);
+      return false;
+    }
+
+    const cardTitle = normalizeString(card.title);
+    const libraryCard = libraryItems.find(
+      item => item.type === 'card' && normalizeString(item.title) === cardTitle
+    );
+
+    if (!libraryCard) {
+      console.log('[Board2] getCardSkipAction: no library card found for:', card.title);
+      return false;
+    }
+
+    if (!libraryCard.content_json) {
+      console.log('[Board2] getCardSkipAction: no content_json for:', libraryCard.title);
+      return false;
+    }
+
+    try {
+      const content = JSON.parse(libraryCard.content_json);
+      const skipAction = content.card?.skipAction || false;
+      console.log('[Board2] getCardSkipAction:', card.title, '-> skipAction:', skipAction);
+      return skipAction;
+    } catch (e) {
+      console.error('[Board2] getCardSkipAction: error parsing content_json', e);
+      return false;
+    }
+  };
+
+  const getCardTasks = card => {
+    if (!card || !libraryItems || !Array.isArray(libraryItems)) return [];
+
+    const cardTitle = normalizeString(card.title);
+    const libraryCard = libraryItems.find(
+      item => item.type === 'card' && normalizeString(item.title) === cardTitle
+    );
+    if (!libraryCard || !libraryCard.content_json) return [];
+    try {
+      const content = JSON.parse(libraryCard.content_json);
+      const tasks = [];
+      (content.categories || []).forEach(cat => {
+        (cat.subcategories || []).forEach(sub => {
+          tasks.push({ ...sub, categoryTitle: cat.title });
+        });
+      });
+      return tasks;
+    } catch {
+      return [];
+    }
+  };
+
+  const getLibraryCardForProjectCard = card => {
+    if (!card || !libraryItems || !Array.isArray(libraryItems)) return null;
+    const cardTitle = normalizeString(card.title);
+    return libraryItems.find(
+      item => item.type === 'card' && normalizeString(item.title) === cardTitle
+    );
+  };
+
   return (
     <div className="h-full flex flex-col overflow-hidden">
       <div className="flex items-center justify-between mb-4">
@@ -1267,17 +1356,31 @@ Affaire: ${commande.affaire || 'N/A'}
                             acc + subcategories.filter(s => s.category_id === cat.id).length,
                           0
                         );
+                        const skipAction = getCardSkipAction(card);
+                        const allCardSubcats = subcategories.filter(s =>
+                          cardCategories.some(c => c.id === s.category_id)
+                        );
+
                         return (
                           <div
                             key={card.id}
-                            className="bg-card-hover rounded-lg border-2 border-std p-4 hover:border-accent hover:ring-2 hover:ring-accent/30 transition-all"
+                            className={`bg-card-hover rounded-lg border-2 p-4 transition-all ${
+                              skipAction
+                                ? 'border-purple-400 hover:border-purple-500 hover:ring-2 hover:ring-purple-300/30'
+                                : 'border-std hover:border-accent hover:ring-2 hover:ring-accent/30'
+                            }`}
                           >
                             <div className="flex items-center justify-between mb-3">
                               <h3
                                 onClick={() => setSelectedCard(card)}
-                                className="font-semibold text-primary cursor-pointer hover:text-accent flex-1"
+                                className="font-semibold text-primary cursor-pointer hover:text-accent flex items-center gap-2 flex-1"
                               >
                                 {card.title}
+                                {skipAction && (
+                                  <span className="px-1.5 py-0.5 text-xs bg-purple-100 text-purple-700 rounded dark:bg-purple-900/40 dark:text-purple-300">
+                                    Tâche unique
+                                  </span>
+                                )}
                               </h3>
                               <div className="flex items-center gap-2">
                                 <button
@@ -1300,139 +1403,202 @@ Affaire: ${commande.affaire || 'N/A'}
                               </div>
                             </div>
                             <div className="space-y-2">
-                              {cardCategories.map(cat => {
-                                const catSubcats = subcategories.filter(
-                                  s => s.category_id === cat.id
-                                );
-                                const isHovered = hoveredCategoryData?.category?.id === cat.id;
-                                return (
-                                  <div
-                                    key={cat.id}
-                                    className="pl-3 border-l-2 border-accent relative"
-                                    onMouseEnter={e => {
-                                      if (hoverTimeoutRef.current) {
-                                        clearTimeout(hoverTimeoutRef.current);
-                                      }
-                                      setHoveredCategoryData({
-                                        card,
-                                        category: cat,
-                                        subcategories: catSubcats,
-                                        mouseX: e.clientX,
-                                        mouseY: e.clientY,
-                                      });
-                                      hoverTimeoutRef.current = setTimeout(() => {
-                                        setHoverPanelVisible(true);
-                                      }, 100);
-                                    }}
-                                    onMouseLeave={() => {
-                                      setHoverPanelVisible(false);
-                                      hoverTimeoutRef.current = setTimeout(() => {
-                                        setHoveredCategoryData(null);
-                                      }, 300);
-                                    }}
-                                  >
-                                    <div className="flex items-center justify-between">
-                                      <div className="flex-1">
-                                        <h4
-                                          onClick={() =>
-                                            setSelectedCategoryForTasks({
-                                              card,
-                                              category: cat,
-                                              subcategories: catSubcats,
-                                            })
-                                          }
-                                          className="text-sm font-medium text-secondary cursor-pointer hover:text-accent hover:underline"
-                                        >
-                                          {cat.title}
-                                        </h4>
-                                        <div className="flex items-center gap-2 text-xs text-muted mt-0.5">
-                                          {cat.assignee && <span>👤 {cat.assignee}</span>}
-                                          {cat.due_date && (
-                                            <span>
-                                              📅{' '}
-                                              {new Date(cat.due_date).toLocaleDateString('fr-FR')}
-                                            </span>
-                                          )}
-                                        </div>
-                                      </div>
-                                    </div>
-
-                                    {isHovered &&
-                                      hoverPanelVisible &&
-                                      hoveredCategoryData?.category?.id === cat.id &&
-                                      catSubcats.length > 0 && (
+                              {skipAction ? (
+                                <>
+                                  {allCardSubcats.length === 0 ? (
+                                    <p className="text-sm text-muted italic">
+                                      Aucune tâche disponible
+                                    </p>
+                                  ) : (
+                                    <>
+                                      <p className="text-xs text-[var(--txt-muted)] mb-2">
+                                        Les tâches sont affichées ci-dessous
+                                      </p>
+                                      {allCardSubcats.map(sub => (
                                         <div
-                                          className="absolute left-1/2 top-0 -translate-x-1/2 w-64 bg-[var(--bg-card)] border border-[var(--border)] rounded-lg shadow-xl z-[60] overflow-hidden"
-                                          onMouseEnter={() => {
-                                            if (hoverTimeoutRef.current) {
-                                              clearTimeout(hoverTimeoutRef.current);
-                                            }
-                                            setHoverPanelVisible(true);
-                                          }}
-                                          onMouseLeave={() => {
-                                            setHoverPanelVisible(false);
-                                            hoverTimeoutRef.current = setTimeout(() => {
-                                              setHoveredCategoryData(null);
-                                            }, 300);
-                                          }}
+                                          key={sub.id}
+                                          className="pl-3 border-l-2 border-accent cursor-pointer hover:bg-[var(--bg-card)] rounded p-2 transition-colors"
+                                          onClick={() => setSelectedSubcategory(sub)}
                                         >
-                                          <div className="max-h-48 overflow-auto p-1">
-                                            {catSubcats.map(sub => (
-                                              <div
-                                                key={sub.id}
-                                                onClick={e => {
-                                                  e.stopPropagation();
-                                                  setSelectedSubcategory(sub);
-                                                  setHoverPanelVisible(false);
-                                                  setHoveredCategoryData(null);
-                                                }}
-                                                className="flex items-center gap-2 p-2 hover:bg-[var(--bg-card-hover)] rounded cursor-pointer transition-colors"
-                                              >
-                                                <span
-                                                  className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                                                    sub.status === 'done'
-                                                      ? 'bg-green-500'
-                                                      : sub.status === 'in_progress'
-                                                        ? 'bg-blue-500'
-                                                        : sub.status === 'blocked'
-                                                          ? 'bg-red-500'
-                                                          : sub.status === 'pending'
-                                                            ? 'bg-yellow-500'
-                                                            : 'bg-gray-400'
-                                                  }`}
-                                                />
-                                                <div className="flex-1 min-w-0">
-                                                  <div className="text-xs text-[var(--txt-primary)] truncate">
-                                                    {sub.title}
-                                                  </div>
-                                                  <div className="flex items-center gap-2 text-xs text-[var(--txt-muted)]">
-                                                    {sub.assignee && (
-                                                      <span className="truncate">
-                                                        👤 {sub.assignee}
-                                                      </span>
-                                                    )}
-                                                    {sub.due_date && (
-                                                      <span className="whitespace-nowrap">
-                                                        📅{' '}
-                                                        {new Date(sub.due_date).toLocaleDateString(
-                                                          'fr-FR'
-                                                        )}
-                                                      </span>
-                                                    )}
-                                                  </div>
-                                                </div>
+                                          <div className="flex items-center gap-2">
+                                            <span
+                                              className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                                                sub.status === 'done'
+                                                  ? 'bg-green-500'
+                                                  : sub.status === 'in_progress'
+                                                    ? 'bg-blue-500'
+                                                    : sub.status === 'blocked'
+                                                      ? 'bg-red-500'
+                                                      : sub.status === 'pending'
+                                                        ? 'bg-yellow-500'
+                                                        : 'bg-gray-400'
+                                              }`}
+                                            />
+                                            <div className="flex-1 min-w-0">
+                                              <div className="text-sm text-[var(--txt-primary)] truncate">
+                                                {sub.title}
                                               </div>
-                                            ))}
+                                              <div className="flex items-center gap-2 text-xs text-[var(--txt-muted)]">
+                                                {sub.assignee && (
+                                                  <span className="truncate">
+                                                    👤 {sub.assignee}
+                                                  </span>
+                                                )}
+                                                {sub.due_date && (
+                                                  <span className="whitespace-nowrap">
+                                                    📅{' '}
+                                                    {new Date(sub.due_date).toLocaleDateString(
+                                                      'fr-FR'
+                                                    )}
+                                                  </span>
+                                                )}
+                                              </div>
+                                            </div>
                                           </div>
                                         </div>
-                                      )}
-                                  </div>
-                                );
-                              })}
-                              {cardCategories.length === 0 && (
-                                <p className="text-sm text-muted">Aucune action</p>
+                                      ))}
+                                    </>
+                                  )}
+                                </>
+                              ) : (
+                                <>
+                                  {cardCategories.map(cat => {
+                                    const catSubcats = subcategories.filter(
+                                      s => s.category_id === cat.id
+                                    );
+                                    const isHovered = hoveredCategoryData?.category?.id === cat.id;
+                                    return (
+                                      <div
+                                        key={cat.id}
+                                        className="pl-3 border-l-2 border-accent relative"
+                                        onMouseEnter={e => {
+                                          if (hoverTimeoutRef.current) {
+                                            clearTimeout(hoverTimeoutRef.current);
+                                          }
+                                          setHoveredCategoryData({
+                                            card,
+                                            category: cat,
+                                            subcategories: catSubcats,
+                                            mouseX: e.clientX,
+                                            mouseY: e.clientY,
+                                          });
+                                          hoverTimeoutRef.current = setTimeout(() => {
+                                            setHoverPanelVisible(true);
+                                          }, 100);
+                                        }}
+                                        onMouseLeave={() => {
+                                          setHoverPanelVisible(false);
+                                          hoverTimeoutRef.current = setTimeout(() => {
+                                            setHoveredCategoryData(null);
+                                          }, 300);
+                                        }}
+                                      >
+                                        <div className="flex items-center justify-between">
+                                          <div className="flex-1">
+                                            <h4
+                                              onClick={() =>
+                                                setSelectedCategoryForTasks({
+                                                  card,
+                                                  category: cat,
+                                                  subcategories: catSubcats,
+                                                })
+                                              }
+                                              className="text-sm font-medium text-secondary cursor-pointer hover:text-accent hover:underline"
+                                            >
+                                              {cat.title}
+                                            </h4>
+                                            <div className="flex items-center gap-2 text-xs text-muted mt-0.5">
+                                              {cat.assignee && <span>👤 {cat.assignee}</span>}
+                                              {cat.due_date && (
+                                                <span>
+                                                  📅{' '}
+                                                  {new Date(cat.due_date).toLocaleDateString(
+                                                    'fr-FR'
+                                                  )}
+                                                </span>
+                                              )}
+                                            </div>
+                                          </div>
+                                        </div>
+
+                                        {isHovered &&
+                                          hoverPanelVisible &&
+                                          hoveredCategoryData?.category?.id === cat.id &&
+                                          catSubcats.length > 0 && (
+                                            <div
+                                              className="absolute left-1/2 top-0 -translate-x-1/2 w-64 bg-[var(--bg-card)] border border-[var(--border)] rounded-lg shadow-xl z-[60] overflow-hidden"
+                                              onMouseEnter={() => {
+                                                if (hoverTimeoutRef.current) {
+                                                  clearTimeout(hoverTimeoutRef.current);
+                                                }
+                                                setHoverPanelVisible(true);
+                                              }}
+                                              onMouseLeave={() => {
+                                                setHoverPanelVisible(false);
+                                                hoverTimeoutRef.current = setTimeout(() => {
+                                                  setHoveredCategoryData(null);
+                                                }, 300);
+                                              }}
+                                            >
+                                              <div className="max-h-48 overflow-auto p-1">
+                                                {catSubcats.map(sub => (
+                                                  <div
+                                                    key={sub.id}
+                                                    onClick={e => {
+                                                      e.stopPropagation();
+                                                      setSelectedSubcategory(sub);
+                                                      setHoverPanelVisible(false);
+                                                      setHoveredCategoryData(null);
+                                                    }}
+                                                    className="flex items-center gap-2 p-2 hover:bg-[var(--bg-card-hover)] rounded cursor-pointer transition-colors"
+                                                  >
+                                                    <span
+                                                      className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                                                        sub.status === 'done'
+                                                          ? 'bg-green-500'
+                                                          : sub.status === 'in_progress'
+                                                            ? 'bg-blue-500'
+                                                            : sub.status === 'blocked'
+                                                              ? 'bg-red-500'
+                                                              : sub.status === 'pending'
+                                                                ? 'bg-yellow-500'
+                                                                : 'bg-gray-400'
+                                                      }`}
+                                                    />
+                                                    <div className="flex-1 min-w-0">
+                                                      <div className="text-xs text-[var(--txt-primary)] truncate">
+                                                        {sub.title}
+                                                      </div>
+                                                      <div className="flex items-center gap-2 text-xs text-[var(--txt-muted)]">
+                                                        {sub.assignee && (
+                                                          <span className="truncate">
+                                                            👤 {sub.assignee}
+                                                          </span>
+                                                        )}
+                                                        {sub.due_date && (
+                                                          <span className="whitespace-nowrap">
+                                                            📅{' '}
+                                                            {new Date(
+                                                              sub.due_date
+                                                            ).toLocaleDateString('fr-FR')}
+                                                          </span>
+                                                        )}
+                                                      </div>
+                                                    </div>
+                                                  </div>
+                                                ))}
+                                              </div>
+                                            </div>
+                                          )}
+                                      </div>
+                                    );
+                                  })}
+                                  {cardCategories.length === 0 && (
+                                    <p className="text-sm text-muted">Aucune action</p>
+                                  )}
+                                </>
                               )}
-                              {totalSubcats > 0 && (
+                              {!skipAction && totalSubcats > 0 && (
                                 <p className="text-xs text-muted mt-2">
                                   {totalSubcats} tâche{totalSubcats > 1 ? 's' : ''} détaillée
                                   {totalSubcats > 1 ? 's' : ''}

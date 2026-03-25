@@ -549,7 +549,7 @@ export default function ContractsSettings() {
                   <thead>
                     <tr className="bg-card-hover">
                       <th className="px-3 py-2 text-left font-semibold text-secondary border border-std w-[180px]">
-                        Champ MyTrello
+                        Champ D-ProjeT
                       </th>
                       <th className="px-3 py-2 text-left font-semibold text-secondary border border-std">
                         Colonne CSV
