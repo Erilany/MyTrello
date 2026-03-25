@@ -274,7 +274,7 @@ export default function Dashboard() {
   ];
 
   const myTasks = useMemo(() => {
-    const days = timeRange === 'week' ? 7 : 30;
+    const days = timeRange === 'week' ? 7 : timeRange === 'month' ? 30 : 180;
     const allTasks = getUpcomingTasks(
       allSubcategories,
       allCategories,
@@ -296,7 +296,7 @@ export default function Dashboard() {
   ]);
 
   const otherTasks = useMemo(() => {
-    const days = timeRange === 'week' ? 7 : 30;
+    const days = timeRange === 'week' ? 7 : timeRange === 'month' ? 30 : 180;
     const tasks = getUpcomingTasks(
       allSubcategories,
       allCategories,
@@ -429,6 +429,12 @@ export default function Dashboard() {
                 >
                   30 jours
                 </button>
+                <button
+                  onClick={() => setTimeRange('semester')}
+                  className={`px-3 py-1.5 text-sm rounded ${timeRange === 'semester' ? 'bg-accent text-white' : 'bg-card-hover text-secondary'}`}
+                >
+                  6 mois
+                </button>
                 {!showOtherTasks && (
                   <button
                     onClick={() => setShowOtherTasks(true)}
@@ -441,7 +447,7 @@ export default function Dashboard() {
             </div>
             <p className="text-sm text-muted mb-4">
               Liste des tâches qui vous sont assignées et qui doivent être terminées dans les{' '}
-              {timeRange === 'week' ? '7' : '30'} prochains jours.
+              {timeRange === 'week' ? '7' : timeRange === 'month' ? '30' : '180'} prochains jours.
               <br />
               <span className="text-xs">
                 Cliquez sur une tâche pour voir ses détails ci-dessous

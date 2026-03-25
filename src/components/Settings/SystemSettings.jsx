@@ -1,8 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Settings as SettingsIcon, HardDrive, Database, Clock, BookOpen } from 'lucide-react';
+import {
+  Settings as SettingsIcon,
+  HardDrive,
+  Database,
+  Clock,
+  BookOpen,
+  FileText,
+} from 'lucide-react';
 import LibraryEditor from './LibraryEditor';
 import { DataTable } from './DataTable';
 import ChaptersDragDrop from './ChaptersDragDrop';
+import ContractsSettings from './ContractsSettings';
 import {
   loadGMRData,
   addGMRItem,
@@ -74,6 +82,7 @@ function SystemSettings() {
     { id: 'storage', label: 'Stockage', icon: HardDrive },
     { id: 'backup', label: 'Sauvegarde auto', icon: Clock },
     { id: 'library', label: 'Modèles Bibliothèque', icon: BookOpen },
+    { id: 'contracts', label: 'Contrats', icon: FileText },
   ];
 
   const gmrColumns = [
@@ -307,6 +316,8 @@ function SystemSettings() {
               <LibraryEditor />
             </div>
           )}
+
+          {activeTab === 'contracts' && <ContractsSettings />}
         </div>
       </div>
     </div>

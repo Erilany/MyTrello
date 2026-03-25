@@ -240,15 +240,73 @@ function Board2() {
     commande: {
       numeroCommande: '',
       dateCommande: '',
-      objet: '',
-      estimation: '',
+      redacteur: '',
+      signataireFinal: '',
+      marcheCadre: '',
+      affaire: '',
     },
+    autresLignes: [],
     groupesMarchandises: {},
   });
+
+  const [contracts, setContracts] = useState([]);
+  const [otpIdentiqueChecked, setOtpIdentiqueChecked] = useState(false);
+  const [dateReceptionUniqueChecked, setDateReceptionUniqueChecked] = useState(false);
+  const [marcheCadreSuggestions, setMarcheCadreSuggestions] = useState([]);
 
   const [expandedCategories, setExpandedCategories] = useState(new Set());
   const [showImportModal, setShowImportModal] = useState(false);
   const [importData, setImportData] = useState(null);
+
+  useEffect(() => {
+    const stored = localStorage.getItem('mytrello_contracts');
+    if (stored) {
+      setContracts(JSON.parse(stored));
+    }
+  }, []);
+
+  useEffect(() => {
+    const search = commandeDetail.commande.marcheCadre?.toLowerCase() || '';
+    if (search.length >= 1) {
+      const filtered = contracts.filter(
+        c =>
+          c.numeroMarche?.toLowerCase().includes(search) ||
+          c.fournisseur?.toLowerCase().includes(search)
+      );
+      setMarcheCadreSuggestions(filtered.slice(0, 10));
+    } else {
+      setMarcheCadreSuggestions([]);
+    }
+  }, [commandeDetail.commande.marcheCadre, contracts]);
+
+  useEffect(() => {
+    if (selectedCommande && eotpLines.length > 0 && eotpLines[0].libelle) {
+      setCommandeDetail(prev => ({
+        ...prev,
+        commande: { ...prev.commande, affaire: eotpLines[0].libelle },
+      }));
+    }
+  }, [eotpLines, selectedCommande]);
+
+  const syncFromLigne010 = field => {
+    setCommandeDetail(prev => {
+      const ligne010 = prev.autresLignes?.find(l => l.numero === '010');
+      if (!ligne010) return prev;
+      const newLignes = prev.autresLignes?.map(ligne => {
+        if (ligne.numero === '010') return ligne;
+        return { ...ligne, [field]: ligne010?.[field] || '' };
+      });
+      return { ...prev, autresLignes: newLignes };
+    });
+  };
+
+  useEffect(() => {
+    if (otpIdentiqueChecked) syncFromLigne010('eotpId');
+  }, [otpIdentiqueChecked]);
+
+  useEffect(() => {
+    if (dateReceptionUniqueChecked) syncFromLigne010('dateReception');
+  }, [dateReceptionUniqueChecked]);
 
   const toggleMarchandiseCategory = categoryKey => {
     setExpandedCategories(prev => {
@@ -273,6 +331,16 @@ function Board2() {
     return gm;
   };
 
+  const getLevel2Eotp = () => {
+    return eotpLines
+      .flatMap(e => e.subEotp || [])
+      .map(sub => ({
+        id: sub.id,
+        numero: sub.numero,
+        libelle: sub.libelle,
+      }));
+  };
+
   const handleSelectCommande = cmd => {
     setSelectedCommande(cmd);
     setSelectedAvenant(null);
@@ -295,9 +363,12 @@ function Board2() {
         commande: {
           numeroCommande: cmd.donnees?.numero || '',
           dateCommande: cmd.donnees?.dateCommande || '',
-          objet: cmd.donnees?.objet || '',
-          estimation: cmd.donnees?.estimation || '',
+          redacteur: cmd.donnees?.redacteur || '',
+          signataireFinal: cmd.donnees?.signataireFinal || '',
+          marcheCadre: cmd.donnees?.marcheCadre || '',
+          affaire: cmd.donnees?.affaire || '',
         },
+        autresLignes: cmd.donnees?.autresLignes || [],
         groupesMarchandises: initializeGroupesMarchandises(),
       });
     }
@@ -315,6 +386,74 @@ function Board2() {
       ...prev,
       commande: { ...prev.commande, [field]: value },
     }));
+  };
+
+  const handleUpdateAutresLigne = (index, field, value) => {
+    setCommandeDetail(prev => {
+      const newLignes = [...(prev.autresLignes || [])];
+      if (field === 'montant') {
+        newLignes[index] = { ...newLignes[index], [field]: value };
+      } else if (field === 'quantite' || field === 'coutUnitaire') {
+        const qte =
+          field === 'quantite'
+            ? parseFloat(value) || 0
+            : parseFloat(newLignes[index].quantite) || 0;
+        const cout =
+          field === 'coutUnitaire'
+            ? parseFloat(value) || 0
+            : parseFloat(newLignes[index].coutUnitaire) || 0;
+        newLignes[index] = {
+          ...newLignes[index],
+          quantite: field === 'quantite' ? parseFloat(value) || 0 : qte,
+          coutUnitaire: field === 'coutUnitaire' ? parseFloat(value) || 0 : cout,
+          montant: qte * cout,
+        };
+      } else {
+        newLignes[index] = { ...newLignes[index], [field]: value };
+      }
+      return { ...prev, autresLignes: newLignes };
+    });
+  };
+
+  const handleAddAutresLigne = () => {
+    const currentLignes = commandeDetail.autresLignes || [];
+    const nextNum = String((currentLignes.length + 1) * 10).padStart(3, '0');
+    setCommandeDetail(prev => ({
+      ...prev,
+      autresLignes: [
+        ...(prev.autresLignes || []),
+        {
+          id: Date.now(),
+          numero: nextNum,
+          designation: '',
+          eotpId: '',
+          dateReception: '',
+          quantite: '',
+          coutUnitaire: '',
+          montant: 0,
+        },
+      ],
+    }));
+  };
+
+  const handleDeleteAutresLigne = index => {
+    setCommandeDetail(prev => {
+      const newLignes = (prev.autresLignes || []).filter((_, i) => i !== index);
+      return {
+        ...prev,
+        autresLignes: newLignes.map((l, i) => ({
+          ...l,
+          numero: String((i + 1) * 10).padStart(3, '0'),
+        })),
+      };
+    });
+  };
+
+  const getTotalMontantHT = () => {
+    return (commandeDetail.autresLignes || []).reduce(
+      (sum, ligne) => sum + (parseFloat(ligne.montant) || 0),
+      0
+    );
   };
 
   const handleToggleMarchandise = (categoryKey, itemLabel) => {
@@ -434,39 +573,113 @@ function Board2() {
   const handleGenerateEmail = () => {
     if (!commandeDetail) return;
 
-    const { affectation, commande, groupesMarchandises } = commandeDetail;
+    const { affectation, commande, autresLignes, groupesMarchandises } = commandeDetail;
     const checkedItems = [];
     CATEGORY_KEYS.forEach(key => {
       const items = groupesMarchandises[key] || [];
       items.filter(i => i.checked).forEach(i => checkedItems.push(i.label));
     });
 
-    const subject = encodeURIComponent(
-      `Commande ${commande.numeroCommande || ''} - ${commande.objet || 'Objet à définir'}`
-    );
+    const getEotpLabel = eotpId => {
+      const eotp = getLevel2Eotp().find(e => e.id === eotpId);
+      return eotp ? `${eotp.numero} - ${eotp.libelle}` : 'Non renseigne';
+    };
 
-    let body = `Bonjour,
+    const totalHT = autresLignes?.reduce((sum, l) => sum + (parseFloat(l.montant) || 0), 0) || 0;
 
-N° Commande: ${commande.numeroCommande || 'N/A'}
-Date: ${commande.dateCommande || 'N/A'}
-Objet: ${commande.objet || 'N/A'}
-Estimation: ${commande.estimation || 'N/A'}
+    const cellStyle = 'border: 1px solid black; padding: 8px;';
+    const headerStyle =
+      'border: 1px solid black; padding: 8px; background-color: #f0f0f0; font-weight: bold;';
 
-N° Affaire: ${affectation.numeroAffaire || 'N/A'}
-Date limite: ${affectation.dateLimite || 'N/A'}
-Interlocuteur: ${affectation.interlocuteur || 'N/A'}
+    let htmlBody = `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+body { font-family: Arial, sans-serif; }
+table { border-collapse: collapse; width: auto; }
+</style>
+</head>
+<body>
 
-Désignation: ${affectation.designation || 'N/A'}
-Localisation: ${affectation.localisation || 'N/A'}
-Maître d'ouvrage: ${affectation.maitreOuvrage || 'N/A'}
+<h3>DONNEES DE LA COMMANDE</h3>
+<p>
+N&#176; Commande: ${commande.numeroCommande || 'N/A'}<br>
+Date: ${commande.dateCommande || 'N/A'}<br>
+Redacteur: ${commande.redacteur || 'N/A'}<br>
+Signataire final: ${commande.signataireFinal || 'N/A'}<br>
+Marche cadre: ${commande.marcheCadre || 'N/A'}<br>
+Affaire: ${commande.affaire || 'N/A'}
+</p>`;
 
-Groupes de marchandises sélectionnés:
-${checkedItems.length > 0 ? checkedItems.map(item => `- ${item}`).join('\n') : 'Aucun'}
+    if (checkedItems.length > 0) {
+      htmlBody += `
+<h3>GROUPES DE MARCHANDISES</h3>
+<p>
+  ${checkedItems.map(item => `&#8226; ${item}<br>`).join('\n  ')}
+</p>`;
+    }
 
-Cordialement`;
+    if (autresLignes && autresLignes.length > 0) {
+      htmlBody += `
+<h3>AUTRES</h3>
+<table>
+  <tr>
+    <th style="${headerStyle}">Poste</th>
+    <th style="${headerStyle}">Designation</th>
+    <th style="${headerStyle}">EOTP</th>
+    <th style="${headerStyle}">Date recept</th>
+    <th style="${headerStyle}">Qte</th>
+    <th style="${headerStyle}">PU HT</th>
+    <th style="${headerStyle}">Montant</th>
+  </tr>`;
 
-    const mailtoLink = `mailto:?subject=${subject}&body=${encodeURIComponent(body)}`;
-    window.open(mailtoLink);
+      autresLignes.forEach(ligne => {
+        const pu = ligne.coutUnitaire ? Number(ligne.coutUnitaire).toFixed(2) + ' EUR' : '-';
+        const montant = ligne.montant ? Number(ligne.montant).toFixed(2) + ' EUR' : '-';
+        htmlBody += `
+  <tr>
+    <td style="${cellStyle}">${ligne.numero}</td>
+    <td style="${cellStyle}">${ligne.designation || '-'}</td>
+    <td style="${cellStyle}">${getEotpLabel(ligne.eotpId)}</td>
+    <td style="${cellStyle}">${ligne.dateReception || '-'}</td>
+    <td style="${cellStyle}">${ligne.quantite || '-'}</td>
+    <td style="${cellStyle}">${pu}</td>
+    <td style="${cellStyle}">${montant}</td>
+  </tr>`;
+      });
+
+      htmlBody += `
+  <tr>
+    <td colspan="6" style="${cellStyle}; text-align: right;"><strong>TOTAL</strong></td>
+    <td style="${cellStyle}"><strong>${totalHT.toFixed(2)} EUR</strong></td>
+  </tr>
+</table>`;
+    }
+
+    htmlBody += `
+<p>Cordialement</p>
+</body>
+</html>`;
+
+    const dateStr = new Date().toISOString().split('T')[0];
+    const numCmd = commande.numeroCommande || 'new';
+    let fileName;
+    if (selectedAvenant) {
+      fileName = `Avenant N°${selectedAvenant.numero}_${numCmd}_${dateStr}.html`;
+    } else {
+      fileName = `Création commande_${numCmd}_${dateStr}.html`;
+    }
+
+    const blob = new Blob([htmlBody], { type: 'text/html;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   useEffect(() => {
@@ -1577,8 +1790,10 @@ Cordialement`;
                           commande: {
                             numeroCommande: '',
                             dateCommande: '',
-                            objet: '',
-                            estimation: '',
+                            redacteur: '',
+                            signataireFinal: '',
+                            marcheCadre: '',
+                            affaire: eotpLines[0]?.libelle || '',
                           },
                           groupesMarchandises: initializeGroupesMarchandises(),
                         };
@@ -1824,26 +2039,206 @@ Cordialement`;
                             className="w-full px-2 py-1 text-sm bg-input border border-std rounded"
                           />
                         </div>
-                        <div className="md:col-span-2">
-                          <label className="block text-xs text-secondary mb-1">Objet</label>
-                          <input
-                            type="text"
-                            value={commandeDetail.commande.objet}
-                            onChange={e => handleUpdateCommande('objet', e.target.value)}
+                        <div>
+                          <label className="block text-xs text-secondary mb-1">
+                            Nom du Rédacteur/Interlocuteur
+                          </label>
+                          <select
+                            value={commandeDetail.commande.redacteur}
+                            onChange={e => handleUpdateCommande('redacteur', e.target.value)}
                             className="w-full px-2 py-1 text-sm bg-input border border-std rounded"
-                          />
+                          >
+                            <option value="">-- Sélectionner --</option>
+                            {internalContacts.map(contact => (
+                              <option key={contact.id} value={contact.name || contact.title}>
+                                {contact.name || contact.title}
+                              </option>
+                            ))}
+                          </select>
                         </div>
                         <div>
                           <label className="block text-xs text-secondary mb-1">
-                            Estimation (€)
+                            Signataire final prévu
                           </label>
                           <input
                             type="text"
-                            value={commandeDetail.commande.estimation}
-                            onChange={e => handleUpdateCommande('estimation', e.target.value)}
+                            value={commandeDetail.commande.signataireFinal}
+                            onChange={e => handleUpdateCommande('signataireFinal', e.target.value)}
                             className="w-full px-2 py-1 text-sm bg-input border border-std rounded"
                           />
                         </div>
+                        <div className="relative">
+                          <label className="block text-xs text-secondary mb-1">
+                            Marché cadre N°
+                          </label>
+                          <input
+                            type="text"
+                            value={commandeDetail.commande.marcheCadre}
+                            onChange={e => handleUpdateCommande('marcheCadre', e.target.value)}
+                            placeholder="Tapez pour rechercher..."
+                            className="w-full px-2 py-1 text-sm bg-input border border-std rounded"
+                            autoComplete="off"
+                          />
+                          {marcheCadreSuggestions.length > 0 && (
+                            <div className="absolute z-50 w-full mt-1 bg-card border border-std rounded shadow-lg max-h-48 overflow-y-auto">
+                              {marcheCadreSuggestions.map(contract => (
+                                <button
+                                  key={contract.id}
+                                  type="button"
+                                  onClick={() => {
+                                    const fullText = `${contract.numeroMarche} - ${contract.fournisseur}`;
+                                    handleUpdateCommande('marcheCadre', fullText);
+                                    setMarcheCadreSuggestions([]);
+                                  }}
+                                  className="w-full px-3 py-2 text-left text-xs hover:bg-card-hover border-b border-std last:border-b-0"
+                                >
+                                  <span className="font-medium text-primary">
+                                    {contract.numeroMarche}
+                                  </span>
+                                  <span className="text-muted ml-2">- {contract.fournisseur}</span>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        <div>
+                          <label className="block text-xs text-secondary mb-1">Affaire</label>
+                          <input
+                            type="text"
+                            value={commandeDetail.commande.affaire}
+                            disabled
+                            className="w-full px-2 py-1 text-sm bg-std text-muted border border-std rounded cursor-not-allowed"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* AUTRES Section */}
+                    <div className="p-4 bg-card rounded-lg border border-std">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-sm font-semibold text-primary">AUTRES</h3>
+                        <div className="flex items-center gap-4">
+                          <label className="flex items-center gap-1 text-xs text-secondary cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={otpIdentiqueChecked}
+                              onChange={e => {
+                                setOtpIdentiqueChecked(e.target.checked);
+                                if (e.target.checked) syncFromLigne010('eotpId');
+                              }}
+                            />
+                            OTP identique pour chaque poste
+                          </label>
+                          <label className="flex items-center gap-1 text-xs text-secondary cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={dateReceptionUniqueChecked}
+                              onChange={e => {
+                                setDateReceptionUniqueChecked(e.target.checked);
+                                if (e.target.checked) syncFromLigne010('dateReception');
+                              }}
+                            />
+                            Date réception unique
+                          </label>
+                          <button
+                            onClick={handleAddAutresLigne}
+                            className="flex items-center px-2 py-1 text-xs text-accent hover:bg-card-hover rounded"
+                          >
+                            <PlusCircle size={12} className="mr-1" />
+                            Ajouter une ligne
+                          </button>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        {(commandeDetail.autresLignes || []).map((ligne, idx) => (
+                          <div
+                            key={ligne.id}
+                            className="flex items-center gap-2 bg-card-hover p-2 rounded"
+                          >
+                            <span className="text-xs text-muted w-8 font-medium">
+                              {ligne.numero}
+                            </span>
+                            <textarea
+                              placeholder="Désignation"
+                              value={ligne.designation}
+                              onChange={e =>
+                                handleUpdateAutresLigne(idx, 'designation', e.target.value)
+                              }
+                              rows={2}
+                              className="flex-[2] px-2 py-1 text-sm bg-input border border-std rounded resize-none"
+                            />
+                            <select
+                              value={ligne.eotpId}
+                              onChange={e => handleUpdateAutresLigne(idx, 'eotpId', e.target.value)}
+                              disabled={otpIdentiqueChecked}
+                              className={`flex-1 px-2 py-1 text-sm border rounded ${
+                                otpIdentiqueChecked
+                                  ? 'bg-std text-muted cursor-not-allowed'
+                                  : 'bg-input border-std'
+                              }`}
+                            >
+                              <option value="">-- EOTP --</option>
+                              {getLevel2Eotp().map(eotp => (
+                                <option key={eotp.id} value={eotp.id}>
+                                  {eotp.numero} - {eotp.libelle}
+                                </option>
+                              ))}
+                            </select>
+                            <input
+                              type="date"
+                              value={ligne.dateReception}
+                              onChange={e =>
+                                handleUpdateAutresLigne(idx, 'dateReception', e.target.value)
+                              }
+                              disabled={dateReceptionUniqueChecked}
+                              className={`w-28 px-2 py-1 text-sm border rounded ${
+                                dateReceptionUniqueChecked
+                                  ? 'bg-std text-muted cursor-not-allowed'
+                                  : 'bg-input border-std'
+                              }`}
+                            />
+                            <input
+                              type="number"
+                              placeholder="Qté"
+                              value={ligne.quantite}
+                              onChange={e =>
+                                handleUpdateAutresLigne(idx, 'quantite', e.target.value)
+                              }
+                              className="w-16 px-2 py-1 text-sm bg-input border border-std rounded scrollbar-hide"
+                              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                            />
+                            <input
+                              type="number"
+                              placeholder="PU HT"
+                              value={ligne.coutUnitaire}
+                              onChange={e =>
+                                handleUpdateAutresLigne(idx, 'coutUnitaire', e.target.value)
+                              }
+                              className="w-20 px-2 py-1 text-sm bg-input border border-std rounded scrollbar-hide"
+                              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                            />
+                            <span className="w-24 text-right text-sm font-medium text-primary">
+                              {parseFloat(ligne.montant || 0).toFixed(2)} €
+                            </span>
+                            <button
+                              onClick={() => handleDeleteAutresLigne(idx)}
+                              className="text-muted hover:text-urgent p-1"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        ))}
+                        {/* Total line */}
+                        {(commandeDetail.autresLignes || []).length > 0 && (
+                          <div className="flex items-center justify-end gap-4 pt-2 border-t border-std">
+                            <span className="text-sm font-semibold text-primary">
+                              Montant Total HT
+                            </span>
+                            <span className="w-24 text-right text-sm font-bold text-accent">
+                              {getTotalMontantHT().toFixed(2)} €
+                            </span>
+                          </div>
+                        )}
                       </div>
                     </div>
 
@@ -2267,7 +2662,10 @@ Cordialement`;
               <h3 className="text-sm font-semibold text-primary">EOTP</h3>
               <button
                 onClick={() =>
-                  setEotpLines([...eotpLines, { id: Date.now(), numero: '', ruo: '', libelle: '' }])
+                  setEotpLines([
+                    ...eotpLines,
+                    { id: Date.now(), numero: '', ruo: '', libelle: '', subEotp: [] },
+                  ])
                 }
                 className="flex items-center px-2 py-1 text-xs text-accent hover:bg-card-hover rounded"
               >
@@ -2275,56 +2673,144 @@ Cordialement`;
                 Ajouter une ligne
               </button>
             </div>
-            <div className="space-y-3">
+            <div className="space-y-4">
               {eotpLines.map((eotp, idx) => (
-                <div key={eotp.id} className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted w-6">{idx + 1}.</span>
+                <div key={eotp.id} className="border border-std rounded-lg p-3 bg-card-hover">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted w-6">{idx + 1}.</span>
+                      <input
+                        type="text"
+                        placeholder="N°EOTP"
+                        value={eotp.numero}
+                        onChange={e => {
+                          const updated = eotpLines.map((l, i) =>
+                            i === idx ? { ...l, numero: e.target.value } : l
+                          );
+                          setEotpLines(updated);
+                        }}
+                        className="flex-1 px-2 py-1 text-sm bg-input border border-std rounded text-primary placeholder-muted focus:outline-none focus:border-accent"
+                      />
+                    </div>
                     <input
                       type="text"
-                      placeholder="N°EOTP"
-                      value={eotp.numero}
+                      placeholder="RUO"
+                      value={eotp.ruo}
                       onChange={e => {
                         const updated = eotpLines.map((l, i) =>
-                          i === idx ? { ...l, numero: e.target.value } : l
+                          i === idx ? { ...l, ruo: e.target.value } : l
                         );
                         setEotpLines(updated);
                       }}
-                      className="flex-1 px-2 py-1 text-sm bg-input border border-std rounded text-primary placeholder-muted focus:outline-none focus:border-accent"
+                      className="px-2 py-1 text-sm bg-input border border-std rounded text-primary placeholder-muted focus:outline-none focus:border-accent"
                     />
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        placeholder="Libellé opération"
+                        value={eotp.libelle}
+                        onChange={e => {
+                          const updated = eotpLines.map((l, i) =>
+                            i === idx ? { ...l, libelle: e.target.value } : l
+                          );
+                          setEotpLines(updated);
+                        }}
+                        className="flex-1 px-2 py-1 text-sm bg-input border border-std rounded text-primary placeholder-muted focus:outline-none focus:border-accent"
+                      />
+                      {eotpLines.length > 1 && (
+                        <button
+                          onClick={() => setEotpLines(eotpLines.filter((_, i) => i !== idx))}
+                          className="text-muted hover:text-urgent"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  <input
-                    type="text"
-                    placeholder="RUO"
-                    value={eotp.ruo}
-                    onChange={e => {
-                      const updated = eotpLines.map((l, i) =>
-                        i === idx ? { ...l, ruo: e.target.value } : l
-                      );
-                      setEotpLines(updated);
-                    }}
-                    className="px-2 py-1 text-sm bg-input border border-std rounded text-primary placeholder-muted focus:outline-none focus:border-accent"
-                  />
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="text"
-                      placeholder="Libellé opération"
-                      value={eotp.libelle}
-                      onChange={e => {
-                        const updated = eotpLines.map((l, i) =>
-                          i === idx ? { ...l, libelle: e.target.value } : l
-                        );
-                        setEotpLines(updated);
-                      }}
-                      className="flex-1 px-2 py-1 text-sm bg-input border border-std rounded text-primary placeholder-muted focus:outline-none focus:border-accent"
-                    />
-                    {eotpLines.length > 1 && (
+
+                  {/* Sous-EOTP */}
+                  <div className="ml-6 pl-3 border-l-2 border-accent/30">
+                    <div className="flex justify-end mb-2">
                       <button
-                        onClick={() => setEotpLines(eotpLines.filter((_, i) => i !== idx))}
-                        className="text-muted hover:text-urgent"
+                        onClick={() => {
+                          const updated = eotpLines.map((l, i) =>
+                            i === idx
+                              ? {
+                                  ...l,
+                                  subEotp: [
+                                    ...(l.subEotp || []),
+                                    { id: Date.now(), numero: '', libelle: '' },
+                                  ],
+                                }
+                              : l
+                          );
+                          setEotpLines(updated);
+                        }}
+                        className="flex items-center px-2 py-0.5 text-xs text-accent hover:bg-card rounded"
                       >
-                        <Trash2 size={14} />
+                        <Plus size={10} className="mr-1" />
+                        EOTP Niveau 2
                       </button>
+                    </div>
+                    {eotp.subEotp && eotp.subEotp.length > 0 && (
+                      <div className="space-y-2">
+                        {eotp.subEotp.map((sub, subIdx) => (
+                          <div key={sub.id} className="flex items-center gap-2">
+                            <span className="text-xs text-muted w-4">{subIdx + 1}.</span>
+                            <input
+                              type="text"
+                              placeholder="EOTP niveau 2"
+                              value={sub.numero}
+                              onChange={e => {
+                                const updated = eotpLines.map((l, i) =>
+                                  i === idx
+                                    ? {
+                                        ...l,
+                                        subEotp: l.subEotp.map((s, si) =>
+                                          si === subIdx ? { ...s, numero: e.target.value } : s
+                                        ),
+                                      }
+                                    : l
+                                );
+                                setEotpLines(updated);
+                              }}
+                              className="flex-1 px-2 py-1 text-sm bg-input border border-std rounded text-primary placeholder-muted focus:outline-none focus:border-accent"
+                            />
+                            <input
+                              type="text"
+                              placeholder="Libellé"
+                              value={sub.libelle}
+                              onChange={e => {
+                                const updated = eotpLines.map((l, i) =>
+                                  i === idx
+                                    ? {
+                                        ...l,
+                                        subEotp: l.subEotp.map((s, si) =>
+                                          si === subIdx ? { ...s, libelle: e.target.value } : s
+                                        ),
+                                      }
+                                    : l
+                                );
+                                setEotpLines(updated);
+                              }}
+                              className="flex-[2] px-2 py-1 text-sm bg-input border border-std rounded text-primary placeholder-muted focus:outline-none focus:border-accent"
+                            />
+                            <button
+                              onClick={() => {
+                                const updated = eotpLines.map((l, i) =>
+                                  i === idx
+                                    ? { ...l, subEotp: l.subEotp.filter((_, si) => si !== subIdx) }
+                                    : l
+                                );
+                                setEotpLines(updated);
+                              }}
+                              className="text-muted hover:text-urgent p-1"
+                            >
+                              <Trash2 size={12} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
                     )}
                   </div>
                 </div>

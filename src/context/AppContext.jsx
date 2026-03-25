@@ -498,18 +498,9 @@ export function AppProvider({ children }) {
             .filter(s => catIds.includes(Number(s.category_id)))
             .sort((a, b) => a.position - b.position)
         );
-
-        if (selectedSubcategory) {
-          const updatedSub = sourceData.subcategories.find(
-            s => Number(s.id) === Number(selectedSubcategory.id)
-          );
-          if (updatedSub) {
-            setSelectedSubcategory(updatedSub);
-          }
-        }
       }
     },
-    [db, selectedSubcategory]
+    [db]
   );
 
   // Project time tracking functions
@@ -795,7 +786,7 @@ export function AppProvider({ children }) {
     });
 
     saveDb(newDb);
-    loadBoard(currentBoard.id);
+    loadBoard(currentBoard.id, newDb);
   };
 
   const exportData = () => {
@@ -842,6 +833,7 @@ export function AppProvider({ children }) {
         });
       });
 
+      const contractsData = localStorage.getItem('mytrello_contracts');
       const exportObj = {
         version: '1.0',
         exportedAt: new Date().toISOString(),
@@ -850,6 +842,7 @@ export function AppProvider({ children }) {
         libraryFavorites: libraryFavorites ? JSON.parse(libraryFavorites) : {},
         libraryEditor: libraryEditor ? JSON.parse(libraryEditor) : null,
         libraryTemplates: libraryTemplates ? JSON.parse(libraryTemplates) : { templates: [] },
+        contracts: contractsData ? JSON.parse(contractsData) : [],
         settings: {
           theme,
           cardColors: cardColors ? JSON.parse(cardColors) : null,
@@ -1267,7 +1260,7 @@ export function AppProvider({ children }) {
       columns: db.columns.map(c => (Number(c.id) === Number(id) ? { ...c, title, color } : c)),
     };
     saveDb(newDb);
-    if (currentBoard) loadBoard(currentBoard.id);
+    if (currentBoard) loadBoard(currentBoard.id, newDb);
   };
 
   const deleteColumn = id => {
@@ -1277,7 +1270,7 @@ export function AppProvider({ children }) {
       cards: db.cards.filter(c => Number(c.column_id) !== Number(id)),
     };
     saveDb(newDb);
-    if (currentBoard) loadBoard(currentBoard.id);
+    if (currentBoard) loadBoard(currentBoard.id, newDb);
   };
 
   const moveColumn = (columnId, newPosition) => {
@@ -1300,7 +1293,7 @@ export function AppProvider({ children }) {
 
     const newDb = { ...db, columns: newColumns };
     saveDb(newDb);
-    if (currentBoard) loadBoard(currentBoard.id);
+    if (currentBoard) loadBoard(currentBoard.id, newDb);
   };
 
   const createCard = (
@@ -1400,7 +1393,7 @@ export function AppProvider({ children }) {
       ),
     };
     saveDb(newDb);
-    if (currentBoard) loadBoard(currentBoard.id);
+    if (currentBoard) loadBoard(currentBoard.id, newDb);
   };
 
   const deleteCard = id => {
@@ -1410,7 +1403,7 @@ export function AppProvider({ children }) {
       categories: db.categories.filter(cat => Number(cat.card_id) !== Number(id)),
     };
     saveDb(newDb);
-    if (currentBoard) loadBoard(currentBoard.id);
+    if (currentBoard) loadBoard(currentBoard.id, newDb);
   };
 
   const archiveCard = id => {
@@ -1419,7 +1412,7 @@ export function AppProvider({ children }) {
       cards: db.cards.map(c => (Number(c.id) === Number(id) ? { ...c, is_archived: 1 } : c)),
     };
     saveDb(newDb);
-    if (currentBoard) loadBoard(currentBoard.id);
+    if (currentBoard) loadBoard(currentBoard.id, newDb);
   };
 
   const restoreCard = id => {
@@ -1428,7 +1421,7 @@ export function AppProvider({ children }) {
       cards: db.cards.map(c => (Number(c.id) === Number(id) ? { ...c, is_archived: 0 } : c)),
     };
     saveDb(newDb);
-    if (currentBoard) loadBoard(currentBoard.id);
+    if (currentBoard) loadBoard(currentBoard.id, newDb);
   };
 
   const canArchiveBoard = boardId => {
@@ -1513,7 +1506,7 @@ export function AppProvider({ children }) {
 
     const newDb = { ...db, cards: newCards };
     saveDb(newDb);
-    if (currentBoard) loadBoard(currentBoard.id);
+    if (currentBoard) loadBoard(currentBoard.id, newDb);
   };
 
   const createCategory = (
@@ -1598,7 +1591,7 @@ export function AppProvider({ children }) {
       ),
     };
     saveDb(newDb);
-    if (currentBoard) loadBoard(currentBoard.id);
+    if (currentBoard) loadBoard(currentBoard.id, newDb);
   };
 
   const deleteCategory = id => {
@@ -1608,7 +1601,7 @@ export function AppProvider({ children }) {
       subcategories: db.subcategories.filter(s => Number(s.category_id) !== Number(id)),
     };
     saveDb(newDb);
-    if (currentBoard) loadBoard(currentBoard.id);
+    if (currentBoard) loadBoard(currentBoard.id, newDb);
   };
 
   const moveCategory = (categoryId, newCardId, newPosition) => {
@@ -1657,7 +1650,7 @@ export function AppProvider({ children }) {
 
     const newDb = { ...db, categories: newCategories };
     saveDb(newDb);
-    if (currentBoard) loadBoard(currentBoard.id);
+    if (currentBoard) loadBoard(currentBoard.id, newDb);
   };
 
   const createSubcategory = (
@@ -1688,6 +1681,7 @@ export function AppProvider({ children }) {
 
     return new Promise(resolve => {
       let subcatId;
+      let newDbRef;
       setDb(currentDb => {
         const maxPos = currentDb.subcategories
           .filter(s => Number(s.category_id) === Number(categoryId))
@@ -1713,12 +1707,13 @@ export function AppProvider({ children }) {
           subcategories: [...currentDb.subcategories, newSubcategory],
           nextIds: { ...currentDb.nextIds, subcategory: subcatId + 1 },
         };
+        newDbRef = newDb;
         saveToStorage(newDb);
         return newDb;
       });
 
       setTimeout(() => {
-        if (currentBoard) loadBoard(currentBoard.id);
+        if (currentBoard) loadBoard(currentBoard.id, newDbRef);
       }, 100);
 
       setTimeout(() => {
@@ -1736,7 +1731,7 @@ export function AppProvider({ children }) {
     };
     saveDb(newDb);
     if (currentBoard) {
-      setTimeout(() => loadBoard(currentBoard.id), 100);
+      setTimeout(() => loadBoard(currentBoard.id, newDb), 100);
     }
   };
 
@@ -1747,7 +1742,7 @@ export function AppProvider({ children }) {
     };
     saveDb(newDb);
     if (currentBoard) {
-      setTimeout(() => loadBoard(currentBoard.id), 100);
+      setTimeout(() => loadBoard(currentBoard.id, newDb), 100);
     }
   };
 
@@ -1850,7 +1845,7 @@ export function AppProvider({ children }) {
 
     const newDb = { ...db, subcategories: newSubcategories };
     saveDb(newDb);
-    if (currentBoard) loadBoard(currentBoard.id);
+    if (currentBoard) loadBoard(currentBoard.id, newDb);
   };
 
   const loadLibrary = useCallback(() => {
@@ -2088,7 +2083,7 @@ export function AppProvider({ children }) {
     saveDb(newDb);
 
     if (currentBoard) {
-      setTimeout(() => loadBoard(currentBoard.id), 100);
+      setTimeout(() => loadBoard(currentBoard.id, newDb), 100);
     }
 
     return updatedCount;

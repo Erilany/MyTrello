@@ -48,6 +48,18 @@ function SubCategoryModal({ subcategory, onClose }) {
   const [dueDate, setDueDate] = useState(subcategory.due_date || '');
   const [assignee, setAssignee] = useState(subcategory.assignee || '');
 
+  // Auto-update status based on progress
+  useEffect(() => {
+    if (status === 'waiting') return;
+    if (progress === 100) {
+      setStatus('done');
+      return;
+    }
+    if (progress > 0 && status === 'todo') {
+      setStatus('in_progress');
+    }
+  }, [progress, status]);
+
   // Email panel state
   const [emailPanelOpen, setEmailPanelOpen] = useState(false);
   const [emails, setEmails] = useState([]);
@@ -554,10 +566,14 @@ function SubCategoryModal({ subcategory, onClose }) {
                 <div>
                   <label className="block text-sm font-medium text-primary mb-1">Durée (j)</label>
                   <input
-                    type="number"
-                    min="1"
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     value={durationDays}
-                    onChange={e => handleDurationChange(e.target.value)}
+                    onChange={e => {
+                      const val = e.target.value.replace(/[^0-9]/g, '');
+                      handleDurationChange(val);
+                    }}
                     className="w-full px-2 py-2 bg-input border border-std rounded-lg text-primary focus:outline-none focus:border-accent text-sm"
                   />
                 </div>
