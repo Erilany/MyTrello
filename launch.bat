@@ -1,7 +1,7 @@
 @echo off
 
 echo ========================================
-echo   Launcher MyTrello - Autonome
+echo   Launcher D-ProjeT - Mode Dev Electron
 echo ========================================
 echo.
 
@@ -20,17 +20,16 @@ echo [OK]
 echo.
 echo [2/4] Arret des anciens processus...
 taskkill /F /IM node.exe >nul 2>&1
+taskkill /F /IM electron.exe >nul 2>&1
 timeout /t 2 >nul
 echo [OK]
 
 echo.
-echo [3/4] Lancement application...
+echo [3/4] Lancement application avec Electron...
 echo.
 cd /d "%PROJECT_DIR%"
-start /b "" "%NODE_DIR%\npm.cmd" exec vite -- --port 5180
-timeout /t 5 >nul
-start http://localhost:5180
+start /b "" "%NODE_DIR%\npm.cmd" run electron:dev
 
 echo.
-echo [TERMINE]
+echo [TERMINE] - La fenetre Electron va s'ouvrir automatiquement
 pause

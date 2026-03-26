@@ -50,6 +50,8 @@ function AppContent() {
     }
   }, [boards, currentBoard, loadBoard, location.pathname]);
 
+  const boardKey = currentBoard?.id || 'no-board';
+
   return (
     <div className={`flex h-screen bg-app ${theme}`}>
       <Sidebar />
@@ -58,10 +60,10 @@ function AppContent() {
         <main className="flex-1 overflow-auto p-4 bg-app">
           <Routes>
             <Route path="/" element={<Dashboard />} />
-            <Route path="/board" element={<Board2 />} />
-            <Route path="/board/:boardId" element={<Board2 />} />
-            <Route path="/board2" element={<Board2 />} />
-            <Route path="/board2/:boardId" element={<Board2 />} />
+            <Route path="/board" element={<Board2 key={boardKey} />} />
+            <Route path="/board/:boardId" element={<Board2 key={boardKey} />} />
+            <Route path="/board2" element={<Board2 key={boardKey} />} />
+            <Route path="/board2/:boardId" element={<Board2 key={boardKey} />} />
             <Route path="/library" element={<DonneesPage />} />
             <Route path="/archives" element={<Archives />} />
             <Route path="/settings" element={<Settings />} />

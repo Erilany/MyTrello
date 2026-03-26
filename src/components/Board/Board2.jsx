@@ -227,6 +227,17 @@ function Board2() {
     }
   };
 
+  const fallbackToBat = folderPath => {
+    const batContent = `@echo off\nstart explorer "${folderPath}"`;
+    const blob = new Blob([batContent], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'open_folder.bat';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+
   const saveLinks = () => saveToStorage('links', JSON.stringify(links));
   const saveCommandes = () => saveToStorage('commandes', JSON.stringify(commandes));
   const saveEotp = () => saveToStorage('eotp', JSON.stringify(eotpLines));
@@ -1232,10 +1243,23 @@ Affaire: ${commande.affaire || 'N/A'}
               onClick={() => {
                 if (link.url) {
                   if (link.type === 'folder') {
-                    const folderUrl = link.url.startsWith('file://')
-                      ? link.url
-                      : `file:///${link.url.replace(/\\/g, '/')}`;
-                    window.open(folderUrl, '_blank');
+                    const folderPath = link.url;
+                    if (window.electron && window.electron.invoke) {
+                      window.electron
+                        .invoke('shell:openFolder', folderPath)
+                        .then(result => {
+                          if (!result.success) {
+                            console.error('Erreur ouverture dossier:', result.error);
+                            alert("Impossible d'ouvrir le dossier: " + result.error);
+                          }
+                        })
+                        .catch(err => {
+                          console.error('Erreur IPC:', err);
+                          fallbackToBat(folderPath);
+                        });
+                    } else {
+                      fallbackToBat(folderPath);
+                    }
                   } else {
                     window.open(link.url, '_blank');
                   }
@@ -2732,14 +2756,22 @@ Affaire: ${commande.affaire || 'N/A'}
                         }
                       } else if (link.type === 'folder') {
                         const folderPath = link.url;
-                        const batContent = `@echo off\nstart explorer "${folderPath}"`;
-                        const blob = new Blob([batContent], { type: 'text/plain' });
-                        const url = URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = 'open_folder.bat';
-                        a.click();
-                        setTimeout(() => URL.revokeObjectURL(url), 1000);
+                        if (window.electron && window.electron.invoke) {
+                          window.electron
+                            .invoke('shell:openFolder', folderPath)
+                            .then(result => {
+                              if (!result.success) {
+                                console.error('Erreur ouverture dossier:', result.error);
+                                alert("Impossible d'ouvrir le dossier: " + result.error);
+                              }
+                            })
+                            .catch(err => {
+                              console.error('Erreur IPC:', err);
+                              fallbackToBat(folderPath);
+                            });
+                        } else {
+                          fallbackToBat(folderPath);
+                        }
                       } else {
                         window.open(link.url, '_blank');
                       }
