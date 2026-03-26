@@ -14,6 +14,7 @@ import {
   CheckSquare,
   Folder,
   Layers,
+  GripVertical,
 } from 'lucide-react';
 import { libraryTemplates } from '../../data/libraryData';
 import { loadTagsData } from '../../data/TagsData';
@@ -802,7 +803,21 @@ function treeToCSV(nodes) {
   return csv;
 }
 
-function TreeNode({ node, onEdit, onDelete, onAddChild, onToggleSkipAction }) {
+function TreeNode({
+  node,
+  onEdit,
+  onDelete,
+  onAddChild,
+  onToggleSkipAction,
+  onDragStart,
+  onDragOver,
+  onDrop,
+  onDragEnd,
+  onDragLeave,
+  draggedNode,
+  dragOverNode,
+  dropPosition,
+}) {
   const [isExpanded, setIsExpanded] = useState(node.expanded !== false);
   const [localData, setLocalData] = useState(node.data);
   const [isEditing, setIsEditing] = useState(false);
@@ -854,8 +869,22 @@ function TreeNode({ node, onEdit, onDelete, onAddChild, onToggleSkipAction }) {
   return (
     <div className="ml-4">
       <div
-        className={`flex items-center gap-2 py-3 px-3 rounded ${config.bg} hover:bg-[var(--bg-card-hover)] transition-colors`}
+        className={`flex items-center gap-2 py-3 px-3 rounded ${config.bg} hover:bg-[var(--bg-card-hover)] transition-colors
+          ${draggedNode?.id === node.id ? 'opacity-50 cursor-grabbing' : 'cursor-grab'}
+          ${dragOverNode?.id === node.id && dropPosition === 'inside' ? 'ring-2 ring-purple-500 ring-offset-1' : ''}
+          ${dragOverNode?.id === node.id && dropPosition === 'before' ? 'border-t-2 border-t-purple-500' : ''}
+          ${dragOverNode?.id === node.id && dropPosition === 'after' ? 'border-b-2 border-b-purple-500' : ''}
+        `}
+        draggable
+        onDragStart={e => onDragStart(e, node)}
+        onDragOver={e => onDragOver(e, node)}
+        onDrop={e => onDrop(e, node)}
+        onDragEnd={onDragEnd}
+        onDragLeave={onDragLeave}
       >
+        {/* Poignée de drag */}
+        <GripVertical size={16} className="text-gray-400 cursor-grab flex-shrink-0" />
+
         {hasChildren ? (
           <button
             onClick={() => setIsExpanded(!isExpanded)}
@@ -1026,6 +1055,14 @@ function TreeNode({ node, onEdit, onDelete, onAddChild, onToggleSkipAction }) {
               onDelete={onDelete}
               onAddChild={onAddChild}
               onToggleSkipAction={onToggleSkipAction}
+              onDragStart={onDragStart}
+              onDragOver={onDragOver}
+              onDrop={onDrop}
+              onDragEnd={onDragEnd}
+              onDragLeave={onDragLeave}
+              draggedNode={draggedNode}
+              dragOverNode={dragOverNode}
+              dropPosition={dropPosition}
             />
           ))}
         </div>
@@ -1041,6 +1078,9 @@ function LibraryEditor() {
   const [showXmlImportModal, setShowXmlImportModal] = useState(false);
   const [xmlItems, setXmlItems] = useState([]);
   const [selectedXmlItems, setSelectedXmlItems] = useState([]);
+  const [draggedNode, setDraggedNode] = useState(null);
+  const [dragOverNode, setDragOverNode] = useState(null);
+  const [dropPosition, setDropPosition] = useState(null); // 'before', 'after', 'inside'
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -1218,6 +1258,189 @@ function LibraryEditor() {
     });
     setHasChanges(true);
   }, []);
+
+  // Fonctions de drag and drop
+  const handleDragStart = useCallback((e, node) => {
+    setDraggedNode(node);
+    e.dataTransfer.effectAllowed = 'move';
+    // Stocker l'ID du nœud pour référence
+    e.dataTransfer.setData('text/plain', node.id);
+  }, []);
+
+  const handleDragOver = useCallback(
+    (e, targetNode) => {
+      e.preventDefault();
+      if (!draggedNode || draggedNode.id === targetNode.id) return;
+
+      // Déterminer la position de drop basée sur la position verticale de la souris
+      const rect = e.currentTarget.getBoundingClientRect();
+      const offsetY = e.clientY - rect.top;
+      const threshold = rect.height / 3;
+
+      let position;
+      if (offsetY < threshold) {
+        position = 'before';
+      } else if (offsetY > rect.height - threshold) {
+        position = 'after';
+      } else {
+        // Si la cible peut accueillir des enfants (et que ce n'est pas un sous-types不合适), proposer 'inside'
+        position = 'inside';
+      }
+
+      setDragOverNode(targetNode);
+      setDropPosition(position);
+    },
+    [draggedNode]
+  );
+
+  const handleDragLeave = useCallback(() => {
+    setDragOverNode(null);
+    setDropPosition(null);
+  }, []);
+
+  const handleDrop = useCallback(
+    (e, targetNode) => {
+      e.preventDefault();
+      if (!draggedNode || !targetNode || draggedNode.id === targetNode.id) {
+        setDraggedNode(null);
+        setDragOverNode(null);
+        setDropPosition(null);
+        return;
+      }
+
+      const position = dropPosition || 'after';
+
+      // Valider le drop
+      if (!isValidDropTarget(draggedNode, targetNode, position)) {
+        alert("Opération non autorisée : ce déplacement n'est pas possible");
+        setDraggedNode(null);
+        setDragOverNode(null);
+        setDropPosition(null);
+        return;
+      }
+
+      setTreeData(prev => {
+        const newData = JSON.parse(JSON.stringify(prev));
+
+        // 1. Retirer le nœud déplacé de son parent actuel
+        let removedNode = null;
+        const removeFromTree = nodes => {
+          for (let i = 0; i < nodes.length; i++) {
+            if (nodes[i].id === draggedNode.id) {
+              removedNode = nodes.splice(i, 1)[0];
+              return true;
+            }
+            if (nodes[i].children && removeFromTree(nodes[i].children)) return true;
+          }
+          return false;
+        };
+        removeFromTree(newData);
+
+        if (!removedNode) {
+          console.error('Node not found for removal');
+          return prev;
+        }
+
+        // 2. Insérer le nœud à la nouvelle position
+        const insertIntoTree = nodes => {
+          for (let i = 0; i < nodes.length; i++) {
+            if (nodes[i].id === targetNode.id) {
+              if (position === 'inside') {
+                // Déposer à l'intérieur (comme enfant)
+                if (!nodes[i].children) nodes[i].children = [];
+                nodes[i].children.push(removedNode);
+                nodes[i].expanded = true;
+              } else if (position === 'before') {
+                // Insérer avant
+                nodes.splice(i, 0, removedNode);
+              } else {
+                // Insérer après
+                nodes.splice(i + 1, 0, removedNode);
+              }
+              return true;
+            }
+            if (nodes[i].children && insertIntoTree(nodes[i].children)) return true;
+          }
+          return false;
+        };
+        insertIntoTree(newData);
+
+        return newData;
+      });
+
+      setHasChanges(true);
+      setDraggedNode(null);
+      setDragOverNode(null);
+      setDropPosition(null);
+    },
+    [draggedNode, dragOverNode, dropPosition]
+  );
+
+  const handleDragEnd = useCallback(() => {
+    setDraggedNode(null);
+    setDragOverNode(null);
+    setDropPosition(null);
+  }, []);
+
+  // Vérifie si un drop est valide selon les règles métier
+  const isValidDropTarget = (dragged, target, position) => {
+    // Empêcher le déplacement d'un nœud dans son propre descendant
+    const isDescendant = (node, childId) => {
+      if (!node.children) return false;
+      for (const child of node.children) {
+        if (child.id === childId || isDescendant(child, childId)) {
+          return true;
+        }
+      }
+      return false;
+    };
+
+    // Vérifier que dragged n'est pas un descendant de target
+    if (position === 'inside' && isDescendant(target, dragged.id)) {
+      return false;
+    }
+
+    // Règles selon les types
+    if (dragged.type === 'chapitre') {
+      // Un chapitre ne peut être déposé qu'à la racine (before/after sur un autre chapitre)
+      if (position === 'inside') return false;
+      if (target.type !== 'chapitre') return false;
+      return true;
+    }
+
+    if (dragged.type === 'carte') {
+      // Une carte peut:
+      // - être déposée sur un chapitre (inside) → changer de chapitre
+      // - être déposée avant/après une autre carte (même niveau)
+      if (position === 'inside') {
+        return target.type === 'chapitre';
+      }
+      // before/after seulement sur une carte
+      return target.type === 'carte';
+    }
+
+    if (dragged.type === 'categorie') {
+      // Une catégorie peut:
+      // - être déposée sur une carte (inside) → changer de carte
+      // - être déposée avant/après une autre catégorie (même carte)
+      if (position === 'inside') {
+        return target.type === 'carte';
+      }
+      return target.type === 'categorie';
+    }
+
+    if (dragged.type === 'souscategorie') {
+      // Une sous-catégorie peut:
+      // - être déposée sur une catégorie (inside) → changer de catégorie
+      // - être déposée avant/après une autre sous-catégorie (même catégorie)
+      if (position === 'inside') {
+        return target.type === 'categorie';
+      }
+      return target.type === 'souscategorie';
+    }
+
+    return false;
+  };
 
   const handleAddRoot = useCallback(() => {
     const newNode = {
@@ -1786,6 +2009,14 @@ function LibraryEditor() {
             onDelete={handleDelete}
             onAddChild={handleAddChild}
             onToggleSkipAction={handleToggleSkipAction}
+            onDragStart={handleDragStart}
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
+            onDragEnd={handleDragEnd}
+            onDragLeave={handleDragLeave}
+            draggedNode={draggedNode}
+            dragOverNode={dragOverNode}
+            dropPosition={dropPosition}
           />
         ))}
       </div>

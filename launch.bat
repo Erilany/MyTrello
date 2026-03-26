@@ -23,7 +23,14 @@ taskkill /F /IM node.exe >nul 2>&1
 taskkill /F /IM electron.exe >nul 2>&1
 timeout /t 2 >nul
 echo [OK]
-
+echo.
+echo [2.5/4] Installation des dependances...
+if not exist node_modules (
+"%NODE_DIR%\npm.cmd" install
+) else (
+echo Les dependances sont deja installees.
+)
+echo [OK]
 echo.
 echo [3/4] Lancement application avec Electron...
 echo.
