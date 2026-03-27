@@ -51,7 +51,9 @@ function convertTreeToLibraryItems(treeData) {
       const tags =
         node.type === 'souscategorie'
           ? [node.data.categorieTag || '', node.data.domaineTag || ''].filter(Boolean).join(',')
-          : '';
+          : [currentChapitre, node.data.categorieTag || '', node.data.domaineTag || '']
+              .filter(Boolean)
+              .join(',');
 
       let cardItem = cardMap.get(currentCarte);
       if (!cardItem) {
@@ -59,7 +61,7 @@ function convertTreeToLibraryItems(treeData) {
           id: itemId++,
           title: currentCarte,
           type: 'card',
-          tags: '',
+          tags: tags,
           duration: node.data.temps || 0,
           content_json: JSON.stringify({
             card: {
@@ -92,10 +94,12 @@ function convertTreeToLibraryItems(treeData) {
             description: '',
             priority: 'normal',
             duration_days: node.data.temps || 0,
-            tag: null,
+            tag: node.data.systemTag || null,
             subcategories: [],
           };
           content.categories.push(category);
+        } else if (node.data.systemTag) {
+          category.tag = node.data.systemTag;
         }
 
         if (!categorySet.has(catKey)) {
@@ -174,6 +178,50 @@ function parsePTDuration(ptStr) {
   return Math.floor(hours / 24);
 }
 
+// Fonction de migration pour restaurer les champs tags/temps manquants
+function migrateLibraryTree(tree) {
+  const newTree = JSON.parse(JSON.stringify(tree));
+
+  function traverseNodes(nodes) {
+    for (const node of nodes) {
+      if (!node.data) node.data = {};
+
+      // Migrer selon le type de nœud
+      if (node.type === 'chapitre') {
+        node.data.chapitre = node.data.chapitre || node.titre || '';
+        node.data.temps = node.data.temps || 0;
+        // Pas de tags pour chapitre
+      } else if (node.type === 'carte') {
+        node.data.carte = node.data.carte || node.titre || '';
+        node.data.temps = node.data.temps || 0;
+        node.data.categorieTag = node.data.categorieTag || '';
+        node.data.domaineTag = node.data.domaineTag || '';
+        node.data.systemTag = '';
+        node.data.skipAction = node.data.skipAction || false;
+      } else if (node.type === 'categorie') {
+        node.data.categorie = node.data.categorie || node.titre || '';
+        node.data.temps = node.data.temps || 0;
+        node.data.categorieTag = node.data.categorieTag || '';
+        node.data.domaineTag = node.data.domaineTag || '';
+        node.data.systemTag = node.data.systemTag || '';
+      } else if (node.type === 'souscategorie') {
+        node.data.sousCat1 = node.data.sousCat1 || node.titre || '';
+        node.data.temps = node.data.temps || 0;
+        node.data.categorieTag = node.data.categorieTag || '';
+        node.data.domaineTag = node.data.domaineTag || '';
+        node.data.systemTag = node.data.systemTag || '';
+      }
+
+      if (node.children && node.children.length > 0) {
+        traverseNodes(node.children);
+      }
+    }
+  }
+
+  traverseNodes(newTree);
+  return newTree;
+}
+
 function convertLibraryDataToTree(libraryItems) {
   const tree = [];
   const chapterMap = new Map();
@@ -230,8 +278,8 @@ function convertLibraryDataToTree(libraryItems) {
             sousCat2: '',
             sousCat3: '',
             temps: item.duration || 0,
-            categorieTag: '',
-            domaineTag: '',
+            categorieTag: categorieTag,
+            domaineTag: domaineTag,
             systemTag: '',
             skipAction: content.card?.skipAction || false,
           },
@@ -259,7 +307,7 @@ function convertLibraryDataToTree(libraryItems) {
               temps: cat.duration_days || 0,
               categorieTag: '',
               domaineTag: '',
-              systemTag: '',
+              systemTag: cat.tag || '',
             },
             children: [],
             expanded: true,
@@ -982,7 +1030,13 @@ function TreeNode({
           placeholder="Temps"
         />
 
-        {node.type === 'souscategorie' && (
+        {node.type === 'chapitre' ? (
+          <>
+            <div className="w-28"></div>
+            <div className="w-28"></div>
+            <div className="w-32"></div>
+          </>
+        ) : (
           <>
             <input
               type="text"
@@ -1015,14 +1069,6 @@ function TreeNode({
                 </option>
               ))}
             </select>
-          </>
-        )}
-
-        {node.type !== 'souscategorie' && (
-          <>
-            <div className="w-28"></div>
-            <div className="w-28"></div>
-            <div className="w-32"></div>
           </>
         )}
 
@@ -1086,8 +1132,14 @@ function LibraryEditor() {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       try {
-        const parsed = JSON.parse(stored);
-        setTreeData(parsed);
+        let parsed = JSON.parse(stored);
+        // Appliquer la migration pour restaurer les champs tags/temps manquants
+        const migrated = migrateLibraryTree(parsed);
+        setTreeData(migrated);
+        // Si la migration a modifié les données, les sauvegarder
+        if (JSON.stringify(migrated) !== stored) {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated));
+        }
       } catch {
         const tree = convertLibraryDataToTree(libraryTemplates);
         setTreeData(tree);
