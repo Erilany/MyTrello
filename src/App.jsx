@@ -13,6 +13,7 @@ import VoiceControl from './components/VoiceControl/VoiceControl';
 import CardModal from './components/Card/CardModal';
 import CategoryModal from './components/Category/CategoryModal';
 import SubCategoryModal from './components/SubCategory/SubCategoryModal';
+import GuidePanel from './components/Guide/GuidePanel';
 
 function Modals() {
   const {
@@ -41,7 +42,7 @@ function Modals() {
 }
 
 function AppContent() {
-  const { theme, boards, loadBoard, currentBoard } = useApp();
+  const { theme, boards, loadBoard, currentBoard, guideOpen } = useApp();
   const location = useLocation();
 
   React.useEffect(() => {
@@ -55,7 +56,7 @@ function AppContent() {
   return (
     <div className={`flex h-screen bg-app ${theme}`}>
       <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden -ml-[20px]">
+      <div className="flex-1 flex flex-col overflow-hidden">
         <Header />
         <main className="flex-1 overflow-auto p-4 bg-app">
           <Routes>
@@ -71,6 +72,7 @@ function AppContent() {
           </Routes>
         </main>
       </div>
+      {guideOpen && <GuidePanel />}
       <Modals />
     </div>
   );

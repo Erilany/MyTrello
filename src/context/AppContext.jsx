@@ -502,6 +502,9 @@ export function AppProvider({ children }) {
     setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
   }, []);
 
+  const [guideOpen, setGuideOpen] = useState(false);
+  const toggleGuide = useCallback(() => setGuideOpen(prev => !prev), []);
+
   const updateCardColors = useCallback(newColors => {
     setCardColors(newColors);
   }, []);
@@ -2322,6 +2325,8 @@ export function AppProvider({ children }) {
     setLibraryViewMode,
     theme,
     toggleTheme,
+    guideOpen,
+    toggleGuide,
     selectedCard,
     setSelectedCard,
     selectedCategory,

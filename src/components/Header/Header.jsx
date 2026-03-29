@@ -1,9 +1,9 @@
 import React from 'react';
 import { useApp } from '../../context/AppContext';
-import { Search, Bell, Sun, Moon } from 'lucide-react';
+import { Search, Bell, Sun, Moon, HelpCircle } from 'lucide-react';
 
 function Header() {
-  const { theme, toggleTheme } = useApp();
+  const { theme, toggleTheme, guideOpen, toggleGuide } = useApp();
 
   return (
     <header
@@ -39,6 +39,14 @@ function Header() {
             className="absolute top-1 right-1 w-2 h-2 bg-urgent rounded-full"
             style={{ boxShadow: '0 0 6px #ef4444' }}
           ></span>
+        </button>
+
+        <button
+          onClick={toggleGuide}
+          className={`icon-btn ${guideOpen ? 'text-accent' : ''}`}
+          title="Guide"
+        >
+          <HelpCircle size={18} />
         </button>
       </div>
     </header>
