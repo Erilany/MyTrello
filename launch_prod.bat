@@ -2,7 +2,7 @@
 setlocal
 
 echo ========================================
-echo   Launcher MyTrello - Mode Production
+echo   Launcher D-ProjeT - Mode Production
 echo ========================================
 echo.
 

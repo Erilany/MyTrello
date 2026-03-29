@@ -1,4 +1,4 @@
-# 🗂️ MyTrello — README
+# 🗂️ D-ProjeT — README
 
 > Application de gestion de projets à 3 niveaux avec intégration Outlook, Gmail et commandes vocales.
 
@@ -190,4 +190,4 @@ mytrello/
 En cas de problème d'installation ou de configuration, consulter `SETUP_ENVIRONNEMENT.md` et `GESTION_ERREURS.md`.
 
 ---
-*MyTrello — README — 23 février 2026*
+*D-ProjeT — README — 23 février 2026*

@@ -1,4 +1,4 @@
-# MyTrello Speech Recognition - Minimal Version
+# D-ProjeT Speech Recognition - Minimal Version
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
 Write-Output "SCRIPT:Starting"

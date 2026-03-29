@@ -1,4 +1,4 @@
-# 📋 MyTrello — MVP (Version 0.1)
+# 📋 D-ProjeT — MVP (Version 0.1)
 > **Objectif** : Utilisation personnelle immédiate — Gestion de projets 3 niveaux sans dépendance externe
 > **Basé sur** : Phases 1, 2 et 3 (partielle) du plan de développement
 
@@ -23,7 +23,7 @@
 ## 🏗️ Architecture MVP
 
 ```
-MyTrello-MVP/
+D-ProjeT-MVP/
 ├── src/
 │   ├── components/
 │   │   ├── Board/
@@ -355,4 +355,4 @@ CREATE TABLE library_items (
 Drag & drop aux 3 niveaux + commandes vocales de base
 
 ---
-*MyTrello — Version MVP 0.1 — 23 février 2026*
+*D-ProjeT — Version MVP 0.1 — 23 février 2026*

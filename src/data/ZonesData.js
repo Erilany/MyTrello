@@ -1,4 +1,4 @@
-const ZONES_STORAGE_KEY = 'mytrello_zones_data';
+const ZONES_STORAGE_KEY = 'd-projet_zones_data';
 
 export const defaultZonesData = [];
 

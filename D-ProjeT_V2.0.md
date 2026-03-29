@@ -1,4 +1,4 @@
-# 📋 MyTrello — Version 2.0
+# 📋 D-ProjeT — Version 2.0
 > **Objectif** : Intégration Outlook native — Module messagerie Outlook complet avec drag & drop et commandes vocales
 > **Prérequis** : V1.2 validée et tous les tests V1.2 passés
 > **Basé sur** : Phase 5 + Phase 7 + Phase 8 (partielle) du plan de développement
@@ -15,7 +15,7 @@
 | Navigation emails (suivant / précédent) | |
 | Actions sur emails (lire, déplacer, taguer, supprimer) | |
 | Drag & drop email → Carte / Catégorie / Sous-catégorie | |
-| Copier / Coller vocal Outlook → MyTrello | |
+| Copier / Coller vocal Outlook → D-ProjeT | |
 | Création de carte depuis email | |
 | Commandes vocales Outlook complètes | |
 | Rafraîchissement automatique des emails | |
@@ -35,7 +35,7 @@ src/components/
     ├── EmailList.jsx                  → Liste des emails
     ├── EmailPreview.jsx               → Aperçu email sélectionné
     ├── EmailActions.jsx               → Barre d'actions (répondre, déplacer...)
-    ├── EmailDraggable.jsx             → Email draggable vers MyTrello
+    ├── EmailDraggable.jsx             → Email draggable vers D-ProjeT
     ├── EmailClipboard.jsx             → Indicateur email en mémoire tampon
     └── ConnectionStatus.jsx          → Indicateur connexion Outlook
 ```
@@ -66,7 +66,7 @@ src/services/
 -- Tokens OAuth Microsoft (chiffrés via electron-store)
 -- Stockage hors SQLite pour raisons de sécurité
 
--- Nouvelle table : emails liés aux éléments MyTrello
+-- Nouvelle table : emails liés aux éléments D-ProjeT
 CREATE TABLE email_links (
   id          INTEGER PRIMARY KEY AUTOINCREMENT,
   ref_type    TEXT NOT NULL,    -- 'card' | 'category' | 'subcategory'
@@ -138,7 +138,7 @@ INSERT INTO settings (key, value) VALUES
 - [ ] Indicateur de connexion en temps réel
 - [ ] Badge nombre d'emails non lus
 
-### ÉTAPE 5 — Drag & Drop email → MyTrello
+### ÉTAPE 5 — Drag & Drop email → D-ProjeT
 
 - [ ] Rendre chaque email draggable (`EmailDraggable`)
 - [ ] Zones de dépôt sur Cartes, Catégories, Sous-catégories
@@ -148,12 +148,12 @@ INSERT INTO settings (key, value) VALUES
 - [ ] À la dépose sur une **Sous-catégorie** → attacher comme note/lien
 - [ ] L'email créé contient : titre = sujet, description = corps, expéditeur, date
 - [ ] Enregistrer le lien dans la table `email_links`
-- [ ] Indicateur visuel sur l'élément MyTrello "Email lié"
+- [ ] Indicateur visuel sur l'élément D-ProjeT "Email lié"
 
-### ÉTAPE 6 — Copier / Coller vocal Outlook → MyTrello
+### ÉTAPE 6 — Copier / Coller vocal Outlook → D-ProjeT
 
 - [ ] Implémenter la mémoire tampon email (table settings, clé `email_clipboard`)
-- [ ] Commande *"Copie email dans MyTrello"* → stocke l'email en mémoire tampon
+- [ ] Commande *"Copie email dans D-ProjeT"* → stocke l'email en mémoire tampon
 - [ ] Indicateur visuel persistant de l'email en mémoire tampon (barre supérieure)
 - [ ] Commande *"Colle l'email ici"* → crée l'élément dans la cible active
 - [ ] Bouton "Vider le presse-papier email" dans l'indicateur
@@ -178,10 +178,10 @@ INSERT INTO settings (key, value) VALUES
 - [ ] *"Taguer [catégorie]"* → Applique une catégorie Outlook
 - [ ] *"Afficher emails de [projet]"* → Filtre les emails liés au projet
 
-#### Liaison Outlook → MyTrello
+#### Liaison Outlook → D-ProjeT
 - [ ] *"Crée une carte"* → Crée une carte depuis l'email ouvert
-- [ ] *"Copie email dans MyTrello"* → Met en mémoire tampon
-- [ ] *"Colle l'email ici"* → Colle dans l'élément actif MyTrello
+- [ ] *"Copie email dans D-ProjeT"* → Met en mémoire tampon
+- [ ] *"Colle l'email ici"* → Colle dans l'élément actif D-ProjeT
 - [ ] *"Lier à la carte [nom]"* → Associe à une carte existante
 
 ---
@@ -193,7 +193,7 @@ INSERT INTO settings (key, value) VALUES
 🧪 Dans Paramètres → Messagerie, cocher "Activer Microsoft Outlook"
 
 ✅ La fenêtre OAuth Microsoft s'ouvre dans le navigateur système
-✅ Après connexion, le panel Outlook apparaît dans MyTrello
+✅ Après connexion, le panel Outlook apparaît dans D-ProjeT
 ✅ Les emails de la boîte de réception sont listés (50 max)
 ✅ Le token est conservé après redémarrage (pas de re-connexion)
 ✅ L'indicateur de connexion affiche "Connecté"
@@ -223,7 +223,7 @@ INSERT INTO settings (key, value) VALUES
 
 🧪 Appliquer la catégorie "Urgent" sur un email
 
-✅ La catégorie est visible dans le panel MyTrello
+✅ La catégorie est visible dans le panel D-ProjeT
 ✅ La catégorie est également visible dans Outlook (vérification externe)
 
 🧪 Rafraîchissement automatique après 5 minutes
@@ -261,7 +261,7 @@ INSERT INTO settings (key, value) VALUES
 
 ### TEST V2.0-06 — Copier / Coller vocal
 ```
-🧪 Email ouvert, dire "Copie email dans MyTrello"
+🧪 Email ouvert, dire "Copie email dans D-ProjeT"
 
 ✅ L'indicateur "Email en mémoire tampon" apparaît (barre supérieure)
 ✅ Le titre de l'email est affiché dans l'indicateur
@@ -273,7 +273,7 @@ INSERT INTO settings (key, value) VALUES
 ✅ L'indicateur de mémoire tampon disparaît
 ✅ Le lien email est enregistré
 
-🧪 Dire "Copie email dans MyTrello" sans email ouvert
+🧪 Dire "Copie email dans D-ProjeT" sans email ouvert
 
 ✅ Message "Aucun email sélectionné" affiché
 ❌ L'application plante ou crée un élément vide
@@ -306,12 +306,12 @@ INSERT INTO settings (key, value) VALUES
 🧪 Dire "Taguer Urgent"
 
 ✅ La catégorie "Urgent" est appliquée sur l'email dans Outlook
-✅ La couleur de la catégorie apparaît dans le panel MyTrello
+✅ La couleur de la catégorie apparaît dans le panel D-ProjeT
 
 🧪 Dire "Crée une carte"
 
-✅ Une carte est créée dans MyTrello avec les données de l'email ouvert
-✅ L'application bascule vers MyTrello et sélectionne la nouvelle carte
+✅ Une carte est créée dans D-ProjeT avec les données de l'email ouvert
+✅ L'application bascule vers D-ProjeT et sélectionne la nouvelle carte
 ```
 
 ### TEST V2.0-09 — Sécurité et déconnexion
@@ -319,14 +319,14 @@ INSERT INTO settings (key, value) VALUES
 🧪 Couper la connexion internet pendant l'utilisation d'Outlook
 
 ✅ Un indicateur "Hors ligne" apparaît dans le panel Outlook
-✅ MyTrello de base continue de fonctionner normalement
+✅ D-ProjeT de base continue de fonctionner normalement
 ✅ La reconnexion est automatique au retour de la connexion
 
 🧪 Se déconnecter du compte Outlook (Paramètres → Messagerie)
 
 ✅ Le panel Outlook disparaît
 ✅ Les tokens sont supprimés de manière sécurisée
-✅ Les liens email dans MyTrello restent visibles (données locales conservées)
+✅ Les liens email dans D-ProjeT restent visibles (données locales conservées)
 ```
 
 ### TEST V2.0-10 — Régression V1.2
@@ -335,7 +335,7 @@ INSERT INTO settings (key, value) VALUES
 
 ✅ Tous les tests passent toujours
 ✅ L'activation d'Outlook n'affecte pas les performances générales
-✅ Le drag & drop MyTrello fonctionne normalement en présence du panel Outlook
+✅ Le drag & drop D-ProjeT fonctionne normalement en présence du panel Outlook
 ❌ Une fonctionnalité précédente est cassée
 ```
 
@@ -348,7 +348,7 @@ INSERT INTO settings (key, value) VALUES
 | **Phases couvertes** | Phase 5 + Phase 7 + Phase 8 partielle |
 | **Tâches de développement** | 44 tâches |
 | **Tests de validation** | 10 tests (+ 30 tests régression) |
-| **Drag & drop** | ✅ Email → MyTrello (tous niveaux) |
+| **Drag & drop** | ✅ Email → D-ProjeT (tous niveaux) |
 | **Commandes vocales** | ✅ Outlook complet |
 | **Outlook** | ✅ Complet |
 | **Gmail** | ❌ Non (prévu V2.1) |
@@ -360,4 +360,4 @@ INSERT INTO settings (key, value) VALUES
 Intégration Gmail + cohabitation Outlook / Gmail simultanés
 
 ---
-*MyTrello — Version 2.0 — 23 février 2026*
+*D-ProjeT — Version 2.0 — 23 février 2026*

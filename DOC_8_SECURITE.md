@@ -1,4 +1,4 @@
-# 🔒 MyTrello — Guide de sécurité
+# 🔒 D-ProjeT — Guide de sécurité
 
 ---
 
@@ -347,4 +347,4 @@ electron                      → Framework desktop
 
 ---
 
-*MyTrello — Sécurité — 23 février 2026*
+*D-ProjeT — Sécurité — 23 février 2026*

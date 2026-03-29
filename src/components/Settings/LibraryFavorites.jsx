@@ -10,7 +10,7 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 
-const FAVORITES_KEY = 'mytrello_library_favorites';
+const FAVORITES_KEY = 'd-projet_library_favorites';
 
 function LibraryFavorites() {
   const { libraryItems } = useApp();

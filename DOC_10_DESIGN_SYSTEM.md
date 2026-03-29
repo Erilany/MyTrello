@@ -1,6 +1,6 @@
-# 🎨 MyTrello — Design System & Identité Visuelle
+# 🎨 D-ProjeT — Design System & Identité Visuelle
 
-> Document de référence visuelle. Tout développeur travaillant sur MyTrello doit respecter
+> Document de référence visuelle. Tout développeur travaillant sur D-ProjeT doit respecter
 > ces spécifications pour maintenir la cohérence du rendu sur l'ensemble de l'application.
 
 ---
@@ -8,7 +8,7 @@
 ## 1. Philosophie du design
 
 ### Concept directeur
-**"Interface de commandement"** — MyTrello s'adresse à des chefs de projet travaillant sur des
+**"Interface de commandement"** — D-ProjeT s'adresse à des chefs de projet travaillant sur des
 infrastructures critiques (postes 400kV, HTB). L'interface doit inspirer **rigueur, maîtrise et
 efficacité**. Pas de fantaisie, pas de légèreté. Tout doit sembler solide, fiable, professionnel.
 
@@ -437,4 +437,4 @@ native non stylisée dans cette interface.
 
 ---
 
-*MyTrello — Design System & Identité Visuelle — 23 février 2026*
+*D-ProjeT — Design System & Identité Visuelle — 23 février 2026*

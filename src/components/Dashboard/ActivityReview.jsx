@@ -72,19 +72,19 @@ function ActivityReview({ boards, categories, subcategories, columns, currentUse
   const [showAllUsers, setShowAllUsers] = useState(false);
   const initializedRef = useRef(false);
 
-  const currentUserRole = localStorage.getItem('mytrello-user-role') || '';
+  const currentUserRole = localStorage.getItem('d-projet-user-role') || '';
 
   useEffect(() => {
     setTags(loadTagsData());
 
-    const saved = localStorage.getItem('mytrello_charge_resentie');
+    const saved = localStorage.getItem('d-projet_charge_ressentie');
     if (saved) {
       setChargeResentie(JSON.parse(saved));
     }
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('mytrello_charge_resentie', JSON.stringify(chargeResentie));
+    localStorage.setItem('d-projet_charge_ressentie', JSON.stringify(chargeResentie));
   }, [chargeResentie]);
 
   useEffect(() => {
@@ -106,7 +106,7 @@ function ActivityReview({ boards, categories, subcategories, columns, currentUse
     }
 
     // Get all boards from storage directly to show all projects with tagged items
-    const storageData = JSON.parse(localStorage.getItem('mytrello_db') || '{}');
+    const storageData = JSON.parse(localStorage.getItem('d-projet_db') || '{}');
     const allBoardsFromStorage = storageData.boards || [];
 
     const projects = [];

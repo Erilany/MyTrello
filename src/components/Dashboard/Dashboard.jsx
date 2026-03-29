@@ -17,6 +17,7 @@ import {
   ListTodo,
   Activity,
   RotateCcw,
+  Flag,
 } from 'lucide-react';
 
 function formatSeconds(seconds) {
@@ -145,6 +146,42 @@ function getUpcomingTasks(subcategories, categories, cards, boards, columns, use
   return result;
 }
 
+
+function getUpcomingMilestones(subcategories, categories, cards, boards, columns, days = 7) {
+  const now = new Date();
+  const futureDate = new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
+
+  const milestonesList = [];
+
+  subcategories.forEach(sub => {
+    let milestones = sub.milestones;
+    if (typeof milestones === 'string') {
+      try { milestones = JSON.parse(milestones); } catch (e) { milestones = []; }
+    }
+    if (!Array.isArray(milestones)) return;
+
+    milestones.forEach(m => {
+      if (m.date) {
+        const milestoneDate = new Date(m.date);
+        if (milestoneDate >= now && milestoneDate <= futureDate && !m.done) {
+          const category = categories.find(c => Number(c.id) === Number(sub.category_id));
+          const card = category ? cards.find(c => Number(c.id) === Number(category.card_id)) : null;
+          const column = card ? columns.find(col => Number(col.id) === Number(card.column_id)) : null;
+          const board = column ? boards.find(b => Number(b.id) === Number(column.board_id)) : null;
+          milestonesList.push({
+            milestone: { ...m, subcategoryId: sub.id, subcategoryTitle: sub.title },
+            category,
+            card,
+            board,
+          });
+        }
+      }
+    });
+  });
+
+  return milestonesList.sort((a, b) => new Date(a.milestone.date) - new Date(b.milestone.date));
+}
+
 export default function Dashboard() {
   const navigate = useNavigate();
   const {
@@ -163,7 +200,7 @@ export default function Dashboard() {
   } = useApp();
 
   // Load all data from localStorage for dashboard
-  const STORAGE_KEY = 'mytrello_db';
+  const STORAGE_KEY = 'd-projet_db';
   const [storageData, setStorageData] = useState(null);
   const loadStorageData = () => {
     const data = localStorage.getItem(STORAGE_KEY);
@@ -213,7 +250,7 @@ export default function Dashboard() {
   const handleDueDateClick = (e, task) => {
     e.stopPropagation();
     if (task.board?.id) {
-      localStorage.setItem('mytrello_open_tab', 'planning');
+      localStorage.setItem('d-projet_open_tab', 'planning');
       loadBoard(task.board.id);
       navigate('/board');
     }
@@ -225,12 +262,24 @@ export default function Dashboard() {
     const currentWeek = getWeekNumber(new Date());
     if (timeData[currentWeek] && timeData[currentWeek][projectId] !== undefined) {
       timeData[currentWeek][projectId] = 0;
-      localStorage.setItem('mytrello_project_time', JSON.stringify(timeData));
+      localStorage.setItem('d-projet_project_time', JSON.stringify(timeData));
       setRefreshKey(k => k + 1);
     }
   };
 
-  const getOtherTasksFiltered = () => {
+     const upcomingMilestones = useMemo(() => {
+     const days = timeRange === 'week' ? 7 : timeRange === 'month' ? 30 : 180;
+     return getUpcomingMilestones(
+       allSubcategories,
+       allCategories,
+       allCards,
+       allBoards,
+       allColumns,
+       days
+     );
+   }, [allSubcategories, allCategories, allCards, allBoards, allColumns, timeRange]);
+
+const getOtherTasksFiltered = () => {
     let tasks = otherTasks;
     if (selectedProjectForOthers) {
       tasks = tasks.filter(t => Number(t.board?.id) === Number(selectedProjectForOthers));
@@ -514,6 +563,45 @@ export default function Dashboard() {
               </span>
             </p>
 
+
+            {/* Jalons à venir */}
+            {upcomingMilestones.length > 0 && (
+              <div className="bg-card rounded-lg border border-std p-6 mb-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-semibold text-primary flex items-center gap-2">
+                    <Flag size={20} className="text-orange-500" />
+                    Jalons à venir
+                  </h2>
+                </div>
+                <p className="text-sm text-muted mb-4">
+                  Liste des jalons avec une date dans les prochains jours.
+                </p>
+                <div className="overflow-x-auto max-h-64">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-std">
+                        <th className="text-left py-2 px-3 text-muted font-medium">Projet</th>
+                        <th className="text-left py-2 px-3 text-muted font-medium">Action</th>
+                        <th className="text-left py-2 px-3 text-muted font-medium">Tâche</th>
+                        <th className="text-left py-2 px-3 text-muted font-medium">Jalon</th>
+                        <th className="text-left py-2 px-3 text-muted font-medium">Date</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {upcomingMilestones.map(({ milestone, category, card, board }, idx) => (
+                        <tr key={'m'+milestone.id+'-'+idx} className="border-b border-std">
+                          <td className="py-2 px-3 text-primary">{board?.title || '-'}</td>
+                          <td className="py-2 px-3 text-secondary">{category?.title || '-'}</td>
+                          <td className="py-2 px-3 text-primary">{card?.title || '-'}</td>
+                          <td className="py-2 px-3 text-primary font-medium">{milestone.title}</td>
+                          <td className="py-2 px-3 text-muted">{new Date(milestone.date).toLocaleDateString('fr-FR')}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
             {myTasks.length === 0 ? (
               <p className="text-secondary text-sm py-4">
                 Aucune tâche assignée à terminer dans cette période

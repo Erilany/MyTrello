@@ -1,4 +1,4 @@
-# ⚙️ MyTrello — Guide de configuration de l'environnement
+# ⚙️ D-ProjeT — Guide de configuration de l'environnement
 
 ---
 
@@ -96,7 +96,7 @@ LOG_FILE=./logs/mytrello.log
 2. Aller dans **Azure Active Directory → Inscriptions d'applications**
 3. Cliquer **Nouvelle inscription**
 4. Remplir :
-   - **Nom** : `MyTrello`
+   - **Nom** : `D-ProjeT`
    - **Types de comptes pris en charge** : `Comptes dans n'importe quel annuaire organisationnel et comptes Microsoft personnels`
    - **URI de redirection** : `mytrello://auth/microsoft/callback` (type : Public client/natif)
 5. Cliquer **S'inscrire**
@@ -132,7 +132,7 @@ Dans **Authentification** :
 ### 4.1 Créer le projet Google Cloud
 
 1. Se connecter sur [https://console.cloud.google.com](https://console.cloud.google.com)
-2. Créer un nouveau projet : `MyTrello`
+2. Créer un nouveau projet : `D-ProjeT`
 3. Aller dans **APIs et services → Bibliothèque**
 4. Rechercher et activer **Gmail API**
 
@@ -141,7 +141,7 @@ Dans **Authentification** :
 1. Aller dans **APIs et services → Écran de consentement OAuth**
 2. Sélectionner **Externe**
 3. Remplir :
-   - Nom de l'application : `MyTrello`
+   - Nom de l'application : `D-ProjeT`
    - Email d'assistance : votre email
 4. Dans **Champs d'application**, ajouter :
 
@@ -157,7 +157,7 @@ Dans **Authentification** :
 
 1. Aller dans **APIs et services → Identifiants → Créer des identifiants → ID client OAuth 2.0**
 2. Sélectionner **Application de bureau**
-3. Nom : `MyTrello Desktop`
+3. Nom : `D-ProjeT Desktop`
 4. Télécharger le fichier JSON → extraire `client_id` et `client_secret`
 5. Renseigner dans `.env` :
    - `GOOGLE_CLIENT_ID`
@@ -248,4 +248,4 @@ Créer le fichier `.vscode/settings.json` :
 
 ---
 
-*MyTrello — Setup Environnement — 23 février 2026*
+*D-ProjeT — Setup Environnement — 23 février 2026*

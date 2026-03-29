@@ -1,4 +1,4 @@
-# 📋 MyTrello — Cahier des charges complet v3.0
+# 📋 D-ProjeT — Cahier des charges complet v3.0
 
 > Application de gestion de projets inspirée de Trello, enrichie d'une gestion de cartes imbriquées à 3 niveaux, d'une bibliothèque de modèles, d'une intégration optionnelle aux services de messagerie (Outlook et/ou Gmail), d'un calendrier Outlook filtrable par tags, et de commandes vocales avancées.
 
@@ -23,7 +23,7 @@
 
 ## 2. ⚠️ Compatibilité Outlook — Point critique
 
-MyTrello doit fonctionner avec **deux configurations Outlook** aux comportements distincts :
+D-ProjeT doit fonctionner avec **deux configurations Outlook** aux comportements distincts :
 
 ### 2.1 Matrice de compatibilité
 
@@ -49,7 +49,7 @@ MyTrello doit fonctionner avec **deux configurations Outlook** aux comportements
 
 ### 2.3 Détection automatique de la configuration
 
-Au moment de la connexion Outlook, MyTrello détecte automatiquement la configuration :
+Au moment de la connexion Outlook, D-ProjeT détecte automatiquement la configuration :
 
 ```
 Connexion Outlook → Tentative OAuth 2.0 + Microsoft Graph API
@@ -83,7 +83,7 @@ Connexion Outlook → Tentative OAuth 2.0 + Microsoft Graph API
 ## 3. 🏗️ Architecture du projet
 
 ```
-MyTrello/
+D-ProjeT/
 ├── src/
 │   ├── components/
 │   │   ├── Board/              → Tableau principal
@@ -115,7 +115,7 @@ MyTrello/
 
 ---
 
-## 4. 🟢 MyTrello — Version de base (sans messagerie)
+## 4. 🟢 D-ProjeT — Version de base (sans messagerie)
 
 ### 4.1 Structure imbriquée à 3 niveaux
 
@@ -246,13 +246,13 @@ TABLEAU — Études et Réalisation Poste 400kV
 
 ---
 
-### 4.6 🎙️ Commandes vocales — MyTrello de base
+### 4.6 🎙️ Commandes vocales — D-ProjeT de base
 
 #### Activation
 
 | Commande | Action |
 |---|---|
-| *"Écoute"* / *"Hey MyTrello"* | Active l'écoute vocale |
+| *"Écoute"* / *"Hey D-ProjeT"* | Active l'écoute vocale |
 | *"Stop"* / *"Pause"* | Désactive l'écoute |
 | *"Aide"* | Liste les commandes disponibles |
 | *"Répète"* | Répète la dernière action effectuée |
@@ -289,12 +289,12 @@ TABLEAU — Études et Réalisation Poste 400kV
 
 ## 5. 📨 Module Messagerie — Activation optionnelle
 
-> Le module messagerie est **désactivé par défaut**. L'utilisateur peut activer un ou plusieurs services via les **paramètres de MyTrello** (boutons à cocher).
+> Le module messagerie est **désactivé par défaut**. L'utilisateur peut activer un ou plusieurs services via les **paramètres de D-ProjeT** (boutons à cocher).
 
 ### 5.1 Activation des services
 
 ```
-⚙️ Paramètres MyTrello → Intégrations Messagerie
+⚙️ Paramètres D-ProjeT → Intégrations Messagerie
 │
 ├── ☐ Activer Microsoft Outlook
 │     → Détection automatique : Microsoft Graph API (cloud) ou EWS (on-premise)
@@ -319,19 +319,19 @@ Les deux services peuvent être activés **simultanément**.
 | Lecture emails | ✅ | ✅ | ✅ |
 | Organisation | Dossiers | Dossiers | Libellés (Labels) |
 | Tags / Catégories | Catégories Outlook | Catégories Outlook | Libellés Gmail |
-| Drag & drop → MyTrello | ✅ | ✅ | ✅ |
+| Drag & drop → D-ProjeT | ✅ | ✅ | ✅ |
 | Copier/Coller vocal | ✅ | ✅ | ✅ |
-| Envoi depuis MyTrello | ✅ | ✅ | ✅ |
+| Envoi depuis D-ProjeT | ✅ | ✅ | ✅ |
 | Pièces jointes | ✅ | ✅ | ✅ |
-| Synchro tags ↔ MyTrello | ✅ Complète | ⚠️ Limitée | ✅ Complète |
+| Synchro tags ↔ D-ProjeT | ✅ Complète | ⚠️ Limitée | ✅ Complète |
 | Calendrier filtrable | ✅ | ✅ | ❌ |
 | Notifications temps réel | ✅ webhooks | ❌ Polling | ✅ |
 
 ---
 
-### 5.3 Lien email → MyTrello (commun aux deux services)
+### 5.3 Lien email → D-ProjeT (commun aux deux services)
 
-| Action | Résultat dans MyTrello |
+| Action | Résultat dans D-ProjeT |
 |---|---|
 | Email glissé sur une **Carte Projet** | Devient une catégorie automatiquement |
 | Email glissé sur une **Catégorie** | Devient une sous-catégorie |
@@ -341,15 +341,15 @@ Les deux services peuvent être activés **simultanément**.
 
 ```
 Étape 1 — Dans le panel messagerie (Outlook ou Gmail)
-→ "Copie email dans MyTrello"
+→ "Copie email dans D-ProjeT"
 → L'email est mis en mémoire tampon
   (titre, expéditeur, date, contenu, pièces jointes)
 
-Étape 2 — Bascule vers MyTrello
-→ "Ouvrir MyTrello"
+Étape 2 — Bascule vers D-ProjeT
+→ "Ouvrir D-ProjeT"
 → L'utilisateur navigue vers la carte ou catégorie souhaitée
 
-Étape 3 — Dans MyTrello
+Étape 3 — Dans D-ProjeT
 → "Colle l'email ici"
 → L'email est collé dans l'élément actif
 ```
@@ -366,7 +366,7 @@ Les deux services peuvent être activés **simultanément**.
 |---|---|
 | *"Ouvrir Outlook"* | Bascule vers le panel Outlook |
 | *"Ouvrir Gmail"* | Bascule vers le panel Gmail |
-| *"Ouvrir MyTrello"* | Bascule vers le tableau MyTrello |
+| *"Ouvrir D-ProjeT"* | Bascule vers le tableau D-ProjeT |
 | *"Basculer messagerie"* | Alterne entre Outlook et Gmail |
 
 #### Gestion des emails
@@ -400,13 +400,13 @@ Les deux services peuvent être activés **simultanément**.
 | *"Archiver"* | Archive l'email Gmail |
 | *"Afficher emails de [projet]"* | Filtre les emails liés au projet |
 
-#### Liaison messagerie → MyTrello
+#### Liaison messagerie → D-ProjeT
 
 | Commande | Action |
 |---|---|
-| *"Crée une carte"* | Crée une carte MyTrello depuis l'email ouvert |
-| *"Copie email dans MyTrello"* | Copie l'email en mémoire tampon |
-| *"Colle l'email ici"* | Colle l'email dans l'élément actif de MyTrello |
+| *"Crée une carte"* | Crée une carte D-ProjeT depuis l'email ouvert |
+| *"Copie email dans D-ProjeT"* | Copie l'email en mémoire tampon |
+| *"Colle l'email ici"* | Colle l'email dans l'élément actif de D-ProjeT |
 | *"Lier à la carte [nom]"* | Associe l'email à une carte existante |
 | *"Créer sous-tâche depuis email"* | Crée une sous-catégorie dans la carte active |
 
@@ -420,7 +420,7 @@ Les deux services peuvent être activés **simultanément**.
 ### 6.1 Activation
 
 ```
-⚙️ Paramètres MyTrello → Intégrations Messagerie → Calendrier
+⚙️ Paramètres D-ProjeT → Intégrations Messagerie → Calendrier
 │
 └── ☐ Activer le calendrier Outlook
       → Requiert : Outlook connecté (Graph API ou EWS)
@@ -478,20 +478,20 @@ Barre de recherche    → Filtre rapide dans la liste des tags
 | **Phase 1** | Structure de base — tableau, colonnes, cartes niveau 1 | 🔴 Critique |
 | **Phase 2** | Catégories et sous-catégories (niveaux 2 et 3) avec drag & drop imbriqué | 🔴 Critique |
 | **Phase 3** | Bibliothèque de modèles avec drag & drop bidirectionnel | 🟠 Haute |
-| **Phase 4** | Commandes vocales MyTrello de base | 🟠 Haute |
+| **Phase 4** | Commandes vocales D-ProjeT de base | 🟠 Haute |
 | **Phase 5** | Module Messagerie — Intégration Outlook (Graph API + EWS fallback) | 🟡 Moyenne |
 | **Phase 6** | Module Messagerie — Intégration Gmail | 🟡 Moyenne |
 | **Phase 7** | Drag & drop emails → cartes/catégories/sous-catégories | 🟡 Moyenne |
 | **Phase 8** | Commandes vocales messagerie | 🟡 Moyenne |
 | **Phase 8b** | Module Calendrier Outlook avec filtrage par tags | 🟡 Moyenne |
-| **Phase 9** | Synchronisation tags messagerie + calendrier ↔ MyTrello | 🟢 Basse |
+| **Phase 9** | Synchronisation tags messagerie + calendrier ↔ D-ProjeT | 🟢 Basse |
 | **Phase 10** | Finitions UI, performances, tests | 🟢 Basse |
 
 ---
 
 ## 8. 📌 Récapitulatif des fonctionnalités
 
-### MyTrello — Base (toujours disponible)
+### D-ProjeT — Base (toujours disponible)
 - ✅ Tableau de bord style Trello avec colonnes personnalisables
 - ✅ Cartes imbriquées à 3 niveaux (Projet → Catégorie → Sous-catégorie)
 - ✅ Drag & drop à chaque niveau (intra et inter éléments)
@@ -506,7 +506,7 @@ Barre de recherche    → Filtre rapide dans la liste des tags
 - ☐ **Outlook 2024 on-premise** : EWS, fonctionnalités adaptées
 - ☐ **Gmail** : Google API, libellés multiples
 - ✅ Les deux services peuvent être actifs simultanément
-- ✅ Copier/Coller vocal entre messagerie et MyTrello
+- ✅ Copier/Coller vocal entre messagerie et D-ProjeT
 - ✅ Création de cartes/catégories/sous-catégories depuis un email
 
 ### Module Calendrier Outlook — Optionnel (activation par bouton)

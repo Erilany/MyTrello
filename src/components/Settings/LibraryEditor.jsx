@@ -20,7 +20,7 @@ import { libraryTemplates } from '../../data/libraryData';
 import { loadTagsData } from '../../data/TagsData';
 import { parseMSProjectXml } from '../../utils/xmlParser';
 
-const STORAGE_KEY = 'mytrello_library_editor';
+const STORAGE_KEY = 'd-projet_library_editor';
 
 function formatDuration(days) {
   const hours = days * 24;

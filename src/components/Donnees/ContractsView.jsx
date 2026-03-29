@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Search, FileText, ChevronUp, ChevronDown } from 'lucide-react';
 
-const STORAGE_KEY = 'mytrello_contracts';
+const STORAGE_KEY = 'd-projet_contracts';
 
 const COLUMNS = [
   { key: 'numeroMarche', label: 'N° Marché', width: 'w-[120px]' },

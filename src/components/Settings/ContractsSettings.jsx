@@ -12,7 +12,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 
-const STORAGE_KEY = 'mytrello_contracts';
+const STORAGE_KEY = 'd-projet_contracts';
 
 const REQUIRED_FIELDS = [
   { key: 'numeroMarche', label: 'N° de Marché', required: true },

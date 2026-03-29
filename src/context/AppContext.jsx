@@ -14,7 +14,62 @@ import { loadZonesData, saveZonesData } from '../data/ZonesData';
 import { loadTagsData, saveTagsData } from '../data/TagsData';
 import { loadChaptersOrder, saveChaptersOrder } from '../data/ChaptersData';
 
-const STORAGE_KEY = 'mytrello_db';
+const STORAGE_KEY = 'd-projet_db';
+
+// Migration des clés localStorage de MyTrello vers D-ProjeT
+function migrateLocalStorageKeys() {
+  const keyMappings = [
+    { old: 'mytrello_db', newKey: 'd-projet_db' },
+    { old: 'mytrello_library_editor', newKey: 'd-projet_library_editor' },
+    { old: 'mytrello_templates', newKey: 'd-projet_templates' },
+    { old: 'mytrello_library_favorites', newKey: 'd-projet_library_favorites' },
+    { old: 'mytrello_project_time', newKey: 'd-projet_project_time' },
+    { old: 'mytrello-theme', newKey: 'd-projet-theme' },
+    { old: 'mytrello-cardColors', newKey: 'd-projet-cardColors' },
+    { old: 'mytrello-username', newKey: 'd-projet-username' },
+    { old: 'mytrello-user-role', newKey: 'd-projet-user-role' },
+    { old: 'mytrello_contracts', newKey: 'd-projet_contracts' },
+    { old: 'mytrello_charge_resentie', newKey: 'd-projet_charge_resentie' },
+    { old: 'mytrello_open_tab', newKey: 'd-projet_open_tab' },
+    { old: 'mytrello_chapters_order', newKey: 'd-projet_chapters_order' },
+    { old: 'mytrello_priority_data', newKey: 'd-projet_priority_data' },
+    { old: 'mytrello_tags_data', newKey: 'd-projet_tags_data' },
+    { old: 'mytrello_gmr_data', newKey: 'd-projet_gmr_data' },
+    { old: 'mytrello_zones_data', newKey: 'd-projet_zones_data' },
+  ];
+
+  let migrated = false;
+  const emailKeys = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key.startsWith('mytrello_email_')) {
+      emailKeys.push(key);
+    }
+  }
+  emailKeys.forEach(oldKey => {
+    const newKey = oldKey.replace('mytrello_email_', 'd-projet_email_');
+    if (!localStorage.getItem(newKey)) {
+      localStorage.setItem(newKey, localStorage.getItem(oldKey));
+    }
+    localStorage.removeItem(oldKey);
+    migrated = true;
+  });
+
+  keyMappings.forEach(({ old, newKey }) => {
+    const oldVal = localStorage.getItem(old);
+    if (oldVal && !localStorage.getItem(newKey)) {
+      localStorage.setItem(newKey, oldVal);
+      migrated = true;
+    }
+    // Ne pas supprimer l'ancienne clé immédiatement pour éviter la perte de données
+    // Si la migration est réussie, on peut décommenter la ligne suivante:
+    // localStorage.removeItem(old);
+  });
+
+  if (migrated) {
+    console.log('[Migration] Clés localStorage migrées de MyTrello vers D-ProjeT');
+  }
+}
 
 function formatDuration(days) {
   const hours = days * 24;
@@ -218,6 +273,9 @@ function saveToStorage(data) {
 }
 
 function initDefaultData() {
+  // Migrer les anciennes clés localStorage si nécessaire
+  migrateLocalStorageKeys();
+
   const data = loadFromStorage();
   if (!data.orders) {
     data.orders = [];
@@ -247,7 +305,7 @@ function initDefaultData() {
   if (!data.libraryItems || data.libraryItems.length === 0) {
     console.log('[AppContext] Loading library templates');
     // Check if custom library data exists in LibraryEditor storage
-    const customLibrary = localStorage.getItem('mytrello_library_editor');
+    const customLibrary = localStorage.getItem('d-projet_library_editor');
     if (customLibrary) {
       try {
         const treeData = JSON.parse(customLibrary);
@@ -262,7 +320,7 @@ function initDefaultData() {
     }
   } else {
     // Even if libraryItems exists, check if admin has updated the library editor
-    const customLibrary = localStorage.getItem('mytrello_library_editor');
+    const customLibrary = localStorage.getItem('d-projet_library_editor');
     if (customLibrary) {
       try {
         const treeData = JSON.parse(customLibrary);
@@ -370,7 +428,7 @@ export function AppProvider({ children }) {
   const [messages, setMessages] = useState([]);
   const [subcategoryEmails, setSubcategoryEmails] = useState([]);
   const [currentUsername, setCurrentUsername] = useState(
-    () => localStorage.getItem('mytrello-username') || ''
+    () => localStorage.getItem('d-projet-username') || ''
   );
   const [loading, setLoading] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -389,11 +447,11 @@ export function AppProvider({ children }) {
   });
 
   useEffect(() => {
-    const savedTheme = localStorage.getItem('mytrello-theme');
+    const savedTheme = localStorage.getItem('d-projet-theme');
     if (savedTheme) {
       setTheme(savedTheme);
     }
-    const savedColors = localStorage.getItem('mytrello-cardColors');
+    const savedColors = localStorage.getItem('d-projet-cardColors');
     if (savedColors) {
       setCardColors(JSON.parse(savedColors));
     }
@@ -401,11 +459,11 @@ export function AppProvider({ children }) {
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark');
-    localStorage.setItem('mytrello-theme', theme);
+    localStorage.setItem('d-projet-theme', theme);
   }, [theme]);
 
   useEffect(() => {
-    localStorage.setItem('mytrello-cardColors', JSON.stringify(cardColors));
+    localStorage.setItem('d-projet-cardColors', JSON.stringify(cardColors));
   }, [cardColors]);
 
   useEffect(() => {
@@ -522,12 +580,12 @@ export function AppProvider({ children }) {
   };
 
   const loadProjectTime = () => {
-    const stored = localStorage.getItem('mytrello_project_time');
+    const stored = localStorage.getItem('d-projet_project_time');
     return stored ? JSON.parse(stored) : {};
   };
 
   const saveProjectTime = data => {
-    localStorage.setItem('mytrello_project_time', JSON.stringify(data));
+    localStorage.setItem('d-projet_project_time', JSON.stringify(data));
   };
 
   const getWeekKey = (date = new Date()) => {
@@ -592,7 +650,7 @@ export function AppProvider({ children }) {
   // Ensure libraryItems has data - always check library editor first
   const forceLibraryItems = () => {
     // Always check if custom library data exists in LibraryEditor storage
-    const customLibrary = localStorage.getItem('mytrello_library_editor');
+    const customLibrary = localStorage.getItem('d-projet_library_editor');
     let itemsToUse;
 
     if (customLibrary) {
@@ -634,18 +692,18 @@ export function AppProvider({ children }) {
   useEffect(() => {
     const handleLibraryUpdate = () => {
       // Always prioritize library editor storage
-      const customLibrary = localStorage.getItem('mytrello_library_editor');
+      const customLibrary = localStorage.getItem('d-projet_library_editor');
       if (customLibrary) {
         try {
           const treeData = JSON.parse(customLibrary);
           const itemsToUse = convertTreeToLibraryItems(treeData);
 
-          // Update mytrello_db with the new libraryItems
-          let mainDb = localStorage.getItem('mytrello_db');
+          // Update d-projet_db with the new libraryItems
+          let mainDb = localStorage.getItem('d-projet_db');
           if (mainDb) {
             const dbObj = JSON.parse(mainDb);
             dbObj.libraryItems = itemsToUse;
-            localStorage.setItem('mytrello_db', JSON.stringify(dbObj));
+            localStorage.setItem('d-projet_db', JSON.stringify(dbObj));
           }
 
           // Force update by creating new object reference
@@ -656,7 +714,7 @@ export function AppProvider({ children }) {
         }
       } else {
         // Fallback to main database
-        const mainDb = localStorage.getItem('mytrello_db');
+        const mainDb = localStorage.getItem('d-projet_db');
         if (mainDb) {
           try {
             const updatedDb = JSON.parse(mainDb);
@@ -799,14 +857,14 @@ export function AppProvider({ children }) {
   const exportData = () => {
     console.log('[ExportData] Starting export...');
     try {
-      const projectTime = localStorage.getItem('mytrello_project_time');
-      const libraryFavorites = localStorage.getItem('mytrello_library_favorites');
-      const libraryEditor = localStorage.getItem('mytrello_library_editor');
-      const libraryTemplates = localStorage.getItem('mytrello_library_templates');
-      const theme = localStorage.getItem('mytrello-theme');
-      const cardColors = localStorage.getItem('mytrello-cardColors');
-      const username = localStorage.getItem('mytrello-username');
-      const userRole = localStorage.getItem('mytrello-user-role');
+      const projectTime = localStorage.getItem('d-projet_project_time');
+      const libraryFavorites = localStorage.getItem('d-projet_library_favorites');
+      const libraryEditor = localStorage.getItem('d-projet_library_editor');
+      const libraryTemplates = localStorage.getItem('d-projet_library_templates');
+      const theme = localStorage.getItem('d-projet-theme');
+      const cardColors = localStorage.getItem('d-projet-cardColors');
+      const username = localStorage.getItem('d-projet-username');
+      const userRole = localStorage.getItem('d-projet-user-role');
 
       console.log('[ExportData] Loading databases...');
       const gmr = loadGMRData();
@@ -840,7 +898,7 @@ export function AppProvider({ children }) {
         });
       });
 
-      const contractsData = localStorage.getItem('mytrello_contracts');
+      const contractsData = localStorage.getItem('d-projet_contracts');
       const exportObj = {
         version: '1.0',
         exportedAt: new Date().toISOString(),
@@ -871,7 +929,7 @@ export function AppProvider({ children }) {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `mytrello-backup-${new Date().toISOString().split('T')[0]}.json`;
+      a.download = `d-projet-backup-${new Date().toISOString().split('T')[0]}.json`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -975,31 +1033,31 @@ export function AppProvider({ children }) {
       saveToStorage(parsed.data);
 
       if (parsed.projectTime) {
-        localStorage.setItem('mytrello_project_time', JSON.stringify(parsed.projectTime));
+        localStorage.setItem('d-projet_project_time', JSON.stringify(parsed.projectTime));
       }
       if (parsed.libraryFavorites) {
-        localStorage.setItem('mytrello_library_favorites', JSON.stringify(parsed.libraryFavorites));
+        localStorage.setItem('d-projet_library_favorites', JSON.stringify(parsed.libraryFavorites));
       }
       if (parsed.libraryEditor) {
         const cleanLibraryEditor = deduplicateLibraryEditor(parsed.libraryEditor);
-        localStorage.setItem('mytrello_library_editor', JSON.stringify(cleanLibraryEditor));
+        localStorage.setItem('d-projet_library_editor', JSON.stringify(cleanLibraryEditor));
       }
       if (parsed.libraryTemplates) {
-        localStorage.setItem('mytrello_library_templates', JSON.stringify(parsed.libraryTemplates));
+        localStorage.setItem('d-projet_library_templates', JSON.stringify(parsed.libraryTemplates));
       }
       if (parsed.settings) {
         if (parsed.settings.theme) {
-          localStorage.setItem('mytrello-theme', parsed.settings.theme);
+          localStorage.setItem('d-projet-theme', parsed.settings.theme);
           setTheme(parsed.settings.theme);
         }
         if (parsed.settings.cardColors) {
-          localStorage.setItem('mytrello-cardColors', JSON.stringify(parsed.settings.cardColors));
+          localStorage.setItem('d-projet-cardColors', JSON.stringify(parsed.settings.cardColors));
         }
         if (parsed.settings.username) {
-          localStorage.setItem('mytrello-username', parsed.settings.username);
+          localStorage.setItem('d-projet-username', parsed.settings.username);
         }
         if (parsed.settings.userRole) {
-          localStorage.setItem('mytrello-user-role', parsed.settings.userRole);
+          localStorage.setItem('d-projet-user-role', parsed.settings.userRole);
         }
       }
 
@@ -1315,7 +1373,9 @@ export function AppProvider({ children }) {
     parentId = null,
     predecessorId = null,
     reloadBoardId = null,
-    chapter = null
+    chapter = null,
+    libraryItemId = null,
+    skipAction = false
   ) => {
     console.log('[createCard] Called with columnId:', columnId, 'title:', title);
 
@@ -1355,6 +1415,8 @@ export function AppProvider({ children }) {
           predecessor_id: predecessorId,
           created_at: new Date().toISOString(),
           chapter,
+          library_item_id: libraryItemId,
+          skip_action: skipAction,
         };
 
         const maxPos = currentDb.cards
@@ -1776,7 +1838,7 @@ export function AppProvider({ children }) {
   const removeEmailFromSubcategory = emailId => {
     const email = db.subcategoryEmails?.find(e => Number(e.id) === Number(emailId));
     if (email && email.filepath) {
-      localStorage.removeItem(`mytrello_email_${emailId}`);
+      localStorage.removeItem(`d-projet_email_${emailId}`);
     }
     const newDb = {
       ...db,
@@ -1802,11 +1864,11 @@ export function AppProvider({ children }) {
   };
 
   const saveEmailFile = (emailId, fileData) => {
-    localStorage.setItem(`mytrello_email_${emailId}`, fileData);
+    localStorage.setItem(`d-projet_email_${emailId}`, fileData);
   };
 
   const getEmailFile = emailId => {
-    return localStorage.getItem(`mytrello_email_${emailId}`);
+    return localStorage.getItem(`d-projet_email_${emailId}`);
   };
 
   const moveSubcategory = (subcategoryId, newCategoryId, newPosition) => {
@@ -1921,7 +1983,7 @@ export function AppProvider({ children }) {
   };
 
   const syncTagsFromLibrary = () => {
-    const treeRaw = localStorage.getItem('mytrello_library_editor');
+    const treeRaw = localStorage.getItem('d-projet_library_editor');
     console.log('[syncTagsFromLibrary] treeRaw exists:', !!treeRaw);
     const categoriesWithTags = [];
     const subcategoriesWithTags = [];

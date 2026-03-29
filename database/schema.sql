@@ -60,6 +60,7 @@ CREATE TABLE IF NOT EXISTS subcategories (
   due_date    DATE,
   assignee    TEXT,
   position    INTEGER NOT NULL,
+  milestones  TEXT, -- JSON array: [{id, title, date, done}]
   created_at  DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at  DATETIME DEFAULT CURRENT_TIMESTAMP
 );

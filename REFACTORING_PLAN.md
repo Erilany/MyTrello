@@ -1,4 +1,4 @@
-# Plan de refactorisation MyTrello
+# Plan de refactorisation D-ProjeT
 
 ## Objectif
 

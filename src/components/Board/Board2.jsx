@@ -1159,11 +1159,28 @@ Affaire: ${commande.affaire || 'N/A'}
     return str.toLowerCase().trim().replace(/\s+/g, ' ');
   };
 
-  const getCardSkipAction = card => {
+const getCardSkipAction = card => {
     if (!card) {
       console.log('[Board2] getCardSkipAction: no card provided');
       return false;
     }
+
+    // Priority 1: use library_item_id if present
+    if (card.library_item_id && libraryItems) {
+      const libraryCard = libraryItems.find(item => item.id === card.library_item_id);
+      if (libraryCard && libraryCard.content_json) {
+        try {
+          const content = JSON.parse(libraryCard.content_json);
+          const skipAction = content.card?.skipAction || false;
+          console.log('[Board2] getCardSkipAction (by ID):', card.title, '-> skipAction:', skipAction);
+          return skipAction;
+        } catch (e) {
+          console.error('[Board2] getCardSkipAction: error parsing content_json for library_item_id', e);
+        }
+      }
+    }
+
+    // Priority 2: fallback to title matching (for legacy data)
     if (!libraryItems || !Array.isArray(libraryItems)) {
       console.log('[Board2] getCardSkipAction: libraryItems not available, card:', card.title);
       return false;
@@ -1195,13 +1212,24 @@ Affaire: ${commande.affaire || 'N/A'}
     }
   };
 
-  const getCardTasks = card => {
+const getCardTasks = card => {
     if (!card || !libraryItems || !Array.isArray(libraryItems)) return [];
 
-    const cardTitle = normalizeString(card.title);
-    const libraryCard = libraryItems.find(
-      item => item.type === 'card' && normalizeString(item.title) === cardTitle
-    );
+    let libraryCard = null;
+
+    // Priority 1: use library_item_id if present
+    if (card.library_item_id) {
+      libraryCard = libraryItems.find(item => item.id === card.library_item_id);
+    }
+
+    // Priority 2: fallback to title matching (for legacy data)
+    if (!libraryCard) {
+      const cardTitle = normalizeString(card.title);
+      libraryCard = libraryItems.find(
+        item => item.type === 'card' && normalizeString(item.title) === cardTitle
+      );
+    }
+
     if (!libraryCard || !libraryCard.content_json) return [];
     try {
       const content = JSON.parse(libraryCard.content_json);

@@ -1,4 +1,4 @@
-# 📋 MyTrello — Version 3.0 (Version Finale)
+# 📋 D-ProjeT — Version 3.0 (Version Finale)
 > **Objectif** : Synchronisation complète + performances + sécurité + tests automatisés
 > **Prérequis** : V2.2 validée et tous les tests V2.2 passés
 > **Basé sur** : Phase 9 + Phase 10 complète du plan de développement
@@ -9,9 +9,9 @@
 
 | Nouveautés V3.0 | Statut |
 |---|---|
-| Synchronisation tags Outlook ↔ étiquettes MyTrello | ✅ Inclus |
-| Synchronisation libellés Gmail ↔ étiquettes MyTrello | ✅ Inclus |
-| Synchronisation tags calendrier Outlook ↔ étiquettes MyTrello | ✅ Inclus |
+| Synchronisation tags Outlook ↔ étiquettes D-ProjeT | ✅ Inclus |
+| Synchronisation libellés Gmail ↔ étiquettes D-ProjeT | ✅ Inclus |
+| Synchronisation tags calendrier Outlook ↔ étiquettes D-ProjeT | ✅ Inclus |
 | Configuration du mapping tags (interface dédiée) | ✅ Inclus |
 | Synchronisation périodique configurable | ✅ Inclus |
 | Virtualisation des listes longues | ✅ Inclus |
@@ -94,13 +94,13 @@ tests/
 ## 🗄️ Évolutions base de données V3.0
 
 ```sql
--- Nouvelle table : mapping tags messagerie ↔ MyTrello
+-- Nouvelle table : mapping tags messagerie ↔ D-ProjeT
 CREATE TABLE tag_mapping (
   id              INTEGER PRIMARY KEY AUTOINCREMENT,
   source          TEXT NOT NULL,    -- 'outlook' | 'gmail'
   source_tag      TEXT NOT NULL,    -- nom tag côté messagerie
-  mytrello_label  TEXT NOT NULL,    -- étiquette MyTrello correspondante
-  priority        TEXT,             -- priorité MyTrello associée
+  mytrello_label  TEXT NOT NULL,    -- étiquette D-ProjeT correspondante
+  priority        TEXT,             -- priorité D-ProjeT associée
   direction       TEXT DEFAULT 'both', -- 'to_mytrello' | 'to_messaging' | 'both'
   created_at      DATETIME DEFAULT CURRENT_TIMESTAMP
 );
@@ -143,25 +143,25 @@ INSERT INTO settings (key, value) VALUES
 ### ÉTAPE 1 — Interface de mapping tags
 
 - [ ] Onglet **Synchronisation** dans les paramètres
-- [ ] Tableau de mapping : Tag messagerie ↔ Étiquette MyTrello
-- [ ] Sélecteur de direction de sync (→ MyTrello / ← Messagerie / Bidirectionnel)
+- [ ] Tableau de mapping : Tag messagerie ↔ Étiquette D-ProjeT
+- [ ] Sélecteur de direction de sync (→ D-ProjeT / ← Messagerie / Bidirectionnel)
 - [ ] Bouton "Ajouter une règle de mapping"
 - [ ] Bouton "Supprimer une règle"
 - [ ] Bouton "Tester la règle" (simulation sans modification)
 - [ ] Règles de résolution de conflits :
-  - MyTrello a la priorité
+  - D-ProjeT a la priorité
   - Messagerie a la priorité
   - Demander à l'utilisateur
 - [ ] Affichage de l'historique des 20 dernières synchronisations
 
 ### ÉTAPE 2 — Service de synchronisation (sync.js)
 
-- [ ] Synchronisation Outlook → MyTrello (catégories → étiquettes)
-- [ ] Synchronisation MyTrello → Outlook (étiquettes → catégories)
-- [ ] Synchronisation Gmail → MyTrello (libellés → étiquettes)
-- [ ] Synchronisation MyTrello → Gmail (étiquettes → libellés)
-- [ ] Synchronisation calendrier Outlook → MyTrello :
-  - Les tags des événements calendrier alimentent les étiquettes MyTrello
+- [ ] Synchronisation Outlook → D-ProjeT (catégories → étiquettes)
+- [ ] Synchronisation D-ProjeT → Outlook (étiquettes → catégories)
+- [ ] Synchronisation Gmail → D-ProjeT (libellés → étiquettes)
+- [ ] Synchronisation D-ProjeT → Gmail (étiquettes → libellés)
+- [ ] Synchronisation calendrier Outlook → D-ProjeT :
+  - Les tags des événements calendrier alimentent les étiquettes D-ProjeT
   - Un événement calendrier lié à une carte met à jour son étiquette
 - [ ] Détection et résolution des conflits
 - [ ] Synchronisation au démarrage de l'application
@@ -283,42 +283,42 @@ INSERT INTO settings (key, value) VALUES
 
 ### TEST V3.0-01 — Configuration mapping tags
 ```
-🧪 Créer la règle : Catégorie Outlook "Urgent" ↔ Étiquette MyTrello "Urgent" (bidirectionnel)
+🧪 Créer la règle : Catégorie Outlook "Urgent" ↔ Étiquette D-ProjeT "Urgent" (bidirectionnel)
 
 ✅ La règle apparaît dans le tableau de mapping
 ✅ La direction "bidirectionnel" est sélectionnée
 ✅ Le test de la règle (simulation) n'effectue aucune modification réelle
 
-🧪 Créer la règle : Libellé Gmail "400kV" → Étiquette MyTrello "400kV" (sens unique)
+🧪 Créer la règle : Libellé Gmail "400kV" → Étiquette D-ProjeT "400kV" (sens unique)
 
 ✅ La règle est créée avec la bonne direction
 ✅ La règle inverse n'est pas créée
 ```
 
-### TEST V3.0-02 — Synchronisation Outlook → MyTrello
+### TEST V3.0-02 — Synchronisation Outlook → D-ProjeT
 ```
 🧪 Appliquer la catégorie "Urgent" sur un email dans Outlook
-   (email déjà lié à une carte MyTrello)
+   (email déjà lié à une carte D-ProjeT)
 
-✅ L'étiquette "Urgent" apparaît sur la carte MyTrello liée
+✅ L'étiquette "Urgent" apparaît sur la carte D-ProjeT liée
 ✅ La sync s'effectue dans l'intervalle configuré (10 min)
 ✅ La sync est journalisée dans sync_history avec statut "success"
 ```
 
-### TEST V3.0-02b — Synchronisation Calendrier → MyTrello
+### TEST V3.0-02b — Synchronisation Calendrier → D-ProjeT
 ```
 🧪 Créer dans Outlook un événement calendrier avec le tag "Projets 400kV"
-   et le lier à la carte "Poste 400kV Lyon-Est" dans MyTrello
+   et le lier à la carte "Poste 400kV Lyon-Est" dans D-ProjeT
 
-✅ L'étiquette "Projets 400kV" est appliquée sur la carte MyTrello liée
+✅ L'étiquette "Projets 400kV" est appliquée sur la carte D-ProjeT liée
 ✅ La sync calendrier est journalisée dans sync_history (source = 'calendar')
-✅ Le changement de tag sur l'événement calendrier met à jour l'étiquette MyTrello
+✅ Le changement de tag sur l'événement calendrier met à jour l'étiquette D-ProjeT
 ✅ Pas de boucle infinie de synchronisation
 ```
 
-### TEST V3.0-03 — Synchronisation MyTrello → Outlook
+### TEST V3.0-03 — Synchronisation D-ProjeT → Outlook
 ```
-🧪 Changer l'étiquette d'une carte en "Urgent" dans MyTrello
+🧪 Changer l'étiquette d'une carte en "Urgent" dans D-ProjeT
    (carte liée à un email Outlook)
 
 ✅ La catégorie "Urgent" est appliquée sur l'email Outlook lié
@@ -329,11 +329,11 @@ INSERT INTO settings (key, value) VALUES
 
 ### TEST V3.0-04 — Résolution de conflits
 ```
-🧪 Configurer "MyTrello a la priorité"
-   Modifier simultanément une étiquette dans MyTrello ET dans Outlook
+🧪 Configurer "D-ProjeT a la priorité"
+   Modifier simultanément une étiquette dans D-ProjeT ET dans Outlook
 
-✅ Après sync, c'est l'étiquette MyTrello qui est conservée
-✅ L'email Outlook adopte l'étiquette MyTrello
+✅ Après sync, c'est l'étiquette D-ProjeT qui est conservée
+✅ L'email Outlook adopte l'étiquette D-ProjeT
 ✅ Le conflit est journalisé dans sync_history avec statut "conflict"
 ```
 
@@ -414,7 +414,7 @@ INSERT INTO settings (key, value) VALUES
 ### TEST V3.0-09 — Test de robustesse longue durée
 ```
 🧪 Utiliser l'application pendant 8 heures en continu
-   (MyTrello + Outlook + Gmail actifs)
+   (D-ProjeT + Outlook + Gmail actifs)
 
 ✅ Pas de fuite mémoire (RAM stable, variation < 10%)
 ✅ Pas de crash
@@ -426,7 +426,7 @@ INSERT INTO settings (key, value) VALUES
 
 ✅ L'application ne crash pas lors des coupures
 ✅ Les reconnexions sont automatiques
-✅ Les données MyTrello locales ne sont jamais affectées
+✅ Les données D-ProjeT locales ne sont jamais affectées
 ```
 
 ### TEST V3.0-10 — Test de régression finale
@@ -450,7 +450,7 @@ INSERT INTO settings (key, value) VALUES
 | **Phases couvertes** | Phase 9 + Phase 10 complètes |
 | **Tâches de développement** | 58 tâches |
 | **Tests de validation** | 10 tests V3.0 + 50 tests régression |
-| **Synchronisation** | ✅ Outlook + Gmail ↔ MyTrello (bidirectionnel) |
+| **Synchronisation** | ✅ Outlook + Gmail ↔ D-ProjeT (bidirectionnel) |
 | **Performances** | ✅ Virtualisées + mises en cache |
 | **Tests automatisés** | ✅ Unitaires + composants + e2e |
 | **Sécurité** | ✅ Renforcée |
@@ -460,7 +460,7 @@ INSERT INTO settings (key, value) VALUES
 
 ---
 
-## 🏁 Récapitulatif global du projet MyTrello
+## 🏁 Récapitulatif global du projet D-ProjeT
 
 | Version | Objectif principal | Tâches | Tests |
 |---|---|---|---|
@@ -474,4 +474,4 @@ INSERT INTO settings (key, value) VALUES
 | **TOTAL** | | **319 tâches** | **71 tests nouveaux + 211 régression** |
 
 ---
-*MyTrello — Version 3.0 Finale — 23 février 2026*
+*D-ProjeT — Version 3.0 Finale — 23 février 2026*

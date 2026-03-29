@@ -1,4 +1,4 @@
-# 📋 MyTrello — Changelog
+# 📋 D-ProjeT — Changelog
 
 > Toutes les modifications notables de ce projet sont documentées dans ce fichier.
 > Format basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/).
@@ -35,7 +35,7 @@
 ## [Non publié] — En cours de développement
 
 ### ✨ Nouveautés
-- Initialisation du projet MyTrello
+- Initialisation du projet D-ProjeT
 
 ---
 
@@ -102,7 +102,7 @@
 - Animations visuelles et zones de dépôt
 
 **Commandes vocales**
-- Activation vocale : "Hey MyTrello" / "Écoute"
+- Activation vocale : "Hey D-ProjeT" / "Écoute"
 - Création : carte, catégorie, sous-catégorie
 - Navigation : ouvrir/fermer carte, afficher tableau, mode focus
 - Actions : taguer, assigner, date d'échéance, archiver, commenter
@@ -158,9 +158,9 @@
 - Drag & drop email → Carte (crée une catégorie)
 - Drag & drop email → Catégorie (crée une sous-catégorie)
 - Drag & drop email → Sous-catégorie (attache comme lien)
-- Copier / Coller vocal Outlook → MyTrello
+- Copier / Coller vocal Outlook → D-ProjeT
 - Création de carte depuis email (vocal)
-- Historique des liens email par élément MyTrello
+- Historique des liens email par élément D-ProjeT
 - Commandes vocales Outlook complètes (15 commandes)
 - Rafraîchissement automatique configurable
 - Indicateur de connexion et de mode (cloud / on-premise)
@@ -176,14 +176,14 @@
 - Authentification OAuth 2.0 Google
 - Panel Gmail : liste des emails, libellés multiples, aperçu
 - Actions : ajouter/retirer libellé, archiver, supprimer, répondre, transférer
-- Drag & drop email Gmail → MyTrello (même logique qu'Outlook)
-- Copier / Coller vocal Gmail → MyTrello
+- Drag & drop email Gmail → D-ProjeT (même logique qu'Outlook)
+- Copier / Coller vocal Gmail → D-ProjeT
 - Commandes vocales Gmail complètes
 
 **Cohabitation Outlook + Gmail**
 - Onglets Outlook | Gmail (si les deux activés)
 - Badge non lus par onglet
-- Indicateur source (bleu Outlook / rouge Gmail) sur les éléments MyTrello
+- Indicateur source (bleu Outlook / rouge Gmail) sur les éléments D-ProjeT
 - Commande vocale "Basculer messagerie"
 
 ---
@@ -203,7 +203,7 @@
 - Vue mois : grille mensuelle, badges colorés, indicateur "+N autres"
 - Navigation entre semaines/mois, bouton "Aujourd'hui"
 - Modal de détail d'un événement
-- Indicateur RDV du jour dans le header MyTrello
+- Indicateur RDV du jour dans le header D-ProjeT
 - Rafraîchissement automatique
 - 15 commandes vocales dédiées (navigation + filtrage)
 
@@ -214,10 +214,10 @@
 ### ✨ Nouveautés
 
 **Synchronisation tags**
-- Interface de mapping tags : messagerie/calendrier ↔ étiquettes MyTrello
-- Synchronisation bidirectionnelle Outlook ↔ MyTrello
-- Synchronisation bidirectionnelle Gmail ↔ MyTrello
-- Synchronisation calendrier Outlook → MyTrello
+- Interface de mapping tags : messagerie/calendrier ↔ étiquettes D-ProjeT
+- Synchronisation bidirectionnelle Outlook ↔ D-ProjeT
+- Synchronisation bidirectionnelle Gmail ↔ D-ProjeT
+- Synchronisation calendrier Outlook → D-ProjeT
 - Règles de résolution de conflits configurables
 - Sync périodique automatique (intervalle configurable)
 - Historique des synchronisations
@@ -253,4 +253,4 @@
 
 ---
 
-*MyTrello — Changelog — 23 février 2026*
+*D-ProjeT — Changelog — 23 février 2026*

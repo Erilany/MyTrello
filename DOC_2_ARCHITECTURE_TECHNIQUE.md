@@ -1,10 +1,10 @@
-# 🏗️ MyTrello — Architecture Technique
+# 🏗️ D-ProjeT — Architecture Technique
 
 ---
 
 ## 1. Vue d'ensemble
 
-MyTrello repose sur **Electron**, qui combine deux processus distincts :
+D-ProjeT repose sur **Electron**, qui combine deux processus distincts :
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -211,7 +211,7 @@ async function createOutlookService() {
 
 ## 5. Flux de données — Drag & Drop
 
-### 5.1 Drag & Drop interne MyTrello
+### 5.1 Drag & Drop interne D-ProjeT
 
 ```
 Utilisateur drag une carte
@@ -235,7 +235,7 @@ Réponse IPC → BoardContext met à jour l'état local
 React re-render des composants concernés
 ```
 
-### 5.2 Drag & Drop email → MyTrello
+### 5.2 Drag & Drop email → D-ProjeT
 
 ```
 Utilisateur drag un email depuis le panel Outlook/Gmail
@@ -244,7 +244,7 @@ Utilisateur drag un email depuis le panel Outlook/Gmail
 EmailDraggable → données email mises dans le drag payload
         │
         ▼
-Drop sur une zone MyTrello (Carte / Catégorie / Sous-catégorie)
+Drop sur une zone D-ProjeT (Carte / Catégorie / Sous-catégorie)
         │
         ▼
 Détection du type de zone cible
@@ -296,7 +296,7 @@ Connexion internet disponible ?
         │         - Sync en temps réel ou périodique
         │
         └── NON → Mode hors ligne
-                  - MyTrello de base : ✅ 100% fonctionnel (SQLite local)
+                  - D-ProjeT de base : ✅ 100% fonctionnel (SQLite local)
                   - Outlook / Gmail : ❌ Indisponible
                   - Calendrier      : ✅ Données en cache (TTL 5 min)
                   - Commandes vocales : ✅ Fonctionnel (Web Speech API locale)
@@ -342,4 +342,4 @@ class CacheService {
 
 ---
 
-*MyTrello — Architecture Technique — 23 février 2026*
+*D-ProjeT — Architecture Technique — 23 février 2026*

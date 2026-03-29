@@ -1,4 +1,4 @@
-# 📋 MyTrello — Version 1.1
+# 📋 D-ProjeT — Version 1.1
 > **Objectif** : Confort d'utilisation — Drag & drop complet + commandes vocales de base
 > **Prérequis** : MVP (Version 0.1) validé et tous les tests MVP passés
 > **Basé sur** : Phase 2 (finalisation) + Phase 4 du plan de développement
@@ -119,7 +119,7 @@ CREATE TABLE voice_history (
 
 - [ ] Créer le dictionnaire de commandes et actions associées
 - [ ] Gestion des paramètres variables : *"Créer une carte [nom]"*
-- [ ] Gestion des synonymes : *"Écoute"* = *"Hey MyTrello"* = *"Activer"*
+- [ ] Gestion des synonymes : *"Écoute"* = *"Hey D-ProjeT"* = *"Activer"*
 - [ ] Score de confiance minimum (ignorer si < 70%)
 - [ ] Retour visuel de la commande reconnue (toast notification)
 - [ ] Message "Commande non reconnue" si aucun match
@@ -128,7 +128,7 @@ CREATE TABLE voice_history (
 ### ÉTAPE 6 — Implémentation des commandes vocales
 
 #### Activation / Contrôle
-- [ ] *"Écoute"* / *"Hey MyTrello"* → Activation écoute
+- [ ] *"Écoute"* / *"Hey D-ProjeT"* → Activation écoute
 - [ ] *"Stop"* / *"Pause"* → Désactivation écoute
 - [ ] *"Annuler"* → Annule la dernière action
 - [ ] *"Aide"* → Affiche la liste des commandes
@@ -217,7 +217,7 @@ CREATE TABLE voice_history (
 
 ### TEST V1.1-05 — Activation vocale
 ```
-🧪 Dire "Hey MyTrello"
+🧪 Dire "Hey D-ProjeT"
 
 ✅ L'icône micro s'anime
 ✅ Un bip discret confirme l'activation
@@ -323,4 +323,4 @@ CREATE TABLE voice_history (
 Bibliothèque avancée + commandes vocales enrichies + finitions UI
 
 ---
-*MyTrello — Version 1.1 — 23 février 2026*
+*D-ProjeT — Version 1.1 — 23 février 2026*

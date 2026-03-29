@@ -133,7 +133,7 @@ function LibraryPanel({ standalone = false }) {
 
   // Load templates from localStorage
   useEffect(() => {
-    const stored = localStorage.getItem('mytrello_templates');
+    const stored = localStorage.getItem('d-projet_templates');
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
@@ -146,7 +146,7 @@ function LibraryPanel({ standalone = false }) {
 
   const saveTemplates = newTemplates => {
     setTemplates(newTemplates);
-    localStorage.setItem('mytrello_templates', JSON.stringify({ templates: newTemplates }));
+    localStorage.setItem('d-projet_templates', JSON.stringify({ templates: newTemplates }));
   };
 
   const handleSaveTemplate = () => {
@@ -217,7 +217,7 @@ function LibraryPanel({ standalone = false }) {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = 'mytrello-templates.json';
+    link.download = 'd-projet-templates.json';
     link.click();
     URL.revokeObjectURL(url);
   };
@@ -274,7 +274,7 @@ function LibraryPanel({ standalone = false }) {
 
   const saveFavorites = newFavorites => {
     setFavorites(newFavorites);
-    localStorage.setItem('mytrello_library_favorites', JSON.stringify(newFavorites));
+    localStorage.setItem('d-projet_library_favorites', JSON.stringify(newFavorites));
     window.dispatchEvent(new Event('library-favorites-updated'));
   };
 
@@ -399,7 +399,7 @@ function LibraryPanel({ standalone = false }) {
   };
 
   useEffect(() => {
-    const stored = localStorage.getItem('mytrello_library_favorites');
+    const stored = localStorage.getItem('d-projet_library_favorites');
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
@@ -417,7 +417,7 @@ function LibraryPanel({ standalone = false }) {
 
   useEffect(() => {
     const handleFavoritesUpdate = () => {
-      const stored = localStorage.getItem('mytrello_library_favorites');
+      const stored = localStorage.getItem('d-projet_library_favorites');
       if (stored) {
         try {
           const parsed = JSON.parse(stored);
@@ -1009,7 +1009,9 @@ function LibraryPanel({ standalone = false }) {
           null,
           null,
           null,
-          chapter
+          chapter,
+          card.id,
+          content.card?.skipAction || false
         );
 
         const selectedCatsForCard = selectedCategories.filter(c => c.cardTitle === card.title);

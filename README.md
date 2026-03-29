@@ -1,4 +1,4 @@
-# MyTrello
+# D-ProjeT
 
 Application de gestion de projet type Kanban.
 
@@ -40,7 +40,7 @@ npm run dev
 
 ### Import/Export
 
-- **Templates** : Import/export de modèles personnalisés via JSON (`mytrello-templates.json`)
+- **Templates** : Import/export de modèles personnalisés via JSON (`d-projet-templates.json`)
 - Sauvegarde automatique dans localStorage
 
 ### Interface utilisateur
@@ -215,7 +215,7 @@ L'application utilise **localStorage** pour stocker les données en JSON. Voici 
 
 ### Utilisation
 
-1. **Exporter** : Bouton "Exporter" → Télécharge `mytrello-templates.json`
+1. **Exporter** : Bouton "Exporter" → Télécharge `d-projet-templates.json`
 2. **Importer** : Bouton "Importer" → Sélectionne un fichier → Coche les templatesdesired → "Importer la sélection"
 
 ## Gestion des doublons

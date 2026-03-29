@@ -1,4 +1,4 @@
-# 📐 MyTrello — Conventions de code
+# 📐 D-ProjeT — Conventions de code
 
 ---
 
@@ -325,4 +325,4 @@ module.exports = {
 
 ---
 
-*MyTrello — Conventions de code — 23 février 2026*
+*D-ProjeT — Conventions de code — 23 février 2026*

@@ -200,7 +200,11 @@ function Sidebar() {
           className="font-display text-lg font-extrabold tracking-tight"
           style={{ fontSize: '18px', letterSpacing: '-0.5px' }}
         >
-          D-ProjeT
+          <span className="text-accent">D</span>
+          <span>-</span>
+          <span className="text-accent">P</span>
+          <span>roje</span>
+          <span className="text-accent">T</span>
         </h1>
         <button
           onClick={() => setSidebarOpen(false)}

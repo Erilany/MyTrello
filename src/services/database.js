@@ -6,7 +6,7 @@ let db = null;
 let SQL = null;
 
 function getDbPath() {
-  const dbPath = process.env.DB_PATH || './database/mytrello.db';
+  const dbPath = process.env.DB_PATH || './database/d-projet.db';
   if (path.isAbsolute(dbPath)) {
     return dbPath;
   }
@@ -77,6 +77,16 @@ async function initDatabase() {
     '[DB MIGRATION] library_items new columns:',
     newTableInfo.length > 0 ? newTableInfo[0].values.map(row => row[1]) : []
   );
+
+  // Migration for subcategories.milestones
+  const subcatTableInfo = db.exec('PRAGMA table_info(subcategories)');
+  const subcatColumns = subcatTableInfo.length > 0 ? subcatTableInfo[0].values.map(row => row[1]) : [];
+  console.log('[DB MIGRATION] subcategories existing columns:', subcatColumns);
+
+  if (!subcatColumns.includes('milestones')) {
+    console.log('[DB MIGRATION] Adding milestones column to subcategories');
+    db.run('ALTER TABLE subcategories ADD COLUMN milestones TEXT');
+  }
 
   insertDefaultData();
   saveDatabase();

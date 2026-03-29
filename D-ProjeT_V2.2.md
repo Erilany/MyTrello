@@ -1,4 +1,4 @@
-# 📋 MyTrello — Version 2.2
+# 📋 D-ProjeT — Version 2.2
 > **Objectif** : Intégration du calendrier Outlook avec filtrage par tags
 > **Prérequis** : V2.1 validée et tous les tests V2.1 passés
 > **Basé sur** : Extension de la Phase 5 (Microsoft Graph API — Calendar)
@@ -9,13 +9,13 @@
 
 | Nouveautés V2.2 | Reporté |
 |---|---|
-| Récupération du calendrier Outlook dans MyTrello | Calendrier Gmail (hors périmètre) |
-| Sélecteur de tags (filtre simple ou multiple) | Synchronisation calendrier ↔ MyTrello (V3.0) |
-| Vue liste des RDV filtrés par tag | Création de RDV depuis MyTrello (hors périmètre) |
+| Récupération du calendrier Outlook dans D-ProjeT | Calendrier Gmail (hors périmètre) |
+| Sélecteur de tags (filtre simple ou multiple) | Synchronisation calendrier ↔ D-ProjeT (V3.0) |
+| Vue liste des RDV filtrés par tag | Création de RDV depuis D-ProjeT (hors périmètre) |
 | Vue calendrier visuel semaine / mois | |
 | Bascule rapide liste ↔ calendrier | |
 | Rafraîchissement automatique du calendrier | |
-| Indicateur RDV du jour dans le header MyTrello | |
+| Indicateur RDV du jour dans le header D-ProjeT | |
 | Commandes vocales calendrier | |
 
 ---
@@ -204,9 +204,9 @@ quels tags/catégories Outlook afficher dans le calendrier.
   - `W` (week) → Vue semaine
   - `M` (month) → Vue mois
 
-### ÉTAPE 7 — Indicateur RDV du jour (header MyTrello)
+### ÉTAPE 7 — Indicateur RDV du jour (header D-ProjeT)
 
-- [ ] Badge dans le header principal de MyTrello indiquant le nombre
+- [ ] Badge dans le header principal de D-ProjeT indiquant le nombre
   de RDV du jour correspondant aux tags sélectionnés
 - [ ] Survol du badge → tooltip listant les RDV du jour
 - [ ] Clic sur le badge → ouvre le panel calendrier sur la vue liste du jour
@@ -444,7 +444,7 @@ quels tags/catégories Outlook afficher dans le calendrier.
 ✅ Les 50 tests passent tous
 ✅ L'activation du calendrier n'affecte pas les panels Outlook/Gmail
 ✅ Les commandes vocales existantes sont toujours fonctionnelles
-✅ Les performances MyTrello de base ne sont pas dégradées
+✅ Les performances D-ProjeT de base ne sont pas dégradées
 ❌ Une fonctionnalité d'une version précédente est cassée
 ```
 
@@ -478,7 +478,7 @@ MVP 0.1 → V1.1 → V1.2 → V2.0 → V2.1 → V2.2 → V3.0
 ```
 
 La V3.0 devra intégrer la **synchronisation des événements calendrier**
-dans son plan de synchronisation global (tags calendrier ↔ étiquettes MyTrello).
+dans son plan de synchronisation global (tags calendrier ↔ étiquettes D-ProjeT).
 
 ---
-*MyTrello — Version 2.2 — 23 février 2026*
+*D-ProjeT — Version 2.2 — 23 février 2026*

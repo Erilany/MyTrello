@@ -38,7 +38,7 @@ function Settings() {
     currentUsername,
     setUsername,
   } = useApp();
-  const [userRole, setUserRole] = useState(() => localStorage.getItem('mytrello-user-role') || '');
+  const [userRole, setUserRole] = useState(() => localStorage.getItem('d-projet-user-role') || '');
   const [boardTitle, setBoardTitle] = useState('');
   const [boardDescription, setBoardDescription] = useState('');
   const [saved, setSaved] = useState(false);
@@ -212,7 +212,7 @@ function Settings() {
                     value={userRole}
                     onChange={e => {
                       setUserRole(e.target.value);
-                      localStorage.setItem('mytrello-user-role', e.target.value);
+                      localStorage.setItem('d-projet-user-role', e.target.value);
                     }}
                     className="w-full px-4 py-2 bg-input border border-std rounded-lg text-primary focus:outline-none focus:border-accent"
                   >

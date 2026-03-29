@@ -1,4 +1,4 @@
-# Guide Utilisateur - MyTrello
+# Guide Utilisateur - D-ProjeT
 
 ## Table des matières
 
@@ -23,7 +23,7 @@
 
 ## Introduction
 
-MyTrello est une application de gestion de projets similaire à Trello, adaptée aux besoins de gestion de projets d'études techniques. Elle permet de:
+D-ProjeT est une application de gestion de projets similaire à Trello, adaptée aux besoins de gestion de projets d'études techniques. Elle permet de:
 
 - **Organiser les projets** en boards avec colonnes et cartes
 - **Gérer les tâches** avec catégories et sous-catégories
@@ -534,4 +534,4 @@ Organisation
 
 ---
 
-_Document créé pour MyTrello - Version 1.0_
+_Document créé pour D-ProjeT - Version 1.0_

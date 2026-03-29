@@ -1,4 +1,4 @@
-# 📋 MyTrello — Version 1.2
+# 📋 D-ProjeT — Version 1.2
 > **Objectif** : Puissance métier — Bibliothèque complète + commandes vocales avancées + finitions UI
 > **Prérequis** : V1.1 validée et tous les tests V1.1 passés
 > **Basé sur** : Phase 3 (complète) + Phase 4 (enrichissement) + Phase 10 (partielle)
@@ -359,4 +359,4 @@ INSERT INTO settings (key, value) VALUES
 Intégration Outlook native — Module messagerie complet
 
 ---
-*MyTrello — Version 1.2 — 23 février 2026*
+*D-ProjeT — Version 1.2 — 23 février 2026*

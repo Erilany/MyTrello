@@ -1,4 +1,4 @@
-# 📋 MyTrello — Plan de développement détaillé avec tests de validation
+# 📋 D-ProjeT — Plan de développement détaillé avec tests de validation
 
 > Ce document détaille les opérations à réaliser pour chaque phase de développement ainsi que les tests de validation associés.
 
@@ -441,7 +441,7 @@ library_items : id, type, title, content_json, tags,
 
 ---
 
-## PHASE 4 — Commandes vocales MyTrello de base
+## PHASE 4 — Commandes vocales D-ProjeT de base
 
 ---
 
@@ -472,8 +472,8 @@ library_items : id, type, title, content_json, tags,
 - [ ] Retour vocal ou visuel de confirmation de la commande reconnue
 - [ ] Historique des commandes vocales exécutées
 
-#### 4.3 Implémentation des commandes MyTrello
-- [ ] *"Écoute"* / *"Hey MyTrello"* → Activation
+#### 4.3 Implémentation des commandes D-ProjeT
+- [ ] *"Écoute"* / *"Hey D-ProjeT"* → Activation
 - [ ] *"Stop"* / *"Pause"* → Désactivation
 - [ ] *"Créer une carte [nom]"* → Création carte
 - [ ] *"Créer catégorie [nom]"* → Création catégorie
@@ -500,7 +500,7 @@ library_items : id, type, title, content_json, tags,
 
 #### TEST 4.1 — Activation vocale
 ```
-🧪 Dire "Hey MyTrello"
+🧪 Dire "Hey D-ProjeT"
 ✅ L'indicateur de micro s'anime
 ✅ Un son ou message confirme l'activation
 ✅ L'application est en écoute active
@@ -624,11 +624,11 @@ library_items : id, type, title, content_json, tags,
 └── EmailActions.jsx
 ```
 
-#### 5.4 Drag & Drop Email → MyTrello
+#### 5.4 Drag & Drop Email → D-ProjeT
 - [ ] Rendre les emails draggables
 - [ ] Détecter la zone de dépôt (carte, catégorie, sous-catégorie)
-- [ ] Créer l'élément MyTrello correspondant avec les données de l'email
-- [ ] Conserver le lien entre l'élément MyTrello et l'email source
+- [ ] Créer l'élément D-ProjeT correspondant avec les données de l'email
+- [ ] Conserver le lien entre l'élément D-ProjeT et l'email source
 
 ---
 
@@ -646,7 +646,7 @@ library_items : id, type, title, content_json, tags,
 🧪 Activer Outlook avec un compte Exchange on-premise
 
 ✅ L'OAuth échoue (normal pour on-premise)
-✅ MyTrello propose automatiquement le formulaire "Mode Exchange on-premise"
+✅ D-ProjeT propose automatiquement le formulaire "Mode Exchange on-premise"
 ✅ Après saisie URL/domaine/identifiants, le badge "🏢 Mode Exchange on-premise" apparaît
 ✅ Les emails sont listés depuis Exchange on-premise via EWS
 ❌ L'application plante si l'OAuth échoue sans proposer le mode EWS
@@ -698,12 +698,12 @@ library_items : id, type, title, content_json, tags,
 
 🧪 Appliquer la catégorie "Urgent" sur un email
 
-✅ La catégorie est visible dans le panel MyTrello
+✅ La catégorie est visible dans le panel D-ProjeT
 ✅ La catégorie est également visible dans Outlook
 ✅ Fonctionne en mode cloud ET on-premise
 ```
 
-#### TEST 5.4 — Drag & Drop Email → MyTrello
+#### TEST 5.4 — Drag & Drop Email → D-ProjeT
 ```
 🧪 Glisser un email vers la carte "Poste Lyon-Est"
 
@@ -764,7 +764,7 @@ library_items : id, type, title, content_json, tags,
 #### 6.4 Cohabitation Outlook + Gmail
 - [ ] Affichage simultané des deux panels (onglets ou côte à côte)
 - [ ] Commande vocale *"Basculer messagerie"*
-- [ ] Drag & drop depuis Gmail vers MyTrello (même logique qu'Outlook)
+- [ ] Drag & drop depuis Gmail vers D-ProjeT (même logique qu'Outlook)
 
 ---
 
@@ -791,9 +791,9 @@ library_items : id, type, title, content_json, tags,
 ✅ L'email reste accessible via ses autres libellés
 ```
 
-#### TEST 6.3 — Drag & Drop Gmail → MyTrello
+#### TEST 6.3 — Drag & Drop Gmail → D-ProjeT
 ```
-🧪 Glisser un email Gmail vers une carte MyTrello
+🧪 Glisser un email Gmail vers une carte D-ProjeT
 ✅ Même comportement qu'avec Outlook
 ✅ La source de l'email (Gmail) est indiquée dans la carte
 ❌ Confusion entre emails Outlook et Gmail dans la carte
@@ -801,7 +801,7 @@ library_items : id, type, title, content_json, tags,
 
 ---
 
-## PHASE 7 — Drag & Drop emails vers MyTrello (consolidation)
+## PHASE 7 — Drag & Drop emails vers D-ProjeT (consolidation)
 
 ---
 
@@ -811,11 +811,11 @@ library_items : id, type, title, content_json, tags,
 - [ ] Unifier la logique de drop pour Outlook et Gmail
 - [ ] Créer le composant `EmailCard` commun aux deux sources
 - [ ] Indicateur visuel de la source (icône Outlook / Gmail)
-- [ ] Historique des emails liés à chaque élément MyTrello
+- [ ] Historique des emails liés à chaque élément D-ProjeT
 
 #### 7.2 Copier / Coller vocal inter-applications
 - [ ] Implémenter la mémoire tampon email
-- [ ] Commande *"Copie email dans MyTrello"*
+- [ ] Commande *"Copie email dans D-ProjeT"*
 - [ ] Commande *"Colle l'email ici"*
 - [ ] Indicateur visuel de l'email en mémoire tampon
 - [ ] Vider la mémoire tampon après collage ou sur commande
@@ -826,7 +826,7 @@ library_items : id, type, title, content_json, tags,
 
 #### TEST 7.1 — Copier / Coller vocal
 ```
-🧪 Dans Outlook, dire "Copie email dans MyTrello"
+🧪 Dans Outlook, dire "Copie email dans D-ProjeT"
 ✅ Un indicateur montre l'email en mémoire tampon
 ✅ Le titre de l'email est affiché dans l'indicateur
 
@@ -872,7 +872,7 @@ library_items : id, type, title, content_json, tags,
 - [ ] *"Basculer sur Gmail"* / *"Basculer sur Outlook"*
 - [ ] *"Afficher emails de [projet]"*
 - [ ] *"Crée une carte"* (depuis email)
-- [ ] *"Copie email dans MyTrello"*
+- [ ] *"Copie email dans D-ProjeT"*
 - [ ] *"Colle l'email ici"*
 - [ ] *"Lier à la carte [nom]"*
 
@@ -907,8 +907,8 @@ library_items : id, type, title, content_json, tags,
 #### TEST 8.3 — Création vocale depuis email
 ```
 🧪 Email ouvert, dire "Crée une carte"
-✅ Une carte est créée dans MyTrello avec les données de l'email
-✅ L'application bascule automatiquement vers MyTrello
+✅ Une carte est créée dans D-ProjeT avec les données de l'email
+✅ L'application bascule automatiquement vers D-ProjeT
 ✅ La nouvelle carte est visible et sélectionnée
 ```
 
@@ -969,7 +969,7 @@ library_items : id, type, title, content_json, tags,
 - [ ] Bouton "Aujourd'hui"
 - [ ] Clic événement → modal de détail
 
-#### 8b.6 Indicateur RDV du jour (header MyTrello)
+#### 8b.6 Indicateur RDV du jour (header D-ProjeT)
 - [ ] Badge dans le header indiquant le nombre de RDV du jour (tags actifs)
 - [ ] Tooltip au survol listant les RDV du jour
 - [ ] Clic → ouvre le calendrier sur la vue liste du jour
@@ -1053,26 +1053,26 @@ library_items : id, type, title, content_json, tags,
 
 ---
 
-## PHASE 9 — Synchronisation tags messagerie + calendrier ↔ MyTrello
+## PHASE 9 — Synchronisation tags messagerie + calendrier ↔ D-ProjeT
 
 ---
 
 ### 🔧 Tâches de développement
 
-#### 9.1 Mapping catégories Outlook ↔ étiquettes MyTrello
+#### 9.1 Mapping catégories Outlook ↔ étiquettes D-ProjeT
 - [ ] Créer la table de mapping `tag_sync`
 - [ ] Interface de configuration du mapping
 - [ ] Synchronisation bidirectionnelle automatique
-- [ ] Gestion des conflits (priorité MyTrello ou messagerie ?)
+- [ ] Gestion des conflits (priorité D-ProjeT ou messagerie ?)
 - [ ] Support du mode cloud (Graph API) ET on-premise (EWS)
 
-#### 9.2 Mapping libellés Gmail ↔ étiquettes MyTrello
+#### 9.2 Mapping libellés Gmail ↔ étiquettes D-ProjeT
 - [ ] Même logique que pour Outlook
 - [ ] Gestion des libellés multiples Gmail
 
-#### 9.3 Mapping tags calendrier Outlook ↔ étiquettes MyTrello
+#### 9.3 Mapping tags calendrier Outlook ↔ étiquettes D-ProjeT
 - [ ] Même logique que pour les emails Outlook
-- [ ] Un tag calendrier peut alimenter les étiquettes MyTrello
+- [ ] Un tag calendrier peut alimenter les étiquettes D-ProjeT
 - [ ] Support cloud ET on-premise (EWS)
 
 #### 9.4 Synchronisation automatique
@@ -1084,10 +1084,10 @@ library_items : id, type, title, content_json, tags,
 
 ### 🧪 Tests de validation — Phase 9
 
-#### TEST 9.1 — Synchronisation Outlook → MyTrello
+#### TEST 9.1 — Synchronisation Outlook → D-ProjeT
 ```
 🧪 Appliquer la catégorie "Urgent" sur un email dans Outlook (cloud)
-✅ L'étiquette "Urgent" apparaît sur la carte MyTrello liée
+✅ L'étiquette "Urgent" apparaît sur la carte D-ProjeT liée
 ✅ La sync s'effectue dans le délai configuré
 
 🧪 Même test en mode Exchange on-premise (EWS)
@@ -1095,19 +1095,19 @@ library_items : id, type, title, content_json, tags,
 ⚠️ Délai potentiellement plus long (polling vs webhooks)
 ```
 
-#### TEST 9.2 — Synchronisation MyTrello → Outlook
+#### TEST 9.2 — Synchronisation D-ProjeT → Outlook
 ```
-🧪 Changer la priorité d'une carte en "Urgent" dans MyTrello
+🧪 Changer la priorité d'une carte en "Urgent" dans D-ProjeT
 ✅ La catégorie "Urgent" est appliquée sur l'email Outlook lié
 ✅ La sync s'effectue sans délai perceptible
 ❌ Boucle infinie de synchronisation (A→B→A→B...)
 ```
 
-#### TEST 9.3 — Synchronisation calendrier → MyTrello
+#### TEST 9.3 — Synchronisation calendrier → D-ProjeT
 ```
-🧪 Modifier le tag d'un événement calendrier lié à une carte MyTrello
+🧪 Modifier le tag d'un événement calendrier lié à une carte D-ProjeT
 
-✅ L'étiquette de la carte MyTrello se met à jour
+✅ L'étiquette de la carte D-ProjeT se met à jour
 ✅ Fonctionne en mode cloud ET on-premise
 ✅ Pas de boucle infinie de synchronisation
 ```
@@ -1178,7 +1178,7 @@ library_items : id, type, title, content_json, tags,
 ✅ La synchronisation messagerie reste stable
 
 🧪 Couper la connexion internet en cours d'utilisation
-✅ MyTrello de base continue de fonctionner (mode hors ligne)
+✅ D-ProjeT de base continue de fonctionner (mode hors ligne)
 ✅ Un indicateur signale la perte de connexion messagerie
 ✅ La reconnexion est automatique au retour de la connexion
 ```

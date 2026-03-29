@@ -1,4 +1,4 @@
-# ⚠️ MyTrello — Stratégie de gestion des erreurs
+# ⚠️ D-ProjeT — Stratégie de gestion des erreurs
 
 ---
 
@@ -255,4 +255,4 @@ logger.info('EWS credentials', { password: '...' });   // ❌ Mot de passe
 
 ---
 
-*MyTrello — Gestion des erreurs — 23 février 2026*
+*D-ProjeT — Gestion des erreurs — 23 février 2026*

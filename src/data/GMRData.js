@@ -1,4 +1,4 @@
-const GMR_STORAGE_KEY = 'mytrello_gmr_data';
+const GMR_STORAGE_KEY = 'd-projet_gmr_data';
 
 export const defaultGMRData = [];
 

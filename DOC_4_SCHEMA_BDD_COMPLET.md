@@ -1,4 +1,4 @@
-# 🗄️ MyTrello — Schéma Base de Données Complet
+# 🗄️ D-ProjeT — Schéma Base de Données Complet
 
 > Schéma SQLite complet couvrant toutes les versions MVP → V3.0.
 > Fichier de référence unique à exécuter pour initialiser la base.
@@ -153,7 +153,7 @@ CREATE TABLE IF NOT EXISTS voice_history (
 -- SECTION 3 : MODULE MESSAGERIE (V2.0 / V2.1)
 -- ───────────────────────────────────────────────────────────
 
--- Liens entre emails et éléments MyTrello
+-- Liens entre emails et éléments D-ProjeT
 CREATE TABLE IF NOT EXISTS email_links (
   id          INTEGER PRIMARY KEY AUTOINCREMENT,
   ref_type    TEXT    NOT NULL,   -- 'card'|'category'|'subcategory'
@@ -201,13 +201,13 @@ CREATE TABLE IF NOT EXISTS calendar_events_cache (
 -- SECTION 5 : SYNCHRONISATION TAGS (V3.0)
 -- ───────────────────────────────────────────────────────────
 
--- Mapping tags messagerie / calendrier ↔ étiquettes MyTrello
+-- Mapping tags messagerie / calendrier ↔ étiquettes D-ProjeT
 CREATE TABLE IF NOT EXISTS tag_mapping (
   id              INTEGER PRIMARY KEY AUTOINCREMENT,
   source          TEXT    NOT NULL,   -- 'outlook'|'gmail'|'calendar'
   source_tag      TEXT    NOT NULL,   -- Nom du tag côté source
-  mytrello_label  TEXT    NOT NULL,   -- Étiquette MyTrello correspondante
-  mytrello_priority TEXT,             -- Priorité MyTrello associée
+  mytrello_label  TEXT    NOT NULL,   -- Étiquette D-ProjeT correspondante
+  mytrello_priority TEXT,             -- Priorité D-ProjeT associée
   direction       TEXT    DEFAULT 'both', -- 'to_mytrello'|'to_source'|'both'
   is_active       INTEGER DEFAULT 1,
   created_at      DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -325,7 +325,7 @@ INSERT OR IGNORE INTO settings (key, value) VALUES
 | `library_items` | MVP | Bibliothèque de modèles |
 | `settings` | MVP | Paramètres utilisateur |
 | `voice_history` | V1.1 | Historique commandes vocales |
-| `email_links` | V2.0 | Liens email ↔ éléments MyTrello |
+| `email_links` | V2.0 | Liens email ↔ éléments D-ProjeT |
 | `calendar_filters` | V2.2 | Tags calendrier sélectionnés |
 | `calendar_events_cache` | V2.2 | Cache local des événements |
 | `tag_mapping` | V3.0 | Règles de synchronisation tags |
@@ -359,8 +359,8 @@ INSERT OR IGNORE INTO settings (key, value) VALUES
 
 ### Champ `direction` (tag_mapping)
 ```
-'to_mytrello'   → Sync dans un seul sens : messagerie → MyTrello
-'to_source'     → Sync dans un seul sens : MyTrello → messagerie
+'to_mytrello'   → Sync dans un seul sens : messagerie → D-ProjeT
+'to_source'     → Sync dans un seul sens : D-ProjeT → messagerie
 'both'          → Synchronisation bidirectionnelle
 ```
 
@@ -408,4 +408,4 @@ npm run db:migrate:rollback
 
 ---
 
-*MyTrello — Schéma BDD Complet — 23 février 2026*
+*D-ProjeT — Schéma BDD Complet — 23 février 2026*

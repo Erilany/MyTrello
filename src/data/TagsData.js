@@ -1,4 +1,4 @@
-const TAGS_STORAGE_KEY = 'mytrello_tags_data';
+const TAGS_STORAGE_KEY = 'd-projet_tags_data';
 
 export const defaultTagsData = [
   { id: 1, name: 'À valider', color: '#F59E0B', functions: [] },

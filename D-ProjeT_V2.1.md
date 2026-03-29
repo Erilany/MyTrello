@@ -1,4 +1,4 @@
-# 📋 MyTrello — Version 2.1
+# 📋 D-ProjeT — Version 2.1
 > **Objectif** : Intégration Gmail + cohabitation Outlook / Gmail simultanés
 > **Prérequis** : V2.0 validée et tous les tests V2.0 passés
 > **Basé sur** : Phase 6 + Phase 7 (consolidation) + Phase 8 (complétion) du plan de développement
@@ -13,10 +13,10 @@
 | Authentification OAuth 2.0 Google | Tests automatisés (V3.0) |
 | Panel email Gmail dans l'interface | Performances avancées (V3.0) |
 | Gestion des libellés Gmail (multi-libellés) | |
-| Drag & drop Gmail → MyTrello | |
+| Drag & drop Gmail → D-ProjeT | |
 | Cohabitation Outlook + Gmail simultanés | |
 | Basculement vocal entre les deux messageries | |
-| Copier / Coller vocal Gmail → MyTrello | |
+| Copier / Coller vocal Gmail → D-ProjeT | |
 | Commandes vocales Gmail spécifiques | |
 | Indicateur source email (Outlook / Gmail) | |
 | Historique des liens email (Outlook + Gmail) | |
@@ -136,19 +136,19 @@ INSERT INTO settings (key, value) VALUES
 - [ ] Indicateur non lus sur chaque onglet
 - [ ] Transition animée entre onglets
 
-### ÉTAPE 6 — Drag & drop Gmail → MyTrello
+### ÉTAPE 6 — Drag & drop Gmail → D-ProjeT
 
 - [ ] Rendre les emails Gmail draggables (même logique qu'Outlook)
 - [ ] Mêmes zones de dépôt que V2.0 (Carte / Catégorie / Sous-catégorie)
-- [ ] Badge source "Gmail" sur l'élément MyTrello créé
+- [ ] Badge source "Gmail" sur l'élément D-ProjeT créé
 - [ ] Enregistrement dans `email_links` avec `source = 'gmail'`
-- [ ] Différenciation visuelle Outlook (bleu) vs Gmail (rouge) dans MyTrello
+- [ ] Différenciation visuelle Outlook (bleu) vs Gmail (rouge) dans D-ProjeT
 
-### ÉTAPE 7 — Copier / Coller vocal Gmail → MyTrello
+### ÉTAPE 7 — Copier / Coller vocal Gmail → D-ProjeT
 
 - [ ] Même logique que V2.0 pour Outlook
 - [ ] La mémoire tampon indique la source (Outlook ou Gmail)
-- [ ] *"Copie email dans MyTrello"* fonctionne depuis Gmail
+- [ ] *"Copie email dans D-ProjeT"* fonctionne depuis Gmail
 - [ ] *"Colle l'email ici"* fonctionne quelle que soit la source
 
 ### ÉTAPE 8 — Commandes vocales Gmail spécifiques
@@ -165,8 +165,8 @@ INSERT INTO settings (key, value) VALUES
 - [ ] *"Archiver"* → Archive l'email Gmail
 - [ ] *"Afficher emails de [projet]"* → Filtre Gmail
 - [ ] *"Crée une carte"* → Depuis email Gmail
-- [ ] *"Copie email dans MyTrello"* → Gmail vers mémoire tampon
-- [ ] *"Colle l'email ici"* → Dans élément actif MyTrello
+- [ ] *"Copie email dans D-ProjeT"* → Gmail vers mémoire tampon
+- [ ] *"Colle l'email ici"* → Dans élément actif D-ProjeT
 
 ### ÉTAPE 9 — Historique des liens email
 
@@ -174,7 +174,7 @@ INSERT INTO settings (key, value) VALUES
 - [ ] Liste des emails liés avec : source (Outlook/Gmail), sujet, expéditeur, date
 - [ ] Clic sur un email lié → ouvre l'aperçu dans le panel messagerie correspondant
 - [ ] Indicateur si l'email n'est plus accessible (supprimé côté serveur)
-- [ ] Badge "N emails liés" visible sur chaque élément MyTrello
+- [ ] Badge "N emails liés" visible sur chaque élément D-ProjeT
 
 ---
 
@@ -222,7 +222,7 @@ INSERT INTO settings (key, value) VALUES
 ✅ Confirmation visuelle et vocale du basculement
 ```
 
-### TEST V2.1-04 — Drag & drop Gmail → MyTrello
+### TEST V2.1-04 — Drag & drop Gmail → D-ProjeT
 ```
 🧪 Glisser un email Gmail vers la carte "Poste 400kV Lyon-Est"
 
@@ -240,12 +240,12 @@ INSERT INTO settings (key, value) VALUES
 
 ### TEST V2.1-05 — Copier / Coller vocal Gmail
 ```
-🧪 Panel Gmail actif, email ouvert, dire "Copie email dans MyTrello"
+🧪 Panel Gmail actif, email ouvert, dire "Copie email dans D-ProjeT"
 
 ✅ L'indicateur affiche "Email Gmail en mémoire tampon"
 ✅ La source Gmail est indiquée dans l'indicateur
 
-🧪 Naviguer vers MyTrello, dire "Colle l'email ici"
+🧪 Naviguer vers D-ProjeT, dire "Colle l'email ici"
 
 ✅ L'élément est créé avec les données de l'email Gmail
 ✅ Badge Gmail visible sur l'élément créé
@@ -263,7 +263,7 @@ INSERT INTO settings (key, value) VALUES
 🧪 Dire "Retirer le libellé Urgent"
 
 ✅ Le libellé "Urgent" est retiré de l'email
-✅ Le badge disparaît dans le panel MyTrello
+✅ Le badge disparaît dans le panel D-ProjeT
 
 🧪 Dire "Archiver"
 
@@ -295,7 +295,7 @@ INSERT INTO settings (key, value) VALUES
 
 ✅ Les deux listes se chargent en moins de 8 secondes au total
 ✅ Le rafraîchissement automatique des deux services ne provoque pas de lag
-✅ Le drag & drop MyTrello reste fluide en présence des deux panels
+✅ Le drag & drop D-ProjeT reste fluide en présence des deux panels
 ```
 
 ### TEST V2.1-09 — Déconnexion Gmail (Outlook reste actif)
@@ -304,7 +304,7 @@ INSERT INTO settings (key, value) VALUES
 
 ✅ Le panel Gmail disparaît (onglets remplacés par panel Outlook direct)
 ✅ Le panel Outlook reste actif et fonctionnel
-✅ Les liens Gmail dans MyTrello restent visibles (données locales conservées)
+✅ Les liens Gmail dans D-ProjeT restent visibles (données locales conservées)
 ✅ Les tokens Google sont supprimés de manière sécurisée
 ```
 
@@ -314,7 +314,7 @@ INSERT INTO settings (key, value) VALUES
 
 ✅ Tous les tests passent toujours
 ✅ L'ajout de Gmail n'affecte pas le comportement Outlook
-✅ Les fonctionnalités MyTrello de base sont intactes
+✅ Les fonctionnalités D-ProjeT de base sont intactes
 ❌ Une fonctionnalité V2.0 ou antérieure est cassée
 ```
 
@@ -327,7 +327,7 @@ INSERT INTO settings (key, value) VALUES
 | **Phases couvertes** | Phase 6 + Phase 7 + Phase 8 complète |
 | **Tâches de développement** | 42 tâches |
 | **Tests de validation** | 10 tests (+ 40 tests régression) |
-| **Drag & drop** | ✅ Email Outlook ET Gmail → MyTrello |
+| **Drag & drop** | ✅ Email Outlook ET Gmail → D-ProjeT |
 | **Commandes vocales** | ✅ Outlook + Gmail complets |
 | **Outlook** | ✅ Complet (inchangé) |
 | **Gmail** | ✅ Complet |
@@ -340,4 +340,4 @@ INSERT INTO settings (key, value) VALUES
 Synchronisation complète + performances + tests automatisés + sécurité + version finale
 
 ---
-*MyTrello — Version 2.1 — 23 février 2026*
+*D-ProjeT — Version 2.1 — 23 février 2026*

@@ -1,10 +1,10 @@
 @echo off
-title MyTrello - Serveur de Developpement
+title D-ProjeT - Serveur de Developpement
 cd /d "%~dp0"
 
 echo.
 echo ====================================
-echo    LANCEMENT DU SERVEUR MYTRELLO
+echo    LANCEMENT DU SERVEUR D-PROJET
 echo ====================================
 echo.
 
