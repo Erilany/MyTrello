@@ -1939,7 +1939,7 @@ function GuidePanel() {
   };
 
   return (
-    <div className="guide-panel w-[25%] min-w-[320px] max-w-[480px] h-full bg-card border-l border-std flex flex-col">
+    <div className="guide-panel absolute right-0 top-14 w-[320px] h-[calc(100%-3.5rem)] bg-card border-l border-std flex flex-col z-40">
       <div className="flex items-center justify-between p-4 border-b border-std bg-card-hover">
         <div className="flex items-center gap-2">
           <BookOpen size={20} className="text-accent" />

@@ -14,6 +14,7 @@ import CardModal from './components/Card/CardModal';
 import CategoryModal from './components/Category/CategoryModal';
 import SubCategoryModal from './components/SubCategory/SubCategoryModal';
 import GuidePanel from './components/Guide/GuidePanel';
+import SearchPanel from './components/Search/SearchPanel';
 
 function Modals() {
   const {
@@ -42,7 +43,7 @@ function Modals() {
 }
 
 function AppContent() {
-  const { theme, boards, loadBoard, currentBoard, guideOpen } = useApp();
+  const { theme, boards, loadBoard, currentBoard, guideOpen, searchOpen } = useApp();
   const location = useLocation();
 
   React.useEffect(() => {
@@ -51,28 +52,41 @@ function AppContent() {
     }
   }, [boards, currentBoard, loadBoard, location.pathname]);
 
+  React.useEffect(() => {
+    const match = location.pathname.match(/^\/board(\/2)?\/(\d+)$/);
+    if (match && currentBoard?.id !== parseInt(match[2])) {
+      loadBoard(parseInt(match[2]));
+    }
+  }, [location.pathname, currentBoard, loadBoard]);
+
   const boardKey = currentBoard?.id || 'no-board';
+  const sidePanelOpen = guideOpen || searchOpen;
 
   return (
     <div className={`flex h-screen bg-app ${theme}`}>
       <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Header />
-        <main className="flex-1 overflow-auto p-4 bg-app">
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/board" element={<Board2 key={boardKey} />} />
-            <Route path="/board/:boardId" element={<Board2 key={boardKey} />} />
-            <Route path="/board2" element={<Board2 key={boardKey} />} />
-            <Route path="/board2/:boardId" element={<Board2 key={boardKey} />} />
-            <Route path="/library" element={<DonneesPage />} />
-            <Route path="/archives" element={<Archives />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/system-settings" element={<SystemSettings />} />
-          </Routes>
-        </main>
+      <div className="flex-1 flex flex-col overflow-hidden relative">
+        <div
+          className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ${sidePanelOpen ? 'mr-[320px]' : ''}`}
+        >
+          <Header />
+          <main className="flex-1 overflow-auto p-4 bg-app">
+            <Routes>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/board" element={<Board2 key={boardKey} />} />
+              <Route path="/board/:boardId" element={<Board2 key={boardKey} />} />
+              <Route path="/board2" element={<Board2 key={boardKey} />} />
+              <Route path="/board2/:boardId" element={<Board2 key={boardKey} />} />
+              <Route path="/library" element={<DonneesPage />} />
+              <Route path="/archives" element={<Archives />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/system-settings" element={<SystemSettings />} />
+            </Routes>
+          </main>
+        </div>
+        {guideOpen && <GuidePanel />}
+        <SearchPanel />
       </div>
-      {guideOpen && <GuidePanel />}
       <Modals />
     </div>
   );

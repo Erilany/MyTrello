@@ -13,6 +13,8 @@ import { loadPriorityData, savePriorityData } from '../data/PriorityData';
 import { loadZonesData, saveZonesData } from '../data/ZonesData';
 import { loadTagsData, saveTagsData } from '../data/TagsData';
 import { loadChaptersOrder, saveChaptersOrder } from '../data/ChaptersData';
+import { normalizeImportData, generateExportData, downloadExport } from '../services/migration';
+import storage from '../services/storage';
 
 const STORAGE_KEY = 'd-projet_db';
 
@@ -438,6 +440,7 @@ export function AppProvider({ children }) {
   const [selectedCard, setSelectedCard] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState(null);
+  const [activeTab, setActiveTab] = useState('taches');
   const [unreadMentions, setUnreadMentions] = useState({});
   const [cardColors, setCardColors] = useState({
     etudes: { gradient: ['#6366f1', '#3b82f6'], keywords: ['études', 'etudes'] },
@@ -503,7 +506,16 @@ export function AppProvider({ children }) {
   }, []);
 
   const [guideOpen, setGuideOpen] = useState(false);
-  const toggleGuide = useCallback(() => setGuideOpen(prev => !prev), []);
+  const toggleGuide = useCallback(() => {
+    setGuideOpen(prev => !prev);
+    setSearchOpen(false);
+  }, []);
+
+  const [searchOpen, setSearchOpen] = useState(false);
+  const toggleSearch = useCallback(() => {
+    setSearchOpen(prev => !prev);
+    setGuideOpen(false);
+  }, []);
 
   const updateCardColors = useCallback(newColors => {
     setCardColors(newColors);
@@ -858,85 +870,10 @@ export function AppProvider({ children }) {
   };
 
   const exportData = () => {
-    console.log('[ExportData] Starting export...');
+    console.log('[ExportData] Starting export with migration layer...');
     try {
-      const projectTime = localStorage.getItem('d-projet_project_time');
-      const libraryFavorites = localStorage.getItem('d-projet_library_favorites');
-      const libraryEditor = localStorage.getItem('d-projet_library_editor');
-      const libraryTemplates = localStorage.getItem('d-projet_library_templates');
-      const theme = localStorage.getItem('d-projet-theme');
-      const cardColors = localStorage.getItem('d-projet-cardColors');
-      const username = localStorage.getItem('d-projet-username');
-      const userRole = localStorage.getItem('d-projet-user-role');
-
-      console.log('[ExportData] Loading databases...');
-      const gmr = loadGMRData();
-      const priority = loadPriorityData();
-      const zones = loadZonesData();
-      const tags = loadTagsData();
-      console.log('[ExportData] Databases loaded:', { gmr, priority, zones, tags });
-
-      const projectDataKeys = [
-        'links',
-        'commandes',
-        'eotp',
-        'internalContacts',
-        'externalContacts',
-        'gmr',
-        'priority',
-        'zone',
-      ];
-      const projectData = {};
-      db.boards.forEach(board => {
-        projectData[board.id] = {};
-        projectDataKeys.forEach(key => {
-          const stored = localStorage.getItem(`board-${board.id}-${key}`);
-          if (stored) {
-            try {
-              projectData[board.id][key] = JSON.parse(stored);
-            } catch {
-              projectData[board.id][key] = stored;
-            }
-          }
-        });
-      });
-
-      const contractsData = localStorage.getItem('d-projet_contracts');
-      const exportObj = {
-        version: '1.0',
-        exportedAt: new Date().toISOString(),
-        data: db,
-        projectTime: projectTime ? JSON.parse(projectTime) : {},
-        libraryFavorites: libraryFavorites ? JSON.parse(libraryFavorites) : {},
-        libraryEditor: libraryEditor ? JSON.parse(libraryEditor) : null,
-        libraryTemplates: libraryTemplates ? JSON.parse(libraryTemplates) : { templates: [] },
-        contracts: contractsData ? JSON.parse(contractsData) : [],
-        settings: {
-          theme,
-          cardColors: cardColors ? JSON.parse(cardColors) : null,
-          username,
-          userRole,
-        },
-        databases: {
-          gmr,
-          priority,
-          zones,
-          tags,
-          chaptersOrder: loadChaptersOrder(),
-        },
-        projectsData: projectData,
-      };
-
-      console.log('[ExportData] Creating blob...');
-      const blob = new Blob([JSON.stringify(exportObj, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `d-projet-backup-${new Date().toISOString().split('T')[0]}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      const exportObj = generateExportData(db);
+      downloadExport(exportObj);
       console.log('[ExportData] Export completed successfully');
     } catch (err) {
       console.error('[ExportData] Error during export:', err);
@@ -981,14 +918,28 @@ export function AppProvider({ children }) {
   const importData = jsonData => {
     try {
       const parsed = typeof jsonData === 'string' ? JSON.parse(jsonData) : jsonData;
-      if (!parsed.data) {
+
+      const normalized = normalizeImportData(parsed);
+
+      if (!normalized.success) {
+        return { success: false, error: normalized.errors.join(', ') };
+      }
+
+      const data = normalized.data;
+      let dbData;
+
+      if (data.version === '2.0' && data.databases?.core) {
+        dbData = data.databases.core;
+      } else if (data.data) {
+        dbData = data.data;
+      } else {
         return { success: false, error: 'Format de fichier invalide: aucune donnée trouvée' };
       }
 
-      const existingColumnBoardIds = new Set((parsed.data.columns || []).map(c => c.board_id));
-      let nextColumnId = Math.max(0, ...(parsed.data.columns || []).map(c => c.id)) + 1;
+      const existingColumnBoardIds = new Set((dbData.columns || []).map(c => c.board_id));
+      let nextColumnId = Math.max(0, ...(dbData.columns || []).map(c => c.id)) + 1;
 
-      parsed.data.boards.forEach(board => {
+      dbData.boards.forEach(board => {
         if (!existingColumnBoardIds.has(board.id)) {
           const defaultColumns = [
             {
@@ -1027,103 +978,149 @@ export function AppProvider({ children }) {
               color: '#475569',
             },
           ];
-          parsed.data.columns.push(...defaultColumns);
+          dbData.columns.push(...defaultColumns);
           existingColumnBoardIds.add(board.id);
         }
       });
 
-      setDb(parsed.data);
-      saveToStorage(parsed.data);
+      setDb(dbData);
+      saveToStorage(dbData);
 
-      if (parsed.projectTime) {
-        localStorage.setItem('d-projet_project_time', JSON.stringify(parsed.projectTime));
+      if (data.projectTime) {
+        localStorage.setItem('d-projet_project_time', JSON.stringify(data.projectTime));
       }
-      if (parsed.libraryFavorites) {
-        localStorage.setItem('d-projet_library_favorites', JSON.stringify(parsed.libraryFavorites));
+      if (data.libraryFavorites) {
+        localStorage.setItem('d-projet_library_favorites', JSON.stringify(data.libraryFavorites));
       }
-      if (parsed.libraryEditor) {
-        const cleanLibraryEditor = deduplicateLibraryEditor(parsed.libraryEditor);
+      if (data.databases?.library) {
+        const cleanLibraryEditor = deduplicateLibraryEditor(data.databases.library);
+        localStorage.setItem('d-projet_library_editor', JSON.stringify(cleanLibraryEditor));
+      } else if (data.libraryEditor) {
+        const cleanLibraryEditor = deduplicateLibraryEditor(data.libraryEditor);
         localStorage.setItem('d-projet_library_editor', JSON.stringify(cleanLibraryEditor));
       }
-      if (parsed.libraryTemplates) {
-        localStorage.setItem('d-projet_library_templates', JSON.stringify(parsed.libraryTemplates));
+      if (data.libraryTemplates) {
+        localStorage.setItem('d-projet_library_templates', JSON.stringify(data.libraryTemplates));
       }
-      if (parsed.settings) {
-        if (parsed.settings.theme) {
-          localStorage.setItem('d-projet-theme', parsed.settings.theme);
-          setTheme(parsed.settings.theme);
+      if (data.settings) {
+        if (data.settings.theme) {
+          localStorage.setItem('d-projet-theme', data.settings.theme);
+          setTheme(data.settings.theme);
         }
-        if (parsed.settings.cardColors) {
-          localStorage.setItem('d-projet-cardColors', JSON.stringify(parsed.settings.cardColors));
+        if (data.settings.cardColors) {
+          localStorage.setItem('d-projet-cardColors', JSON.stringify(data.settings.cardColors));
         }
-        if (parsed.settings.username) {
-          localStorage.setItem('d-projet-username', parsed.settings.username);
+        if (data.settings.username) {
+          localStorage.setItem('d-projet-username', data.settings.username);
         }
-        if (parsed.settings.userRole) {
-          localStorage.setItem('d-projet-user-role', parsed.settings.userRole);
-        }
-      }
-
-      if (parsed.databases) {
-        if (parsed.databases.gmr) {
-          saveGMRData(parsed.databases.gmr);
-        }
-        if (parsed.databases.priority) {
-          savePriorityData(parsed.databases.priority);
-        }
-        if (parsed.databases.zones) {
-          saveZonesData(parsed.databases.zones);
-        }
-        if (parsed.databases.tags) {
-          saveTagsData(parsed.databases.tags);
-        }
-        if (parsed.databases.chaptersOrder) {
-          saveChaptersOrder(parsed.databases.chaptersOrder);
+        if (data.settings.userRole) {
+          localStorage.setItem('d-projet-user-role', data.settings.userRole);
         }
       }
 
-      if (parsed.projectsData) {
-        Object.entries(parsed.projectsData).forEach(([boardId, data]) => {
-          if (data.links) {
-            localStorage.setItem(`board-${boardId}-links`, JSON.stringify(data.links));
+      const databases = data.databases?.params || data.databases;
+      if (databases) {
+        if (databases.gmr) {
+          saveGMRData(databases.gmr);
+        }
+        if (databases.priority) {
+          savePriorityData(databases.priority);
+        }
+        if (databases.zones) {
+          saveZonesData(databases.zones);
+        }
+        if (databases.tags) {
+          saveTagsData(databases.tags);
+        }
+        if (databases.chaptersOrder) {
+          saveChaptersOrder(databases.chaptersOrder);
+        }
+      }
+
+      if (data.projects) {
+        data.projects.forEach(project => {
+          const boardId = project.id;
+          if (project.links) {
+            localStorage.setItem(`board-${boardId}-links`, JSON.stringify(project.links));
           }
-          if (data.commandes) {
-            localStorage.setItem(`board-${boardId}-commandes`, JSON.stringify(data.commandes));
+          if (project.commandes) {
+            localStorage.setItem(`board-${boardId}-commandes`, JSON.stringify(project.commandes));
           }
-          if (data.eotp) {
-            localStorage.setItem(`board-${boardId}-eotp`, JSON.stringify(data.eotp));
+          if (project.eotp) {
+            localStorage.setItem(`board-${boardId}-eotp`, JSON.stringify(project.eotp));
           }
-          if (data.internalContacts) {
+          if (project.internalContacts) {
             localStorage.setItem(
               `board-${boardId}-internalContacts`,
-              JSON.stringify(data.internalContacts)
+              JSON.stringify(project.internalContacts)
             );
           }
-          if (data.externalContacts) {
+          if (project.externalContacts) {
             localStorage.setItem(
               `board-${boardId}-externalContacts`,
-              JSON.stringify(data.externalContacts)
+              JSON.stringify(project.externalContacts)
             );
           }
-          if (data.gmr) {
-            localStorage.setItem(`board-${boardId}-gmr`, data.gmr);
+          if (project.gmr) {
+            localStorage.setItem(`board-${boardId}-gmr`, project.gmr);
           }
-          if (data.priority) {
-            localStorage.setItem(`board-${boardId}-priority`, data.priority);
+          if (project.priority) {
+            localStorage.setItem(`board-${boardId}-priority`, project.priority);
           }
-          if (data.zone) {
-            localStorage.setItem(`board-${boardId}-zone`, data.zone);
+          if (project.zone) {
+            localStorage.setItem(`board-${boardId}-zone`, project.zone);
           }
         });
       }
 
-      if (parsed.data.boards && parsed.data.boards.length > 0) {
-        loadBoard(parsed.data.boards[0].id);
+      if (data.projectsData) {
+        Object.entries(data.projectsData).forEach(([boardId, projData]) => {
+          if (projData.links) {
+            localStorage.setItem(`board-${boardId}-links`, JSON.stringify(projData.links));
+          }
+          if (projData.commandes) {
+            localStorage.setItem(`board-${boardId}-commandes`, JSON.stringify(projData.commandes));
+          }
+          if (projData.eotp) {
+            localStorage.setItem(`board-${boardId}-eotp`, JSON.stringify(projData.eotp));
+          }
+          if (projData.internalContacts) {
+            localStorage.setItem(
+              `board-${boardId}-internalContacts`,
+              JSON.stringify(projData.internalContacts)
+            );
+          }
+          if (projData.externalContacts) {
+            localStorage.setItem(
+              `board-${boardId}-externalContacts`,
+              JSON.stringify(projData.externalContacts)
+            );
+          }
+          if (projData.gmr) {
+            localStorage.setItem(`board-${boardId}-gmr`, projData.gmr);
+          }
+          if (projData.priority) {
+            localStorage.setItem(`board-${boardId}-priority`, projData.priority);
+          }
+          if (projData.zone) {
+            localStorage.setItem(`board-${boardId}-zone`, projData.zone);
+          }
+        });
       }
-      return { success: true };
-    } catch (e) {
-      console.error('[Import] Error:', e);
-      return { success: false, error: e.message };
+
+      if (data.databases?.contracts || data.contracts) {
+        const contracts = data.databases?.contracts || data.contracts;
+        localStorage.setItem('d-projet_contracts', JSON.stringify(contracts));
+      }
+
+      console.log(
+        '[ImportData] Import réussi!',
+        normalized.warnings.length > 0 ? `Warnings: ${normalized.warnings.join(', ')}` : ''
+      );
+      return { success: true, warnings: normalized.warnings };
+    } catch (error) {
+      console.error('[ImportData] Erreur:', error);
+      return { success: false, error: error.message };
     }
   };
 
@@ -2327,12 +2324,16 @@ export function AppProvider({ children }) {
     toggleTheme,
     guideOpen,
     toggleGuide,
+    searchOpen,
+    toggleSearch,
     selectedCard,
     setSelectedCard,
     selectedCategory,
     setSelectedCategory,
     selectedSubcategory,
     setSelectedSubcategory,
+    activeTab,
+    setActiveTab,
     loadBoard,
     loadBoards,
     createBoard,

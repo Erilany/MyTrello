@@ -56,6 +56,8 @@ function Board2() {
     createCategory,
     loadBoard,
     libraryItems,
+    activeTab: contextActiveTab,
+    setActiveTab: contextSetActiveTab,
   } = useApp();
 
   console.log(
@@ -67,7 +69,8 @@ function Board2() {
     cards?.length
   );
 
-  const [activeTab, setActiveTab] = useState('taches');
+  const activeTab = contextActiveTab;
+  const setActiveTab = contextSetActiveTab;
   const previousActiveTabRef = useRef('taches');
   const [isInitialized, setIsInitialized] = useState(false);
 

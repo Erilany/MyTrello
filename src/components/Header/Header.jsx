@@ -1,9 +1,9 @@
 import React from 'react';
 import { useApp } from '../../context/AppContext';
-import { Search, Bell, Sun, Moon, HelpCircle } from 'lucide-react';
+import { Bell, Sun, Moon, HelpCircle, Search } from 'lucide-react';
 
 function Header() {
-  const { theme, toggleTheme, guideOpen, toggleGuide } = useApp();
+  const { theme, toggleTheme, guideOpen, toggleGuide, searchOpen, toggleSearch } = useApp();
 
   return (
     <header
@@ -13,17 +13,13 @@ function Header() {
       <div className="flex items-center"></div>
 
       <div className="flex items-center space-x-2">
-        <div className="relative">
-          <Search
-            size={16}
-            className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted"
-          />
-          <input
-            type="text"
-            placeholder="Rechercher..."
-            className="pl-9 pr-4 py-1.5 text-sm bg-input border border-std rounded-md text-primary placeholder-muted focus:outline-none focus:border-accent w-56 transition-std"
-          />
-        </div>
+        <button
+          onClick={toggleSearch}
+          className={`icon-btn ${searchOpen ? 'text-accent' : ''}`}
+          title="Rechercher"
+        >
+          <Search size={18} />
+        </button>
 
         <button
           onClick={toggleTheme}
