@@ -1804,6 +1804,34 @@ export function AppProvider({ children }) {
     }
   };
 
+  const toggleMilestone = (subcategoryId, milestoneId) => {
+    const sub = db.subcategories.find(s => Number(s.id) === Number(subcategoryId));
+    if (!sub) return;
+
+    let milestones = sub.milestones;
+    if (typeof milestones === 'string') {
+      try {
+        milestones = JSON.parse(milestones);
+      } catch (e) {
+        milestones = [];
+      }
+    }
+    if (!Array.isArray(milestones)) milestones = [];
+
+    const updatedMilestones = milestones.map(m => {
+      if (Number(m.id) === Number(milestoneId)) {
+        return { ...m, done: !m.done };
+      }
+      return m;
+    });
+
+    updateSubcategory(subcategoryId, { milestones: updatedMilestones });
+
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('milestone-updated'));
+    }, 100);
+  };
+
   const deleteSubcategory = id => {
     const newDb = {
       ...db,
@@ -2255,7 +2283,7 @@ export function AppProvider({ children }) {
 
   const setUsername = useCallback(name => {
     setCurrentUsername(name);
-    localStorage.setItem('mytrello-username', name);
+    localStorage.setItem('d-projet-username', name);
   }, []);
 
   const addComment = (refType, refId, content) => {
@@ -2331,6 +2359,7 @@ export function AppProvider({ children }) {
     moveCategory,
     createSubcategory,
     updateSubcategory,
+    toggleMilestone,
     deleteSubcategory,
     moveSubcategory,
     addEmailToSubcategory,

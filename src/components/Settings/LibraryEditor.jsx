@@ -1527,13 +1527,13 @@ function LibraryEditor() {
     const newLibraryItems = convertTreeToLibraryItems(treeData);
 
     // Try to update main database, or create it if it doesn't exist
-    let mainDb = localStorage.getItem('mytrello_db');
+    let mainDb = localStorage.getItem('d-projet_db');
 
     if (mainDb) {
       try {
         const db = JSON.parse(mainDb);
         db.libraryItems = newLibraryItems;
-        localStorage.setItem('mytrello_db', JSON.stringify(db));
+        localStorage.setItem('d-projet_db', JSON.stringify(db));
       } catch (e) {
         console.error('[LibraryEditor] Error updating main database:', e);
       }
@@ -1558,7 +1558,7 @@ function LibraryEditor() {
         },
         orders: [],
       };
-      localStorage.setItem('mytrello_db', JSON.stringify(newDb));
+      localStorage.setItem('d-projet_db', JSON.stringify(newDb));
     }
 
     // Dispatch event to notify other components

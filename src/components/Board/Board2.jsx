@@ -72,10 +72,10 @@ function Board2() {
   const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
-    const openTab = localStorage.getItem('mytrello_open_tab');
+    const openTab = localStorage.getItem('d-projet_open_tab');
     if (openTab === 'planning') {
       setActiveTab('planning');
-      localStorage.removeItem('mytrello_open_tab');
+      localStorage.removeItem('d-projet_open_tab');
     }
   }, []);
 
@@ -289,7 +289,7 @@ function Board2() {
   const [importData, setImportData] = useState(null);
 
   useEffect(() => {
-    const stored = localStorage.getItem('mytrello_contracts');
+    const stored = localStorage.getItem('d-projet_contracts');
     if (stored) {
       setContracts(JSON.parse(stored));
     }
@@ -1159,7 +1159,7 @@ Affaire: ${commande.affaire || 'N/A'}
     return str.toLowerCase().trim().replace(/\s+/g, ' ');
   };
 
-const getCardSkipAction = card => {
+  const getCardSkipAction = card => {
     if (!card) {
       console.log('[Board2] getCardSkipAction: no card provided');
       return false;
@@ -1172,10 +1172,18 @@ const getCardSkipAction = card => {
         try {
           const content = JSON.parse(libraryCard.content_json);
           const skipAction = content.card?.skipAction || false;
-          console.log('[Board2] getCardSkipAction (by ID):', card.title, '-> skipAction:', skipAction);
+          console.log(
+            '[Board2] getCardSkipAction (by ID):',
+            card.title,
+            '-> skipAction:',
+            skipAction
+          );
           return skipAction;
         } catch (e) {
-          console.error('[Board2] getCardSkipAction: error parsing content_json for library_item_id', e);
+          console.error(
+            '[Board2] getCardSkipAction: error parsing content_json for library_item_id',
+            e
+          );
         }
       }
     }
@@ -1212,7 +1220,7 @@ const getCardSkipAction = card => {
     }
   };
 
-const getCardTasks = card => {
+  const getCardTasks = card => {
     if (!card || !libraryItems || !Array.isArray(libraryItems)) return [];
 
     let libraryCard = null;

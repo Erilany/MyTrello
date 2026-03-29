@@ -74,7 +74,7 @@ function LibraryFavorites() {
   };
 
   const regenerateAllFavorites = () => {
-    const libraryEditorRaw = localStorage.getItem('mytrello_library_editor');
+    const libraryEditorRaw = localStorage.getItem('d-projet_library_editor');
     if (!libraryEditorRaw) {
       alert('Aucune bibliothèque trouvée');
       return;

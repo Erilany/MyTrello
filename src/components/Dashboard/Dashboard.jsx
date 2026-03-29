@@ -146,7 +146,6 @@ function getUpcomingTasks(subcategories, categories, cards, boards, columns, use
   return result;
 }
 
-
 function getUpcomingMilestones(subcategories, categories, cards, boards, columns, days = 7) {
   const now = new Date();
   const futureDate = new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
@@ -156,7 +155,11 @@ function getUpcomingMilestones(subcategories, categories, cards, boards, columns
   subcategories.forEach(sub => {
     let milestones = sub.milestones;
     if (typeof milestones === 'string') {
-      try { milestones = JSON.parse(milestones); } catch (e) { milestones = []; }
+      try {
+        milestones = JSON.parse(milestones);
+      } catch (e) {
+        milestones = [];
+      }
     }
     if (!Array.isArray(milestones)) return;
 
@@ -166,7 +169,9 @@ function getUpcomingMilestones(subcategories, categories, cards, boards, columns
         if (milestoneDate >= now && milestoneDate <= futureDate && !m.done) {
           const category = categories.find(c => Number(c.id) === Number(sub.category_id));
           const card = category ? cards.find(c => Number(c.id) === Number(category.card_id)) : null;
-          const column = card ? columns.find(col => Number(col.id) === Number(card.column_id)) : null;
+          const column = card
+            ? columns.find(col => Number(col.id) === Number(card.column_id))
+            : null;
           const board = column ? boards.find(b => Number(b.id) === Number(column.board_id)) : null;
           milestonesList.push({
             milestone: { ...m, subcategoryId: sub.id, subcategoryTitle: sub.title },
@@ -180,6 +185,53 @@ function getUpcomingMilestones(subcategories, categories, cards, boards, columns
   });
 
   return milestonesList.sort((a, b) => new Date(a.milestone.date) - new Date(b.milestone.date));
+}
+
+function getMyMilestones(subcategories, categories, cards, boards, columns, username) {
+  const milestonesList = [];
+
+  subcategories.forEach(sub => {
+    if (sub.assignee !== username) return;
+
+    let milestones = sub.milestones;
+    if (typeof milestones === 'string') {
+      try {
+        milestones = JSON.parse(milestones);
+      } catch (e) {
+        milestones = [];
+      }
+    }
+    if (!Array.isArray(milestones)) return;
+
+    milestones.forEach(m => {
+      const category = categories.find(c => Number(c.id) === Number(sub.category_id));
+      const card = category ? cards.find(c => Number(c.id) === Number(category.card_id)) : null;
+      const column = card ? columns.find(col => Number(col.id) === Number(card.column_id)) : null;
+      const board = column ? boards.find(b => Number(b.id) === Number(column.board_id)) : null;
+      milestonesList.push({
+        milestone: { ...m, subcategoryId: sub.id, subcategoryTitle: sub.title },
+        category,
+        card,
+        board,
+      });
+    });
+  });
+
+  const withoutDate = milestonesList
+    .filter(m => !m.milestone.date)
+    .sort((a, b) => {
+      if (a.milestone.done !== b.milestone.done) return a.milestone.done ? 1 : -1;
+      return (a.milestone.position || 0) - (b.milestone.position || 0);
+    });
+
+  const withDate = milestonesList
+    .filter(m => m.milestone.date)
+    .sort((a, b) => {
+      if (a.milestone.done !== b.milestone.done) return a.milestone.done ? 1 : -1;
+      return new Date(a.milestone.date) - new Date(b.milestone.date);
+    });
+
+  return [...withoutDate, ...withDate];
 }
 
 export default function Dashboard() {
@@ -197,38 +249,12 @@ export default function Dashboard() {
     setSelectedCard,
     loadBoard,
     db,
+    toggleMilestone,
   } = useApp();
 
   // Load all data from localStorage for dashboard
   const STORAGE_KEY = 'd-projet_db';
   const [storageData, setStorageData] = useState(null);
-  const loadStorageData = () => {
-    const data = localStorage.getItem(STORAGE_KEY);
-    if (data) {
-      setStorageData(JSON.parse(data));
-    }
-  };
-  useEffect(() => {
-    loadStorageData();
-    const handleStorageChange = () => loadStorageData();
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
-
-  // Also refresh when tab becomes active
-  useEffect(() => {
-    const handleFocus = () => loadStorageData();
-    window.addEventListener('focus', handleFocus);
-    return () => window.removeEventListener('focus', handleFocus);
-  }, []);
-
-  // Use storage data if available, otherwise fallback to db
-  const allBoards = storageData?.boards || db?.boards || boards;
-  const allCards = storageData?.cards || db?.cards || cards;
-  const allCategories = storageData?.categories || db?.categories || categories;
-  const allSubcategories = storageData?.subcategories || db?.subcategories || subcategories;
-  const allColumns = storageData?.columns || db?.columns || [];
-
   const [selectedWeek, setSelectedWeek] = useState(() => getWeekNumber(new Date()));
   const [timeRange, setTimeRange] = useState('week');
   const [showMyTasks, setShowMyTasks] = useState(true);
@@ -238,6 +264,16 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState('time');
   const [refreshKey, setRefreshKey] = useState(0);
   const [expandedProjects, setExpandedProjects] = useState({});
+  const [recentlyCompletedMilestones, setRecentlyCompletedMilestones] = useState([]);
+
+  const handleMilestoneToggle = (e, milestone) => {
+    e.stopPropagation();
+    toggleMilestone(milestone.subcategoryId, milestone.id);
+    setRecentlyCompletedMilestones(prev => [...prev, milestone.id]);
+    setTimeout(() => {
+      setRecentlyCompletedMilestones(prev => prev.filter(id => id !== milestone.id));
+    }, 1000);
+  };
 
   const handleTaskClick = task => {
     setSelectedTaskDashboard(task);
@@ -256,6 +292,12 @@ export default function Dashboard() {
     }
   };
 
+  const allBoards = storageData?.boards || db?.boards || boards;
+  const allCards = storageData?.cards || db?.cards || cards;
+  const allCategories = storageData?.categories || db?.categories || categories;
+  const allSubcategories = storageData?.subcategories || db?.subcategories || subcategories;
+  const allColumns = storageData?.columns || db?.columns || [];
+
   const resetProjectTime = projectId => {
     if (!window.confirm('Réinitialiser le temps pour ce projet cette semaine ?')) return;
     const timeData = loadProjectTime();
@@ -267,19 +309,19 @@ export default function Dashboard() {
     }
   };
 
-     const upcomingMilestones = useMemo(() => {
-     const days = timeRange === 'week' ? 7 : timeRange === 'month' ? 30 : 180;
-     return getUpcomingMilestones(
-       allSubcategories,
-       allCategories,
-       allCards,
-       allBoards,
-       allColumns,
-       days
-     );
-   }, [allSubcategories, allCategories, allCards, allBoards, allColumns, timeRange]);
+  const upcomingMilestones = useMemo(() => {
+    const days = timeRange === 'week' ? 7 : timeRange === 'month' ? 30 : 180;
+    return getUpcomingMilestones(
+      allSubcategories,
+      allCategories,
+      allCards,
+      allBoards,
+      allColumns,
+      days
+    );
+  }, [allSubcategories, allCategories, allCards, allBoards, allColumns, timeRange]);
 
-const getOtherTasksFiltered = () => {
+  const getOtherTasksFiltered = () => {
     let tasks = otherTasks;
     if (selectedProjectForOthers) {
       tasks = tasks.filter(t => Number(t.board?.id) === Number(selectedProjectForOthers));
@@ -426,6 +468,33 @@ const getOtherTasksFiltered = () => {
     timeRange,
   ]);
 
+  const myMilestones = useMemo(() => {
+    return getMyMilestones(
+      allSubcategories,
+      allCategories,
+      allCards,
+      allBoards,
+      allColumns,
+      currentUsername
+    ).filter(m => !recentlyCompletedMilestones.includes(m.milestone.id));
+  }, [
+    allSubcategories,
+    allCategories,
+    allCards,
+    allBoards,
+    allColumns,
+    currentUsername,
+    recentlyCompletedMilestones,
+  ]);
+
+  const incompleteTasks = useMemo(() => {
+    return myTasks.filter(task => task.status !== 'done');
+  }, [myTasks]);
+
+  const completedTasks = useMemo(() => {
+    return myTasks.filter(task => task.status === 'done');
+  }, [myTasks]);
+
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <h1 className="text-2xl font-display font-bold text-primary mb-6">Dashboard</h1>
@@ -563,38 +632,73 @@ const getOtherTasksFiltered = () => {
               </span>
             </p>
 
-
-            {/* Jalons à venir */}
-            {upcomingMilestones.length > 0 && (
+            {/* Mes jalons */}
+            {myMilestones.length > 0 && (
               <div className="bg-card rounded-lg border border-std p-6 mb-6">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-lg font-semibold text-primary flex items-center gap-2">
                     <Flag size={20} className="text-orange-500" />
-                    Jalons à venir
+                    Mes jalons
                   </h2>
+                  <span className="text-xs text-muted">
+                    {myMilestones.filter(m => !m.milestone.done).length} en cours /{' '}
+                    {myMilestones.filter(m => m.milestone.done).length} terminés
+                  </span>
                 </div>
-                <p className="text-sm text-muted mb-4">
-                  Liste des jalons avec une date dans les prochains jours.
-                </p>
                 <div className="overflow-x-auto max-h-64">
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-std">
+                        <th className="text-left py-2 px-3 text-muted font-medium">Statut</th>
                         <th className="text-left py-2 px-3 text-muted font-medium">Projet</th>
-                        <th className="text-left py-2 px-3 text-muted font-medium">Action</th>
                         <th className="text-left py-2 px-3 text-muted font-medium">Tâche</th>
                         <th className="text-left py-2 px-3 text-muted font-medium">Jalon</th>
                         <th className="text-left py-2 px-3 text-muted font-medium">Date</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {upcomingMilestones.map(({ milestone, category, card, board }, idx) => (
-                        <tr key={'m'+milestone.id+'-'+idx} className="border-b border-std">
-                          <td className="py-2 px-3 text-primary">{board?.title || '-'}</td>
-                          <td className="py-2 px-3 text-secondary">{category?.title || '-'}</td>
-                          <td className="py-2 px-3 text-primary">{card?.title || '-'}</td>
-                          <td className="py-2 px-3 text-primary font-medium">{milestone.title}</td>
-                          <td className="py-2 px-3 text-muted">{new Date(milestone.date).toLocaleDateString('fr-FR')}</td>
+                      {myMilestones.map(({ milestone, category, card, board }, idx) => (
+                        <tr
+                          key={'m' + milestone.id + '-' + idx}
+                          className={`border-b border-std ${milestone.done ? 'opacity-60' : 'hover:bg-card-hover cursor-pointer'}`}
+                          onClick={() => {
+                            const sub = allSubcategories.find(
+                              s => Number(s.id) === Number(milestone.subcategoryId)
+                            );
+                            if (sub) handleTaskClick(sub);
+                          }}
+                        >
+                          <td className="py-2 px-3">
+                            <input
+                              type="checkbox"
+                              checked={milestone.done}
+                              onChange={e => handleMilestoneToggle(e, milestone)}
+                              onClick={e => e.stopPropagation()}
+                              className="w-4 h-4 rounded border-std text-accent cursor-pointer"
+                            />
+                          </td>
+                          <td
+                            className={`py-2 px-3 ${milestone.done ? 'line-through text-muted' : 'text-primary'}`}
+                          >
+                            {board?.title || '-'}
+                          </td>
+                          <td
+                            className={`py-2 px-3 ${milestone.done ? 'line-through text-muted' : 'text-secondary'}`}
+                          >
+                            {card?.title || '-'}
+                          </td>
+                          <td
+                            className={`py-2 px-3 font-medium ${milestone.done ? 'line-through text-muted' : 'text-primary'}`}
+                          >
+                            {milestone.title}
+                          </td>
+                          <td
+                            className={`py-2 px-3 ${milestone.done ? 'line-through text-muted' : 'text-muted'}`}
+                          >
+                            {milestone.date
+                              ? new Date(milestone.date).toLocaleDateString('fr-FR')
+                              : '-'}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -602,81 +706,149 @@ const getOtherTasksFiltered = () => {
                 </div>
               </div>
             )}
-            {myTasks.length === 0 ? (
-              <p className="text-secondary text-sm py-4">
-                Aucune tâche assignée à terminer dans cette période
-              </p>
-            ) : (
-              <div className="overflow-x-auto max-h-96">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-std">
-                      <th className="text-left py-2 px-3 text-muted font-medium">Projet</th>
-                      <th className="text-left py-2 px-3 text-muted font-medium">Action</th>
-                      <th className="text-left py-2 px-3 text-muted font-medium">Tâche</th>
-                      <th className="text-left py-2 px-3 text-muted font-medium">État</th>
-                      <th className="text-left py-2 px-3 text-muted font-medium">Avancement</th>
-                      <th className="text-left py-2 px-3 text-muted font-medium">Priorité</th>
-                      <th className="text-left py-2 px-3 text-muted font-medium">Échéance</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {myTasks.map(task => (
-                      <tr
-                        key={task.id}
-                        className="border-b border-std hover:bg-card-hover cursor-pointer"
-                        onClick={() => handleTaskClick(task)}
-                      >
-                        <td className="py-2 px-3 text-primary">{task.board?.title}</td>
-                        <td className="py-2 px-3 text-secondary">{task.category?.title}</td>
-                        <td className="py-2 px-3 text-primary font-medium">{task.title}</td>
-                        <td className="py-2 px-3">
-                          <span
-                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs text-white ${getStatusColor(task.status)}`}
-                          >
-                            {task.status === 'done' ? (
-                              <CheckCircle size={12} />
-                            ) : task.status === 'in_progress' ? (
-                              <PlayCircle size={12} />
-                            ) : (
-                              <Circle size={12} />
-                            )}
-                            {getStatusLabel(task.status)}
-                          </span>
-                        </td>
-                        <td className="py-2 px-3">
-                          <div className="flex items-center gap-2">
-                            <div className="w-16 h-2 bg-card-hover rounded-full overflow-hidden">
-                              <div
-                                className={`h-full rounded-full ${
-                                  task.status === 'done'
-                                    ? 'bg-green-500'
-                                    : task.status === 'in_progress'
+
+            {/* Tâches à terminer */}
+            <div className="bg-card rounded-lg border border-std p-6 mb-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-semibold text-primary flex items-center gap-2">
+                  <Circle size={20} className="text-blue-500" />
+                  Tâches à terminer
+                </h2>
+                <span className="text-xs text-muted">{incompleteTasks.length} tâches</span>
+              </div>
+              {incompleteTasks.length === 0 ? (
+                <p className="text-secondary text-sm py-4">
+                  Aucune tâche à terminer dans cette période
+                </p>
+              ) : (
+                <div className="overflow-x-auto max-h-96">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-std">
+                        <th className="text-left py-2 px-3 text-muted font-medium">Projet</th>
+                        <th className="text-left py-2 px-3 text-muted font-medium">Action</th>
+                        <th className="text-left py-2 px-3 text-muted font-medium">Tâche</th>
+                        <th className="text-left py-2 px-3 text-muted font-medium">État</th>
+                        <th className="text-left py-2 px-3 text-muted font-medium">Avancement</th>
+                        <th className="text-left py-2 px-3 text-muted font-medium">Priorité</th>
+                        <th className="text-left py-2 px-3 text-muted font-medium">Échéance</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {incompleteTasks.map(task => (
+                        <tr
+                          key={task.id}
+                          className="border-b border-std hover:bg-card-hover cursor-pointer"
+                          onClick={() => handleTaskClick(task)}
+                        >
+                          <td className="py-2 px-3 text-primary">{task.board?.title}</td>
+                          <td className="py-2 px-3 text-secondary">{task.category?.title}</td>
+                          <td className="py-2 px-3 text-primary font-medium">{task.title}</td>
+                          <td className="py-2 px-3">
+                            <span
+                              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs text-white ${getStatusColor(task.status)}`}
+                            >
+                              {task.status === 'in_progress' ? (
+                                <PlayCircle size={12} />
+                              ) : (
+                                <Circle size={12} />
+                              )}
+                              {getStatusLabel(task.status)}
+                            </span>
+                          </td>
+                          <td className="py-2 px-3">
+                            <div className="flex items-center gap-2">
+                              <div className="w-16 h-2 bg-card-hover rounded-full overflow-hidden">
+                                <div
+                                  className={`h-full rounded-full ${
+                                    task.status === 'in_progress'
                                       ? 'bg-blue-500'
                                       : task.status === 'waiting'
                                         ? 'bg-yellow-500'
                                         : 'bg-gray-400'
-                                }`}
-                                style={{ width: `${task.progress || 0}%` }}
-                              />
+                                  }`}
+                                  style={{ width: `${task.progress || 0}%` }}
+                                />
+                              </div>
+                              <span className="text-xs text-muted w-8">{task.progress || 0}%</span>
                             </div>
-                            <span className="text-xs text-muted w-8">{task.progress || 0}%</span>
-                          </div>
-                        </td>
-                        <td className={`py-2 px-3 font-medium ${getPriorityColor(task.priority)}`}>
-                          {getPriorityLabel(task.priority)}
-                        </td>
-                        <td
-                          className="py-2 px-3 text-muted cursor-pointer hover:text-accent"
-                          onClick={e => handleDueDateClick(e, task)}
-                          title="Cliquez pour ouvrir le planning"
-                        >
-                          {task.due_date}
-                        </td>
+                          </td>
+                          <td
+                            className={`py-2 px-3 font-medium ${getPriorityColor(task.priority)}`}
+                          >
+                            {getPriorityLabel(task.priority)}
+                          </td>
+                          <td
+                            className="py-2 px-3 text-muted cursor-pointer hover:text-accent"
+                            onClick={e => handleDueDateClick(e, task)}
+                            title="Cliquez pour ouvrir le planning"
+                          >
+                            {task.due_date}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            {/* Tâches terminées */}
+            {completedTasks.length > 0 && (
+              <div className="bg-card rounded-lg border border-std p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-semibold text-primary flex items-center gap-2">
+                    <CheckCircle size={20} className="text-green-500" />
+                    Tâches terminées
+                  </h2>
+                  <span className="text-xs text-muted">{completedTasks.length} tâches</span>
+                </div>
+                <div className="overflow-x-auto max-h-64">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-std">
+                        <th className="text-left py-2 px-3 text-muted font-medium">Projet</th>
+                        <th className="text-left py-2 px-3 text-muted font-medium">Action</th>
+                        <th className="text-left py-2 px-3 text-muted font-medium">Tâche</th>
+                        <th className="text-left py-2 px-3 text-muted font-medium">Avancement</th>
+                        <th className="text-left py-2 px-3 text-muted font-medium">Priorité</th>
+                        <th className="text-left py-2 px-3 text-muted font-medium">Échéance</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {completedTasks.map(task => (
+                        <tr
+                          key={task.id}
+                          className="border-b border-std hover:bg-card-hover cursor-pointer opacity-75"
+                          onClick={() => handleTaskClick(task)}
+                        >
+                          <td className="py-2 px-3 text-primary">{task.board?.title}</td>
+                          <td className="py-2 px-3 text-secondary">{task.category?.title}</td>
+                          <td className="py-2 px-3 text-primary font-medium line-through">
+                            {task.title}
+                          </td>
+                          <td className="py-2 px-3">
+                            <div className="flex items-center gap-2">
+                              <div className="w-16 h-2 bg-green-500 rounded-full overflow-hidden">
+                                <div
+                                  className="h-full bg-green-500 rounded-full"
+                                  style={{ width: '100%' }}
+                                />
+                              </div>
+                              <span className="text-xs text-muted w-8">100%</span>
+                            </div>
+                          </td>
+                          <td
+                            className={`py-2 px-3 font-medium ${getPriorityColor(task.priority)}`}
+                          >
+                            {getPriorityLabel(task.priority)}
+                          </td>
+                          <td className="py-2 px-3 text-muted">{task.due_date}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
 

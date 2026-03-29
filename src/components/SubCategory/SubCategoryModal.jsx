@@ -31,7 +31,7 @@ function SubCategoryModal({ subcategory, onClose }) {
   const [categories, setCategories] = useState([]);
 
   useEffect(() => {
-    const data = localStorage.getItem('mytrello_db');
+    const data = localStorage.getItem('d-projet_db');
     if (data) {
       const parsed = JSON.parse(data);
       if (parsed.libraryItems) setLibraryItems(parsed.libraryItems);
@@ -266,6 +266,43 @@ function SubCategoryModal({ subcategory, onClose }) {
 
   // Milestones
   const [milestones, setMilestones] = useState(subcategory.milestones || []);
+  const [isAddingMilestone, setIsAddingMilestone] = useState(false);
+  const [newMilestoneTitle, setNewMilestoneTitle] = useState('');
+  const [newMilestoneDate, setNewMilestoneDate] = useState('');
+  const [draggedId, setDraggedId] = useState(null);
+
+  const sortMilestones = ms => {
+    const withoutDate = ms
+      .filter(m => !m.date)
+      .sort((a, b) => (a.position || 0) - (b.position || 0));
+    const withDate = ms.filter(m => m.date).sort((a, b) => new Date(a.date) - new Date(b.date));
+    return [...withoutDate, ...withDate];
+  };
+
+  useEffect(() => {
+    const handleMilestoneUpdated = () => {
+      const data = localStorage.getItem('d-projet_db');
+      if (data) {
+        try {
+          const parsed = JSON.parse(data);
+          const updatedSub = parsed.subcategories?.find(
+            s => Number(s.id) === Number(subcategory.id)
+          );
+          if (updatedSub) {
+            setMilestones(sortMilestones(updatedSub.milestones || []));
+          }
+        } catch (e) {
+          console.error('Error parsing milestones:', e);
+        }
+      }
+    };
+    window.addEventListener('milestone-updated', handleMilestoneUpdated);
+    return () => window.removeEventListener('milestone-updated', handleMilestoneUpdated);
+  }, [subcategory.id]);
+
+  useEffect(() => {
+    setMilestones(sortMilestones(subcategory.milestones || []));
+  }, [subcategory.id]);
 
   // Helper to add working days (excluding weekends)
   const addWorkingDays = (startDateStr, days) => {
@@ -382,15 +419,41 @@ function SubCategoryModal({ subcategory, onClose }) {
   };
 
   const addMilestone = () => {
-    const newMilestone = prompt('Nom du jalon:');
-    if (newMilestone) {
-      const sorted = [...milestones, { id: Date.now(), title: newMilestone, done: false }].sort(
-        (a, b) => {
-          if (a.done !== b.done) return a.done ? 1 : -1;
-          return 0;
-        }
-      );
-      setMilestones(sorted);
+    setIsAddingMilestone(true);
+    setNewMilestoneTitle('');
+    setNewMilestoneDate('');
+  };
+
+  const saveNewMilestone = () => {
+    if (newMilestoneTitle.trim()) {
+      const maxPosition = milestones
+        .filter(m => !m.date)
+        .reduce((max, m) => Math.max(max, m.position || 0), 0);
+      const newMilestoneObj = {
+        id: Date.now(),
+        title: newMilestoneTitle.trim(),
+        done: false,
+        date: newMilestoneDate || null,
+        position: maxPosition + 1,
+      };
+      setMilestones(sortMilestones([...milestones, newMilestoneObj]));
+    }
+    setIsAddingMilestone(false);
+    setNewMilestoneTitle('');
+    setNewMilestoneDate('');
+  };
+
+  const cancelAddMilestone = () => {
+    setIsAddingMilestone(false);
+    setNewMilestoneTitle('');
+    setNewMilestoneDate('');
+  };
+
+  const handleNewMilestoneKeyDown = e => {
+    if (e.key === 'Enter') {
+      saveNewMilestone();
+    } else if (e.key === 'Escape') {
+      cancelAddMilestone();
     }
   };
 
@@ -406,6 +469,54 @@ function SubCategoryModal({ subcategory, onClose }) {
 
   const deleteMilestone = id => {
     setMilestones(milestones.filter(m => m.id !== id));
+  };
+
+  const updateMilestoneTitle = (id, newTitle) => {
+    if (!newTitle.trim()) return;
+    const newMilestones = milestones.map(m => (m.id === id ? { ...m, title: newTitle.trim() } : m));
+    setMilestones(newMilestones);
+  };
+
+  const updateMilestoneDate = (id, newDate) => {
+    const newMilestones = milestones.map(m => (m.id === id ? { ...m, date: newDate || null } : m));
+    setMilestones(sortMilestones(newMilestones));
+  };
+
+  const handleMilestoneDragStart = (e, id) => {
+    setDraggedId(id);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleMilestoneDragOver = (e, id) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleMilestoneDrop = (e, targetId) => {
+    e.preventDefault();
+    if (!draggedId || draggedId === targetId) return;
+
+    const withoutDate = milestones.filter(m => !m.date);
+    const withDate = milestones.filter(m => m.date);
+
+    const draggedIdxInWithout = withoutDate.findIndex(m => m.id === draggedId);
+    const targetIdxInWithout = withoutDate.findIndex(m => m.id === targetId);
+
+    if (draggedIdxInWithout === -1 || targetIdxInWithout === -1) return;
+
+    const reordered = [...withoutDate];
+    const [removed] = reordered.splice(draggedIdxInWithout, 1);
+    reordered.splice(targetIdxInWithout, 0, removed);
+
+    const withUpdatedPositions = reordered.map((m, idx) => ({ ...m, position: idx + 1 }));
+
+    setMilestones(sortMilestones([...withUpdatedPositions, ...withDate]));
+
+    setDraggedId(null);
+  };
+
+  const handleMilestoneDragEnd = () => {
+    setDraggedId(null);
   };
 
   const priorities = [
@@ -648,36 +759,118 @@ function SubCategoryModal({ subcategory, onClose }) {
             <div>
               <div className="flex items-center justify-between mb-2">
                 <label className="block text-sm font-medium text-primary">Jalons</label>
-                <button onClick={addMilestone} className="text-xs text-accent hover:underline">
-                  + Jalon
-                </button>
+                {!isAddingMilestone && (
+                  <button onClick={addMilestone} className="text-xs text-accent hover:underline">
+                    + Jalon
+                  </button>
+                )}
               </div>
-              {milestones.length === 0 ? (
+              {isAddingMilestone && (
+                <div className="p-3 bg-card-hover rounded mb-3 border border-accent">
+                  <div className="flex items-center gap-2 mb-2">
+                    <input
+                      type="checkbox"
+                      checked={false}
+                      disabled
+                      className="w-4 h-4 rounded border-std text-accent opacity-50"
+                    />
+                    <input
+                      type="text"
+                      value={newMilestoneTitle}
+                      onChange={e => setNewMilestoneTitle(e.target.value)}
+                      onKeyDown={handleNewMilestoneKeyDown}
+                      autoFocus
+                      className="flex-1 px-2 py-1 text-sm bg-card border border-std rounded focus:outline-none focus:border-accent text-primary"
+                      placeholder="Nom du jalon (Entrée pour valider)..."
+                    />
+                    <button
+                      onClick={cancelAddMilestone}
+                      className="p-1 text-muted hover:text-urgent rounded"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-2 ml-6">
+                    <span className="text-xs text-muted">Date:</span>
+                    <input
+                      type="date"
+                      value={newMilestoneDate}
+                      onChange={e => setNewMilestoneDate(e.target.value)}
+                      className="px-2 py-1 text-xs bg-card border border-std rounded focus:outline-none focus:border-accent text-primary"
+                    />
+                    <button
+                      onClick={saveNewMilestone}
+                      className="px-2 py-1 text-xs bg-accent text-white rounded hover:opacity-90"
+                    >
+                      Ajouter
+                    </button>
+                  </div>
+                </div>
+              )}
+              {milestones.length === 0 && !isAddingMilestone ? (
                 <p className="text-sm text-muted">Aucun jalon</p>
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {milestones.map(milestone => (
                     <div
                       key={milestone.id}
-                      className="flex items-center gap-2 p-2 bg-card-hover rounded"
+                      draggable={!milestone.date}
+                      onDragStart={e =>
+                        !milestone.date && handleMilestoneDragStart(e, milestone.id)
+                      }
+                      onDragOver={e => !milestone.date && handleMilestoneDragOver(e, milestone.id)}
+                      onDrop={e => !milestone.date && handleMilestoneDrop(e, milestone.id)}
+                      onDragEnd={handleMilestoneDragEnd}
+                      className={`p-3 bg-card-hover rounded transition-all ${
+                        milestone.done ? 'opacity-60' : ''
+                      } ${
+                        draggedId === milestone.id
+                          ? 'border-2 border-accent shadow-lg opacity-75'
+                          : !milestone.date
+                            ? 'cursor-grab hover:border hover:border-accent'
+                            : ''
+                      }`}
                     >
-                      <input
-                        type="checkbox"
-                        checked={milestone.done}
-                        onChange={() => toggleMilestone(milestone.id)}
-                        className="w-4 h-4 rounded border-std text-accent"
-                      />
-                      <span
-                        className={`flex-1 text-sm ${milestone.done ? 'line-through text-muted' : 'text-primary'}`}
-                      >
-                        {milestone.title}
-                      </span>
-                      <button
-                        onClick={() => deleteMilestone(milestone.id)}
-                        className="p-1 text-muted hover:text-urgent rounded"
-                      >
-                        <Trash2 size={14} />
-                      </button>
+                      <div className="flex items-center gap-2 mb-2">
+                        {!milestone.date && (
+                          <GripVertical size={16} className="text-muted flex-shrink-0" />
+                        )}
+                        <input
+                          type="checkbox"
+                          checked={milestone.done}
+                          onChange={() => toggleMilestone(milestone.id)}
+                          className="w-4 h-4 rounded border-std text-accent"
+                        />
+                        <input
+                          type="text"
+                          value={milestone.title}
+                          onChange={e => updateMilestoneTitle(milestone.id, e.target.value)}
+                          className={`flex-1 px-2 py-1 text-sm bg-card border border-std rounded focus:outline-none focus:border-accent ${
+                            milestone.done ? 'line-through text-muted' : 'text-primary'
+                          }`}
+                          placeholder="Nom du jalon..."
+                        />
+                        <button
+                          onClick={() => deleteMilestone(milestone.id)}
+                          className="p-1 text-muted hover:text-urgent rounded"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                      <div className="flex items-center gap-2 ml-6">
+                        <span className="text-xs text-muted">Date:</span>
+                        <input
+                          type="date"
+                          value={milestone.date || ''}
+                          onChange={e => updateMilestoneDate(milestone.id, e.target.value)}
+                          className="px-2 py-1 text-xs bg-card border border-std rounded focus:outline-none focus:border-accent text-primary"
+                        />
+                        {milestone.date && (
+                          <span className="text-xs text-muted">
+                            ({new Date(milestone.date).toLocaleDateString('fr-FR')})
+                          </span>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>

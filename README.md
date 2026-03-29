@@ -161,10 +161,10 @@ L'application utilise **localStorage** pour stocker les données en JSON. Voici 
 
 | Clé                          | Description                    |
 | ---------------------------- | ------------------------------ |
-| `mytrello_db`                | Base de données principale     |
-| `mytrello_theme`             | Thème sélectionné (light/dark) |
-| `mytrello_library_favorites` | Favoris de la bibliothèque     |
-| `mytrello_templates`         | Templates personnalisés        |
+| `d-projet_db`                | Base de données principale     |
+| `d-projet-theme`             | Thème sélectionné (light/dark) |
+| `d-projet_library_favorites` | Favoris de la bibliothèque     |
+| `d-projet_templates`         | Templates personnalisés        |
 
 ## Import / Export de templates
 

@@ -26,15 +26,15 @@ Les tokens ne sont **jamais** stockés dans SQLite, localStorage ou en fichier t
 const Store = require('electron-store');
 
 const store = new Store({
-  name: 'mytrello-auth',
-  encryptionKey: process.env.ENCRYPTION_KEY,  // Clé 32 bytes depuis .env
+  name: 'd-projet-auth',
+  encryptionKey: process.env.ENCRYPTION_KEY, // Clé 32 bytes depuis .env
   clearInvalidConfig: true,
 });
 
 // Écriture
-store.set('microsoft.accessToken',  accessToken);
+store.set('microsoft.accessToken', accessToken);
 store.set('microsoft.refreshToken', refreshToken);
-store.set('microsoft.expiresAt',    expiresAt);
+store.set('microsoft.expiresAt', expiresAt);
 
 // Lecture
 const token = store.get('microsoft.accessToken');
@@ -47,17 +47,17 @@ store.delete('microsoft.expiresAt');
 
 ### 2.2 Données stockées dans electron-store (chiffré)
 
-| Clé | Contenu | Sensibilité |
-|---|---|---|
-| `microsoft.accessToken` | Token d'accès Graph API | 🔴 Critique |
-| `microsoft.refreshToken` | Token de refresh Microsoft | 🔴 Critique |
-| `microsoft.expiresAt` | Date d'expiration du token | 🟡 Faible |
-| `google.accessToken` | Token d'accès Gmail API | 🔴 Critique |
-| `google.refreshToken` | Token de refresh Google | 🔴 Critique |
-| `google.expiresAt` | Date d'expiration du token | 🟡 Faible |
-| `ews.password` | Mot de passe Exchange on-premise | 🔴 Critique |
-| `ews.username` | Nom d'utilisateur Exchange | 🟠 Moyen |
-| `ews.serverUrl` | URL serveur Exchange | 🟠 Moyen |
+| Clé                      | Contenu                          | Sensibilité |
+| ------------------------ | -------------------------------- | ----------- |
+| `microsoft.accessToken`  | Token d'accès Graph API          | 🔴 Critique |
+| `microsoft.refreshToken` | Token de refresh Microsoft       | 🔴 Critique |
+| `microsoft.expiresAt`    | Date d'expiration du token       | 🟡 Faible   |
+| `google.accessToken`     | Token d'accès Gmail API          | 🔴 Critique |
+| `google.refreshToken`    | Token de refresh Google          | 🔴 Critique |
+| `google.expiresAt`       | Date d'expiration du token       | 🟡 Faible   |
+| `ews.password`           | Mot de passe Exchange on-premise | 🔴 Critique |
+| `ews.username`           | Nom d'utilisateur Exchange       | 🟠 Moyen    |
+| `ews.serverUrl`          | URL serveur Exchange             | 🟠 Moyen    |
 
 ### 2.3 Génération de la clé de chiffrement
 
@@ -141,13 +141,13 @@ mainWindow.webContents.session.webRequest.onHeadersReceived((details, callback) 
       ...details.responseHeaders,
       'Content-Security-Policy': [
         "default-src 'self';" +
-        "script-src 'self';" +
-        "style-src 'self' 'unsafe-inline';" +  // TailwindCSS nécessite unsafe-inline
-        "img-src 'self' data: https:;" +
-        "connect-src 'self' https://graph.microsoft.com https://www.googleapis.com;" +
-        "font-src 'self';"
-      ]
-    }
+          "script-src 'self';" +
+          "style-src 'self' 'unsafe-inline';" + // TailwindCSS nécessite unsafe-inline
+          "img-src 'self' data: https:;" +
+          "connect-src 'self' https://graph.microsoft.com https://www.googleapis.com;" +
+          "font-src 'self';",
+      ],
+    },
   });
 });
 ```
@@ -158,12 +158,12 @@ mainWindow.webContents.session.webRequest.onHeadersReceived((details, callback) 
 // electron.js
 const mainWindow = new BrowserWindow({
   webPreferences: {
-    nodeIntegration: false,          // ❌ Désactivé — sécurité
-    contextIsolation: true,          // ✅ Activé — isolation contexte
-    enableRemoteModule: false,       // ❌ Désactivé — déprécié et risqué
-    sandbox: true,                   // ✅ Activé — sandbox renderer
+    nodeIntegration: false, // ❌ Désactivé — sécurité
+    contextIsolation: true, // ✅ Activé — isolation contexte
+    enableRemoteModule: false, // ❌ Désactivé — déprécié et risqué
+    sandbox: true, // ✅ Activé — sandbox renderer
     preload: path.join(__dirname, 'preload.js'),
-  }
+  },
 });
 ```
 
@@ -173,34 +173,75 @@ const mainWindow = new BrowserWindow({
 // preload.js — Seuls les canaux listés ici sont accessibles depuis React
 const ALLOWED_CHANNELS = [
   // Base de données
-  'db:boards:getAll', 'db:boards:create', 'db:boards:update', 'db:boards:delete',
-  'db:columns:getAll', 'db:columns:create', 'db:columns:update', 'db:columns:delete',
-  'db:cards:getAll', 'db:cards:create', 'db:cards:update', 'db:cards:delete',
-  'db:cards:move', 'db:cards:archive',
-  'db:categories:getAll', 'db:categories:create', 'db:categories:update',
-  'db:categories:delete', 'db:categories:move',
-  'db:subcategories:getAll', 'db:subcategories:create', 'db:subcategories:update',
-  'db:subcategories:delete', 'db:subcategories:move',
-  'db:library:getAll', 'db:library:save', 'db:library:delete',
-  'db:settings:get', 'db:settings:set',
+  'db:boards:getAll',
+  'db:boards:create',
+  'db:boards:update',
+  'db:boards:delete',
+  'db:columns:getAll',
+  'db:columns:create',
+  'db:columns:update',
+  'db:columns:delete',
+  'db:cards:getAll',
+  'db:cards:create',
+  'db:cards:update',
+  'db:cards:delete',
+  'db:cards:move',
+  'db:cards:archive',
+  'db:categories:getAll',
+  'db:categories:create',
+  'db:categories:update',
+  'db:categories:delete',
+  'db:categories:move',
+  'db:subcategories:getAll',
+  'db:subcategories:create',
+  'db:subcategories:update',
+  'db:subcategories:delete',
+  'db:subcategories:move',
+  'db:library:getAll',
+  'db:library:save',
+  'db:library:delete',
+  'db:settings:get',
+  'db:settings:set',
   // Outlook
-  'outlook:auth:connect', 'outlook:auth:disconnect', 'outlook:auth:status',
-  'outlook:emails:list', 'outlook:emails:get', 'outlook:emails:move',
-  'outlook:emails:category', 'outlook:emails:markRead', 'outlook:emails:delete',
-  'outlook:emails:reply', 'outlook:emails:forward',
-  'outlook:folders:list', 'outlook:categories:list',
+  'outlook:auth:connect',
+  'outlook:auth:disconnect',
+  'outlook:auth:status',
+  'outlook:emails:list',
+  'outlook:emails:get',
+  'outlook:emails:move',
+  'outlook:emails:category',
+  'outlook:emails:markRead',
+  'outlook:emails:delete',
+  'outlook:emails:reply',
+  'outlook:emails:forward',
+  'outlook:folders:list',
+  'outlook:categories:list',
   // Calendrier
-  'calendar:tags:list', 'calendar:events:getByTags', 'calendar:events:getForPeriod',
+  'calendar:tags:list',
+  'calendar:events:getByTags',
+  'calendar:events:getForPeriod',
   // Gmail
-  'gmail:auth:connect', 'gmail:auth:disconnect', 'gmail:auth:status',
-  'gmail:emails:list', 'gmail:emails:get', 'gmail:emails:addLabel',
-  'gmail:emails:removeLabel', 'gmail:emails:archive', 'gmail:emails:delete',
-  'gmail:emails:reply', 'gmail:emails:forward', 'gmail:labels:list',
+  'gmail:auth:connect',
+  'gmail:auth:disconnect',
+  'gmail:auth:status',
+  'gmail:emails:list',
+  'gmail:emails:get',
+  'gmail:emails:addLabel',
+  'gmail:emails:removeLabel',
+  'gmail:emails:archive',
+  'gmail:emails:delete',
+  'gmail:emails:reply',
+  'gmail:emails:forward',
+  'gmail:labels:list',
   // Sync
-  'sync:run', 'sync:history:get', 'sync:mapping:getAll',
-  'sync:mapping:create', 'sync:mapping:delete',
+  'sync:run',
+  'sync:history:get',
+  'sync:mapping:getAll',
+  'sync:mapping:create',
+  'sync:mapping:delete',
   // Export/Import
-  'data:export', 'data:import',
+  'data:export',
+  'data:import',
 ];
 
 contextBridge.exposeInMainWorld('electron', {
@@ -209,7 +250,7 @@ contextBridge.exposeInMainWorld('electron', {
       throw new Error(`Canal IPC non autorisé : ${channel}`);
     }
     return ipcRenderer.invoke(channel, data);
-  }
+  },
 });
 ```
 
@@ -248,9 +289,9 @@ function validateCardData(data) {
     throw new Error('VALIDATION_FAILED: priority invalide');
   }
   return {
-    title:     data.title.trim().substring(0, 500),  // Limiter la longueur
+    title: data.title.trim().substring(0, 500), // Limiter la longueur
     column_id: data.column_id,
-    priority:  data.priority || 'normal',
+    priority: data.priority || 'normal',
   };
 }
 ```
@@ -276,15 +317,15 @@ function validateCardData(data) {
 // ✅ Logger des données anonymisées
 logger.info('Email reçu', {
   source: 'outlook',
-  emailId: hashId(email.id),       // Hash — jamais l'ID réel
-  hasAttachments: email.attachments.length > 0,  // Booléen — jamais le contenu
+  emailId: hashId(email.id), // Hash — jamais l'ID réel
+  hasAttachments: email.attachments.length > 0, // Booléen — jamais le contenu
 });
 
 // ❌ Ne jamais logger
 logger.info('Email reçu', {
-  subject: email.subject,   // ❌ Contenu potentiellement sensible
-  body: email.body,         // ❌ Contenu privé
-  token: accessToken,       // ❌ Token d'accès
+  subject: email.subject, // ❌ Contenu potentiellement sensible
+  body: email.body, // ❌ Contenu privé
+  token: accessToken, // ❌ Token d'accès
 });
 ```
 
@@ -307,12 +348,12 @@ npm audit --json > audit-report.json
 
 ### 7.2 Seuils acceptables
 
-| Niveau | Action requise |
-|---|---|
-| **Critical** | Corriger immédiatement avant tout commit |
-| **High** | Corriger dans les 48h |
+| Niveau       | Action requise                                 |
+| ------------ | ---------------------------------------------- |
+| **Critical** | Corriger immédiatement avant tout commit       |
+| **High**     | Corriger dans les 48h                          |
 | **Moderate** | Documenter et corriger dans le sprint en cours |
-| **Low** | Documenter et planifier |
+| **Low**      | Documenter et planifier                        |
 
 ### 7.3 Dépendances à surveiller en priorité
 
@@ -347,4 +388,4 @@ electron                      → Framework desktop
 
 ---
 
-*D-ProjeT — Sécurité — 23 février 2026*
+_D-ProjeT — Sécurité — 23 février 2026_

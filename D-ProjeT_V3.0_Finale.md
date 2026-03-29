@@ -1,4 +1,5 @@
 # 📋 D-ProjeT — Version 3.0 (Version Finale)
+
 > **Objectif** : Synchronisation complète + performances + sécurité + tests automatisés
 > **Prérequis** : V2.2 validée et tous les tests V2.2 passés
 > **Basé sur** : Phase 9 + Phase 10 complète du plan de développement
@@ -7,24 +8,24 @@
 
 ## 🎯 Périmètre V3.0
 
-| Nouveautés V3.0 | Statut |
-|---|---|
-| Synchronisation tags Outlook ↔ étiquettes D-ProjeT | ✅ Inclus |
-| Synchronisation libellés Gmail ↔ étiquettes D-ProjeT | ✅ Inclus |
-| Synchronisation tags calendrier Outlook ↔ étiquettes D-ProjeT | ✅ Inclus |
-| Configuration du mapping tags (interface dédiée) | ✅ Inclus |
-| Synchronisation périodique configurable | ✅ Inclus |
-| Virtualisation des listes longues | ✅ Inclus |
-| Lazy loading des emails | ✅ Inclus |
-| Mise en cache intelligente | ✅ Inclus |
-| Optimisation des requêtes SQLite | ✅ Inclus |
-| Tests unitaires automatisés (Jest) | ✅ Inclus |
-| Tests de composants (React Testing Library) | ✅ Inclus |
-| Tests end-to-end (Playwright) | ✅ Inclus |
-| Chiffrement des tokens OAuth | ✅ Inclus (renforcé) |
-| Audit et validation des entrées | ✅ Inclus |
-| Export / Import des données complètes | ✅ Inclus |
-| Changelog intégré à l'application | ✅ Inclus |
+| Nouveautés V3.0                                               | Statut               |
+| ------------------------------------------------------------- | -------------------- |
+| Synchronisation tags Outlook ↔ étiquettes D-ProjeT            | ✅ Inclus            |
+| Synchronisation libellés Gmail ↔ étiquettes D-ProjeT          | ✅ Inclus            |
+| Synchronisation tags calendrier Outlook ↔ étiquettes D-ProjeT | ✅ Inclus            |
+| Configuration du mapping tags (interface dédiée)              | ✅ Inclus            |
+| Synchronisation périodique configurable                       | ✅ Inclus            |
+| Virtualisation des listes longues                             | ✅ Inclus            |
+| Lazy loading des emails                                       | ✅ Inclus            |
+| Mise en cache intelligente                                    | ✅ Inclus            |
+| Optimisation des requêtes SQLite                              | ✅ Inclus            |
+| Tests unitaires automatisés (Jest)                            | ✅ Inclus            |
+| Tests de composants (React Testing Library)                   | ✅ Inclus            |
+| Tests end-to-end (Playwright)                                 | ✅ Inclus            |
+| Chiffrement des tokens OAuth                                  | ✅ Inclus (renforcé) |
+| Audit et validation des entrées                               | ✅ Inclus            |
+| Export / Import des données complètes                         | ✅ Inclus            |
+| Changelog intégré à l'application                             | ✅ Inclus            |
 
 ---
 
@@ -99,9 +100,9 @@ CREATE TABLE tag_mapping (
   id              INTEGER PRIMARY KEY AUTOINCREMENT,
   source          TEXT NOT NULL,    -- 'outlook' | 'gmail'
   source_tag      TEXT NOT NULL,    -- nom tag côté messagerie
-  mytrello_label  TEXT NOT NULL,    -- étiquette D-ProjeT correspondante
+  d_projet_label  TEXT NOT NULL,    -- étiquette D-ProjeT correspondante
   priority        TEXT,             -- priorité D-ProjeT associée
-  direction       TEXT DEFAULT 'both', -- 'to_mytrello' | 'to_messaging' | 'both'
+  direction       TEXT DEFAULT 'both', -- 'to_d_projet' | 'to_messaging' | 'both'
   created_at      DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -128,7 +129,7 @@ CREATE TABLE sync_history (
 INSERT INTO settings (key, value) VALUES
   ('sync_enabled',          'true'),
   ('sync_interval_min',     '10'),
-  ('sync_conflict_rule',    'mytrello'), -- 'mytrello' | 'messaging'
+  ('sync_conflict_rule',    'd-projet'), -- 'd-projet' | 'messaging'
   ('sync_calendar_enabled', 'true'),     -- sync calendrier activée
   ('cache_ttl_min',         '5'),
   ('last_sync_outlook',     ''),
@@ -282,6 +283,7 @@ INSERT INTO settings (key, value) VALUES
 ## 🧪 Tests de validation V3.0
 
 ### TEST V3.0-01 — Configuration mapping tags
+
 ```
 🧪 Créer la règle : Catégorie Outlook "Urgent" ↔ Étiquette D-ProjeT "Urgent" (bidirectionnel)
 
@@ -296,6 +298,7 @@ INSERT INTO settings (key, value) VALUES
 ```
 
 ### TEST V3.0-02 — Synchronisation Outlook → D-ProjeT
+
 ```
 🧪 Appliquer la catégorie "Urgent" sur un email dans Outlook
    (email déjà lié à une carte D-ProjeT)
@@ -306,6 +309,7 @@ INSERT INTO settings (key, value) VALUES
 ```
 
 ### TEST V3.0-02b — Synchronisation Calendrier → D-ProjeT
+
 ```
 🧪 Créer dans Outlook un événement calendrier avec le tag "Projets 400kV"
    et le lier à la carte "Poste 400kV Lyon-Est" dans D-ProjeT
@@ -317,6 +321,7 @@ INSERT INTO settings (key, value) VALUES
 ```
 
 ### TEST V3.0-03 — Synchronisation D-ProjeT → Outlook
+
 ```
 🧪 Changer l'étiquette d'une carte en "Urgent" dans D-ProjeT
    (carte liée à un email Outlook)
@@ -328,6 +333,7 @@ INSERT INTO settings (key, value) VALUES
 ```
 
 ### TEST V3.0-04 — Résolution de conflits
+
 ```
 🧪 Configurer "D-ProjeT a la priorité"
    Modifier simultanément une étiquette dans D-ProjeT ET dans Outlook
@@ -338,6 +344,7 @@ INSERT INTO settings (key, value) VALUES
 ```
 
 ### TEST V3.0-05 — Performances listes longues
+
 ```
 🧪 Charger un tableau avec 100 cartes,
    chaque carte avec 10 catégories et 5 sous-catégories (5000 éléments)
@@ -355,6 +362,7 @@ INSERT INTO settings (key, value) VALUES
 ```
 
 ### TEST V3.0-06 — Tests automatisés (couverture)
+
 ```
 🧪 Lancer la suite de tests Jest
 
@@ -374,6 +382,7 @@ INSERT INTO settings (key, value) VALUES
 ```
 
 ### TEST V3.0-07 — Sécurité
+
 ```
 🧪 Lancer npm audit
 
@@ -392,6 +401,7 @@ INSERT INTO settings (key, value) VALUES
 ```
 
 ### TEST V3.0-08 — Export / Import des données
+
 ```
 🧪 Exporter l'intégralité des données en JSON
 
@@ -412,6 +422,7 @@ INSERT INTO settings (key, value) VALUES
 ```
 
 ### TEST V3.0-09 — Test de robustesse longue durée
+
 ```
 🧪 Utiliser l'application pendant 8 heures en continu
    (D-ProjeT + Outlook + Gmail actifs)
@@ -430,6 +441,7 @@ INSERT INTO settings (key, value) VALUES
 ```
 
 ### TEST V3.0-10 — Test de régression finale
+
 ```
 🧪 Rejouer TOUS les tests des versions précédentes :
    10 tests MVP + 10 tests V1.1 + 10 tests V1.2 +
@@ -445,33 +457,34 @@ INSERT INTO settings (key, value) VALUES
 
 ## 📊 Récapitulatif V3.0 — Version Finale
 
-| Critère | Détail |
-|---|---|
-| **Phases couvertes** | Phase 9 + Phase 10 complètes |
-| **Tâches de développement** | 58 tâches |
-| **Tests de validation** | 10 tests V3.0 + 50 tests régression |
-| **Synchronisation** | ✅ Outlook + Gmail ↔ D-ProjeT (bidirectionnel) |
-| **Performances** | ✅ Virtualisées + mises en cache |
-| **Tests automatisés** | ✅ Unitaires + composants + e2e |
-| **Sécurité** | ✅ Renforcée |
-| **Export / Import** | ✅ JSON complet |
-| **Connexion internet** | ✅ Requise pour messagerie uniquement |
-| **Plateforme** | Desktop (Electron) + Web (React) |
+| Critère                     | Détail                                         |
+| --------------------------- | ---------------------------------------------- |
+| **Phases couvertes**        | Phase 9 + Phase 10 complètes                   |
+| **Tâches de développement** | 58 tâches                                      |
+| **Tests de validation**     | 10 tests V3.0 + 50 tests régression            |
+| **Synchronisation**         | ✅ Outlook + Gmail ↔ D-ProjeT (bidirectionnel) |
+| **Performances**            | ✅ Virtualisées + mises en cache               |
+| **Tests automatisés**       | ✅ Unitaires + composants + e2e                |
+| **Sécurité**                | ✅ Renforcée                                   |
+| **Export / Import**         | ✅ JSON complet                                |
+| **Connexion internet**      | ✅ Requise pour messagerie uniquement          |
+| **Plateforme**              | Desktop (Electron) + Web (React)               |
 
 ---
 
 ## 🏁 Récapitulatif global du projet D-ProjeT
 
-| Version | Objectif principal | Tâches | Tests |
-|---|---|---|---|
-| **MVP 0.1** | Utilisation personnelle immédiate | 35 | 10 |
-| **V1.1** | Drag & drop + voix de base | 38 | 10 + 10 régression |
-| **V1.2** | Bibliothèque + voix avancée + UI | 52 | 10 + 20 régression |
-| **V2.0** | Intégration Outlook | 44 | 10 + 30 régression |
-| **V2.1** | Intégration Gmail + cohabitation | 42 | 10 + 40 régression |
-| **V2.2** | Calendrier Outlook + filtrage par tags | 48 | 11 + 50 régression |
-| **V3.0** | Sync + perf + tests + sécurité | 60 | 10 + 61 régression |
-| **TOTAL** | | **319 tâches** | **71 tests nouveaux + 211 régression** |
+| Version     | Objectif principal                     | Tâches         | Tests                                  |
+| ----------- | -------------------------------------- | -------------- | -------------------------------------- |
+| **MVP 0.1** | Utilisation personnelle immédiate      | 35             | 10                                     |
+| **V1.1**    | Drag & drop + voix de base             | 38             | 10 + 10 régression                     |
+| **V1.2**    | Bibliothèque + voix avancée + UI       | 52             | 10 + 20 régression                     |
+| **V2.0**    | Intégration Outlook                    | 44             | 10 + 30 régression                     |
+| **V2.1**    | Intégration Gmail + cohabitation       | 42             | 10 + 40 régression                     |
+| **V2.2**    | Calendrier Outlook + filtrage par tags | 48             | 11 + 50 régression                     |
+| **V3.0**    | Sync + perf + tests + sécurité         | 60             | 10 + 61 régression                     |
+| **TOTAL**   |                                        | **319 tâches** | **71 tests nouveaux + 211 régression** |
 
 ---
-*D-ProjeT — Version 3.0 Finale — 23 février 2026*
+
+_D-ProjeT — Version 3.0 Finale — 23 février 2026_

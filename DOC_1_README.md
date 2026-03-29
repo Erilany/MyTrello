@@ -6,14 +6,14 @@
 
 ## 📋 Prérequis système
 
-| Outil | Version minimale | Vérification |
-|---|---|---|
-| **Node.js** | 20.x LTS | `node --version` |
-| **npm** | 10.x | `npm --version` |
-| **Git** | 2.40+ | `git --version` |
-| **Windows** | 10 / 11 (64 bits) | — |
-| **Electron** | Installé via npm | — |
-| **SQLite** | Installé via npm (better-sqlite3) | — |
+| Outil        | Version minimale                  | Vérification     |
+| ------------ | --------------------------------- | ---------------- |
+| **Node.js**  | 20.x LTS                          | `node --version` |
+| **npm**      | 10.x                              | `npm --version`  |
+| **Git**      | 2.40+                             | `git --version`  |
+| **Windows**  | 10 / 11 (64 bits)                 | —                |
+| **Electron** | Installé via npm                  | —                |
+| **SQLite**   | Installé via npm (better-sqlite3) | —                |
 
 ---
 
@@ -22,8 +22,8 @@
 ### 1. Cloner le dépôt
 
 ```bash
-git clone https://github.com/votre-org/mytrello.git
-cd mytrello
+git clone https://github.com/votre-org/D-ProjeT.git
+cd D-ProjeT
 ```
 
 ### 2. Installer les dépendances
@@ -56,28 +56,28 @@ npm run dev
 
 ## 📦 Scripts disponibles
 
-| Commande | Description |
-|---|---|
-| `npm run dev` | Lance Electron + React en mode développement (hot reload) |
-| `npm run build` | Compile React pour la production |
-| `npm run electron` | Lance uniquement Electron (sans hot reload) |
-| `npm run db:init` | Initialise la base de données SQLite |
-| `npm run db:reset` | Réinitialise la base de données (⚠️ supprime toutes les données) |
-| `npm run db:migrate` | Applique les migrations en attente |
-| `npm test` | Lance les tests unitaires (Jest) |
-| `npm run test:watch` | Tests unitaires en mode watch |
-| `npm run test:e2e` | Lance les tests end-to-end (Playwright) |
-| `npm run test:coverage` | Rapport de couverture de tests |
-| `npm run lint` | Vérifie le code (ESLint) |
-| `npm run lint:fix` | Corrige automatiquement les erreurs ESLint |
-| `npm run format` | Formate le code (Prettier) |
+| Commande                | Description                                                      |
+| ----------------------- | ---------------------------------------------------------------- |
+| `npm run dev`           | Lance Electron + React en mode développement (hot reload)        |
+| `npm run build`         | Compile React pour la production                                 |
+| `npm run electron`      | Lance uniquement Electron (sans hot reload)                      |
+| `npm run db:init`       | Initialise la base de données SQLite                             |
+| `npm run db:reset`      | Réinitialise la base de données (⚠️ supprime toutes les données) |
+| `npm run db:migrate`    | Applique les migrations en attente                               |
+| `npm test`              | Lance les tests unitaires (Jest)                                 |
+| `npm run test:watch`    | Tests unitaires en mode watch                                    |
+| `npm run test:e2e`      | Lance les tests end-to-end (Playwright)                          |
+| `npm run test:coverage` | Rapport de couverture de tests                                   |
+| `npm run lint`          | Vérifie le code (ESLint)                                         |
+| `npm run lint:fix`      | Corrige automatiquement les erreurs ESLint                       |
+| `npm run format`        | Formate le code (Prettier)                                       |
 
 ---
 
 ## 🏗️ Structure du projet
 
 ```
-mytrello/
+D-ProjeT/
 ├── .env.example              → Template variables d'environnement
 ├── .eslintrc.js              → Configuration ESLint
 ├── .prettierrc               → Configuration Prettier
@@ -140,38 +140,38 @@ mytrello/
 
 ## 🔧 Stack technique
 
-| Couche | Technologie | Version |
-|---|---|---|
-| Desktop | Electron | ^28.x |
-| UI | React | ^18.x |
-| Styles | TailwindCSS | ^3.x |
-| Drag & Drop | react-beautiful-dnd | ^13.x |
-| Calendrier | react-big-calendar | ^1.x |
-| Dates | date-fns | ^3.x |
-| Animations | framer-motion | ^10.x |
-| Voix | Web Speech API | Native |
-| Base de données | better-sqlite3 | ^9.x |
-| Auth Microsoft | @azure/msal-node | ^2.x |
-| Graph API | @microsoft/microsoft-graph-client | ^3.x |
-| EWS (fallback) | ews-javascript-api | ^0.11.x |
-| Auth Google | google-auth-library | ^9.x |
-| Gmail API | googleapis | ^128.x |
-| Stockage sécurisé | electron-store | ^8.x |
-| Tests unitaires | Jest | ^29.x |
-| Tests composants | @testing-library/react | ^14.x |
-| Tests e2e | Playwright | ^1.x |
+| Couche            | Technologie                       | Version |
+| ----------------- | --------------------------------- | ------- |
+| Desktop           | Electron                          | ^28.x   |
+| UI                | React                             | ^18.x   |
+| Styles            | TailwindCSS                       | ^3.x    |
+| Drag & Drop       | react-beautiful-dnd               | ^13.x   |
+| Calendrier        | react-big-calendar                | ^1.x    |
+| Dates             | date-fns                          | ^3.x    |
+| Animations        | framer-motion                     | ^10.x   |
+| Voix              | Web Speech API                    | Native  |
+| Base de données   | better-sqlite3                    | ^9.x    |
+| Auth Microsoft    | @azure/msal-node                  | ^2.x    |
+| Graph API         | @microsoft/microsoft-graph-client | ^3.x    |
+| EWS (fallback)    | ews-javascript-api                | ^0.11.x |
+| Auth Google       | google-auth-library               | ^9.x    |
+| Gmail API         | googleapis                        | ^128.x  |
+| Stockage sécurisé | electron-store                    | ^8.x    |
+| Tests unitaires   | Jest                              | ^29.x   |
+| Tests composants  | @testing-library/react            | ^14.x   |
+| Tests e2e         | Playwright                        | ^1.x    |
 
 ---
 
 ## 🌿 Branches Git
 
-| Branche | Rôle |
-|---|---|
-| `main` | Code stable — releases uniquement |
-| `develop` | Branche d'intégration principale |
-| `feature/xxx` | Développement d'une fonctionnalité |
-| `fix/xxx` | Correction de bug |
-| `release/vX.X` | Préparation d'une release |
+| Branche        | Rôle                               |
+| -------------- | ---------------------------------- |
+| `main`         | Code stable — releases uniquement  |
+| `develop`      | Branche d'intégration principale   |
+| `feature/xxx`  | Développement d'une fonctionnalité |
+| `fix/xxx`      | Correction de bug                  |
+| `release/vX.X` | Préparation d'une release          |
 
 ---
 
@@ -190,4 +190,5 @@ mytrello/
 En cas de problème d'installation ou de configuration, consulter `SETUP_ENVIRONNEMENT.md` et `GESTION_ERREURS.md`.
 
 ---
-*D-ProjeT — README — 23 février 2026*
+
+_D-ProjeT — README — 23 février 2026_
