@@ -19,6 +19,7 @@ import {
   Database,
   Library,
   Briefcase,
+  ShoppingCart,
 } from 'lucide-react';
 import { loadChaptersOrder } from '../../data/ChaptersData';
 import { loadGMRData } from '../../data/GMRData';
@@ -38,6 +39,9 @@ function SearchPanel() {
     cards,
     subcategories,
     categories,
+    loadBoard,
+    setSelectedCommande,
+    setActiveTabCommande,
   } = useApp();
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
@@ -52,7 +56,32 @@ function SearchPanel() {
     return saved ? JSON.parse(saved) : [];
   });
 
+  const [commandes, setCommandes] = useState(() => {
+    const allCommandes = [];
+    const savedDb = localStorage.getItem('d-projet_db');
+    if (savedDb) {
+      const db = JSON.parse(savedDb);
+      if (db.boards) {
+        db.boards.forEach(board => {
+          const boardCommandes = localStorage.getItem(`board-${board.id}-commandes`);
+          if (boardCommandes) {
+            const parsed = JSON.parse(boardCommandes);
+            parsed.forEach(cmd => {
+              allCommandes.push({ ...cmd, boardId: board.id, boardName: board.title });
+            });
+          }
+        });
+      }
+    }
+    return allCommandes;
+  });
+
+  const loadedRef = React.useRef(false);
+
   useEffect(() => {
+    if (loadedRef.current) return;
+    loadedRef.current = true;
+
     setChapters(loadChaptersOrder());
     setGmrs(loadGMRData());
     setZones(loadZonesData());
@@ -61,6 +90,23 @@ function SearchPanel() {
     if (savedContracts) {
       setContracts(JSON.parse(savedContracts));
     }
+    const allCommandes = [];
+    const savedDb = localStorage.getItem('d-projet_db');
+    if (savedDb) {
+      const db = JSON.parse(savedDb);
+      if (db.boards) {
+        db.boards.forEach(board => {
+          const boardCommandes = localStorage.getItem(`board-${board.id}-commandes`);
+          if (boardCommandes) {
+            const parsed = JSON.parse(boardCommandes);
+            parsed.forEach(cmd => {
+              allCommandes.push({ ...cmd, boardId: board.id, boardName: board.title });
+            });
+          }
+        });
+      }
+    }
+    setCommandes(allCommandes);
   }, []);
 
   const loadFromStorage = () => {
@@ -121,6 +167,7 @@ function SearchPanel() {
       gmrs: [],
       zones: [],
       contracts: [],
+      commandes: [],
     };
 
     allBoards.forEach(board => {
@@ -234,6 +281,39 @@ function SearchPanel() {
       }
     });
 
+    // Recherche dans les commandes
+    console.log('[Search] Recherche commandes avec query:', q, 'total:', commandes.length);
+    if (commandes[0]) {
+      console.log('[Search] Sample full:', JSON.stringify(commandes[0]));
+    }
+    commandes.forEach((commande, idx) => {
+      const donnees = commande.donnees || {};
+      const detail = commande.detail || {};
+      const commandeData = detail.commande || {};
+      const numero =
+        donnees.numeroCommande || donnees.numero || commandeData.numeroCommande || commande.title;
+      const marche = donnees.marcheCadre || donnees.marche || commandeData.marcheCadre || '';
+      const fournisseur = donnees.fournisseur || commandeData.fournisseur || '';
+      const matchNumero = searchInText(numero, q);
+      const matchMarche = searchInText(marche, q);
+      const matchFournisseur = searchInText(fournisseur, q);
+      if (idx === 0) {
+        console.log('[Search] Test commande:', {
+          numero,
+          marche,
+          fournisseur,
+          match: matchNumero || matchMarche || matchFournisseur,
+        });
+      }
+      if (matchNumero || matchMarche || matchFournisseur) {
+        results.commandes.push({
+          ...commande,
+          uniqueKey: `commande-${commande.id || numero || idx}`,
+        });
+      }
+    });
+    console.log('[Search] Résultats commandes:', results.commandes.length);
+
     return results;
   }, [
     query,
@@ -245,6 +325,7 @@ function SearchPanel() {
     gmrs,
     zones,
     contracts,
+    commandes,
   ]);
 
   const totalResults = Object.values(searchResults).reduce((sum, arr) => sum + arr.length, 0);
@@ -435,6 +516,22 @@ function SearchPanel() {
       data: searchResults.contracts,
       onClick: handleContractClick,
     },
+    {
+      key: 'commandes',
+      label: 'Commandes',
+      icon: ShoppingCart,
+      color: 'text-orange-500',
+      data: searchResults.commandes,
+      onClick: item => {
+        if (item.boardId) {
+          loadBoard(item.boardId);
+        }
+        setSelectedCommande(item);
+        setActiveTab('commandes');
+        setActiveTabCommande('commande');
+        toggleSearch();
+      },
+    },
   ];
 
   if (!searchOpen) return null;
@@ -513,7 +610,9 @@ function SearchPanel() {
                         className="w-full text-left p-2 rounded hover:bg-card-hover transition-std"
                       >
                         <div className="text-sm text-primary truncate font-medium">
-                          {item.name || item.title || item.label || item.numero || item.code}
+                          {cat.key === 'commandes'
+                            ? item.donnees?.numeroCommande || item.title
+                            : item.name || item.title || item.label || item.numero || item.code}
                         </div>
                         <div className="text-xs text-accent truncate">
                           {cat.key === 'projects' && 'Projet'}
@@ -526,10 +625,16 @@ function SearchPanel() {
                           {cat.key === 'gmrs' && 'Paramètres > GMR'}
                           {cat.key === 'zones' && 'Paramètres > Zones'}
                           {cat.key === 'contracts' && 'Bibliothèque > Contrats'}
+                          {cat.key === 'commandes' && (item.boardName || 'Projet')}
                         </div>
-                        {(item.fournisseur || item.acheteur) && (
+                        {(item.fournisseur ||
+                          item.acheteer ||
+                          item.donnees?.fournisseur ||
+                          item.donnees?.marcheCadre) && (
                           <div className="text-xs text-muted truncate">
-                            {item.fournisseur} {item.acheteur && `• ${item.acheteur}`}
+                            {cat.key === 'commandes'
+                              ? `${item.donnees?.fournisseur || ''} ${item.donnees?.marcheCadre ? '• ' + item.donnees.marcheCadre : ''}`
+                              : `${item.fournisseur} ${item.acheteur ? '• ' + item.acheteur : ''}`}
                           </div>
                         )}
                       </button>

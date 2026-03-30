@@ -250,6 +250,8 @@ export default function Dashboard() {
     loadBoard,
     db,
     toggleMilestone,
+    hiddenMilestones,
+    addHiddenMilestone,
   } = useApp();
 
   // Load all data from localStorage for dashboard
@@ -265,6 +267,7 @@ export default function Dashboard() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [expandedProjects, setExpandedProjects] = useState({});
   const [recentlyCompletedMilestones, setRecentlyCompletedMilestones] = useState([]);
+  const [milestoneNotification, setMilestoneNotification] = useState(null);
 
   const handleMilestoneToggle = (e, milestone) => {
     e.stopPropagation();
@@ -272,6 +275,9 @@ export default function Dashboard() {
     setRecentlyCompletedMilestones(prev => [...prev, milestone.id]);
     setTimeout(() => {
       setRecentlyCompletedMilestones(prev => prev.filter(id => id !== milestone.id));
+      addHiddenMilestone(milestone.id);
+      setMilestoneNotification('Jalon terminé !');
+      setTimeout(() => setMilestoneNotification(null), 2000);
     }, 1000);
   };
 
@@ -476,7 +482,12 @@ export default function Dashboard() {
       allBoards,
       allColumns,
       currentUsername
-    ).filter(m => !recentlyCompletedMilestones.includes(m.milestone.id));
+    ).filter(
+      m =>
+        !m.milestone.done &&
+        !hiddenMilestones.has(m.milestone.id) &&
+        !recentlyCompletedMilestones.includes(m.milestone.id)
+    );
   }, [
     allSubcategories,
     allCategories,
@@ -484,6 +495,7 @@ export default function Dashboard() {
     allBoards,
     allColumns,
     currentUsername,
+    hiddenMilestones,
     recentlyCompletedMilestones,
   ]);
 
@@ -498,6 +510,13 @@ export default function Dashboard() {
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <h1 className="text-2xl font-display font-bold text-primary mb-6">Dashboard</h1>
+
+      {/* Toast notification */}
+      {milestoneNotification && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2 bg-green-500 text-white rounded-lg shadow-lg">
+          {milestoneNotification}
+        </div>
+      )}
 
       {/* Onglets */}
       <div className="flex border-b border-std">
@@ -1019,6 +1038,7 @@ export default function Dashboard() {
             categories={allCategories}
             subcategories={allSubcategories}
             columns={allColumns}
+            cards={allCards}
             currentUsername={currentUsername}
           />
         </div>

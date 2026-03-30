@@ -1,3 +1,9 @@
+import { loadGMRData } from '../data/GMRData';
+import { loadPriorityData } from '../data/PriorityData';
+import { loadZonesData } from '../data/ZonesData';
+import { loadTagsData } from '../data/TagsData';
+import { loadChaptersOrder } from '../data/ChaptersData';
+
 export const CURRENT_VERSION = '2.0';
 
 export const validateImportData = data => {
@@ -153,41 +159,11 @@ export const generateExportData = (db, options = {}) => {
     databases: {
       core: db,
       params: {
-        gmr: (() => {
-          try {
-            return require('../data/GMRData').loadGMRData();
-          } catch {
-            return [];
-          }
-        })(),
-        priority: (() => {
-          try {
-            return require('../data/PriorityData').loadPriorityData();
-          } catch {
-            return [];
-          }
-        })(),
-        zones: (() => {
-          try {
-            return require('../data/ZonesData').loadZonesData();
-          } catch {
-            return [];
-          }
-        })(),
-        tags: (() => {
-          try {
-            return require('../data/TagsData').loadTagsData();
-          } catch {
-            return [];
-          }
-        })(),
-        chaptersOrder: (() => {
-          try {
-            return require('../data/ChaptersData').loadChaptersOrder();
-          } catch {
-            return [];
-          }
-        })(),
+        gmr: loadGMRData(),
+        priority: loadPriorityData(),
+        zones: loadZonesData(),
+        tags: loadTagsData(),
+        chaptersOrder: loadChaptersOrder(),
       },
       library: (() => {
         try {
@@ -200,6 +176,14 @@ export const generateExportData = (db, options = {}) => {
       contracts: (() => {
         try {
           const e = localStorage.getItem('d-projet_contracts');
+          return e ? JSON.parse(e) : [];
+        } catch {
+          return [];
+        }
+      })(),
+      entreprises: (() => {
+        try {
+          const e = localStorage.getItem('d-projet_entreprises');
           return e ? JSON.parse(e) : [];
         } catch {
           return [];

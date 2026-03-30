@@ -58,6 +58,10 @@ function Board2() {
     libraryItems,
     activeTab: contextActiveTab,
     setActiveTab: contextSetActiveTab,
+    selectedCommande: contextSelectedCommande,
+    setSelectedCommande: contextSetSelectedCommande,
+    activeTabCommande: contextActiveTabCommande,
+    setActiveTabCommande: contextSetActiveTabCommande,
   } = useApp();
 
   console.log(
@@ -204,6 +208,8 @@ function Board2() {
   const [showAddInternal, setShowAddInternal] = useState(false);
   const [newInternalTitle, setNewInternalTitle] = useState('');
   const [externalContacts, setExternalContacts] = useState([]);
+  const [entrepriseSuggestions, setEntrepriseSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState({});
   const [boardGMR, setBoardGMR] = useState('');
   const [boardPriority, setBoardPriority] = useState('');
   const [boardZone, setBoardZone] = useState('');
@@ -246,15 +252,61 @@ function Board2() {
   const saveEotp = () => saveToStorage('eotp', JSON.stringify(eotpLines));
   const saveInternalContacts = () =>
     saveToStorage('internalContacts', JSON.stringify(internalContacts));
-  const saveExternalContacts = () =>
+  const saveExternalContacts = () => {
     saveToStorage('externalContacts', JSON.stringify(externalContacts));
 
+    const allCurrent = JSON.parse(localStorage.getItem('d-projet_entreprises') || '[]');
+    const newContacts = externalContacts.filter(ec => ec.entreprise && ec.nom);
+    const merged = [...allCurrent];
+    newContacts.forEach(newC => {
+      const key = `${(newC.entreprise || '').toLowerCase().trim()}-${(newC.nom || '').toLowerCase().trim()}-${(newC.prenom || '').toLowerCase().trim()}`;
+      const exists = merged.find(
+        m =>
+          `${(m.entreprise || '').toLowerCase().trim()}-${(m.nom || '').toLowerCase().trim()}-${(m.prenom || '').toLowerCase().trim()}` ===
+          key
+      );
+      if (!exists) {
+        merged.push(newC);
+      }
+    });
+    localStorage.setItem('d-projet_entreprises', JSON.stringify(merged));
+  };
+
+  const getFilteredSuggestions = query => {
+    if (!query || query.length < 2) return [];
+    const q = query.toLowerCase();
+    return entrepriseSuggestions
+      .filter(ent => (ent.entreprise || '').toLowerCase().includes(q))
+      .slice(0, 5);
+  };
+
+  const handleEntrepriseChange = (idx, value) => {
+    const updated = [...externalContacts];
+    updated[idx].entreprise = value;
+    setExternalContacts(updated);
+    setShowSuggestions(prev => ({ ...prev, [idx]: value.length >= 2 }));
+  };
+
+  const handleSelectSuggestion = (idx, suggestion) => {
+    const updated = [...externalContacts];
+    updated[idx] = {
+      ...updated[idx],
+      entreprise: suggestion.entreprise || '',
+      fonction: suggestion.fonction || '',
+      nom: suggestion.nom || '',
+      prenom: suggestion.prenom || '',
+      email: suggestion.email || '',
+      telBureau: suggestion.telBureau || '',
+      telPortable: suggestion.telPortable || '',
+    };
+    setExternalContacts(updated);
+    setShowSuggestions(prev => ({ ...prev, [idx]: false }));
+  };
+
   const [commandes, setCommandes] = useState([]);
-  const [selectedCommande, setSelectedCommande] = useState(null);
   const [selectedAvenant, setSelectedAvenant] = useState(null);
   const [showAddCommande, setShowAddCommande] = useState(false);
   const [newCommandeTitle, setNewCommandeTitle] = useState('');
-  const [activeTabCommande, setActiveTabCommande] = useState('affectation');
 
   const [commandeDetail, setCommandeDetail] = useState({
     affectation: {
@@ -313,13 +365,13 @@ function Board2() {
   }, [commandeDetail.commande.marcheCadre, contracts]);
 
   useEffect(() => {
-    if (selectedCommande && eotpLines.length > 0 && eotpLines[0].libelle) {
+    if (contextSelectedCommande && eotpLines.length > 0 && eotpLines[0].libelle) {
       setCommandeDetail(prev => ({
         ...prev,
         commande: { ...prev.commande, affaire: eotpLines[0].libelle },
       }));
     }
-  }, [eotpLines, selectedCommande]);
+  }, [eotpLines, contextSelectedCommande]);
 
   const syncFromLigne010 = field => {
     setCommandeDetail(prev => {
@@ -376,7 +428,7 @@ function Board2() {
   };
 
   const handleSelectCommande = cmd => {
-    setSelectedCommande(cmd);
+    contextSetSelectedCommande(cmd);
     setSelectedAvenant(null);
     if (cmd.detail) {
       setCommandeDetail({
@@ -414,6 +466,15 @@ function Board2() {
       });
     }
   };
+
+  useEffect(() => {
+    if (contextSelectedCommande && commandes.length > 0) {
+      const cmd = commandes.find(c => c.id === contextSelectedCommande.id);
+      if (cmd) {
+        handleSelectCommande(cmd);
+      }
+    }
+  }, [contextSelectedCommande, commandes]);
 
   const handleUpdateAffectation = (field, value) => {
     setCommandeDetail(prev => ({
@@ -547,15 +608,15 @@ function Board2() {
   };
 
   const saveCommandeDetail = useCallback(() => {
-    if (!selectedCommande) return;
+    if (!contextSelectedCommande) return;
     const updatedCommandes = commandes.map(c =>
-      c.id === selectedCommande.id ? { ...c, detail: commandeDetail } : c
+      c.id === contextSelectedCommande.id ? { ...c, detail: commandeDetail } : c
     );
     setCommandes(updatedCommandes);
-  }, [selectedCommande, commandeDetail, commandes]);
+  }, [contextSelectedCommande, commandeDetail, commandes]);
 
   useEffect(() => {
-    if (selectedCommande) {
+    if (contextSelectedCommande) {
       saveCommandeDetail();
     }
   }, [commandeDetail]);
@@ -578,7 +639,7 @@ function Board2() {
   };
 
   const applyImportData = () => {
-    if (!importData || !selectedCommande) return;
+    if (!importData || !contextSelectedCommande) return;
 
     const newDetail = { ...commandeDetail };
 
@@ -758,6 +819,10 @@ Affaire: ${commande.affaire || 'N/A'}
       setExternalContacts(
         JSON.parse(localStorage.getItem(`board-${currentBoard.id}-externalContacts`) || '[]')
       );
+      const savedEntreprises = localStorage.getItem('d-projet_entreprises');
+      if (savedEntreprises) {
+        setEntrepriseSuggestions(JSON.parse(savedEntreprises));
+      }
       const gmr = localStorage.getItem(`board-${currentBoard.id}-gmr`) || '';
       const priority = localStorage.getItem(`board-${currentBoard.id}-priority`) || '';
       const zone = localStorage.getItem(`board-${currentBoard.id}-zone`) || '';
@@ -1889,7 +1954,7 @@ Affaire: ${commande.affaire || 'N/A'}
                           setSelectedAvenant(null);
                         }}
                         className={`flex-1 text-left p-2 rounded border text-sm ${
-                          selectedCommande?.id === cmd.id && !selectedAvenant
+                          contextSelectedCommande?.id === cmd.id && !selectedAvenant
                             ? 'border-accent bg-accent-soft'
                             : 'border-std bg-card hover:bg-card-hover'
                         }`}
@@ -1909,8 +1974,8 @@ Affaire: ${commande.affaire || 'N/A'}
                               )
                             ) {
                               setCommandes(commandes.filter(c => c.id !== cmd.id));
-                              if (selectedCommande?.id === cmd.id) {
-                                setSelectedCommande(null);
+                              if (contextSelectedCommande?.id === cmd.id) {
+                                contextSetSelectedCommande(null);
                                 setSelectedAvenant(null);
                               }
                             }
@@ -2063,16 +2128,18 @@ Affaire: ${commande.affaire || 'N/A'}
           </div>
 
           <div className="flex-1 overflow-y-auto p-4">
-            {selectedCommande ? (
+            {contextSelectedCommande ? (
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h2 className="text-lg font-bold text-primary">{selectedCommande.title}</h2>
+                    <h2 className="text-lg font-bold text-primary">
+                      {contextSelectedCommande.title}
+                    </h2>
                     <div className="flex gap-2 mt-2">
                       <button
-                        onClick={() => setActiveTabCommande('affectation')}
+                        onClick={() => contextSetActiveTabCommande('affectation')}
                         className={`px-3 py-1 text-xs rounded ${
-                          activeTabCommande === 'affectation'
+                          contextActiveTabCommande === 'affectation'
                             ? 'bg-accent text-white'
                             : 'border border-accent text-accent hover:bg-accent-soft'
                         }`}
@@ -2080,9 +2147,9 @@ Affaire: ${commande.affaire || 'N/A'}
                         Affectation
                       </button>
                       <button
-                        onClick={() => setActiveTabCommande('commande')}
+                        onClick={() => contextSetActiveTabCommande('commande')}
                         className={`px-3 py-1 text-xs rounded ${
-                          activeTabCommande === 'commande'
+                          contextActiveTabCommande === 'commande'
                             ? 'bg-accent text-white'
                             : 'border border-accent text-accent hover:bg-accent-soft'
                         }`}
@@ -2093,7 +2160,7 @@ Affaire: ${commande.affaire || 'N/A'}
                   </div>
                 </div>
 
-                {activeTabCommande === 'affectation' && (
+                {contextActiveTabCommande === 'affectation' && (
                   <div className="space-y-6">
                     <div className="p-4 bg-card rounded-lg border border-std">
                       <h3 className="text-sm font-semibold text-primary mb-4">RENSEIGNEMENTS</h3>
@@ -2223,7 +2290,7 @@ Affaire: ${commande.affaire || 'N/A'}
                   </div>
                 )}
 
-                {activeTabCommande === 'commande' && (
+                {contextActiveTabCommande === 'commande' && (
                   <div className="space-y-6">
                     <div className="p-4 bg-card rounded-lg border border-std">
                       <div className="flex items-center justify-between mb-4">
@@ -3272,17 +3339,47 @@ Affaire: ${commande.affaire || 'N/A'}
                     </button>
                   </div>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    <input
-                      type="text"
-                      placeholder="Entreprise"
-                      value={contact.entreprise}
-                      onChange={e => {
-                        const updated = [...externalContacts];
-                        updated[idx].entreprise = e.target.value;
-                        setExternalContacts(updated);
-                      }}
-                      className="px-2 py-1 text-sm bg-input border border-std rounded text-primary placeholder-muted focus:outline-none focus:border-accent"
-                    />
+                    <div className="relative">
+                      <input
+                        type="text"
+                        placeholder="Entreprise"
+                        value={contact.entreprise}
+                        onChange={e => handleEntrepriseChange(idx, e.target.value)}
+                        onFocus={() =>
+                          setShowSuggestions(prev => ({
+                            ...prev,
+                            [idx]: contact.entreprise.length >= 2,
+                          }))
+                        }
+                        onBlur={() =>
+                          setTimeout(
+                            () => setShowSuggestions(prev => ({ ...prev, [idx]: false })),
+                            200
+                          )
+                        }
+                        className="px-2 py-1 text-sm bg-input border border-std rounded text-primary placeholder-muted focus:outline-none focus:border-accent w-full"
+                      />
+                      {showSuggestions[idx] &&
+                        getFilteredSuggestions(contact.entreprise).length > 0 && (
+                          <div className="absolute z-10 w-full mt-1 bg-card border border-std rounded-md shadow-lg max-h-48 overflow-y-auto">
+                            {getFilteredSuggestions(contact.entreprise).map((suggestion, sIdx) => (
+                              <button
+                                key={sIdx}
+                                onClick={() => handleSelectSuggestion(idx, suggestion)}
+                                className="w-full text-left px-3 py-2 text-sm hover:bg-card-hover border-b border-std last:border-b-0"
+                              >
+                                <span className="text-primary font-medium">
+                                  {suggestion.entreprise}
+                                </span>
+                                <span className="text-muted">
+                                  {' '}
+                                  - {suggestion.nom} {suggestion.prenom}
+                                </span>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                    </div>
                     <input
                       type="text"
                       placeholder="Fonction"

@@ -6,11 +6,13 @@ import {
   Clock,
   BookOpen,
   FileText,
+  Building,
 } from 'lucide-react';
 import LibraryEditor from './LibraryEditor';
 import { DataTable } from './DataTable';
 import ChaptersDragDrop from './ChaptersDragDrop';
 import ContractsSettings from './ContractsSettings';
+import EntreprisesTab from './EntreprisesTab';
 import {
   loadGMRData,
   addGMRItem,
@@ -83,6 +85,7 @@ function SystemSettings() {
     { id: 'backup', label: 'Sauvegarde auto', icon: Clock },
     { id: 'library', label: 'Modèles Bibliothèque', icon: BookOpen },
     { id: 'contracts', label: 'Contrats', icon: FileText },
+    { id: 'entreprises', label: 'Annuaire Entreprises', icon: Building },
   ];
 
   const gmrColumns = [
@@ -318,6 +321,8 @@ function SystemSettings() {
           )}
 
           {activeTab === 'contracts' && <ContractsSettings />}
+
+          {activeTab === 'entreprises' && <EntreprisesTab />}
         </div>
       </div>
     </div>

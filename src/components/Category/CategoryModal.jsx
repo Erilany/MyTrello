@@ -10,14 +10,29 @@ function CategoryModal({ category, onClose }) {
     saveToLibrary,
     subcategories,
     categories,
+    cards,
     libraryItems,
     currentBoard,
     getInternalContacts,
   } = useApp();
 
-  const tag = category.tag || null;
+  // Tag inheritance: use category tag, or inherit from parent card via library
+  let inheritedTag = null;
+  if (!category.tag && libraryItems) {
+    const parentCard = libraryItems.find(
+      item => item.type === 'card' && item.id === category.card_id
+    );
+    if (parentCard && parentCard.content_json) {
+      try {
+        const content = JSON.parse(parentCard.content_json);
+        const cat = content.categories?.find(c => c.title === category.title);
+        inheritedTag = cat?.tag || null;
+      } catch (e) {}
+    }
+  }
+  const effectiveTag = category.tag || inheritedTag;
   const allTags = loadTagsData();
-  const tagInfo = tag ? allTags.find(t => t.name === tag) : null;
+  const tagInfo = effectiveTag ? allTags.find(t => t.name === effectiveTag) : null;
 
   const [title, setTitle] = useState(category.title);
   const [description, setDescription] = useState(category.description || '');
@@ -248,16 +263,20 @@ function CategoryModal({ category, onClose }) {
             </select>
           </div>
 
-          {tag && (
+          {effectiveTag && (
             <div>
               <label className="block text-sm font-medium text-secondary mb-1">Tag</label>
               <div
                 className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-white"
                 style={{ backgroundColor: tagInfo?.color || '#6B7280' }}
               >
-                {tag}
+                {effectiveTag}
               </div>
-              <p className="text-xs text-muted mt-1">Tag assigné par l'administrateur</p>
+              <p className="text-xs text-muted mt-1">
+                {category.tag
+                  ? "Tag assigné par l'administrateur"
+                  : 'Tag hérité de la carte parente (bibliothèque)'}
+              </p>
             </div>
           )}
 

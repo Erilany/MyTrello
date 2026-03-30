@@ -440,6 +440,8 @@ export function AppProvider({ children }) {
   const [selectedCard, setSelectedCard] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState(null);
+  const [selectedCommande, setSelectedCommande] = useState(null);
+  const [activeTabCommande, setActiveTabCommande] = useState('commande');
   const [activeTab, setActiveTab] = useState('taches');
   const [unreadMentions, setUnreadMentions] = useState({});
   const [cardColors, setCardColors] = useState({
@@ -447,6 +449,11 @@ export function AppProvider({ children }) {
     enCours: { gradient: ['#f59e0b', '#fbbf24'], keywords: ['cours', 'en cours'] },
     realise: { gradient: ['#22c55e', '#4ade80'], keywords: ['réalisé', 'realis', 'terminé'] },
     archive: { gradient: ['#475569', '#475569'], keywords: ['archiv'] },
+  });
+
+  const [hiddenMilestones, setHiddenMilestones] = useState(() => {
+    const saved = localStorage.getItem('d-projet_hidden_milestones');
+    return saved ? new Set(JSON.parse(saved)) : new Set();
   });
 
   useEffect(() => {
@@ -1034,6 +1041,9 @@ export function AppProvider({ children }) {
         }
         if (databases.chaptersOrder) {
           saveChaptersOrder(databases.chaptersOrder);
+        }
+        if (databases.entreprises) {
+          localStorage.setItem('d-projet_entreprises', JSON.stringify(databases.entreprises));
         }
       }
 
@@ -1832,6 +1842,15 @@ export function AppProvider({ children }) {
     }, 100);
   };
 
+  const addHiddenMilestone = milestoneId => {
+    setHiddenMilestones(prev => {
+      const newSet = new Set(prev);
+      newSet.add(Number(milestoneId));
+      localStorage.setItem('d-projet_hidden_milestones', JSON.stringify([...newSet]));
+      return newSet;
+    });
+  };
+
   const deleteSubcategory = id => {
     const newDb = {
       ...db,
@@ -2332,6 +2351,10 @@ export function AppProvider({ children }) {
     setSelectedCategory,
     selectedSubcategory,
     setSelectedSubcategory,
+    selectedCommande,
+    setSelectedCommande,
+    activeTabCommande,
+    setActiveTabCommande,
     activeTab,
     setActiveTab,
     loadBoard,
@@ -2366,6 +2389,8 @@ export function AppProvider({ children }) {
     createSubcategory,
     updateSubcategory,
     toggleMilestone,
+    hiddenMilestones,
+    addHiddenMilestone,
     deleteSubcategory,
     moveSubcategory,
     addEmailToSubcategory,

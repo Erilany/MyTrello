@@ -30,21 +30,30 @@ function getQuarterYear(date) {
   return date.getFullYear();
 }
 
+function formatDateFrench(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+  return `${day}/${month}/${year}`;
+}
+
 function getQuarterColumnsTwoYears() {
   const columns = [];
   const today = new Date();
   const currentQuarter = Math.ceil((today.getMonth() + 1) / 3);
   const currentYear = today.getFullYear();
 
-  // Start from 4 quarters ago (1 year back)
-  const startQuarter = currentQuarter - 3;
+  // Start from 1 quarter ago
+  const startQuarter = currentQuarter - 1;
   const startYear = startQuarter <= 0 ? currentYear - 1 : currentYear;
   const adjustedStartQuarter = startQuarter <= 0 ? startQuarter + 4 : startQuarter;
 
   const start = new Date(startYear, (adjustedStartQuarter - 1) * 3, 1);
 
-  // Generate 8 quarters (2 years)
-  for (let i = 0; i < 8; i++) {
+  // Generate 7 quarters (1 past + current + 5 future)
+  for (let i = 0; i < 7; i++) {
     const q = Math.ceil((start.getMonth() + 1) / 3);
     const y = start.getFullYear();
     columns.push({ quarter: `T${q}`, year: y, label: `T${q} - ${y}` });
@@ -55,12 +64,22 @@ function getQuarterColumnsTwoYears() {
 }
 
 function getItemDateRange(item) {
-  const start = item.start_date ? new Date(item.start_date) : new Date(item.created_at);
-  const end = item.due_date ? new Date(item.due_date) : null;
+  const start = item.startDate
+    ? new Date(item.startDate)
+    : item.start_date
+      ? new Date(item.start_date)
+      : null;
+  const end = item.endDate
+    ? new Date(item.endDate)
+    : item.due_date
+      ? new Date(item.due_date)
+      : null;
   return { start, end };
 }
 
-function ActivityReview({ boards, categories, subcategories, columns, currentUsername }) {
+const TAG_VERTICAL_OFFSET = 3;
+
+function ActivityReview({ boards, categories, subcategories, columns, currentUsername, cards }) {
   const { syncTagsFromLibrary } = useApp();
   const [projectsData, setProjectsData] = useState([]);
   const [taggedItems, setTaggedItems] = useState([]);
@@ -101,11 +120,10 @@ function ActivityReview({ boards, categories, subcategories, columns, currentUse
   }, []);
 
   useEffect(() => {
-    if (!boards || !currentUsername) {
+    if (!currentUsername) {
       return;
     }
 
-    // Get all boards from storage directly to show all projects with tagged items
     const storageData = JSON.parse(localStorage.getItem('d-projet_db') || '{}');
     const allBoardsFromStorage = storageData.boards || [];
 
@@ -170,35 +188,47 @@ function ActivityReview({ boards, categories, subcategories, columns, currentUse
     setProjectsData(projects);
 
     if (projects.length > 0) {
-      const allItems = [];
-      const today = new Date();
-      let latestDate = today;
-
       const tagsWithFunctions = loadTagsData();
 
-      categories.forEach(cat => {
-        // Show ONLY if has a tag AND has dates
-        if (cat.tag && cat.start_date && cat.due_date) {
-          if (cat.card_id) {
-            const boardId = Number(cat.card_id);
-            const board = boards.find(b => Number(b.id) === boardId);
-            if (board) {
-              const tagInfo = cat.tag ? tagsWithFunctions.find(t => t.name === cat.tag) : null;
-              const tagFunctions = tagInfo?.functions || [];
-              const hasMatchingFunction =
-                showAllUsers || (tagFunctions.length > 0 && tagFunctions.includes(currentUserRole));
+      const projectTagsMap = {};
 
-              if (hasMatchingFunction) {
-                allItems.push({
-                  ...cat,
-                  type: 'category',
-                  boardId: board.id,
-                  boardTitle: board.title,
-                  displayLabel: cat.tag,
-                });
-                if (cat.due_date) {
-                  const dueDate = new Date(cat.due_date);
-                  if (dueDate > latestDate) latestDate = dueDate;
+      const findBoardForCategory = cat => {
+        if (!cat.card_id || !cards || !columns || !allBoardsFromStorage) return null;
+        const card = cards.find(c => Number(c.id) === Number(cat.card_id));
+        if (!card) return null;
+        const column = columns.find(col => Number(col.id) === Number(card.column_id));
+        if (!column) return null;
+        return allBoardsFromStorage.find(b => Number(b.id) === Number(column.board_id));
+      };
+
+      categories.forEach(cat => {
+        if (cat.tag && cat.start_date && cat.due_date) {
+          const board = findBoardForCategory(cat);
+          if (board) {
+            const tagInfo = cat.tag ? tagsWithFunctions.find(t => t.name === cat.tag) : null;
+            const tagFunctions = tagInfo?.functions || [];
+            const hasMatchingFunction =
+              showAllUsers || (tagFunctions.length > 0 && tagFunctions.includes(currentUserRole));
+
+            if (hasMatchingFunction) {
+              if (!projectTagsMap[board.id]) {
+                projectTagsMap[board.id] = {};
+              }
+              const tagName = cat.tag;
+              if (!projectTagsMap[board.id][tagName]) {
+                projectTagsMap[board.id][tagName] = {
+                  label: tagName,
+                  color: tagInfo?.color || '#6B7280',
+                  startDate: cat.start_date,
+                  endDate: cat.due_date,
+                };
+              } else {
+                const existing = projectTagsMap[board.id][tagName];
+                if (new Date(cat.start_date) < new Date(existing.startDate)) {
+                  existing.startDate = cat.start_date;
+                }
+                if (new Date(cat.due_date) > new Date(existing.endDate)) {
+                  existing.endDate = cat.due_date;
                 }
               }
             }
@@ -207,15 +237,12 @@ function ActivityReview({ boards, categories, subcategories, columns, currentUse
       });
 
       subcategories.forEach(sub => {
-        // Get tag from subcategory or inherit from parent category
         const category = categories.find(c => Number(c.id) === Number(sub.category_id));
         const itemTag = sub.tag || (category ? category.tag : null);
 
-        // Show if: has a tag AND has dates
         if (itemTag && sub.start_date && sub.due_date) {
-          if (category && category.card_id) {
-            const boardId = Number(category.card_id);
-            const board = boards.find(b => Number(b.id) === boardId);
+          if (category) {
+            const board = findBoardForCategory(category);
             if (board) {
               const tagInfo = itemTag ? tagsWithFunctions.find(t => t.name === itemTag) : null;
               const tagFunctions = tagInfo?.functions || [];
@@ -223,16 +250,25 @@ function ActivityReview({ boards, categories, subcategories, columns, currentUse
                 showAllUsers || (tagFunctions.length > 0 && tagFunctions.includes(currentUserRole));
 
               if (hasMatchingFunction) {
-                allItems.push({
-                  ...sub,
-                  type: 'subcategory',
-                  boardId: board.id,
-                  boardTitle: board.title,
-                  displayLabel: itemTag,
-                });
-                if (sub.due_date) {
-                  const dueDate = new Date(sub.due_date);
-                  if (dueDate > latestDate) latestDate = dueDate;
+                if (!projectTagsMap[board.id]) {
+                  projectTagsMap[board.id] = {};
+                }
+                const tagName = itemTag;
+                if (!projectTagsMap[board.id][tagName]) {
+                  projectTagsMap[board.id][tagName] = {
+                    label: tagName,
+                    color: tagInfo?.color || '#6B7280',
+                    startDate: sub.start_date,
+                    endDate: sub.due_date,
+                  };
+                } else {
+                  const existing = projectTagsMap[board.id][tagName];
+                  if (new Date(sub.start_date) < new Date(existing.startDate)) {
+                    existing.startDate = sub.start_date;
+                  }
+                  if (new Date(sub.due_date) > new Date(existing.endDate)) {
+                    existing.endDate = sub.due_date;
+                  }
                 }
               }
             }
@@ -240,11 +276,23 @@ function ActivityReview({ boards, categories, subcategories, columns, currentUse
         }
       });
 
+      const allItems = [];
+      Object.entries(projectTagsMap).forEach(([boardId, tagsMap]) => {
+        const board = allBoardsFromStorage.find(b => Number(b.id) === Number(boardId));
+        Object.values(tagsMap).forEach(tagData => {
+          allItems.push({
+            ...tagData,
+            boardId: Number(boardId),
+            boardTitle: board?.title || '',
+          });
+        });
+      });
+
       setTaggedItems(allItems);
       const cols = getQuarterColumnsTwoYears();
       setQuarterColumns(cols);
     }
-  }, [boards, categories, subcategories, columns, currentUsername, currentUserRole, refreshKey]);
+  }, [categories, subcategories, columns, cards, currentUsername, currentUserRole, refreshKey]);
 
   const groupedByZone = useMemo(() => {
     const groups = {};
@@ -292,10 +340,10 @@ function ActivityReview({ boards, categories, subcategories, columns, currentUse
       }
     }
 
-    if (startIdx === -1 && endIdx === -1) return null;
-
     const startIndex = startIdx !== -1 ? startIdx : 0;
     const endIndex = endIdx !== -1 ? endIdx : quarterCols.length - 1;
+
+    if (startIndex > quarterCols.length - 1 || endIndex < 0) return null;
 
     return { startIndex, endIndex };
   };
@@ -511,7 +559,6 @@ function ActivityReview({ boards, categories, subcategories, columns, currentUse
                 </tr>
                 {projects.map(project => {
                   const projectItems = taggedItems.filter(item => item.boardId === project.id);
-
                   return (
                     <tr key={project.id} className="border-b border-std hover:bg-card-hover h-12">
                       <td className="p-1 text-center font-medium text-accent h-12 align-middle bg-card sticky left-0 z-10">
@@ -529,6 +576,9 @@ function ActivityReview({ boards, categories, subcategories, columns, currentUse
                           <span className="font-mono text-secondary">{project.ruo || '-'}</span>
                           <span className="mx-1 text-muted">|</span>
                           <span className="font-medium">{project.title}</span>
+                          {projectItems.length > 0 && (
+                            <span className="ml-2 text-green-500">({projectItems.length})</span>
+                          )}
                         </div>
                       </td>
                       <td className="p-1 text-center h-12 align-middle border-r border-std sticky left-[512px] z-10 bg-card-hover">
@@ -569,46 +619,57 @@ function ActivityReview({ boards, categories, subcategories, columns, currentUse
                         return (
                           <td
                             key={colIdx}
-                            className={`p-1 border-r border-std h-12 align-middle ${isCurrentQuarterCol ? 'bg-green-900/30' : 'bg-card-hover'} w-[90px]`}
+                            className={`p-1 border-r-0 h-12 align-middle ${isCurrentQuarterCol ? 'bg-green-900/30' : 'bg-card-hover'}`}
                             style={{
                               left: `${leftPos}px`,
                               position: 'sticky',
                               top: 0,
                               zIndex: 5,
+                              width: '90px',
                             }}
                           >
-                            <div className="flex flex-col gap-0.5 overflow-hidden h-full">
-                              {projectItems
-                                .filter(item => {
+                            <div className="flex flex-col overflow-hidden h-full">
+                              {(() => {
+                                const groupedByTag = {};
+                                projectItems.forEach(item => {
                                   const pos = getItemPosition(item, quarterColumns);
-                                  if (!pos) return false;
-                                  const effectiveTag = item.tag || item.displayLabel;
-                                  return (
-                                    effectiveTag &&
-                                    pos.startIndex <= colIdx &&
-                                    pos.endIndex >= colIdx
-                                  );
-                                })
-                                .map((item, idx) => {
-                                  const pos = getItemPosition(item, quarterColumns);
-                                  if (!pos) return null;
-                                  const tagValue = item.tag || item.displayLabel || 'Sans tag';
+                                  if (!pos || !item.label) return;
+                                  if (!groupedByTag[item.label]) {
+                                    groupedByTag[item.label] = {
+                                      ...item,
+                                      startIndex: pos.startIndex,
+                                      endIndex: pos.endIndex,
+                                    };
+                                  } else {
+                                    groupedByTag[item.label].startIndex = Math.min(
+                                      groupedByTag[item.label].startIndex,
+                                      pos.startIndex
+                                    );
+                                    groupedByTag[item.label].endIndex = Math.max(
+                                      groupedByTag[item.label].endIndex,
+                                      pos.endIndex
+                                    );
+                                  }
+                                });
+                                const groupedItems = Object.values(groupedByTag);
+                                return groupedItems.map((item, idx) => {
+                                  const isVisible =
+                                    item.startIndex <= colIdx && item.endIndex >= colIdx;
                                   return (
                                     <div
-                                      key={`${item.type}-${item.id}-${idx}`}
-                                      className="px-2 py-1 rounded text-white text-xs truncate"
+                                      key={`${item.boardId}-${item.label}`}
+                                      className="px-2 py-1 text-white text-xs truncate"
                                       style={{
-                                        backgroundColor: getTagColor(tagValue),
+                                        backgroundColor: item.color || '#6B7280',
+                                        marginTop: idx > 0 ? `${TAG_VERTICAL_OFFSET}px` : '0px',
+                                        height: '18px',
+                                        visibility: isVisible ? 'visible' : 'hidden',
                                       }}
-                                      title={`${item.title} - Tag: ${tagValue} (${item.start_date || '?'} à ${item.due_date || '?'})`}
-                                    >
-                                      {item.title} [{tagValue}]{' '}
-                                      {pos.endIndex > pos.startIndex
-                                        ? `(T${quarterColumns[pos.startIndex]?.quarter})`
-                                        : ''}
-                                    </div>
+                                      title={`${item.label} (${formatDateFrench(item.startDate)} au ${formatDateFrench(item.endDate)})`}
+                                    />
                                   );
-                                })}
+                                });
+                              })()}
                             </div>
                           </td>
                         );

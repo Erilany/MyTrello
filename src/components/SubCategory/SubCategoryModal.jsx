@@ -19,11 +19,11 @@ function SubCategoryModal({ subcategory, onClose }) {
     getEmailsForSubcategory,
     saveEmailFile,
     getEmailFile,
+    addHiddenMilestone,
   } = useApp();
 
-  const tag = subcategory.tag || null;
   const allTags = loadTagsData();
-  const tagInfo = tag ? allTags.find(t => t.name === tag) : null;
+  const tagInfo = effectiveTag ? allTags.find(t => t.name === effectiveTag) : null;
 
   // Load data directly from localStorage for consistency
   const [libraryItems, setLibraryItems] = useState([]);
@@ -59,6 +59,13 @@ function SubCategoryModal({ subcategory, onClose }) {
       setStatus('in_progress');
     }
   }, [progress, status]);
+
+  // Auto-update progress to 100% when status is done
+  useEffect(() => {
+    if (status === 'done' && progress !== 100) {
+      setProgress(100);
+    }
+  }, [status, progress]);
 
   // Email panel state
   const [emailPanelOpen, setEmailPanelOpen] = useState(false);
@@ -242,8 +249,11 @@ function SubCategoryModal({ subcategory, onClose }) {
   const [anchorOnStart, setAnchorOnStart] = useState(!!subcategory.start_date);
   const [anchorOnEnd, setAnchorOnEnd] = useState(!!subcategory.due_date && !subcategory.start_date);
 
-  // Temps repère from library (read-only)
+  // Tag inheritance: use task tag, or inherit from parent category
   const parentCategory = categories?.find(c => c.id === subcategory.category_id);
+  const effectiveTag = subcategory.tag || (parentCategory ? parentCategory.tag : null);
+
+  // Temps repère from library (read-only)
   let tempsRepere = null;
   if (parentCategory && libraryItems) {
     const parentCard = cards?.find(c => Number(c.id) === Number(parentCategory.card_id));
@@ -458,6 +468,13 @@ function SubCategoryModal({ subcategory, onClose }) {
   };
 
   const toggleMilestone = id => {
+    const milestone = milestones.find(m => m.id === id);
+    const isBeingChecked = milestone && !milestone.done;
+
+    if (isBeingChecked) {
+      addHiddenMilestone(id);
+    }
+
     const newMilestones = milestones
       .map(m => (m.id === id ? { ...m, done: !m.done } : m))
       .sort((a, b) => {
@@ -742,16 +759,20 @@ function SubCategoryModal({ subcategory, onClose }) {
                 </select>
               </div>
 
-              {tag && (
+              {effectiveTag && (
                 <div>
                   <label className="block text-sm font-medium text-primary mb-1">Tag</label>
                   <div
                     className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-white"
                     style={{ backgroundColor: tagInfo?.color || '#6B7280' }}
                   >
-                    {tag}
+                    {effectiveTag}
                   </div>
-                  <p className="text-xs text-muted mt-1">Tag assigné par l'administrateur</p>
+                  <p className="text-xs text-muted mt-1">
+                    {subcategory.tag
+                      ? "Tag assigné par l'administrateur"
+                      : 'Tag hérité de la catégorie parente'}
+                  </p>
                 </div>
               )}
             </div>
