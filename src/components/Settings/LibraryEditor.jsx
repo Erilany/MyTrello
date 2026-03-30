@@ -856,7 +856,6 @@ function TreeNode({
   onEdit,
   onDelete,
   onAddChild,
-  onToggleSkipAction,
   onDragStart,
   onDragOver,
   onDrop,
@@ -885,13 +884,6 @@ function TreeNode({
 
   const handleBlur = () => {
     setIsEditing(false);
-  };
-
-  const handleToggleSkipAction = () => {
-    const newSkipAction = !localData.skipAction;
-    const updatedData = { ...localData, skipAction: newSkipAction };
-    setLocalData(updatedData);
-    onToggleSkipAction(node.id, newSkipAction);
   };
 
   const typeConfig = {
@@ -973,17 +965,6 @@ function TreeNode({
               className="flex-1 px-3 py-1.5 text-sm bg-[var(--bg-input)] border border-[var(--border)] rounded text-[var(--txt-primary)] cursor-text"
               placeholder="Nom de la carte"
             />
-            <button
-              onClick={handleToggleSkipAction}
-              className={`px-2 py-1 text-xs rounded border ${
-                localData.skipAction
-                  ? 'bg-orange-500/20 text-orange-500 border-orange-500/50 hover:bg-orange-500/30'
-                  : 'bg-std text-muted border-std hover:bg-card-hover'
-              }`}
-              title="Ignorer le niveau Action"
-            >
-              {localData.skipAction ? 'Tâche unique' : 'Multi-tâches'}
-            </button>
           </>
         )}
 
@@ -1100,7 +1081,6 @@ function TreeNode({
               onEdit={onEdit}
               onDelete={onDelete}
               onAddChild={onAddChild}
-              onToggleSkipAction={onToggleSkipAction}
               onDragStart={onDragStart}
               onDragOver={onDragOver}
               onDrop={onDrop}
@@ -1285,27 +1265,6 @@ function LibraryEditor() {
       };
 
       findAndAdd(newData);
-      return newData;
-    });
-    setHasChanges(true);
-  }, []);
-
-  const handleToggleSkipAction = useCallback((nodeId, newSkipAction) => {
-    setTreeData(prev => {
-      const newData = JSON.parse(JSON.stringify(prev));
-
-      const findAndUpdate = nodes => {
-        for (let n of nodes) {
-          if (n.id === nodeId) {
-            n.data = { ...n.data, skipAction: newSkipAction };
-            return true;
-          }
-          if (n.children && findAndUpdate(n.children)) return true;
-        }
-        return false;
-      };
-
-      findAndUpdate(newData);
       return newData;
     });
     setHasChanges(true);
@@ -2060,7 +2019,6 @@ function LibraryEditor() {
             onEdit={handleEdit}
             onDelete={handleDelete}
             onAddChild={handleAddChild}
-            onToggleSkipAction={handleToggleSkipAction}
             onDragStart={handleDragStart}
             onDragOver={handleDragOver}
             onDrop={handleDrop}

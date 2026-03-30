@@ -201,10 +201,11 @@ function Sidebar() {
           style={{ fontSize: '18px', letterSpacing: '-0.5px' }}
         >
           <span className="text-accent">D</span>
-          <span>-</span>
+          <span className="text-white">-</span>
           <span className="text-accent">P</span>
-          <span>roje</span>
+          <span className="text-white">roje</span>
           <span className="text-accent">T</span>
+          <span className="text-white">s</span>
         </h1>
         <button
           onClick={() => setSidebarOpen(false)}

@@ -18,7 +18,7 @@ import {
 
 const pageGuides = {
   introduction: {
-    title: 'Guide D-ProjeT',
+    title: 'Guide D-ProjeTs',
     sections: [
       {
         id: 'roles',
@@ -1921,7 +1921,7 @@ function GuidePanel() {
   };
 
   const guideOptions = [
-    { key: 'introduction', label: 'Guide D-ProjeT' },
+    { key: 'introduction', label: 'Guide D-ProjeTs' },
     { key: 'dashboard', label: 'Dashboard' },
     { key: 'board', label: 'Projet' },
     { key: 'library', label: 'Bibliothèque' },
@@ -1961,10 +1961,10 @@ function GuidePanel() {
                           : 'dashboard')
             }
             onChange={e => handleGuideChange(e.target.value)}
-            className="bg-transparent border-none text-primary font-semibold cursor-pointer focus:outline-none"
+            className="bg-card text-primary font-semibold cursor-pointer focus:outline-none rounded px-2 py-1 border border-std"
           >
             {guideOptions.map(opt => (
-              <option key={opt.key} value={opt.key}>
+              <option key={opt.key} value={opt.key} className="bg-card text-primary">
                 {opt.label}
               </option>
             ))}

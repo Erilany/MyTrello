@@ -18,7 +18,7 @@ import storage from '../services/storage';
 
 const STORAGE_KEY = 'd-projet_db';
 
-// Migration des clés localStorage de MyTrello vers D-ProjeT
+// Migration des clés localStorage de MyTrello vers D-ProjeTs
 function migrateLocalStorageKeys() {
   const keyMappings = [
     { old: 'mytrello_db', newKey: 'd-projet_db' },
@@ -69,7 +69,7 @@ function migrateLocalStorageKeys() {
   });
 
   if (migrated) {
-    console.log('[Migration] Clés localStorage migrées de MyTrello vers D-ProjeT');
+    console.log('[Migration] Clés localStorage migrées de MyTrello vers D-ProjeTs');
   }
 }
 

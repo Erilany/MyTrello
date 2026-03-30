@@ -679,11 +679,6 @@ function LibraryFavorites() {
                           <span className="text-sm font-medium text-[var(--txt-primary)]">
                             {item.title}
                           </span>
-                          {cardSkipAction && (
-                            <span className="px-1.5 py-0.5 text-xs bg-purple-100 text-purple-700 rounded dark:bg-purple-900/40 dark:text-purple-300">
-                              Tâche unique
-                            </span>
-                          )}
                         </button>
                         <button
                           onClick={e => {

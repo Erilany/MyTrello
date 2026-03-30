@@ -45,6 +45,7 @@ function createWindow() {
     minWidth: 1024,
     minHeight: 768,
     backgroundColor: '#ffffff',
+    title: 'D-ProjeTs',
     show: false,
     webPreferences: {
       nodeIntegration: false,
@@ -155,12 +156,12 @@ function createMenu() {
       label: 'Aide',
       submenu: [
         {
-          label: 'À propos de D-ProjeT',
+          label: 'À propos de D-ProjeTs',
           click: () => {
             dialog.showMessageBox(mainWindow, {
               type: 'info',
-              title: 'À propos de D-ProjeT',
-              message: 'D-ProjeT v1.1',
+              title: 'À propos de D-ProjeTs',
+              message: 'D-ProjeTs v1.1',
               detail: 'Application de gestion de projets à 3 niveaux.',
             });
           },
@@ -183,7 +184,7 @@ function createTray() {
 
     const contextMenu = Menu.buildFromTemplate([
       {
-        label: 'Ouvrir D-ProjeT',
+        label: 'Ouvrir D-ProjeTs',
         click: () => {
           mainWindow.show();
         },
@@ -198,7 +199,7 @@ function createTray() {
       },
     ]);
 
-    tray.setToolTip('D-ProjeT');
+    tray.setToolTip('D-ProjeTs');
     tray.setContextMenu(contextMenu);
 
     tray.on('double-click', () => {

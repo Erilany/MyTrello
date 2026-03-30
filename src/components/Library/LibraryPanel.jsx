@@ -1250,8 +1250,64 @@ function LibraryPanel({ standalone = false }) {
             cardsAdded++;
           }
 
+          // Logique automatique: si 1 seule SOUS-CATÉGORIE au total pour cette carte, importer directement
+          const totalSelectedSubcats = selectedSubcategories.filter(
+            ss => ss.cardTitle === cardTitle
+          );
+          const isSingleTask = totalSelectedSubcats.length === 1;
+
+          // Si une seule tâche, importer sans créer de catégories
+          if (isSingleTask && totalSelectedSubcats.length > 0) {
+            console.log('[DEBUG] Single task detected - importing directly without categories');
+            const subcat = totalSelectedSubcats[0];
+            // Créer une catégorie par défaut "Tâches" si nécessaire
+            let defaultCat = db.categories.find(
+              c => Number(c.card_id) === cardId && !c.parent_id && c.title === 'Tâches'
+            );
+            if (!defaultCat) {
+              try {
+                const newCatId = await createCategory(
+                  cardId,
+                  'Tâches',
+                  '',
+                  'normal',
+                  null,
+                  '',
+                  null,
+                  1,
+                  null,
+                  null
+                );
+                defaultCat = { id: newCatId };
+              } catch (e) {
+                console.log('[DEBUG] Error creating default category:', e);
+              }
+            }
+            if (defaultCat) {
+              try {
+                await createSubcategory(
+                  defaultCat.id,
+                  subcat.title,
+                  subcat.description || '',
+                  subcat.priority || 'normal',
+                  subcat.due_date || null,
+                  subcat.assignee || '',
+                  null,
+                  subcat.duration_days || 1,
+                  null,
+                  subcat.tag
+                );
+                console.log('[DEBUG] Created subcategory directly:', subcat.title);
+              } catch (e) {
+                console.log('[DEBUG] Error creating subcategory:', e);
+              }
+            }
+            // Skip les catégories car on a déjà importé la tâche unique
+            continue;
+          }
+
+          // Sinon, créer les catégories normalement (plusieurs sous-catégories)
           const cardCategories = content.categories || [];
-          console.log('[DEBUG] cardCategories:', cardCategories.length);
           for (const cat of cardCategories) {
             const isCatSelected = selectedCategories.some(
               sc => sc.title === cat.title && sc.cardTitle === cardTitle
@@ -1865,11 +1921,6 @@ function LibraryPanel({ standalone = false }) {
                             <h4 className="font-medium text-sm truncate text-gray-800 dark:text-white flex-1">
                               {item.title}
                             </h4>
-                            {cardSkipAction && (
-                              <span className="px-1.5 py-0.5 text-xs bg-purple-100 text-purple-700 rounded dark:bg-purple-900/40 dark:text-purple-300 flex-shrink-0">
-                                Tâche unique
-                              </span>
-                            )}
                             {isCardFavorite(item.id) && (
                               <Star
                                 size={14}

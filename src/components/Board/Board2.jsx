@@ -1440,12 +1440,25 @@ Affaire: ${commande.affaire || 'N/A'}
                       )
                       .map(card => {
                         const cardCategories = categories.filter(c => c.card_id === card.id);
-                        const totalSubcats = cardCategories.reduce(
-                          (acc, cat) =>
-                            acc + subcategories.filter(s => s.category_id === cat.id).length,
+                        const categoriesWithSubcats = cardCategories.map(cat => {
+                          const catSubcats = subcategories.filter(s => s.category_id === cat.id);
+                          return {
+                            ...cat,
+                            subcats: catSubcats,
+                            isSingleTask: catSubcats.length === 1,
+                          };
+                        });
+                        const hasMultiTaskCategories = categoriesWithSubcats.some(
+                          cat => !cat.isSingleTask
+                        );
+                        const hasSingleTaskCategories = categoriesWithSubcats.some(
+                          cat => cat.isSingleTask
+                        );
+                        const skipAction = hasSingleTaskCategories && !hasMultiTaskCategories;
+                        const totalSubcats = categoriesWithSubcats.reduce(
+                          (acc, cat) => acc + cat.subcats.length,
                           0
                         );
-                        const skipAction = getCardSkipAction(card);
                         const allCardSubcats = subcategories.filter(s =>
                           cardCategories.some(c => c.id === s.category_id)
                         );
@@ -1465,11 +1478,6 @@ Affaire: ${commande.affaire || 'N/A'}
                                 className="font-semibold text-primary cursor-pointer hover:text-accent flex items-center gap-2 flex-1"
                               >
                                 {card.title}
-                                {skipAction && (
-                                  <span className="px-1.5 py-0.5 text-xs bg-purple-100 text-purple-700 rounded dark:bg-purple-900/40 dark:text-purple-300">
-                                    Tâche unique
-                                  </span>
-                                )}
                               </h3>
                               <div className="flex items-center gap-2">
                                 <button
@@ -1492,118 +1500,45 @@ Affaire: ${commande.affaire || 'N/A'}
                               </div>
                             </div>
                             <div className="space-y-2">
-                              {skipAction ? (
-                                <>
-                                  {allCardSubcats.length === 0 ? (
-                                    <p className="text-sm text-muted italic">
-                                      Aucune tâche disponible
-                                    </p>
-                                  ) : (
-                                    <>
-                                      <p className="text-xs text-[var(--txt-muted)] mb-2">
-                                        Les tâches sont affichées ci-dessous
-                                      </p>
-                                      {allCardSubcats.map(sub => (
-                                        <div
-                                          key={sub.id}
-                                          className="pl-3 border-l-2 border-accent cursor-pointer hover:bg-[var(--bg-card)] rounded p-2 transition-colors"
-                                          onClick={() => setSelectedSubcategory(sub)}
-                                        >
-                                          <div className="flex items-center gap-2">
-                                            <span
-                                              className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                                                sub.status === 'done'
-                                                  ? 'bg-green-500'
-                                                  : sub.status === 'waiting'
-                                                    ? 'bg-blue-500'
-                                                    : sub.status === 'todo'
-                                                      ? 'bg-red-500'
-                                                      : sub.status === 'in_progress'
-                                                        ? 'bg-yellow-500'
-                                                        : sub.status === 'blocked'
-                                                          ? 'bg-red-500'
-                                                          : 'bg-gray-400'
-                                              }`}
-                                            />
-                                            <div className="flex-1 min-w-0">
-                                              <div className="text-sm text-[var(--txt-primary)] truncate">
-                                                {sub.title}
-                                              </div>
-                                              <div className="flex items-center gap-2 text-xs text-[var(--txt-muted)]">
-                                                {sub.assignee && (
-                                                  <span className="truncate">
-                                                    👤 {sub.assignee}
-                                                  </span>
-                                                )}
-                                                {sub.due_date && (
-                                                  <span className="whitespace-nowrap">
-                                                    📅{' '}
-                                                    {new Date(sub.due_date).toLocaleDateString(
-                                                      'fr-FR'
-                                                    )}
-                                                  </span>
-                                                )}
-                                              </div>
-                                            </div>
-                                          </div>
-                                        </div>
-                                      ))}
-                                    </>
-                                  )}
-                                </>
+                              {categoriesWithSubcats.length === 0 ? (
+                                <p className="text-sm text-muted italic">Aucune tâche disponible</p>
                               ) : (
-                                <>
-                                  {cardCategories.map(cat => {
-                                    const catSubcats = subcategories.filter(
-                                      s => s.category_id === cat.id
-                                    );
-                                    const isHovered = hoveredCategoryData?.category?.id === cat.id;
-                                    return (
+                                categoriesWithSubcats.map(cat =>
+                                  cat.isSingleTask ? (
+                                    cat.subcats.map(sub => (
                                       <div
-                                        key={cat.id}
-                                        className="pl-3 border-l-2 border-accent relative"
-                                        onMouseEnter={e => {
-                                          if (hoverTimeoutRef.current) {
-                                            clearTimeout(hoverTimeoutRef.current);
-                                          }
-                                          setHoveredCategoryData({
-                                            card,
-                                            category: cat,
-                                            subcategories: catSubcats,
-                                            mouseX: e.clientX,
-                                            mouseY: e.clientY,
-                                          });
-                                          hoverTimeoutRef.current = setTimeout(() => {
-                                            setHoverPanelVisible(true);
-                                          }, 100);
-                                        }}
-                                        onMouseLeave={() => {
-                                          setHoverPanelVisible(false);
-                                          hoverTimeoutRef.current = setTimeout(() => {
-                                            setHoveredCategoryData(null);
-                                          }, 300);
-                                        }}
+                                        key={sub.id}
+                                        className="pl-3 border-l-2 border-purple-400 cursor-pointer hover:bg-[var(--bg-card)] rounded p-2 transition-colors"
+                                        onClick={() => setSelectedSubcategory(sub)}
                                       >
-                                        <div className="flex items-center justify-between">
-                                          <div className="flex-1">
-                                            <h4
-                                              onClick={() =>
-                                                setSelectedCategoryForTasks({
-                                                  card,
-                                                  category: cat,
-                                                  subcategories: catSubcats,
-                                                })
-                                              }
-                                              className="text-sm font-medium text-secondary cursor-pointer hover:text-accent hover:underline"
-                                            >
-                                              {cat.title}
-                                            </h4>
-                                            <div className="flex items-center gap-2 text-xs text-muted mt-0.5">
-                                              {cat.assignee && <span>👤 {cat.assignee}</span>}
-                                              {cat.due_date && (
-                                                <span>
+                                        <div className="flex items-center gap-2">
+                                          <span
+                                            className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                                              sub.status === 'done'
+                                                ? 'bg-green-500'
+                                                : sub.status === 'waiting'
+                                                  ? 'bg-blue-500'
+                                                  : sub.status === 'todo'
+                                                    ? 'bg-red-500'
+                                                    : sub.status === 'in_progress'
+                                                      ? 'bg-yellow-500'
+                                                      : sub.status === 'blocked'
+                                                        ? 'bg-red-500'
+                                                        : 'bg-gray-400'
+                                            }`}
+                                          />
+                                          <div className="flex-1 min-w-0">
+                                            <div className="text-sm text-[var(--txt-primary)] truncate">
+                                              {sub.title}
+                                            </div>
+                                            <div className="flex items-center gap-2 text-xs text-[var(--txt-muted)]">
+                                              {sub.assignee && (
+                                                <span className="truncate">👤 {sub.assignee}</span>
+                                              )}
+                                              {sub.due_date && (
+                                                <span className="whitespace-nowrap">
                                                   📅{' '}
-                                                  {new Date(cat.due_date).toLocaleDateString(
+                                                  {new Date(sub.due_date).toLocaleDateString(
                                                     'fr-FR'
                                                   )}
                                                 </span>
@@ -1611,38 +1546,81 @@ Affaire: ${commande.affaire || 'N/A'}
                                             </div>
                                           </div>
                                         </div>
-
-                                        {isHovered &&
-                                          hoverPanelVisible &&
-                                          hoveredCategoryData?.category?.id === cat.id &&
-                                          catSubcats.length > 0 && (
-                                            <div
-                                              className="absolute left-1/2 top-0 -translate-x-1/2 w-64 bg-[var(--bg-card)] border border-[var(--border)] rounded-lg shadow-xl z-[60] overflow-hidden"
-                                              onMouseEnter={() => {
-                                                if (hoverTimeoutRef.current) {
-                                                  clearTimeout(hoverTimeoutRef.current);
-                                                }
-                                                setHoverPanelVisible(true);
-                                              }}
-                                              onMouseLeave={() => {
-                                                setHoverPanelVisible(false);
-                                                hoverTimeoutRef.current = setTimeout(() => {
-                                                  setHoveredCategoryData(null);
-                                                }, 300);
-                                              }}
-                                            >
-                                              <div className="max-h-48 overflow-auto p-1">
-                                                {catSubcats.map(sub => (
-                                                  <div
-                                                    key={sub.id}
-                                                    onClick={e => {
-                                                      e.stopPropagation();
-                                                      setSelectedSubcategory(sub);
-                                                      setHoverPanelVisible(false);
-                                                      setHoveredCategoryData(null);
-                                                    }}
-                                                    className="flex items-center gap-2 p-2 hover:bg-[var(--bg-card-hover)] rounded cursor-pointer transition-colors"
-                                                  >
+                                      </div>
+                                    ))
+                                  ) : (
+                                    <div
+                                      key={cat.id}
+                                      className="pl-3 border-l-2 border-accent relative"
+                                      onMouseEnter={e => {
+                                        if (hoverTimeoutRef.current)
+                                          clearTimeout(hoverTimeoutRef.current);
+                                        setHoveredCategoryData({
+                                          card,
+                                          category: cat,
+                                          subcategories: cat.subcats,
+                                          mouseX: e.clientX,
+                                          mouseY: e.clientY,
+                                        });
+                                        hoverTimeoutRef.current = setTimeout(
+                                          () => setHoverPanelVisible(true),
+                                          100
+                                        );
+                                      }}
+                                      onMouseLeave={() => {
+                                        setHoverPanelVisible(false);
+                                        hoverTimeoutRef.current = setTimeout(
+                                          () => setHoveredCategoryData(null),
+                                          300
+                                        );
+                                      }}
+                                    >
+                                      <div
+                                        className="text-sm text-[var(--txt-primary)] font-medium cursor-pointer hover:text-accent"
+                                        onClick={() =>
+                                          setSelectedCategoryForTasks({
+                                            card,
+                                            category: cat,
+                                            subcategories: cat.subcats,
+                                          })
+                                        }
+                                      >
+                                        {cat.title}{' '}
+                                        <span className="ml-2 text-xs text-[var(--txt-muted)]">
+                                          ({cat.subcats.length} tâches)
+                                        </span>
+                                      </div>
+                                      {hoverPanelVisible &&
+                                        hoveredCategoryData?.category?.id === cat.id &&
+                                        cat.subcats.length > 0 && (
+                                          <div
+                                            className="absolute left-1/2 top-0 -translate-x-1/2 w-64 bg-[var(--bg-card)] border border-[var(--border)] rounded-lg shadow-xl z-[60] overflow-hidden"
+                                            onMouseEnter={() => {
+                                              if (hoverTimeoutRef.current)
+                                                clearTimeout(hoverTimeoutRef.current);
+                                              setHoverPanelVisible(true);
+                                            }}
+                                            onMouseLeave={() => {
+                                              setHoverPanelVisible(false);
+                                              hoverTimeoutRef.current = setTimeout(
+                                                () => setHoveredCategoryData(null),
+                                                300
+                                              );
+                                            }}
+                                          >
+                                            <div className="max-h-48 overflow-auto p-1">
+                                              {cat.subcats.map(sub => (
+                                                <div
+                                                  key={sub.id}
+                                                  className="p-2 hover:bg-[var(--bg-card-hover)] rounded cursor-pointer"
+                                                  onClick={e => {
+                                                    e.stopPropagation();
+                                                    setSelectedSubcategory(sub);
+                                                    setHoverPanelVisible(false);
+                                                    setHoveredCategoryData(null);
+                                                  }}
+                                                >
+                                                  <div className="flex items-center gap-2">
                                                     <span
                                                       className={`w-2 h-2 rounded-full flex-shrink-0 ${
                                                         sub.status === 'done'
@@ -1679,23 +1657,14 @@ Affaire: ${commande.affaire || 'N/A'}
                                                       </div>
                                                     </div>
                                                   </div>
-                                                ))}
-                                              </div>
+                                                </div>
+                                              ))}
                                             </div>
-                                          )}
-                                      </div>
-                                    );
-                                  })}
-                                  {cardCategories.length === 0 && (
-                                    <p className="text-sm text-muted">Aucune action</p>
-                                  )}
-                                </>
-                              )}
-                              {!skipAction && totalSubcats > 0 && (
-                                <p className="text-xs text-muted mt-2">
-                                  {totalSubcats} tâche{totalSubcats > 1 ? 's' : ''} détaillée
-                                  {totalSubcats > 1 ? 's' : ''}
-                                </p>
+                                          </div>
+                                        )}
+                                    </div>
+                                  )
+                                )
                               )}
                             </div>
                           </div>
