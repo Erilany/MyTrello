@@ -1,4 +1,5 @@
-# 📋 D-ProjeT — MVP (Version 0.1)
+# 📋 C-PRojeTs — MVP (Version 0.1)
+
 > **Objectif** : Utilisation personnelle immédiate — Gestion de projets 3 niveaux sans dépendance externe
 > **Basé sur** : Phases 1, 2 et 3 (partielle) du plan de développement
 
@@ -6,24 +7,24 @@
 
 ## 🎯 Périmètre du MVP
 
-| Inclus | Exclu |
-|---|---|
-| Tableau + colonnes + cartes niveau 1 | Drag & drop (prévu V1.1) |
-| Catégories (niveau 2) | Commandes vocales (prévu V1.1) |
-| Sous-catégories (niveau 3) | Bibliothèque avancée (prévu V1.2) |
-| Bibliothèque de modèles simple | Intégration messagerie (prévu V2.0) |
-| Étiquettes de priorité | Thèmes clair/sombre (prévu V1.2) |
-| Dates d'échéance | Synchronisation (prévu V3.0) |
-| Commentaires et assignations | Tests automatisés (prévu V3.0) |
-| Persistance locale (SQLite) | Mode collaboratif |
-| Navigation clic / clavier | |
+| Inclus                               | Exclu                               |
+| ------------------------------------ | ----------------------------------- |
+| Tableau + colonnes + cartes niveau 1 | Drag & drop (prévu V1.1)            |
+| Catégories (niveau 2)                | Commandes vocales (prévu V1.1)      |
+| Sous-catégories (niveau 3)           | Bibliothèque avancée (prévu V1.2)   |
+| Bibliothèque de modèles simple       | Intégration messagerie (prévu V2.0) |
+| Étiquettes de priorité               | Thèmes clair/sombre (prévu V1.2)    |
+| Dates d'échéance                     | Synchronisation (prévu V3.0)        |
+| Commentaires et assignations         | Tests automatisés (prévu V3.0)      |
+| Persistance locale (SQLite)          | Mode collaboratif                   |
+| Navigation clic / clavier            |                                     |
 
 ---
 
 ## 🏗️ Architecture MVP
 
 ```
-D-ProjeT-MVP/
+C-PRojeTs-MVP/
 ├── src/
 │   ├── components/
 │   │   ├── Board/
@@ -150,6 +151,7 @@ CREATE TABLE library_items (
 ## 🔧 Tâches de développement MVP
 
 ### ÉTAPE 1 — Initialisation projet
+
 - [ ] Initialiser Electron + React
 - [ ] Configurer TailwindCSS
 - [ ] Configurer ESLint / Prettier
@@ -158,12 +160,14 @@ CREATE TABLE library_items (
 - [ ] Configurer le routage React de base
 
 ### ÉTAPE 2 — Tableau et colonnes
+
 - [ ] Composant `Board` — affichage et gestion des colonnes
 - [ ] Création / renommage / suppression de colonne
 - [ ] Persistance des colonnes en base
 - [ ] Interface de sélection et création de tableau
 
 ### ÉTAPE 3 — Cartes niveau 1
+
 - [ ] Composant `Card` — affichage titre, priorité, date, assignée
 - [ ] Modal d'édition complète de la carte
 - [ ] Étiquettes de priorité colorées (urgent / normal / en attente / terminé)
@@ -173,6 +177,7 @@ CREATE TABLE library_items (
 - [ ] Déplacement par boutons ← → entre colonnes (sans drag & drop)
 
 ### ÉTAPE 4 — Catégories (niveau 2)
+
 - [ ] Composant `Category` intégré dans Card
 - [ ] Création / édition / suppression de catégorie
 - [ ] Collapse / expand de la catégorie
@@ -181,12 +186,14 @@ CREATE TABLE library_items (
 - [ ] Déplacement vers une autre carte (menu contextuel)
 
 ### ÉTAPE 5 — Sous-catégories (niveau 3)
+
 - [ ] Composant `SubCategory` intégré dans Category
 - [ ] Création / édition / suppression de sous-catégorie
 - [ ] Déplacement ↑ ↓ au sein de la catégorie (boutons)
 - [ ] Déplacement vers une autre catégorie (menu contextuel)
 
 ### ÉTAPE 6 — Bibliothèque de modèles (version simple)
+
 - [ ] Panel bibliothèque (panneau latéral rétractable)
 - [ ] Bouton "Sauvegarder comme modèle" sur chaque élément
 - [ ] Sauvegarde du contenu imbriqué complet en JSON
@@ -195,6 +202,7 @@ CREATE TABLE library_items (
 - [ ] Renommer / supprimer un modèle
 
 ### ÉTAPE 7 — Finalisation MVP
+
 - [ ] Gestion des commentaires (tous niveaux)
 - [ ] Date d'échéance avec indicateur visuel (dépassé / proche / ok)
 - [ ] Page de paramètres minimale
@@ -206,6 +214,7 @@ CREATE TABLE library_items (
 ## 🧪 Tests de validation MVP
 
 ### TEST MVP-01 — Démarrage application
+
 ```
 ✅ L'application Electron s'ouvre sans erreur
 ✅ La base de données est créée automatiquement au premier lancement
@@ -215,6 +224,7 @@ CREATE TABLE library_items (
 ```
 
 ### TEST MVP-02 — Tableaux et colonnes
+
 ```
 🧪 Créer le tableau "Postes 400kV — 2026"
    Ajouter les colonnes : "Études", "En cours", "Réalisé", "Archivé"
@@ -227,6 +237,7 @@ CREATE TABLE library_items (
 ```
 
 ### TEST MVP-03 — Cartes niveau 1
+
 ```
 🧪 Créer la carte "Poste 400kV Saint-Étienne-du-Rouvray"
    Priorité = Urgent | Date = 30/06/2026 | Assigné = "Chef de projet"
@@ -240,6 +251,7 @@ CREATE TABLE library_items (
 ```
 
 ### TEST MVP-04 — Déplacement des cartes
+
 ```
 🧪 Déplacer "Poste 400kV Saint-Étienne-du-Rouvray" vers "En cours"
 
@@ -250,6 +262,7 @@ CREATE TABLE library_items (
 ```
 
 ### TEST MVP-05 — Catégories niveau 2
+
 ```
 🧪 Dans la carte créée, ajouter :
    "Études GC" | "Études Électriques HTB" | "Réalisation GC"
@@ -264,6 +277,7 @@ CREATE TABLE library_items (
 ```
 
 ### TEST MVP-06 — Déplacement des catégories
+
 ```
 🧪 Remonter "Suivi administratif" en première position
 
@@ -278,6 +292,7 @@ CREATE TABLE library_items (
 ```
 
 ### TEST MVP-07 — Sous-catégories niveau 3
+
 ```
 🧪 Dans "Études GC", créer :
    "Terrassements" | "Fondations bâtiment de commande"
@@ -291,6 +306,7 @@ CREATE TABLE library_items (
 ```
 
 ### TEST MVP-08 — Déplacement des sous-catégories
+
 ```
 🧪 Déplacer "Fondations bâtiment de commande" vers "Réalisation GC"
 
@@ -301,6 +317,7 @@ CREATE TABLE library_items (
 ```
 
 ### TEST MVP-09 — Bibliothèque de modèles
+
 ```
 🧪 Sauvegarder la carte "Poste 400kV Saint-Étienne-du-Rouvray" en bibliothèque
 
@@ -319,6 +336,7 @@ CREATE TABLE library_items (
 ```
 
 ### TEST MVP-10 — Commentaires et archivage
+
 ```
 🧪 Ajouter un commentaire sur la sous-catégorie "Fondations" :
    "RDV bureau d'études le 15/03/2026 — attente plan de coffrage"
@@ -338,21 +356,23 @@ CREATE TABLE library_items (
 
 ## 📊 Récapitulatif MVP
 
-| Critère | Détail |
-|---|---|
-| **Phases couvertes** | Phase 1, Phase 2, Phase 3 partielle |
-| **Tâches de développement** | 35 tâches |
-| **Tests de validation** | 10 tests |
-| **Drag & drop** | ❌ Boutons ↑↓ ←→ et menus contextuels |
-| **Commandes vocales** | ❌ Non |
-| **Messagerie** | ❌ Non |
-| **Connexion internet** | ❌ Non requise |
-| **Plateforme** | Desktop (Electron) |
+| Critère                     | Détail                                |
+| --------------------------- | ------------------------------------- |
+| **Phases couvertes**        | Phase 1, Phase 2, Phase 3 partielle   |
+| **Tâches de développement** | 35 tâches                             |
+| **Tests de validation**     | 10 tests                              |
+| **Drag & drop**             | ❌ Boutons ↑↓ ←→ et menus contextuels |
+| **Commandes vocales**       | ❌ Non                                |
+| **Messagerie**              | ❌ Non                                |
+| **Connexion internet**      | ❌ Non requise                        |
+| **Plateforme**              | Desktop (Electron)                    |
 
 ---
 
 ## ➡️ Prochaine version : V1.1
+
 Drag & drop aux 3 niveaux + commandes vocales de base
 
 ---
-*D-ProjeT — Version MVP 0.1 — 23 février 2026*
+
+_C-PRojeTs — Version MVP 0.1 — 23 février 2026_

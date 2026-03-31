@@ -22,7 +22,7 @@ function Library() {
 
   useEffect(() => {
     loadLibrary();
-    const stored = localStorage.getItem('d-projet_library_favorites');
+    const stored = localStorage.getItem('c-projets_library_favorites');
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
@@ -58,7 +58,7 @@ function Library() {
       newFavorites.cards.push(String(itemId));
     }
     setFavorites(newFavorites);
-    localStorage.setItem('d-projet_library_favorites', JSON.stringify(newFavorites));
+    localStorage.setItem('c-projets_library_favorites', JSON.stringify(newFavorites));
     window.dispatchEvent(new Event('library-favorites-updated'));
   };
 

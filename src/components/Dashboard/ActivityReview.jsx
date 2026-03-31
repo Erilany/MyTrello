@@ -16,9 +16,9 @@ const ROLE_TO_ACTIVITY = {
 };
 
 const SMILEY_LEVELS = {
-  low: { emoji: '😊', color: '#22C55E', label: 'Faible' },
-  medium: { emoji: '😐', color: '#F59E0B', label: 'Moyenne' },
-  high: { emoji: '😰', color: '#EF4444', label: 'Élevée' },
+  low: { emoji: '🟢', color: '#22C55E', label: 'Faible' },
+  medium: { emoji: '🟠', color: '#F59E0B', label: 'Moyenne' },
+  high: { emoji: '🔴', color: '#EF4444', label: 'Élevée' },
 };
 
 function getQuarter(date) {
@@ -28,6 +28,10 @@ function getQuarter(date) {
 
 function getQuarterYear(date) {
   return date.getFullYear();
+}
+
+function getMonthIndexInQuarter(date) {
+  return date.getMonth() % 3;
 }
 
 function formatDateFrench(dateStr) {
@@ -91,19 +95,19 @@ function ActivityReview({ boards, categories, subcategories, columns, currentUse
   const [showAllUsers, setShowAllUsers] = useState(false);
   const initializedRef = useRef(false);
 
-  const currentUserRole = localStorage.getItem('d-projet-user-role') || '';
+  const currentUserRole = localStorage.getItem('c-projets-user-role') || '';
 
   useEffect(() => {
     setTags(loadTagsData());
 
-    const saved = localStorage.getItem('d-projet_charge_ressentie');
+    const saved = localStorage.getItem('c-projets_charge_ressentie');
     if (saved) {
       setChargeResentie(JSON.parse(saved));
     }
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('d-projet_charge_ressentie', JSON.stringify(chargeResentie));
+    localStorage.setItem('c-projets_charge_ressentie', JSON.stringify(chargeResentie));
   }, [chargeResentie]);
 
   useEffect(() => {
@@ -124,7 +128,7 @@ function ActivityReview({ boards, categories, subcategories, columns, currentUse
       return;
     }
 
-    const storageData = JSON.parse(localStorage.getItem('d-projet_db') || '{}');
+    const storageData = JSON.parse(localStorage.getItem('c-projets_db') || '{}');
     const allBoardsFromStorage = storageData.boards || [];
 
     const projects = [];
@@ -360,10 +364,17 @@ function ActivityReview({ boards, categories, subcategories, columns, currentUse
   };
 
   const handleChargeChange = (quarterKey, level) => {
-    setChargeResentie(prev => ({
-      ...prev,
-      [quarterKey]: level,
-    }));
+    setChargeResentie(prev => {
+      if (prev[quarterKey] === level) {
+        const newState = { ...prev };
+        delete newState[quarterKey];
+        return newState;
+      }
+      return {
+        ...prev,
+        [quarterKey]: level,
+      };
+    });
   };
 
   const getCurrentQuarterKey = () => {
@@ -628,7 +639,7 @@ function ActivityReview({ boards, categories, subcategories, columns, currentUse
                               width: '90px',
                             }}
                           >
-                            <div className="flex flex-col overflow-hidden h-full">
+                            <div className="flex flex-col overflow-visible h-full relative">
                               {(() => {
                                 const groupedByTag = {};
                                 projectItems.forEach(item => {
@@ -655,15 +666,62 @@ function ActivityReview({ boards, categories, subcategories, columns, currentUse
                                 return groupedItems.map((item, idx) => {
                                   const isVisible =
                                     item.startIndex <= colIdx && item.endIndex >= colIdx;
+                                  if (!isVisible) {
+                                    return (
+                                      <div
+                                        key={`${item.boardId}-${item.label}`}
+                                        className="absolute"
+                                        style={{
+                                          top: idx > 0 ? `${idx * 21}px` : '0px',
+                                          height: '18px',
+                                          visibility: 'hidden',
+                                        }}
+                                      />
+                                    );
+                                  }
+                                  const startMonthIdx = getMonthIndexInQuarter(
+                                    new Date(item.startDate)
+                                  );
+                                  const endMonthIdx = getMonthIndexInQuarter(
+                                    new Date(item.endDate)
+                                  );
+                                  const isFirstQuarter = colIdx === item.startIndex;
+                                  const isLastQuarter = colIdx === item.endIndex;
+
+                                  let leftPercent = 0;
+                                  let widthPercent = 100;
+
+                                  if (isFirstQuarter && isLastQuarter) {
+                                    leftPercent = (startMonthIdx / 3) * 100;
+                                    widthPercent = ((endMonthIdx - startMonthIdx + 1) / 3) * 100;
+                                  } else if (isFirstQuarter) {
+                                    leftPercent = (startMonthIdx / 3) * 100;
+                                    widthPercent = ((3 - startMonthIdx) / 3) * 100;
+                                  } else if (isLastQuarter) {
+                                    leftPercent = 0;
+                                    widthPercent = ((endMonthIdx + 1) / 3) * 100;
+                                  }
+
                                   return (
                                     <div
                                       key={`${item.boardId}-${item.label}`}
-                                      className="px-2 py-1 text-white text-xs truncate"
+                                      className="px-2 py-1 text-white text-xs truncate absolute"
                                       style={{
                                         backgroundColor: item.color || '#6B7280',
-                                        marginTop: idx > 0 ? `${TAG_VERTICAL_OFFSET}px` : '0px',
+                                        top: idx > 0 ? `${idx * 21}px` : '0px',
                                         height: '18px',
-                                        visibility: isVisible ? 'visible' : 'hidden',
+                                        left: `${leftPercent}%`,
+                                        width: `${widthPercent}%`,
+                                        minWidth: '20px',
+                                        maxWidth: '100%',
+                                        borderRadius:
+                                          isFirstQuarter && isLastQuarter
+                                            ? '4px'
+                                            : isFirstQuarter
+                                              ? '4px 0 0 4px'
+                                              : isLastQuarter
+                                                ? '0 4px 4px 0'
+                                                : '0',
                                       }}
                                       title={`${item.label} (${formatDateFrench(item.startDate)} au ${formatDateFrench(item.endDate)})`}
                                     />

@@ -1,20 +1,20 @@
-# 📐 D-ProjeT — Conventions de code
+# 📐 C-PRojeTs — Conventions de code
 
 ---
 
 ## 1. Nommage des fichiers
 
-| Type | Convention | Exemple |
-|---|---|---|
-| Composant React | PascalCase | `CardModal.jsx` |
-| Service / utilitaire | camelCase | `database.js`, `voice.js` |
-| Context React | PascalCase + Context | `BoardContext.js` |
-| Hook personnalisé | camelCase + use | `useVoice.js`, `useDragDrop.js` |
-| Test unitaire | même nom + `.test` | `database.test.js` |
-| Test composant | même nom + `.test` | `Card.test.jsx` |
-| Test e2e | sujet + `.spec` | `dragdrop.spec.js` |
-| Style CSS module | même nom + `.module.css` | `Card.module.css` |
-| Constantes | SCREAMING_SNAKE_CASE | `VOICE_COMMANDS.js` |
+| Type                 | Convention               | Exemple                         |
+| -------------------- | ------------------------ | ------------------------------- |
+| Composant React      | PascalCase               | `CardModal.jsx`                 |
+| Service / utilitaire | camelCase                | `database.js`, `voice.js`       |
+| Context React        | PascalCase + Context     | `BoardContext.js`               |
+| Hook personnalisé    | camelCase + use          | `useVoice.js`, `useDragDrop.js` |
+| Test unitaire        | même nom + `.test`       | `database.test.js`              |
+| Test composant       | même nom + `.test`       | `Card.test.jsx`                 |
+| Test e2e             | sujet + `.spec`          | `dragdrop.spec.js`              |
+| Style CSS module     | même nom + `.module.css` | `Card.module.css`               |
+| Constantes           | SCREAMING_SNAKE_CASE     | `VOICE_COMMANDS.js`             |
 
 ---
 
@@ -26,25 +26,25 @@
 // ✅ Correct — camelCase pour variables et fonctions
 const cardTitle = 'Poste 400kV';
 const isArchived = false;
-function createCategory(cardId, title) { }
-const handleDragEnd = (result) => { };
+function createCategory(cardId, title) {}
+const handleDragEnd = result => {};
 
 // ❌ Incorrect
 const card_title = '...';
 const CardTitle = '...';
-function Create_Category() { }
+function Create_Category() {}
 ```
 
 ### 2.2 Composants React
 
 ```javascript
 // ✅ Correct — PascalCase pour les composants
-function CardModal({ card, onClose }) { }
-const CategoryHeader = ({ category }) => { };
+function CardModal({ card, onClose }) {}
+const CategoryHeader = ({ category }) => {};
 
 // ❌ Incorrect
-function card_modal() { }
-function cardModal() { }
+function card_modal() {}
+function cardModal() {}
 ```
 
 ### 2.3 Constantes
@@ -78,12 +78,12 @@ const maxVoiceHistory = 20;
 
 ```javascript
 // ✅ Format : [domaine]:[entité]:[action]
-'db:cards:create'
-'db:cards:getAll'
-'outlook:emails:list'
-'outlook:emails:move'
-'calendar:events:getByTags'
-'voice:commands:history'
+'db:cards:create';
+'db:cards:getAll';
+'outlook:emails:list';
+'outlook:emails:move';
+'calendar:events:getByTags';
+'voice:commands:history';
 ```
 
 ---
@@ -92,13 +92,13 @@ const maxVoiceHistory = 20;
 
 ```jsx
 // ✅ Ordre recommandé dans un composant
-import React, { useState, useEffect, useCallback } from 'react';  // 1. React
-import PropTypes from 'prop-types';                                 // 2. PropTypes
-import { useBoardContext } from '../../context/BoardContext';       // 3. Contextes
-import { useVoice } from '../../hooks/useVoice';                   // 4. Hooks custom
-import CategoryHeader from './CategoryHeader';                      // 5. Composants enfants
-import { formatDate, generateId } from '../../utils';              // 6. Utilitaires
-import styles from './Category.module.css';                         // 7. Styles
+import React, { useState, useEffect, useCallback } from 'react'; // 1. React
+import PropTypes from 'prop-types'; // 2. PropTypes
+import { useBoardContext } from '../../context/BoardContext'; // 3. Contextes
+import { useVoice } from '../../hooks/useVoice'; // 4. Hooks custom
+import CategoryHeader from './CategoryHeader'; // 5. Composants enfants
+import { formatDate, generateId } from '../../utils'; // 6. Utilitaires
+import styles from './Category.module.css'; // 7. Styles
 
 // 8. Constantes locales au composant
 const DEFAULT_COLOR = '#F5F5F5';
@@ -118,7 +118,9 @@ function Category({ category, onUpdate, onDelete }) {
   // 13. Effets
   useEffect(() => {
     registerCommand(`ouvrir catégorie ${category.title}`, handleOpen);
-    return () => { /* cleanup */ };
+    return () => {
+      /* cleanup */
+    };
   }, [category.title]);
 
   // 14. Handlers
@@ -126,24 +128,19 @@ function Category({ category, onUpdate, onDelete }) {
     setIsCollapsed(prev => !prev);
   }, []);
 
-  const handleUpdate = useCallback(async (newData) => {
-    const result = await updateCategory(category.id, newData);
-    if (result.success) onUpdate?.(result.data);
-  }, [category.id, updateCategory, onUpdate]);
+  const handleUpdate = useCallback(
+    async newData => {
+      const result = await updateCategory(category.id, newData);
+      if (result.success) onUpdate?.(result.data);
+    },
+    [category.id, updateCategory, onUpdate]
+  );
 
   // 15. Rendu
   return (
     <div className={styles.category}>
-      <CategoryHeader
-        category={category}
-        isCollapsed={isCollapsed}
-        onCollapse={handleCollapse}
-      />
-      {!isCollapsed && (
-        <div className={styles.content}>
-          {/* sous-catégories */}
-        </div>
-      )}
+      <CategoryHeader category={category} isCollapsed={isCollapsed} onCollapse={handleCollapse} />
+      {!isCollapsed && <div className={styles.content}>{/* sous-catégories */}</div>}
     </div>
   );
 }
@@ -218,17 +215,17 @@ class DatabaseService {
 
 #### Types autorisés
 
-| Type | Utilisation |
-|---|---|
-| `feat` | Nouvelle fonctionnalité |
-| `fix` | Correction de bug |
+| Type       | Utilisation                                 |
+| ---------- | ------------------------------------------- |
+| `feat`     | Nouvelle fonctionnalité                     |
+| `fix`      | Correction de bug                           |
 | `refactor` | Refactoring sans changement de comportement |
-| `style` | Formatage, espaces, points-virgules |
-| `test` | Ajout ou modification de tests |
-| `docs` | Documentation uniquement |
-| `chore` | Tâches de maintenance (dépendances, config) |
-| `perf` | Amélioration de performance |
-| `ci` | Configuration CI/CD |
+| `style`    | Formatage, espaces, points-virgules         |
+| `test`     | Ajout ou modification de tests              |
+| `docs`     | Documentation uniquement                    |
+| `chore`    | Tâches de maintenance (dépendances, config) |
+| `perf`     | Amélioration de performance                 |
+| `ci`       | Configuration CI/CD                         |
 
 #### Scopes courants
 
@@ -265,6 +262,7 @@ git checkout -b release/v1.1.0
 
 Le titre d'une PR doit suivre le format Conventional Commits.
 La description doit inclure :
+
 - Ce qui a été fait
 - Comment tester
 - Screenshots si changement visuel
@@ -325,4 +323,4 @@ module.exports = {
 
 ---
 
-*D-ProjeT — Conventions de code — 23 février 2026*
+_C-PRojeTs — Conventions de code — 23 février 2026_

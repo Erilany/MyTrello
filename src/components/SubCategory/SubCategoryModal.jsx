@@ -31,7 +31,7 @@ function SubCategoryModal({ subcategory, onClose }) {
   const [categories, setCategories] = useState([]);
 
   useEffect(() => {
-    const data = localStorage.getItem('d-projet_db');
+    const data = localStorage.getItem('c-projets_db');
     if (data) {
       const parsed = JSON.parse(data);
       if (parsed.libraryItems) setLibraryItems(parsed.libraryItems);
@@ -291,7 +291,7 @@ function SubCategoryModal({ subcategory, onClose }) {
 
   useEffect(() => {
     const handleMilestoneUpdated = () => {
-      const data = localStorage.getItem('d-projet_db');
+      const data = localStorage.getItem('c-projets_db');
       if (data) {
         try {
           const parsed = JSON.parse(data);

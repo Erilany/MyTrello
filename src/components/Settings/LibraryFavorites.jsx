@@ -10,7 +10,7 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 
-const FAVORITES_KEY = 'd-projet_library_favorites';
+const FAVORITES_KEY = 'c-projets_library_favorites';
 
 function LibraryFavorites() {
   const { libraryItems } = useApp();
@@ -74,7 +74,7 @@ function LibraryFavorites() {
   };
 
   const regenerateAllFavorites = () => {
-    const libraryEditorRaw = localStorage.getItem('d-projet_library_editor');
+    const libraryEditorRaw = localStorage.getItem('c-projets_library_editor');
     if (!libraryEditorRaw) {
       alert('Aucune bibliothèque trouvée');
       return;

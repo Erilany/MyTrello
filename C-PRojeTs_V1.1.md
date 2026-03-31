@@ -1,4 +1,5 @@
-# 📋 D-ProjeT — Version 1.1
+# 📋 C-PRojeTs — Version 1.1
+
 > **Objectif** : Confort d'utilisation — Drag & drop complet + commandes vocales de base
 > **Prérequis** : MVP (Version 0.1) validé et tous les tests MVP passés
 > **Basé sur** : Phase 2 (finalisation) + Phase 4 du plan de développement
@@ -7,18 +8,18 @@
 
 ## 🎯 Périmètre V1.1
 
-| Nouveautés V1.1 | Reporté |
-|---|---|
-| Drag & drop cartes entre colonnes | Bibliothèque avancée (V1.2) |
-| Drag & drop catégories (intra et inter-cartes) | Thèmes clair/sombre (V1.2) |
-| Drag & drop sous-catégories (intra et inter-catégories) | Intégration messagerie (V2.0) |
-| Drag & drop colonnes | |
-| Commande vocale — activation / désactivation | |
-| Commandes vocales — création (carte, catégorie, sous-catégorie) | |
-| Commandes vocales — navigation (ouvrir, fermer, afficher) | |
-| Commandes vocales — actions (taguer, assigner, archiver) | |
-| Retour visuel et sonore des commandes vocales | |
-| Historique des commandes vocales | |
+| Nouveautés V1.1                                                 | Reporté                       |
+| --------------------------------------------------------------- | ----------------------------- |
+| Drag & drop cartes entre colonnes                               | Bibliothèque avancée (V1.2)   |
+| Drag & drop catégories (intra et inter-cartes)                  | Thèmes clair/sombre (V1.2)    |
+| Drag & drop sous-catégories (intra et inter-catégories)         | Intégration messagerie (V2.0) |
+| Drag & drop colonnes                                            |                               |
+| Commande vocale — activation / désactivation                    |                               |
+| Commandes vocales — création (carte, catégorie, sous-catégorie) |                               |
+| Commandes vocales — navigation (ouvrir, fermer, afficher)       |                               |
+| Commandes vocales — actions (taguer, assigner, archiver)        |                               |
+| Retour visuel et sonore des commandes vocales                   |                               |
+| Historique des commandes vocales                                |                               |
 
 > ⚠️ Les boutons ↑↓ ←→ et menus contextuels du MVP restent disponibles en complément du drag & drop.
 
@@ -118,8 +119,8 @@ CREATE TABLE voice_history (
 ### ÉTAPE 5 — Moteur de correspondance des commandes
 
 - [ ] Créer le dictionnaire de commandes et actions associées
-- [ ] Gestion des paramètres variables : *"Créer une carte [nom]"*
-- [ ] Gestion des synonymes : *"Écoute"* = *"Hey D-ProjeT"* = *"Activer"*
+- [ ] Gestion des paramètres variables : _"Créer une carte [nom]"_
+- [ ] Gestion des synonymes : _"Écoute"_ = _"Hey C-PRojeTs"_ = _"Activer"_
 - [ ] Score de confiance minimum (ignorer si < 70%)
 - [ ] Retour visuel de la commande reconnue (toast notification)
 - [ ] Message "Commande non reconnue" si aucun match
@@ -128,40 +129,46 @@ CREATE TABLE voice_history (
 ### ÉTAPE 6 — Implémentation des commandes vocales
 
 #### Activation / Contrôle
-- [ ] *"Écoute"* / *"Hey D-ProjeT"* → Activation écoute
-- [ ] *"Stop"* / *"Pause"* → Désactivation écoute
-- [ ] *"Annuler"* → Annule la dernière action
-- [ ] *"Aide"* → Affiche la liste des commandes
-- [ ] *"Répète"* → Rejoue la dernière action
+
+- [ ] _"Écoute"_ / _"Hey C-PRojeTs"_ → Activation écoute
+- [ ] _"Stop"_ / _"Pause"_ → Désactivation écoute
+- [ ] _"Annuler"_ → Annule la dernière action
+- [ ] _"Aide"_ → Affiche la liste des commandes
+- [ ] _"Répète"_ → Rejoue la dernière action
 
 #### Création
-- [ ] *"Créer une carte [nom]"* → Nouvelle carte dans colonne active
-- [ ] *"Créer catégorie [nom]"* → Nouvelle catégorie dans carte active
-- [ ] *"Créer sous-catégorie [nom]"* → Nouvelle sous-catégorie dans catégorie active
+
+- [ ] _"Créer une carte [nom]"_ → Nouvelle carte dans colonne active
+- [ ] _"Créer catégorie [nom]"_ → Nouvelle catégorie dans carte active
+- [ ] _"Créer sous-catégorie [nom]"_ → Nouvelle sous-catégorie dans catégorie active
 
 #### Navigation
-- [ ] *"Ouvrir carte [nom]"* → Ouvre la carte (modal)
-- [ ] *"Fermer carte"* → Ferme la modal active
-- [ ] *"Afficher tableau [nom]"* → Bascule vers le tableau
-- [ ] *"Mode focus"* → Masque tout sauf l'élément actif
+
+- [ ] _"Ouvrir carte [nom]"_ → Ouvre la carte (modal)
+- [ ] _"Fermer carte"_ → Ferme la modal active
+- [ ] _"Afficher tableau [nom]"_ → Bascule vers le tableau
+- [ ] _"Mode focus"_ → Masque tout sauf l'élément actif
 
 #### Actions
-- [ ] *"Taguer [priorité]"* → Applique une étiquette
-- [ ] *"Assigner à [nom]"* → Assigne l'élément actif
-- [ ] *"Date d'échéance [date]"* → Définit la deadline
-- [ ] *"Archiver carte"* → Archive la carte active
-- [ ] *"Ajouter commentaire [texte]"* → Ajoute un commentaire
+
+- [ ] _"Taguer [priorité]"_ → Applique une étiquette
+- [ ] _"Assigner à [nom]"_ → Assigne l'élément actif
+- [ ] _"Date d'échéance [date]"_ → Définit la deadline
+- [ ] _"Archiver carte"_ → Archive la carte active
+- [ ] _"Ajouter commentaire [texte]"_ → Ajoute un commentaire
 
 #### Bibliothèque
-- [ ] *"Sauvegarder comme modèle"* → Sauvegarde en bibliothèque
-- [ ] *"Utiliser le modèle [nom]"* → Applique un modèle
-- [ ] *"Ouvrir la bibliothèque"* → Affiche le panel
+
+- [ ] _"Sauvegarder comme modèle"_ → Sauvegarde en bibliothèque
+- [ ] _"Utiliser le modèle [nom]"_ → Applique un modèle
+- [ ] _"Ouvrir la bibliothèque"_ → Affiche le panel
 
 ---
 
 ## 🧪 Tests de validation V1.1
 
 ### TEST V1.1-01 — Drag & drop cartes (niveau 1)
+
 ```
 🧪 Glisser "Poste 400kV Saint-Étienne-du-Rouvray" de "Études" vers "En cours"
 
@@ -175,6 +182,7 @@ CREATE TABLE voice_history (
 ```
 
 ### TEST V1.1-02 — Drag & drop colonnes
+
 ```
 🧪 Glisser la colonne "Archivé" en deuxième position
 
@@ -184,6 +192,7 @@ CREATE TABLE voice_history (
 ```
 
 ### TEST V1.1-03 — Drag & drop catégories (niveau 2)
+
 ```
 🧪 Glisser "Études Électriques HTB" avant "Études GC" dans la même carte
 
@@ -200,6 +209,7 @@ CREATE TABLE voice_history (
 ```
 
 ### TEST V1.1-04 — Drag & drop sous-catégories (niveau 3)
+
 ```
 🧪 Glisser "Fondations bâtiment de commande" avant "Terrassements"
    dans la catégorie "Études GC"
@@ -216,8 +226,9 @@ CREATE TABLE voice_history (
 ```
 
 ### TEST V1.1-05 — Activation vocale
+
 ```
-🧪 Dire "Hey D-ProjeT"
+🧪 Dire "Hey C-PRojeTs"
 
 ✅ L'icône micro s'anime
 ✅ Un bip discret confirme l'activation
@@ -235,6 +246,7 @@ CREATE TABLE voice_history (
 ```
 
 ### TEST V1.1-06 — Commandes de création vocale
+
 ```
 🧪 Activer l'écoute, dire "Créer une carte Poste Marseille Sud"
 
@@ -250,6 +262,7 @@ CREATE TABLE voice_history (
 ```
 
 ### TEST V1.1-07 — Commandes de navigation vocale
+
 ```
 🧪 Dire "Ouvrir carte Poste Lyon-Est"
 
@@ -263,6 +276,7 @@ CREATE TABLE voice_history (
 ```
 
 ### TEST V1.1-08 — Commandes d'action vocale
+
 ```
 🧪 Carte active, dire "Taguer urgent"
 
@@ -276,6 +290,7 @@ CREATE TABLE voice_history (
 ```
 
 ### TEST V1.1-09 — Robustesse vocale
+
 ```
 🧪 Dire une commande inconnue "Faire le café"
 
@@ -294,6 +309,7 @@ CREATE TABLE voice_history (
 ```
 
 ### TEST V1.1-10 — Régression MVP
+
 ```
 🧪 Rejouer les 10 tests du MVP
 
@@ -307,20 +323,22 @@ CREATE TABLE voice_history (
 
 ## 📊 Récapitulatif V1.1
 
-| Critère | Détail |
-|---|---|
-| **Phases couvertes** | Phase 2 (finalisation) + Phase 4 |
-| **Tâches de développement** | 38 tâches |
-| **Tests de validation** | 10 tests (+ 10 tests régression MVP) |
-| **Drag & drop** | ✅ Aux 3 niveaux + colonnes |
-| **Commandes vocales** | ✅ Base (création, navigation, actions) |
-| **Messagerie** | ❌ Non |
-| **Connexion internet** | ❌ Non requise |
+| Critère                     | Détail                                  |
+| --------------------------- | --------------------------------------- |
+| **Phases couvertes**        | Phase 2 (finalisation) + Phase 4        |
+| **Tâches de développement** | 38 tâches                               |
+| **Tests de validation**     | 10 tests (+ 10 tests régression MVP)    |
+| **Drag & drop**             | ✅ Aux 3 niveaux + colonnes             |
+| **Commandes vocales**       | ✅ Base (création, navigation, actions) |
+| **Messagerie**              | ❌ Non                                  |
+| **Connexion internet**      | ❌ Non requise                          |
 
 ---
 
 ## ➡️ Prochaine version : V1.2
+
 Bibliothèque avancée + commandes vocales enrichies + finitions UI
 
 ---
-*D-ProjeT — Version 1.1 — 23 février 2026*
+
+_C-PRojeTs — Version 1.1 — 23 février 2026_

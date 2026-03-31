@@ -1,4 +1,4 @@
-const CHAPTERS_ORDER_KEY = 'd-projet_chapters_order';
+const CHAPTERS_ORDER_KEY = 'c-projets_chapters_order';
 
 export function loadChaptersOrder() {
   try {
@@ -32,7 +32,7 @@ function extractChaptersFromTree(nodes, chapters = []) {
 
 export function extractChaptersFromLibrary() {
   try {
-    const libraryRaw = localStorage.getItem('d-projet_library_editor');
+    const libraryRaw = localStorage.getItem('c-projets_library_editor');
 
     if (!libraryRaw) return [];
 

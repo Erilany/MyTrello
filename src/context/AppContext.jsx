@@ -16,40 +16,62 @@ import { loadChaptersOrder, saveChaptersOrder } from '../data/ChaptersData';
 import { normalizeImportData, generateExportData, downloadExport } from '../services/migration';
 import storage from '../services/storage';
 
-const STORAGE_KEY = 'd-projet_db';
+const STORAGE_KEY = 'c-projets_db';
 
-// Migration des clés localStorage de MyTrello vers D-ProjeTs
+// Migration des clés localStorage de MyTrello vers C-PRojeTs
 function migrateLocalStorageKeys() {
   const keyMappings = [
-    { old: 'mytrello_db', newKey: 'd-projet_db' },
-    { old: 'mytrello_library_editor', newKey: 'd-projet_library_editor' },
-    { old: 'mytrello_templates', newKey: 'd-projet_templates' },
-    { old: 'mytrello_library_favorites', newKey: 'd-projet_library_favorites' },
-    { old: 'mytrello_project_time', newKey: 'd-projet_project_time' },
-    { old: 'mytrello-theme', newKey: 'd-projet-theme' },
-    { old: 'mytrello-cardColors', newKey: 'd-projet-cardColors' },
-    { old: 'mytrello-username', newKey: 'd-projet-username' },
-    { old: 'mytrello-user-role', newKey: 'd-projet-user-role' },
-    { old: 'mytrello_contracts', newKey: 'd-projet_contracts' },
-    { old: 'mytrello_charge_resentie', newKey: 'd-projet_charge_resentie' },
-    { old: 'mytrello_open_tab', newKey: 'd-projet_open_tab' },
-    { old: 'mytrello_chapters_order', newKey: 'd-projet_chapters_order' },
-    { old: 'mytrello_priority_data', newKey: 'd-projet_priority_data' },
-    { old: 'mytrello_tags_data', newKey: 'd-projet_tags_data' },
-    { old: 'mytrello_gmr_data', newKey: 'd-projet_gmr_data' },
-    { old: 'mytrello_zones_data', newKey: 'd-projet_zones_data' },
+    { old: 'mytrello_db', newKey: 'c-projets_db' },
+    { old: 'mytrello_library_editor', newKey: 'c-projets_library_editor' },
+    { old: 'mytrello_templates', newKey: 'c-projets_templates' },
+    { old: 'mytrello_library_favorites', newKey: 'c-projets_library_favorites' },
+    { old: 'mytrello_project_time', newKey: 'c-projets_project_time' },
+    { old: 'mytrello-theme', newKey: 'c-projets-theme' },
+    { old: 'mytrello-cardColors', newKey: 'c-projets-cardColors' },
+    { old: 'mytrello-username', newKey: 'c-projets-username' },
+    { old: 'mytrello-user-role', newKey: 'c-projets-user-role' },
+    { old: 'mytrello_contracts', newKey: 'c-projets_contracts' },
+    { old: 'mytrello_charge_resentie', newKey: 'c-projets_charge_resentie' },
+    { old: 'mytrello_open_tab', newKey: 'c-projets_open_tab' },
+    { old: 'mytrello_chapters_order', newKey: 'c-projets_chapters_order' },
+    { old: 'mytrello_priority_data', newKey: 'c-projets_priority_data' },
+    { old: 'mytrello_tags_data', newKey: 'c-projets_tags_data' },
+    { old: 'mytrello_gmr_data', newKey: 'c-projets_gmr_data' },
+    { old: 'mytrello_zones_data', newKey: 'c-projets_zones_data' },
+    { old: 'c-projets_db', newKey: 'c-projets_db' },
+    { old: 'c-projets_library_editor', newKey: 'c-projets_library_editor' },
+    { old: 'c-projets_templates', newKey: 'c-projets_templates' },
+    { old: 'c-projets_library_favorites', newKey: 'c-projets_library_favorites' },
+    { old: 'c-projets_project_time', newKey: 'c-projets_project_time' },
+    { old: 'c-projets-theme', newKey: 'c-projets-theme' },
+    { old: 'c-projets-cardColors', newKey: 'c-projets-cardColors' },
+    { old: 'c-projets-username', newKey: 'c-projets-username' },
+    { old: 'c-projets-user-role', newKey: 'c-projets-user-role' },
+    { old: 'c-projets_contracts', newKey: 'c-projets_contracts' },
+    { old: 'c-projets_charge_resentie', newKey: 'c-projets_charge_resentie' },
+    { old: 'c-projets_open_tab', newKey: 'c-projets_open_tab' },
+    { old: 'c-projets_chapters_order', newKey: 'c-projets_chapters_order' },
+    { old: 'c-projets_priority_data', newKey: 'c-projets_priority_data' },
+    { old: 'c-projets_tags_data', newKey: 'c-projets_tags_data' },
+    { old: 'c-projets_gmr_data', newKey: 'c-projets_gmr_data' },
+    { old: 'c-projets_zones_data', newKey: 'c-projets_zones_data' },
+    { old: 'c-projets_hidden_milestones', newKey: 'c-projets_hidden_milestones' },
+    { old: 'c-projets_entreprises', newKey: 'c-projets_entreprises' },
+    { old: 'c-projets_library_templates', newKey: 'c-projets_library_templates' },
   ];
 
   let migrated = false;
   const emailKeys = [];
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
-    if (key.startsWith('mytrello_email_')) {
+    if (key.startsWith('mytrello_email_') || key.startsWith('c-projets_email_')) {
       emailKeys.push(key);
     }
   }
   emailKeys.forEach(oldKey => {
-    const newKey = oldKey.replace('mytrello_email_', 'd-projet_email_');
+    const newKey = oldKey
+      .replace('mytrello_email_', 'c-projets_email_')
+      .replace('c-projets_email_', 'c-projets_email_');
     if (!localStorage.getItem(newKey)) {
       localStorage.setItem(newKey, localStorage.getItem(oldKey));
     }
@@ -63,13 +85,10 @@ function migrateLocalStorageKeys() {
       localStorage.setItem(newKey, oldVal);
       migrated = true;
     }
-    // Ne pas supprimer l'ancienne clé immédiatement pour éviter la perte de données
-    // Si la migration est réussie, on peut décommenter la ligne suivante:
-    // localStorage.removeItem(old);
   });
 
   if (migrated) {
-    console.log('[Migration] Clés localStorage migrées de MyTrello vers D-ProjeTs');
+    console.log('[Migration] Clés localStorage migrées vers C-PRojeTs');
   }
 }
 
@@ -307,7 +326,7 @@ function initDefaultData() {
   if (!data.libraryItems || data.libraryItems.length === 0) {
     console.log('[AppContext] Loading library templates');
     // Check if custom library data exists in LibraryEditor storage
-    const customLibrary = localStorage.getItem('d-projet_library_editor');
+    const customLibrary = localStorage.getItem('c-projets_library_editor');
     if (customLibrary) {
       try {
         const treeData = JSON.parse(customLibrary);
@@ -322,7 +341,7 @@ function initDefaultData() {
     }
   } else {
     // Even if libraryItems exists, check if admin has updated the library editor
-    const customLibrary = localStorage.getItem('d-projet_library_editor');
+    const customLibrary = localStorage.getItem('c-projets_library_editor');
     if (customLibrary) {
       try {
         const treeData = JSON.parse(customLibrary);
@@ -430,7 +449,7 @@ export function AppProvider({ children }) {
   const [messages, setMessages] = useState([]);
   const [subcategoryEmails, setSubcategoryEmails] = useState([]);
   const [currentUsername, setCurrentUsername] = useState(
-    () => localStorage.getItem('d-projet-username') || ''
+    () => localStorage.getItem('c-projets-username') || ''
   );
   const [loading, setLoading] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -452,16 +471,16 @@ export function AppProvider({ children }) {
   });
 
   const [hiddenMilestones, setHiddenMilestones] = useState(() => {
-    const saved = localStorage.getItem('d-projet_hidden_milestones');
+    const saved = localStorage.getItem('c-projets_hidden_milestones');
     return saved ? new Set(JSON.parse(saved)) : new Set();
   });
 
   useEffect(() => {
-    const savedTheme = localStorage.getItem('d-projet-theme');
+    const savedTheme = localStorage.getItem('c-projets-theme');
     if (savedTheme) {
       setTheme(savedTheme);
     }
-    const savedColors = localStorage.getItem('d-projet-cardColors');
+    const savedColors = localStorage.getItem('c-projets-cardColors');
     if (savedColors) {
       setCardColors(JSON.parse(savedColors));
     }
@@ -469,11 +488,11 @@ export function AppProvider({ children }) {
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark');
-    localStorage.setItem('d-projet-theme', theme);
+    localStorage.setItem('c-projets-theme', theme);
   }, [theme]);
 
   useEffect(() => {
-    localStorage.setItem('d-projet-cardColors', JSON.stringify(cardColors));
+    localStorage.setItem('c-projets-cardColors', JSON.stringify(cardColors));
   }, [cardColors]);
 
   useEffect(() => {
@@ -602,12 +621,12 @@ export function AppProvider({ children }) {
   };
 
   const loadProjectTime = () => {
-    const stored = localStorage.getItem('d-projet_project_time');
+    const stored = localStorage.getItem('c-projets_project_time');
     return stored ? JSON.parse(stored) : {};
   };
 
   const saveProjectTime = data => {
-    localStorage.setItem('d-projet_project_time', JSON.stringify(data));
+    localStorage.setItem('c-projets_project_time', JSON.stringify(data));
   };
 
   const getWeekKey = (date = new Date()) => {
@@ -672,7 +691,7 @@ export function AppProvider({ children }) {
   // Ensure libraryItems has data - always check library editor first
   const forceLibraryItems = () => {
     // Always check if custom library data exists in LibraryEditor storage
-    const customLibrary = localStorage.getItem('d-projet_library_editor');
+    const customLibrary = localStorage.getItem('c-projets_library_editor');
     let itemsToUse;
 
     if (customLibrary) {
@@ -714,18 +733,18 @@ export function AppProvider({ children }) {
   useEffect(() => {
     const handleLibraryUpdate = () => {
       // Always prioritize library editor storage
-      const customLibrary = localStorage.getItem('d-projet_library_editor');
+      const customLibrary = localStorage.getItem('c-projets_library_editor');
       if (customLibrary) {
         try {
           const treeData = JSON.parse(customLibrary);
           const itemsToUse = convertTreeToLibraryItems(treeData);
 
-          // Update d-projet_db with the new libraryItems
-          let mainDb = localStorage.getItem('d-projet_db');
+          // Update c-projets_db with the new libraryItems
+          let mainDb = localStorage.getItem('c-projets_db');
           if (mainDb) {
             const dbObj = JSON.parse(mainDb);
             dbObj.libraryItems = itemsToUse;
-            localStorage.setItem('d-projet_db', JSON.stringify(dbObj));
+            localStorage.setItem('c-projets_db', JSON.stringify(dbObj));
           }
 
           // Force update by creating new object reference
@@ -736,7 +755,7 @@ export function AppProvider({ children }) {
         }
       } else {
         // Fallback to main database
-        const mainDb = localStorage.getItem('d-projet_db');
+        const mainDb = localStorage.getItem('c-projets_db');
         if (mainDb) {
           try {
             const updatedDb = JSON.parse(mainDb);
@@ -994,34 +1013,40 @@ export function AppProvider({ children }) {
       saveToStorage(dbData);
 
       if (data.projectTime) {
-        localStorage.setItem('d-projet_project_time', JSON.stringify(data.projectTime));
+        localStorage.setItem('c-projets_project_time', JSON.stringify(data.projectTime));
       }
       if (data.libraryFavorites) {
-        localStorage.setItem('d-projet_library_favorites', JSON.stringify(data.libraryFavorites));
+        localStorage.setItem('c-projets_library_favorites', JSON.stringify(data.libraryFavorites));
       }
       if (data.databases?.library) {
         const cleanLibraryEditor = deduplicateLibraryEditor(data.databases.library);
-        localStorage.setItem('d-projet_library_editor', JSON.stringify(cleanLibraryEditor));
+        localStorage.setItem('c-projets_library_editor', JSON.stringify(cleanLibraryEditor));
       } else if (data.libraryEditor) {
         const cleanLibraryEditor = deduplicateLibraryEditor(data.libraryEditor);
-        localStorage.setItem('d-projet_library_editor', JSON.stringify(cleanLibraryEditor));
+        localStorage.setItem('c-projets_library_editor', JSON.stringify(cleanLibraryEditor));
       }
       if (data.libraryTemplates) {
-        localStorage.setItem('d-projet_library_templates', JSON.stringify(data.libraryTemplates));
+        localStorage.setItem('c-projets_library_templates', JSON.stringify(data.libraryTemplates));
       }
       if (data.settings) {
         if (data.settings.theme) {
-          localStorage.setItem('d-projet-theme', data.settings.theme);
+          localStorage.setItem('c-projets-theme', data.settings.theme);
           setTheme(data.settings.theme);
         }
         if (data.settings.cardColors) {
-          localStorage.setItem('d-projet-cardColors', JSON.stringify(data.settings.cardColors));
+          localStorage.setItem('c-projets-cardColors', JSON.stringify(data.settings.cardColors));
         }
         if (data.settings.username) {
-          localStorage.setItem('d-projet-username', data.settings.username);
+          localStorage.setItem('c-projets-username', data.settings.username);
         }
         if (data.settings.userRole) {
-          localStorage.setItem('d-projet-user-role', data.settings.userRole);
+          localStorage.setItem('c-projets-user-role', data.settings.userRole);
+        }
+        if (data.settings.chargeResentie) {
+          localStorage.setItem(
+            'c-projets_charge_ressentie',
+            JSON.stringify(data.settings.chargeResentie)
+          );
         }
       }
 
@@ -1043,7 +1068,7 @@ export function AppProvider({ children }) {
           saveChaptersOrder(databases.chaptersOrder);
         }
         if (databases.entreprises) {
-          localStorage.setItem('d-projet_entreprises', JSON.stringify(databases.entreprises));
+          localStorage.setItem('c-projets_entreprises', JSON.stringify(databases.entreprises));
         }
       }
 
@@ -1120,7 +1145,7 @@ export function AppProvider({ children }) {
 
       if (data.databases?.contracts || data.contracts) {
         const contracts = data.databases?.contracts || data.contracts;
-        localStorage.setItem('d-projet_contracts', JSON.stringify(contracts));
+        localStorage.setItem('c-projets_contracts', JSON.stringify(contracts));
       }
 
       console.log(
@@ -1846,7 +1871,7 @@ export function AppProvider({ children }) {
     setHiddenMilestones(prev => {
       const newSet = new Set(prev);
       newSet.add(Number(milestoneId));
-      localStorage.setItem('d-projet_hidden_milestones', JSON.stringify([...newSet]));
+      localStorage.setItem('c-projets_hidden_milestones', JSON.stringify([...newSet]));
       return newSet;
     });
   };
@@ -1885,7 +1910,7 @@ export function AppProvider({ children }) {
   const removeEmailFromSubcategory = emailId => {
     const email = db.subcategoryEmails?.find(e => Number(e.id) === Number(emailId));
     if (email && email.filepath) {
-      localStorage.removeItem(`d-projet_email_${emailId}`);
+      localStorage.removeItem(`c-projets_email_${emailId}`);
     }
     const newDb = {
       ...db,
@@ -1911,11 +1936,11 @@ export function AppProvider({ children }) {
   };
 
   const saveEmailFile = (emailId, fileData) => {
-    localStorage.setItem(`d-projet_email_${emailId}`, fileData);
+    localStorage.setItem(`c-projets_email_${emailId}`, fileData);
   };
 
   const getEmailFile = emailId => {
-    return localStorage.getItem(`d-projet_email_${emailId}`);
+    return localStorage.getItem(`c-projets_email_${emailId}`);
   };
 
   const moveSubcategory = (subcategoryId, newCategoryId, newPosition) => {
@@ -2030,7 +2055,7 @@ export function AppProvider({ children }) {
   };
 
   const syncTagsFromLibrary = () => {
-    const treeRaw = localStorage.getItem('d-projet_library_editor');
+    const treeRaw = localStorage.getItem('c-projets_library_editor');
     console.log('[syncTagsFromLibrary] treeRaw exists:', !!treeRaw);
     const categoriesWithTags = [];
     const subcategoriesWithTags = [];
@@ -2302,7 +2327,7 @@ export function AppProvider({ children }) {
 
   const setUsername = useCallback(name => {
     setCurrentUsername(name);
-    localStorage.setItem('d-projet-username', name);
+    localStorage.setItem('c-projets-username', name);
   }, []);
 
   const addComment = (refType, refId, content) => {

@@ -154,7 +154,7 @@ class VoiceService {
 
   initializeCommands() {
     return {
-      activation: ['écoute', 'hey d-projet', 'activer', 'écoute-moi', 'd-projet'],
+      activation: ['écoute', 'hey c-projets', 'activer', 'écoute-moi', 'c-projets'],
       stop: ['stop', 'pause', 'arrêter', 'arrête', 'stop écoute'],
       cancel: ['annuler', 'annule', '取消'],
       help: ['aide', 'help', 'liste commandes', 'commandes'],

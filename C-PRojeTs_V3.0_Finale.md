@@ -1,4 +1,4 @@
-# 📋 D-ProjeT — Version 3.0 (Version Finale)
+# 📋 C-PRojeTs — Version 3.0 (Version Finale)
 
 > **Objectif** : Synchronisation complète + performances + sécurité + tests automatisés
 > **Prérequis** : V2.2 validée et tous les tests V2.2 passés
@@ -8,24 +8,24 @@
 
 ## 🎯 Périmètre V3.0
 
-| Nouveautés V3.0                                               | Statut               |
-| ------------------------------------------------------------- | -------------------- |
-| Synchronisation tags Outlook ↔ étiquettes D-ProjeT            | ✅ Inclus            |
-| Synchronisation libellés Gmail ↔ étiquettes D-ProjeT          | ✅ Inclus            |
-| Synchronisation tags calendrier Outlook ↔ étiquettes D-ProjeT | ✅ Inclus            |
-| Configuration du mapping tags (interface dédiée)              | ✅ Inclus            |
-| Synchronisation périodique configurable                       | ✅ Inclus            |
-| Virtualisation des listes longues                             | ✅ Inclus            |
-| Lazy loading des emails                                       | ✅ Inclus            |
-| Mise en cache intelligente                                    | ✅ Inclus            |
-| Optimisation des requêtes SQLite                              | ✅ Inclus            |
-| Tests unitaires automatisés (Jest)                            | ✅ Inclus            |
-| Tests de composants (React Testing Library)                   | ✅ Inclus            |
-| Tests end-to-end (Playwright)                                 | ✅ Inclus            |
-| Chiffrement des tokens OAuth                                  | ✅ Inclus (renforcé) |
-| Audit et validation des entrées                               | ✅ Inclus            |
-| Export / Import des données complètes                         | ✅ Inclus            |
-| Changelog intégré à l'application                             | ✅ Inclus            |
+| Nouveautés V3.0                                                | Statut               |
+| -------------------------------------------------------------- | -------------------- |
+| Synchronisation tags Outlook ↔ étiquettes C-PRojeTs            | ✅ Inclus            |
+| Synchronisation libellés Gmail ↔ étiquettes C-PRojeTs          | ✅ Inclus            |
+| Synchronisation tags calendrier Outlook ↔ étiquettes C-PRojeTs | ✅ Inclus            |
+| Configuration du mapping tags (interface dédiée)               | ✅ Inclus            |
+| Synchronisation périodique configurable                        | ✅ Inclus            |
+| Virtualisation des listes longues                              | ✅ Inclus            |
+| Lazy loading des emails                                        | ✅ Inclus            |
+| Mise en cache intelligente                                     | ✅ Inclus            |
+| Optimisation des requêtes SQLite                               | ✅ Inclus            |
+| Tests unitaires automatisés (Jest)                             | ✅ Inclus            |
+| Tests de composants (React Testing Library)                    | ✅ Inclus            |
+| Tests end-to-end (Playwright)                                  | ✅ Inclus            |
+| Chiffrement des tokens OAuth                                   | ✅ Inclus (renforcé) |
+| Audit et validation des entrées                                | ✅ Inclus            |
+| Export / Import des données complètes                          | ✅ Inclus            |
+| Changelog intégré à l'application                              | ✅ Inclus            |
 
 ---
 
@@ -95,13 +95,13 @@ tests/
 ## 🗄️ Évolutions base de données V3.0
 
 ```sql
--- Nouvelle table : mapping tags messagerie ↔ D-ProjeT
+-- Nouvelle table : mapping tags messagerie ↔ C-PRojeTs
 CREATE TABLE tag_mapping (
   id              INTEGER PRIMARY KEY AUTOINCREMENT,
   source          TEXT NOT NULL,    -- 'outlook' | 'gmail'
   source_tag      TEXT NOT NULL,    -- nom tag côté messagerie
-  d_projet_label  TEXT NOT NULL,    -- étiquette D-ProjeT correspondante
-  priority        TEXT,             -- priorité D-ProjeT associée
+  d_projet_label  TEXT NOT NULL,    -- étiquette C-PRojeTs correspondante
+  priority        TEXT,             -- priorité C-PRojeTs associée
   direction       TEXT DEFAULT 'both', -- 'to_d_projet' | 'to_messaging' | 'both'
   created_at      DATETIME DEFAULT CURRENT_TIMESTAMP
 );
@@ -129,7 +129,7 @@ CREATE TABLE sync_history (
 INSERT INTO settings (key, value) VALUES
   ('sync_enabled',          'true'),
   ('sync_interval_min',     '10'),
-  ('sync_conflict_rule',    'd-projet'), -- 'd-projet' | 'messaging'
+  ('sync_conflict_rule',    'c-projets'), -- 'c-projets' | 'messaging'
   ('sync_calendar_enabled', 'true'),     -- sync calendrier activée
   ('cache_ttl_min',         '5'),
   ('last_sync_outlook',     ''),
@@ -144,25 +144,25 @@ INSERT INTO settings (key, value) VALUES
 ### ÉTAPE 1 — Interface de mapping tags
 
 - [ ] Onglet **Synchronisation** dans les paramètres
-- [ ] Tableau de mapping : Tag messagerie ↔ Étiquette D-ProjeT
-- [ ] Sélecteur de direction de sync (→ D-ProjeT / ← Messagerie / Bidirectionnel)
+- [ ] Tableau de mapping : Tag messagerie ↔ Étiquette C-PRojeTs
+- [ ] Sélecteur de direction de sync (→ C-PRojeTs / ← Messagerie / Bidirectionnel)
 - [ ] Bouton "Ajouter une règle de mapping"
 - [ ] Bouton "Supprimer une règle"
 - [ ] Bouton "Tester la règle" (simulation sans modification)
 - [ ] Règles de résolution de conflits :
-  - D-ProjeT a la priorité
+  - C-PRojeTs a la priorité
   - Messagerie a la priorité
   - Demander à l'utilisateur
 - [ ] Affichage de l'historique des 20 dernières synchronisations
 
 ### ÉTAPE 2 — Service de synchronisation (sync.js)
 
-- [ ] Synchronisation Outlook → D-ProjeT (catégories → étiquettes)
-- [ ] Synchronisation D-ProjeT → Outlook (étiquettes → catégories)
-- [ ] Synchronisation Gmail → D-ProjeT (libellés → étiquettes)
-- [ ] Synchronisation D-ProjeT → Gmail (étiquettes → libellés)
-- [ ] Synchronisation calendrier Outlook → D-ProjeT :
-  - Les tags des événements calendrier alimentent les étiquettes D-ProjeT
+- [ ] Synchronisation Outlook → C-PRojeTs (catégories → étiquettes)
+- [ ] Synchronisation C-PRojeTs → Outlook (étiquettes → catégories)
+- [ ] Synchronisation Gmail → C-PRojeTs (libellés → étiquettes)
+- [ ] Synchronisation C-PRojeTs → Gmail (étiquettes → libellés)
+- [ ] Synchronisation calendrier Outlook → C-PRojeTs :
+  - Les tags des événements calendrier alimentent les étiquettes C-PRojeTs
   - Un événement calendrier lié à une carte met à jour son étiquette
 - [ ] Détection et résolution des conflits
 - [ ] Synchronisation au démarrage de l'application
@@ -285,45 +285,45 @@ INSERT INTO settings (key, value) VALUES
 ### TEST V3.0-01 — Configuration mapping tags
 
 ```
-🧪 Créer la règle : Catégorie Outlook "Urgent" ↔ Étiquette D-ProjeT "Urgent" (bidirectionnel)
+🧪 Créer la règle : Catégorie Outlook "Urgent" ↔ Étiquette C-PRojeTs "Urgent" (bidirectionnel)
 
 ✅ La règle apparaît dans le tableau de mapping
 ✅ La direction "bidirectionnel" est sélectionnée
 ✅ Le test de la règle (simulation) n'effectue aucune modification réelle
 
-🧪 Créer la règle : Libellé Gmail "400kV" → Étiquette D-ProjeT "400kV" (sens unique)
+🧪 Créer la règle : Libellé Gmail "400kV" → Étiquette C-PRojeTs "400kV" (sens unique)
 
 ✅ La règle est créée avec la bonne direction
 ✅ La règle inverse n'est pas créée
 ```
 
-### TEST V3.0-02 — Synchronisation Outlook → D-ProjeT
+### TEST V3.0-02 — Synchronisation Outlook → C-PRojeTs
 
 ```
 🧪 Appliquer la catégorie "Urgent" sur un email dans Outlook
-   (email déjà lié à une carte D-ProjeT)
+   (email déjà lié à une carte C-PRojeTs)
 
-✅ L'étiquette "Urgent" apparaît sur la carte D-ProjeT liée
+✅ L'étiquette "Urgent" apparaît sur la carte C-PRojeTs liée
 ✅ La sync s'effectue dans l'intervalle configuré (10 min)
 ✅ La sync est journalisée dans sync_history avec statut "success"
 ```
 
-### TEST V3.0-02b — Synchronisation Calendrier → D-ProjeT
+### TEST V3.0-02b — Synchronisation Calendrier → C-PRojeTs
 
 ```
 🧪 Créer dans Outlook un événement calendrier avec le tag "Projets 400kV"
-   et le lier à la carte "Poste 400kV Lyon-Est" dans D-ProjeT
+   et le lier à la carte "Poste 400kV Lyon-Est" dans C-PRojeTs
 
-✅ L'étiquette "Projets 400kV" est appliquée sur la carte D-ProjeT liée
+✅ L'étiquette "Projets 400kV" est appliquée sur la carte C-PRojeTs liée
 ✅ La sync calendrier est journalisée dans sync_history (source = 'calendar')
-✅ Le changement de tag sur l'événement calendrier met à jour l'étiquette D-ProjeT
+✅ Le changement de tag sur l'événement calendrier met à jour l'étiquette C-PRojeTs
 ✅ Pas de boucle infinie de synchronisation
 ```
 
-### TEST V3.0-03 — Synchronisation D-ProjeT → Outlook
+### TEST V3.0-03 — Synchronisation C-PRojeTs → Outlook
 
 ```
-🧪 Changer l'étiquette d'une carte en "Urgent" dans D-ProjeT
+🧪 Changer l'étiquette d'une carte en "Urgent" dans C-PRojeTs
    (carte liée à un email Outlook)
 
 ✅ La catégorie "Urgent" est appliquée sur l'email Outlook lié
@@ -335,11 +335,11 @@ INSERT INTO settings (key, value) VALUES
 ### TEST V3.0-04 — Résolution de conflits
 
 ```
-🧪 Configurer "D-ProjeT a la priorité"
-   Modifier simultanément une étiquette dans D-ProjeT ET dans Outlook
+🧪 Configurer "C-PRojeTs a la priorité"
+   Modifier simultanément une étiquette dans C-PRojeTs ET dans Outlook
 
-✅ Après sync, c'est l'étiquette D-ProjeT qui est conservée
-✅ L'email Outlook adopte l'étiquette D-ProjeT
+✅ Après sync, c'est l'étiquette C-PRojeTs qui est conservée
+✅ L'email Outlook adopte l'étiquette C-PRojeTs
 ✅ Le conflit est journalisé dans sync_history avec statut "conflict"
 ```
 
@@ -425,7 +425,7 @@ INSERT INTO settings (key, value) VALUES
 
 ```
 🧪 Utiliser l'application pendant 8 heures en continu
-   (D-ProjeT + Outlook + Gmail actifs)
+   (C-PRojeTs + Outlook + Gmail actifs)
 
 ✅ Pas de fuite mémoire (RAM stable, variation < 10%)
 ✅ Pas de crash
@@ -437,7 +437,7 @@ INSERT INTO settings (key, value) VALUES
 
 ✅ L'application ne crash pas lors des coupures
 ✅ Les reconnexions sont automatiques
-✅ Les données D-ProjeT locales ne sont jamais affectées
+✅ Les données C-PRojeTs locales ne sont jamais affectées
 ```
 
 ### TEST V3.0-10 — Test de régression finale
@@ -457,22 +457,22 @@ INSERT INTO settings (key, value) VALUES
 
 ## 📊 Récapitulatif V3.0 — Version Finale
 
-| Critère                     | Détail                                         |
-| --------------------------- | ---------------------------------------------- |
-| **Phases couvertes**        | Phase 9 + Phase 10 complètes                   |
-| **Tâches de développement** | 58 tâches                                      |
-| **Tests de validation**     | 10 tests V3.0 + 50 tests régression            |
-| **Synchronisation**         | ✅ Outlook + Gmail ↔ D-ProjeT (bidirectionnel) |
-| **Performances**            | ✅ Virtualisées + mises en cache               |
-| **Tests automatisés**       | ✅ Unitaires + composants + e2e                |
-| **Sécurité**                | ✅ Renforcée                                   |
-| **Export / Import**         | ✅ JSON complet                                |
-| **Connexion internet**      | ✅ Requise pour messagerie uniquement          |
-| **Plateforme**              | Desktop (Electron) + Web (React)               |
+| Critère                     | Détail                                          |
+| --------------------------- | ----------------------------------------------- |
+| **Phases couvertes**        | Phase 9 + Phase 10 complètes                    |
+| **Tâches de développement** | 58 tâches                                       |
+| **Tests de validation**     | 10 tests V3.0 + 50 tests régression             |
+| **Synchronisation**         | ✅ Outlook + Gmail ↔ C-PRojeTs (bidirectionnel) |
+| **Performances**            | ✅ Virtualisées + mises en cache                |
+| **Tests automatisés**       | ✅ Unitaires + composants + e2e                 |
+| **Sécurité**                | ✅ Renforcée                                    |
+| **Export / Import**         | ✅ JSON complet                                 |
+| **Connexion internet**      | ✅ Requise pour messagerie uniquement           |
+| **Plateforme**              | Desktop (Electron) + Web (React)                |
 
 ---
 
-## 🏁 Récapitulatif global du projet D-ProjeT
+## 🏁 Récapitulatif global du projet C-PRojeTs
 
 | Version     | Objectif principal                     | Tâches         | Tests                                  |
 | ----------- | -------------------------------------- | -------------- | -------------------------------------- |
@@ -487,4 +487,4 @@ INSERT INTO settings (key, value) VALUES
 
 ---
 
-_D-ProjeT — Version 3.0 Finale — 23 février 2026_
+_C-PRojeTs — Version 3.0 Finale — 23 février 2026_

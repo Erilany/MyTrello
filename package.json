@@ -1,6 +1,6 @@
 {
-  "name": "d-projet",
-  "version": "0.1.0",
+  "name": "c-projets",
+  "version": "1.1.0",
   "description": "Application de gestion de projets à 3 niveaux avec intégration Outlook, Gmail et commandes vocales",
   "main": "electron.js",
   "scripts": {

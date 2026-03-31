@@ -52,13 +52,13 @@ function SearchPanel() {
   const [zones, setZones] = useState(() => loadZonesData());
   const [tags, setTags] = useState(() => loadTagsData());
   const [contracts, setContracts] = useState(() => {
-    const saved = localStorage.getItem('d-projet_contracts');
+    const saved = localStorage.getItem('c-projets_contracts');
     return saved ? JSON.parse(saved) : [];
   });
 
   const [commandes, setCommandes] = useState(() => {
     const allCommandes = [];
-    const savedDb = localStorage.getItem('d-projet_db');
+    const savedDb = localStorage.getItem('c-projets_db');
     if (savedDb) {
       const db = JSON.parse(savedDb);
       if (db.boards) {
@@ -86,12 +86,12 @@ function SearchPanel() {
     setGmrs(loadGMRData());
     setZones(loadZonesData());
     setTags(loadTagsData());
-    const savedContracts = localStorage.getItem('d-projet_contracts');
+    const savedContracts = localStorage.getItem('c-projets_contracts');
     if (savedContracts) {
       setContracts(JSON.parse(savedContracts));
     }
     const allCommandes = [];
-    const savedDb = localStorage.getItem('d-projet_db');
+    const savedDb = localStorage.getItem('c-projets_db');
     if (savedDb) {
       const db = JSON.parse(savedDb);
       if (db.boards) {
@@ -110,7 +110,7 @@ function SearchPanel() {
   }, []);
 
   const loadFromStorage = () => {
-    const savedDb = localStorage.getItem('d-projet_db');
+    const savedDb = localStorage.getItem('c-projets_db');
     if (savedDb) {
       const db = JSON.parse(savedDb);
       return {
@@ -207,7 +207,7 @@ function SearchPanel() {
         let boardName = 'Projet';
         let boardId = null;
         if (card) {
-          const savedDb = localStorage.getItem('d-projet_db');
+          const savedDb = localStorage.getItem('c-projets_db');
           if (savedDb) {
             const db = JSON.parse(savedDb);
             const columnData = db.columns?.find(col => Number(col.id) === Number(card.column_id));

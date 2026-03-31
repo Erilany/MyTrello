@@ -1,4 +1,4 @@
-# 🔒 D-ProjeT — Guide de sécurité
+# 🔒 C-PRojeTs — Guide de sécurité
 
 ---
 
@@ -26,7 +26,7 @@ Les tokens ne sont **jamais** stockés dans SQLite, localStorage ou en fichier t
 const Store = require('electron-store');
 
 const store = new Store({
-  name: 'd-projet-auth',
+  name: 'c-projets-auth',
   encryptionKey: process.env.ENCRYPTION_KEY, // Clé 32 bytes depuis .env
   clearInvalidConfig: true,
 });
@@ -388,4 +388,4 @@ electron                      → Framework desktop
 
 ---
 
-_D-ProjeT — Sécurité — 23 février 2026_
+_C-PRojeTs — Sécurité — 23 février 2026_

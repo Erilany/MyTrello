@@ -1,4 +1,4 @@
-# Plan de refactorisation D-ProjeT
+# Plan de refactorisation C-PRojeTs
 
 ## Objectif
 

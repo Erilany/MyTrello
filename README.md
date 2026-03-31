@@ -1,4 +1,4 @@
-# D-ProjeT
+# C-PRojeTs
 
 Application de gestion de projet type Kanban.
 
@@ -40,7 +40,7 @@ npm run dev
 
 ### Import/Export
 
-- **Templates** : Import/export de modèles personnalisés via JSON (`d-projet-templates.json`)
+- **Templates** : Import/export de modèles personnalisés via JSON (`c-projets-templates.json`)
 - Sauvegarde automatique dans localStorage
 
 ### Interface utilisateur
@@ -159,12 +159,12 @@ L'application utilise **localStorage** pour stocker les données en JSON. Voici 
 
 ### Clés de stockage localStorage
 
-| Clé                          | Description                    |
-| ---------------------------- | ------------------------------ |
-| `d-projet_db`                | Base de données principale     |
-| `d-projet-theme`             | Thème sélectionné (light/dark) |
-| `d-projet_library_favorites` | Favoris de la bibliothèque     |
-| `d-projet_templates`         | Templates personnalisés        |
+| Clé                           | Description                    |
+| ----------------------------- | ------------------------------ |
+| `c-projets_db`                | Base de données principale     |
+| `c-projets-theme`             | Thème sélectionné (light/dark) |
+| `c-projets_library_favorites` | Favoris de la bibliothèque     |
+| `c-projets_templates`         | Templates personnalisés        |
 
 ## Import / Export de templates
 
@@ -215,7 +215,7 @@ L'application utilise **localStorage** pour stocker les données en JSON. Voici 
 
 ### Utilisation
 
-1. **Exporter** : Bouton "Exporter" → Télécharge `d-projet-templates.json`
+1. **Exporter** : Bouton "Exporter" → Télécharge `c-projets-templates.json`
 2. **Importer** : Bouton "Importer" → Sélectionne un fichier → Coche les templatesdesired → "Importer la sélection"
 
 ## Gestion des doublons

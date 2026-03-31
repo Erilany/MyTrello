@@ -14,6 +14,7 @@
   --bg-card-hover: #f1f5f9;
   --bg-col: #f1f5f9;
   --bg-input: #e2e8f0;
+  --bg-disabled: #cbd5e1;
 
   /* Bordures */
   --border: rgba(0, 0, 0, 0.08);
@@ -74,6 +75,7 @@
   --bg-card-hover: #232e42;
   --bg-col: #161c28;
   --bg-input: #252f42;
+  --bg-disabled: #1e2736;
 
   /* Bordures */
   --border: rgba(255, 255, 255, 0.07);

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Search, Building, Trash2 } from 'lucide-react';
 
-const STORAGE_KEY = 'd-projet_entreprises';
+const STORAGE_KEY = 'c-projets_entreprises';
 
 function EntreprisesTab() {
   const [entreprises, setEntreprises] = useState([]);
@@ -14,7 +14,7 @@ function EntreprisesTab() {
   const loadEntreprises = () => {
     const allContacts = [];
 
-    const savedDb = localStorage.getItem('d-projet_db');
+    const savedDb = localStorage.getItem('c-projets_db');
     if (savedDb) {
       const db = JSON.parse(savedDb);
       if (db.boards && Array.isArray(db.boards)) {

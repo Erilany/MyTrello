@@ -20,7 +20,7 @@ import { libraryTemplates } from '../../data/libraryData';
 import { loadTagsData } from '../../data/TagsData';
 import { parseMSProjectXml } from '../../utils/xmlParser';
 
-const STORAGE_KEY = 'd-projet_library_editor';
+const STORAGE_KEY = 'c-projets_library_editor';
 
 function formatDuration(days) {
   const hours = days * 24;
@@ -48,12 +48,7 @@ function convertTreeToLibraryItems(treeData) {
     }
 
     if (node.type === 'carte' || node.type === 'categorie' || node.type === 'souscategorie') {
-      const tags =
-        node.type === 'souscategorie'
-          ? [node.data.categorieTag || '', node.data.domaineTag || ''].filter(Boolean).join(',')
-          : [currentChapitre, node.data.categorieTag || '', node.data.domaineTag || '']
-              .filter(Boolean)
-              .join(',');
+      const tags = currentChapitre;
 
       let cardItem = cardMap.get(currentCarte);
       if (!cardItem) {
@@ -194,21 +189,14 @@ function migrateLibraryTree(tree) {
       } else if (node.type === 'carte') {
         node.data.carte = node.data.carte || node.titre || '';
         node.data.temps = node.data.temps || 0;
-        node.data.categorieTag = node.data.categorieTag || '';
-        node.data.domaineTag = node.data.domaineTag || '';
         node.data.systemTag = '';
-        node.data.skipAction = node.data.skipAction || false;
       } else if (node.type === 'categorie') {
         node.data.categorie = node.data.categorie || node.titre || '';
         node.data.temps = node.data.temps || 0;
-        node.data.categorieTag = node.data.categorieTag || '';
-        node.data.domaineTag = node.data.domaineTag || '';
         node.data.systemTag = node.data.systemTag || '';
       } else if (node.type === 'souscategorie') {
         node.data.sousCat1 = node.data.sousCat1 || node.titre || '';
         node.data.temps = node.data.temps || 0;
-        node.data.categorieTag = node.data.categorieTag || '';
-        node.data.domaineTag = node.data.domaineTag || '';
         node.data.systemTag = node.data.systemTag || '';
       }
 
@@ -237,8 +225,6 @@ function convertLibraryDataToTree(libraryItems) {
       const tagsStr = item.tags || '';
       const tags = tagsStr.split(',');
       const chapterTitle = tags[0] || 'Autre';
-      const categorieTag = tags[1] || '';
-      const domaineTag = tags[2] || '';
 
       let chapter = chapterMap.get(chapterTitle);
       if (!chapter) {
@@ -254,8 +240,6 @@ function convertLibraryDataToTree(libraryItems) {
             sousCat2: '',
             sousCat3: '',
             temps: 0,
-            categorieTag: '',
-            domaineTag: '',
           },
           children: [],
           expanded: true,
@@ -278,8 +262,6 @@ function convertLibraryDataToTree(libraryItems) {
             sousCat2: '',
             sousCat3: '',
             temps: item.duration || 0,
-            categorieTag: categorieTag,
-            domaineTag: domaineTag,
             systemTag: '',
             skipAction: content.card?.skipAction || false,
           },
@@ -305,8 +287,6 @@ function convertLibraryDataToTree(libraryItems) {
               sousCat2: '',
               sousCat3: '',
               temps: cat.duration_days || 0,
-              categorieTag: '',
-              domaineTag: '',
               systemTag: cat.tag || '',
             },
             children: [],
@@ -327,8 +307,6 @@ function convertLibraryDataToTree(libraryItems) {
                   sousCat2: '',
                   sousCat3: '',
                   temps: subcat.duration_days || 0,
-                  categorieTag: cat.tag || categorieTag,
-                  domaineTag: '',
                   systemTag: cat.tag || subcat.tag || '',
                 },
                 children: [],
@@ -347,26 +325,26 @@ function convertLibraryDataToTree(libraryItems) {
   return tree;
 }
 
-const defaultCsvData = `N°;Chapitre;Carte;Action;Tâche;Temps;Tags 1;Tags 2;Tag Revue d'activité;Sans Action
-5;Jalons;Jalons SIEPR;;;;;;PT10955H0M0S;;;NON
-6;Jalons;Jalons SIEPR;Jalons projet;;;;;PT10955H0M0S;;;NON
-7;Jalons;Jalons SIEPR;Jalons projet;Signature de la DO;;;;PT0H0M0S;Projet;Projet
-8;Jalons;Jalons SIEPR;Jalons projet;Lancement projet;;;;PT0H0M0S;Projet;Projet
-9;Jalons;Jalons SIEPR;Jalons projet;Signature de la DCT;;;;PT0H0M0S;Projet;Projet
-10;Jalons;Jalons SIEPR;Jalons projet;Signature de la DI;;;;PT0H0M0S;Projet;Projet
-11;Jalons;Jalons SIEPR;Jalons projet;PV de fin de concertation;;;;PT0H0M0S;Projet;Projet
-12;Jalons;Jalons SIEPR;Jalons projet;Dépôt de la DUP;;;;PT0H0M0S;Projet;Projet
-13;Jalons;Jalons SIEPR;Jalons projet;Signature de la DUP;;;;PT0H0M0S;Projet;Projet
-14;Jalons;Jalons SIEPR;Jalons projet;Sécurisation du foncier;;;;PT0H0M0S;Projet;Projet
-15;Jalons;Jalons SIEPR;Jalons projet;Obtention de la dernière autorisation;;;;PT0H0M0S;Projet;Projet
-16;Jalons;Jalons SIEPR;Jalons projet;Clôture;;;;PT0H0M0S;Travaux;Projet
-17;Jalons;Jalons SIEPR;Jalons OP poste;;;;;;PT9779H0M0S;;;
-18;Jalons;Jalons SIEPR;Jalons OP poste;CTF Poste validée;;;;PT0H0M0S;Processus Décisionnel;Poste
-19;Jalons;Jalons SIEPR;Jalons OP poste;Commande MCPO;;;;PT0H0M0S;;Poste
-20;Jalons;Jalons SIEPR;Jalons OP poste;Ouverture de chantier poste;;;;PT0H0M0S;Travaux;Poste
-21;Jalons;Jalons SIEPR;Jalons OP poste;Première mise en service poste;;;;PT0H0M0S;Travaux;Poste
-22;Jalons;Jalons SIEPR;Jalons OP poste;Dernière mise en service poste;;;;PT0H0M0S;Travaux;Poste
-23;Jalons;Jalons SIEPR;Jalons OP poste;Fin des travaux poste;;;;PT0H0M0S;Travaux;Poste
+const defaultCsvData = `N°;Chapitre;Carte;Action;Tâche;Temps;Tag Revue d'activité;Sans Action
+5;Jalons;Jalons SIEPR;;;;;PT10955H0M0S;;NON
+6;Jalons;Jalons SIEPR;Jalons projet;;;;;PT10955H0M0S;;NON
+7;Jalons;Jalons SIEPR;Jalons projet;Signature de la DO;;;;PT0H0M0S;Projet
+8;Jalons;Jalons SIEPR;Jalons projet;Lancement projet;;;;PT0H0M0S;Projet
+9;Jalons;Jalons SIEPR;Jalons projet;Signature de la DCT;;;;PT0H0M0S;Projet
+10;Jalons;Jalons SIEPR;Jalons projet;Signature de la DI;;;;PT0H0M0S;Projet
+11;Jalons;Jalons SIEPR;Jalons projet;PV de fin de concertation;;;;PT0H0M0S;Projet
+12;Jalons;Jalons SIEPR;Jalons projet;Dépôt de la DUP;;;;PT0H0M0S;Projet
+13;Jalons;Jalons SIEPR;Jalons projet;Signature de la DUP;;;;PT0H0M0S;Projet
+14;Jalons;Jalons SIEPR;Jalons projet;Sécurisation du foncier;;;;PT0H0M0S;Projet
+15;Jalons;Jalons SIEPR;Jalons projet;Obtention de la dernière autorisation;;;;PT0H0M0S;Projet
+16;Jalons;Jalons SIEPR;Jalons projet;Clôture;;;;PT0H0M0S;Travaux
+17;Jalons;Jalons SIEPR;Jalons OP poste;;;;;;PT9779H0M0S;;
+18;Jalons;Jalons SIEPR;Jalons OP poste;CTF Poste validée;;;;PT0H0M0S;Processus Décisionnel
+19;Jalons;Jalons SIEPR;Jalons OP poste;Commande MCPO;;;;PT0H0M0S;Poste
+20;Jalons;Jalons SIEPR;Jalons OP poste;Ouverture de chantier poste;;;;PT0H0M0S;Travaux
+21;Jalons;Jalons SIEPR;Jalons OP poste;Première mise en service poste;;;;PT0H0M0S;Travaux
+22;Jalons;Jalons SIEPR;Jalons OP poste;Dernière mise en service poste;;;;PT0H0M0S;Travaux
+23;Jalons;Jalons SIEPR;Jalons OP poste;Fin des travaux poste;;;;PT0H0M0S;Travaux
 24;Jalons;Jalons SIEPR;Jalons OP LA;;;;;;PT10360H0M0S;;;
 25;Jalons;Jalons SIEPR;Jalons OP LA;CTF LA validée;;;;PT0H0M0S;Processus Décisionnel;LA
 26;Jalons;Jalons SIEPR;Jalons OP LA;APO;;;;PT0H0M0S;Procédures Administratives;LA
@@ -665,10 +643,8 @@ function parseCSV(csv) {
       sousCat2: isOldFormat ? values[5] || '' : '',
       sousCat3: isOldFormat ? values[6] || '' : '',
       temps: parsePTDuration(isOldFormat ? values[7] : values[5]),
-      categorieTag: isOldFormat ? values[8] || '' : values[6] || '',
-      domaineTag: isOldFormat ? values[9] || '' : values[7] || '',
-      systemTag: isOldFormat ? values[10] || '' : values[8] || '',
-      skipAction: values.length > 9 ? values[9]?.toUpperCase() === 'OUI' : false,
+      systemTag: isOldFormat ? values[8] || '' : values[6] || '',
+      skipAction: values.length > 7 ? values[7]?.toUpperCase() === 'OUI' : false,
     };
     items.push(item);
   }
@@ -709,8 +685,6 @@ function buildTree(items) {
             sousCat1: '',
             sousCat2: '',
             sousCat3: '',
-            categorieTag: '',
-            domaineTag: '',
             systemTag: '',
             skipAction: item.skipAction || false,
           },
@@ -737,7 +711,7 @@ function buildTree(items) {
             id: catId,
             type: 'categorie',
             titre: item.categorie || item.sousCat1 || '(Sans catégorie)',
-            data: { ...item, categorieTag: '', domaineTag: '', systemTag: '' },
+            data: { ...item, systemTag: '' },
             children: [],
             expanded: true,
           };
@@ -782,7 +756,7 @@ function buildTree(items) {
 }
 
 function treeToCSV(nodes) {
-  let csv = "N°;Chapitre;Carte;Action;Tâche;Temps;Tags 1;Tags 2;Tag Revue d'activité;Sans Action\n";
+  let csv = "N°;Chapitre;Carte;Action;Tâche;Temps;Tag Revue d'activité;Sans Action\n";
   let counter = 1;
   const exportedCards = new Set();
 
@@ -809,8 +783,6 @@ function treeToCSV(nodes) {
         currentCategorie,
         node.data.sousCat1 || '',
         formatDuration(node.data.temps || 0),
-        node.data.categorieTag || '',
-        node.data.domaineTag || '',
         node.data.systemTag || '',
         '',
       ];
@@ -828,8 +800,6 @@ function treeToCSV(nodes) {
             '',
             child.data.sousCat1 || child.data.sousCat2 || child.data.sousCat3 || child.titre || '',
             formatDuration(child.data.temps || 0),
-            child.data.categorieTag || '',
-            child.data.domaineTag || '',
             child.data.systemTag || '',
             'OUI',
           ];
@@ -1011,32 +981,17 @@ function TreeNode({
           placeholder="Temps"
         />
 
-        {node.type === 'chapitre' ? (
+        {node.type === 'chapitre' || node.type === 'carte' ? (
           <>
-            <div className="w-28"></div>
-            <div className="w-28"></div>
-            <div className="w-32"></div>
+            <select
+              disabled
+              className="w-32 px-2 py-1.5 text-sm bg-[var(--bg-disabled)] border border-[var(--border)] rounded text-[var(--txt-muted)] cursor-not-allowed"
+            >
+              <option value="">Tag Revue d'activité...</option>
+            </select>
           </>
         ) : (
           <>
-            <input
-              type="text"
-              value={localData.categorieTag || ''}
-              onChange={e => handleChange('categorieTag', e.target.value)}
-              onBlur={handleBlur}
-              className="w-28 px-2 py-1.5 text-sm bg-[var(--bg-input)] border border-[var(--border)] rounded text-[var(--txt-primary)] cursor-text"
-              placeholder="Tags 1"
-            />
-
-            <input
-              type="text"
-              value={localData.domaineTag || ''}
-              onChange={e => handleChange('domaineTag', e.target.value)}
-              onBlur={handleBlur}
-              className="w-28 px-2 py-1.5 text-sm bg-[var(--bg-input)] border border-[var(--border)] rounded text-[var(--txt-primary)] cursor-text"
-              placeholder="Tags 2"
-            />
-
             <select
               value={localData.systemTag || ''}
               onChange={e => handleChange('systemTag', e.target.value)}
@@ -1190,8 +1145,6 @@ function LibraryEditor() {
           sousCat1: '',
           sousCat2: '',
           sousCat3: '',
-          categorieTag: '',
-          domaineTag: '',
           systemTag: '',
         },
         children: [],
@@ -1208,8 +1161,6 @@ function LibraryEditor() {
           sousCat1: '',
           sousCat2: '',
           sousCat3: '',
-          categorieTag: parentNode.data.categorieTag || '',
-          domaineTag: parentNode.data.domaineTag || '',
           systemTag: parentNode.data.systemTag || '',
         },
         children: [],
@@ -1225,8 +1176,6 @@ function LibraryEditor() {
           sousCat1: 'Nouvelle tâche',
           sousCat2: '',
           sousCat3: '',
-          categorieTag: parentNode.data.categorieTag || '',
-          domaineTag: parentNode.data.domaineTag || '',
           systemTag: parentNode.data.systemTag || '',
         },
         children: [],
@@ -1467,8 +1416,6 @@ function LibraryEditor() {
         sousCat2: '',
         sousCat3: '',
         temps: 0,
-        categorieTag: '',
-        domaineTag: '',
         systemTag: '',
       },
       children: [],
@@ -1486,13 +1433,13 @@ function LibraryEditor() {
     const newLibraryItems = convertTreeToLibraryItems(treeData);
 
     // Try to update main database, or create it if it doesn't exist
-    let mainDb = localStorage.getItem('d-projet_db');
+    let mainDb = localStorage.getItem('c-projets_db');
 
     if (mainDb) {
       try {
         const db = JSON.parse(mainDb);
         db.libraryItems = newLibraryItems;
-        localStorage.setItem('d-projet_db', JSON.stringify(db));
+        localStorage.setItem('c-projets_db', JSON.stringify(db));
       } catch (e) {
         console.error('[LibraryEditor] Error updating main database:', e);
       }
@@ -1517,7 +1464,7 @@ function LibraryEditor() {
         },
         orders: [],
       };
-      localStorage.setItem('d-projet_db', JSON.stringify(newDb));
+      localStorage.setItem('c-projets_db', JSON.stringify(newDb));
     }
 
     // Dispatch event to notify other components
@@ -1634,8 +1581,6 @@ function LibraryEditor() {
             categorie,
             sousCat1: item.outlineLevel >= 4 ? item.name : '',
             temps: roundToHalf(item.duration),
-            categorieTag: item.outlineLevel >= 4 ? '' : '',
-            domaineTag: '',
             systemTag: '',
           },
         };
@@ -1811,9 +1756,7 @@ function LibraryEditor() {
       const durationStr = duration > 0 ? `P${duration}D` : `PT1H0M0S`;
       const taskName = node.titre || node.data?.title || '';
       const systemTag = node.data?.systemTag || '';
-      const categorieTag = node.data?.categorieTag || '';
-      const domaineTag = node.data?.domaineTag || '';
-      const notes = [systemTag, categorieTag, domaineTag].filter(Boolean).join(', ');
+      const notes = systemTag;
 
       const task = {
         UID: uidCounter++,
@@ -2001,8 +1944,6 @@ function LibraryEditor() {
         <span className="flex-1">Titre</span>
         <span className="flex-[2]">Tâche</span>
         <span className="w-20 text-center">Temps repères</span>
-        <span className="w-28 text-[var(--txt-muted)]">Tags 1</span>
-        <span className="w-28 text-[var(--txt-muted)]">Tags 2</span>
         <span className="w-32 text-[var(--txt-muted)]">Tag Revue d'activité</span>
         <span className="w-16"></span>
       </div>

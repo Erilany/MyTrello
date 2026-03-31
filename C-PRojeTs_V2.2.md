@@ -1,4 +1,5 @@
-# 📋 D-ProjeT — Version 2.2
+# 📋 C-PRojeTs — Version 2.2
+
 > **Objectif** : Intégration du calendrier Outlook avec filtrage par tags
 > **Prérequis** : V2.1 validée et tous les tests V2.1 passés
 > **Basé sur** : Extension de la Phase 5 (Microsoft Graph API — Calendar)
@@ -7,16 +8,16 @@
 
 ## 🎯 Périmètre V2.2
 
-| Nouveautés V2.2 | Reporté |
-|---|---|
-| Récupération du calendrier Outlook dans D-ProjeT | Calendrier Gmail (hors périmètre) |
-| Sélecteur de tags (filtre simple ou multiple) | Synchronisation calendrier ↔ D-ProjeT (V3.0) |
-| Vue liste des RDV filtrés par tag | Création de RDV depuis D-ProjeT (hors périmètre) |
-| Vue calendrier visuel semaine / mois | |
-| Bascule rapide liste ↔ calendrier | |
-| Rafraîchissement automatique du calendrier | |
-| Indicateur RDV du jour dans le header D-ProjeT | |
-| Commandes vocales calendrier | |
+| Nouveautés V2.2                                   | Reporté                                           |
+| ------------------------------------------------- | ------------------------------------------------- |
+| Récupération du calendrier Outlook dans C-PRojeTs | Calendrier Gmail (hors périmètre)                 |
+| Sélecteur de tags (filtre simple ou multiple)     | Synchronisation calendrier ↔ C-PRojeTs (V3.0)     |
+| Vue liste des RDV filtrés par tag                 | Création de RDV depuis C-PRojeTs (hors périmètre) |
+| Vue calendrier visuel semaine / mois              |                                                   |
+| Bascule rapide liste ↔ calendrier                 |                                                   |
+| Rafraîchissement automatique du calendrier        |                                                   |
+| Indicateur RDV du jour dans le header C-PRojeTs   |                                                   |
+| Commandes vocales calendrier                      |                                                   |
 
 ---
 
@@ -105,11 +106,11 @@ INSERT INTO settings (key, value) VALUES
   > ⚠️ Nécessite une mise à jour du consentement OAuth (l'utilisateur devra
   > se reconnecter une fois pour accepter la nouvelle permission)
 - [ ] Méthode `getCalendarTags()` → récupère toutes les catégories Outlook
-  utilisées dans les événements du calendrier
+      utilisées dans les événements du calendrier
 - [ ] Méthode `getEventsByTags(tags[], dateFrom, dateTo)` → récupère les
-  événements filtrés par un ou plusieurs tags sur une période donnée
+      événements filtrés par un ou plusieurs tags sur une période donnée
 - [ ] Méthode `getEventsForPeriod(dateFrom, dateTo)` → récupère tous les
-  événements sans filtre (pour la vue calendrier complète)
+      événements sans filtre (pour la vue calendrier complète)
 - [ ] Mise en cache locale des événements dans `calendar_events_cache`
 - [ ] Rafraîchissement automatique du cache toutes les X minutes (configurable)
 - [ ] Gestion des événements récurrents (affichage des occurrences)
@@ -132,9 +133,9 @@ C'est le composant central de la fonctionnalité. Il permet de choisir
 quels tags/catégories Outlook afficher dans le calendrier.
 
 - [ ] Au premier chargement : récupérer tous les tags disponibles via
-  `getCalendarTags()` et les afficher dans le sélecteur
+      `getCalendarTags()` et les afficher dans le sélecteur
 - [ ] Affichage des tags sous forme de **badges colorés cliquables**
-  (couleur = couleur de la catégorie Outlook correspondante)
+      (couleur = couleur de la catégorie Outlook correspondante)
 - [ ] **Mode sélection simple** (un seul tag actif à la fois) :
   - Clic sur un tag → l'active et désactive le précédent
   - Le calendrier se filtre immédiatement
@@ -146,7 +147,7 @@ quels tags/catégories Outlook afficher dans le calendrier.
 - [ ] Bascule rapide entre mode simple et mode multiple
 - [ ] Option "Tous les tags" → affiche tous les événements sans filtre
 - [ ] Barre de recherche rapide dans la liste des tags
-  (utile si beaucoup de catégories Outlook)
+      (utile si beaucoup de catégories Outlook)
 - [ ] Persistance des tags sélectionnés (table `calendar_filters`)
 - [ ] Bouton "Rafraîchir les tags" (re-synchronise depuis Outlook)
 
@@ -188,7 +189,7 @@ quels tags/catégories Outlook afficher dans le calendrier.
 - [ ] Clic sur un événement → modal de détail
 - [ ] Survol d'un événement → tooltip avec résumé
 - [ ] Les événements filtrés par tags sont appliqués en temps réel
-  (changer le tag → les événements disparaissent/apparaissent instantanément)
+      (changer le tag → les événements disparaissent/apparaissent instantanément)
 - [ ] Événements multi-jours affichés en bandeau continu
 
 ### ÉTAPE 6 — Bascule vue liste ↔ calendrier
@@ -204,10 +205,10 @@ quels tags/catégories Outlook afficher dans le calendrier.
   - `W` (week) → Vue semaine
   - `M` (month) → Vue mois
 
-### ÉTAPE 7 — Indicateur RDV du jour (header D-ProjeT)
+### ÉTAPE 7 — Indicateur RDV du jour (header C-PRojeTs)
 
-- [ ] Badge dans le header principal de D-ProjeT indiquant le nombre
-  de RDV du jour correspondant aux tags sélectionnés
+- [ ] Badge dans le header principal de C-PRojeTs indiquant le nombre
+      de RDV du jour correspondant aux tags sélectionnés
 - [ ] Survol du badge → tooltip listant les RDV du jour
 - [ ] Clic sur le badge → ouvre le panel calendrier sur la vue liste du jour
 - [ ] Le badge est vide (masqué) si aucun RDV du jour
@@ -225,28 +226,29 @@ quels tags/catégories Outlook afficher dans le calendrier.
 
 ### ÉTAPE 9 — Commandes vocales calendrier
 
-- [ ] *"Ouvrir le calendrier"* → Bascule vers le panel calendrier
-- [ ] *"Fermer le calendrier"* → Ferme le panel
-- [ ] *"Vue semaine"* → Bascule sur la vue hebdomadaire
-- [ ] *"Vue mois"* → Bascule sur la vue mensuelle
-- [ ] *"Vue liste"* → Bascule sur la vue liste
-- [ ] *"Semaine suivante"* → Navigation semaine suivante
-- [ ] *"Semaine précédente"* → Navigation semaine précédente
-- [ ] *"Mois suivant"* → Navigation mois suivant
-- [ ] *"Mois précédent"* → Navigation mois précédent
-- [ ] *"Aujourd'hui"* → Revient à la date du jour
-- [ ] *"Filtrer par [tag]"* → Active le tag dans le sélecteur
-- [ ] *"Ajouter le tag [tag]"* → Ajoute un tag en mode multi
-- [ ] *"Retirer le tag [tag]"* → Retire un tag en mode multi
-- [ ] *"Tous les tags"* → Sélectionne tous les tags
-- [ ] *"Aucun filtre"* → Désactive tous les filtres
-- [ ] *"Mes rendez-vous aujourd'hui"* → Vue liste filtrée sur le jour
+- [ ] _"Ouvrir le calendrier"_ → Bascule vers le panel calendrier
+- [ ] _"Fermer le calendrier"_ → Ferme le panel
+- [ ] _"Vue semaine"_ → Bascule sur la vue hebdomadaire
+- [ ] _"Vue mois"_ → Bascule sur la vue mensuelle
+- [ ] _"Vue liste"_ → Bascule sur la vue liste
+- [ ] _"Semaine suivante"_ → Navigation semaine suivante
+- [ ] _"Semaine précédente"_ → Navigation semaine précédente
+- [ ] _"Mois suivant"_ → Navigation mois suivant
+- [ ] _"Mois précédent"_ → Navigation mois précédent
+- [ ] _"Aujourd'hui"_ → Revient à la date du jour
+- [ ] _"Filtrer par [tag]"_ → Active le tag dans le sélecteur
+- [ ] _"Ajouter le tag [tag]"_ → Ajoute un tag en mode multi
+- [ ] _"Retirer le tag [tag]"_ → Retire un tag en mode multi
+- [ ] _"Tous les tags"_ → Sélectionne tous les tags
+- [ ] _"Aucun filtre"_ → Désactive tous les filtres
+- [ ] _"Mes rendez-vous aujourd'hui"_ → Vue liste filtrée sur le jour
 
 ---
 
 ## 🧪 Tests de validation V2.2
 
 ### TEST V2.2-01 — Activation du calendrier
+
 ```
 🧪 Dans Paramètres → Messagerie → Calendrier,
    cocher "Activer le calendrier Outlook"
@@ -262,6 +264,7 @@ quels tags/catégories Outlook afficher dans le calendrier.
 ```
 
 ### TEST V2.2-02 — Sélecteur de tags (mode simple)
+
 ```
 🧪 Cliquer sur le tag "Projets 400kV" dans le sélecteur
 
@@ -278,6 +281,7 @@ quels tags/catégories Outlook afficher dans le calendrier.
 ```
 
 ### TEST V2.2-03 — Sélecteur de tags (mode multiple)
+
 ```
 🧪 Activer le mode multi-tags, sélectionner
    "Projets 400kV" ET "Réunions Direction"
@@ -299,6 +303,7 @@ quels tags/catégories Outlook afficher dans le calendrier.
 ```
 
 ### TEST V2.2-04 — Vue liste des RDV
+
 ```
 🧪 Tag "Projets 400kV" sélectionné, vue liste active
 
@@ -316,6 +321,7 @@ quels tags/catégories Outlook afficher dans le calendrier.
 ```
 
 ### TEST V2.2-05 — Vue semaine
+
 ```
 🧪 Basculer sur la vue semaine, tag "Projets 400kV" actif
 
@@ -333,6 +339,7 @@ quels tags/catégories Outlook afficher dans le calendrier.
 ```
 
 ### TEST V2.2-06 — Vue mois
+
 ```
 🧪 Basculer sur la vue mois, deux tags actifs simultanément
 
@@ -348,6 +355,7 @@ quels tags/catégories Outlook afficher dans le calendrier.
 ```
 
 ### TEST V2.2-07 — Bascule entre vues
+
 ```
 🧪 Basculer entre Liste → Semaine → Mois plusieurs fois
 
@@ -363,6 +371,7 @@ quels tags/catégories Outlook afficher dans le calendrier.
 ```
 
 ### TEST V2.2-08 — Indicateur RDV du jour
+
 ```
 🧪 Journée avec 3 RDV "Projets 400kV" dans le calendrier Outlook
 
@@ -382,6 +391,7 @@ quels tags/catégories Outlook afficher dans le calendrier.
 ```
 
 ### TEST V2.2-09 — Commandes vocales calendrier
+
 ```
 🧪 Dire "Ouvrir le calendrier"
 
@@ -416,6 +426,7 @@ quels tags/catégories Outlook afficher dans le calendrier.
 ```
 
 ### TEST V2.2-10 — Rafraîchissement et performances
+
 ```
 🧪 Attendre l'intervalle de rafraîchissement automatique (15 min)
 
@@ -437,6 +448,7 @@ quels tags/catégories Outlook afficher dans le calendrier.
 ```
 
 ### TEST V2.2-11 — Régression V2.1
+
 ```
 🧪 Rejouer les 10 tests V2.1 + 10 tests V2.0 + 10 tests V1.2
    + 10 tests V1.1 + 10 tests MVP
@@ -444,7 +456,7 @@ quels tags/catégories Outlook afficher dans le calendrier.
 ✅ Les 50 tests passent tous
 ✅ L'activation du calendrier n'affecte pas les panels Outlook/Gmail
 ✅ Les commandes vocales existantes sont toujours fonctionnelles
-✅ Les performances D-ProjeT de base ne sont pas dégradées
+✅ Les performances C-PRojeTs de base ne sont pas dégradées
 ❌ Une fonctionnalité d'une version précédente est cassée
 ```
 
@@ -452,20 +464,20 @@ quels tags/catégories Outlook afficher dans le calendrier.
 
 ## 📊 Récapitulatif V2.2
 
-| Critère | Détail |
-|---|---|
-| **Phases couvertes** | Extension Phase 5 (Graph API Calendar) |
-| **Tâches de développement** | 48 tâches |
-| **Tests de validation** | 11 tests (+ 50 tests régression) |
-| **Vue liste RDV** | ✅ Filtrée par tag(s) |
-| **Vue calendrier** | ✅ Semaine + Mois |
-| **Filtre tags** | ✅ Simple ET multiple |
-| **Commandes vocales** | ✅ Navigation + filtrage vocal |
-| **Indicateur header** | ✅ RDV du jour |
-| **Drag & drop RDV** | ❌ Non (hors périmètre) |
-| **Création RDV** | ❌ Non (hors périmètre) |
-| **Calendrier Gmail** | ❌ Non (hors périmètre) |
-| **Connexion internet** | ✅ Requise pour Outlook uniquement |
+| Critère                     | Détail                                 |
+| --------------------------- | -------------------------------------- |
+| **Phases couvertes**        | Extension Phase 5 (Graph API Calendar) |
+| **Tâches de développement** | 48 tâches                              |
+| **Tests de validation**     | 11 tests (+ 50 tests régression)       |
+| **Vue liste RDV**           | ✅ Filtrée par tag(s)                  |
+| **Vue calendrier**          | ✅ Semaine + Mois                      |
+| **Filtre tags**             | ✅ Simple ET multiple                  |
+| **Commandes vocales**       | ✅ Navigation + filtrage vocal         |
+| **Indicateur header**       | ✅ RDV du jour                         |
+| **Drag & drop RDV**         | ❌ Non (hors périmètre)                |
+| **Création RDV**            | ❌ Non (hors périmètre)                |
+| **Calendrier Gmail**        | ❌ Non (hors périmètre)                |
+| **Connexion internet**      | ✅ Requise pour Outlook uniquement     |
 
 ---
 
@@ -478,7 +490,8 @@ MVP 0.1 → V1.1 → V1.2 → V2.0 → V2.1 → V2.2 → V3.0
 ```
 
 La V3.0 devra intégrer la **synchronisation des événements calendrier**
-dans son plan de synchronisation global (tags calendrier ↔ étiquettes D-ProjeT).
+dans son plan de synchronisation global (tags calendrier ↔ étiquettes C-PRojeTs).
 
 ---
-*D-ProjeT — Version 2.2 — 23 février 2026*
+
+_C-PRojeTs — Version 2.2 — 23 février 2026_

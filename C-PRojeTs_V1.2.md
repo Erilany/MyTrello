@@ -1,4 +1,5 @@
-# 📋 D-ProjeT — Version 1.2
+# 📋 C-PRojeTs — Version 1.2
+
 > **Objectif** : Puissance métier — Bibliothèque complète + commandes vocales avancées + finitions UI
 > **Prérequis** : V1.1 validée et tous les tests V1.1 passés
 > **Basé sur** : Phase 3 (complète) + Phase 4 (enrichissement) + Phase 10 (partielle)
@@ -7,19 +8,19 @@
 
 ## 🎯 Périmètre V1.2
 
-| Nouveautés V1.2 | Reporté |
-|---|---|
-| Drag & drop bidirectionnel bibliothèque | Intégration messagerie (V2.0) |
-| Recherche et filtres dans la bibliothèque | Synchronisation tags (V3.0) |
-| Thème clair / thème sombre | Tests automatisés (V3.0) |
-| Personnalisation couleurs par tableau | |
-| Animations de transition fluides | |
-| Commandes vocales bibliothèque enrichies | |
-| Indicateurs visuels avancés (deadlines, badges) | |
-| Raccourcis clavier globaux | |
-| Mode focus amélioré | |
-| Page de paramètres complète | |
-| Tour guidé nouvel utilisateur (onboarding) | |
+| Nouveautés V1.2                                 | Reporté                       |
+| ----------------------------------------------- | ----------------------------- |
+| Drag & drop bidirectionnel bibliothèque         | Intégration messagerie (V2.0) |
+| Recherche et filtres dans la bibliothèque       | Synchronisation tags (V3.0)   |
+| Thème clair / thème sombre                      | Tests automatisés (V3.0)      |
+| Personnalisation couleurs par tableau           |                               |
+| Animations de transition fluides                |                               |
+| Commandes vocales bibliothèque enrichies        |                               |
+| Indicateurs visuels avancés (deadlines, badges) |                               |
+| Raccourcis clavier globaux                      |                               |
+| Mode focus amélioré                             |                               |
+| Page de paramètres complète                     |                               |
+| Tour guidé nouvel utilisateur (onboarding)      |                               |
 
 ---
 
@@ -112,19 +113,19 @@ INSERT INTO settings (key, value) VALUES
 
 ### ÉTAPE 2 — Commandes vocales bibliothèque
 
-- [ ] *"Ouvrir la bibliothèque"* → Affiche le panel
-- [ ] *"Fermer la bibliothèque"* → Masque le panel
-- [ ] *"Sauvegarder comme modèle"* → Sauvegarde l'élément actif
-- [ ] *"Sauvegarder comme modèle [nom]"* → Avec nom personnalisé
-- [ ] *"Utiliser le modèle [nom]"* → Applique dans l'emplacement actif
-- [ ] *"Supprimer le modèle [nom]"* → Supprime avec confirmation vocale
-- [ ] *"Rechercher modèle [terme]"* → Filtre la bibliothèque
+- [ ] _"Ouvrir la bibliothèque"_ → Affiche le panel
+- [ ] _"Fermer la bibliothèque"_ → Masque le panel
+- [ ] _"Sauvegarder comme modèle"_ → Sauvegarde l'élément actif
+- [ ] _"Sauvegarder comme modèle [nom]"_ → Avec nom personnalisé
+- [ ] _"Utiliser le modèle [nom]"_ → Applique dans l'emplacement actif
+- [ ] _"Supprimer le modèle [nom]"_ → Supprime avec confirmation vocale
+- [ ] _"Rechercher modèle [terme]"_ → Filtre la bibliothèque
 
 ### ÉTAPE 3 — Thèmes et personnalisation UI
 
 - [ ] Thème clair (défaut)
 - [ ] Thème sombre
-- [ ] Bascule thème (bouton dans header + commande vocale *"Thème sombre"*)
+- [ ] Bascule thème (bouton dans header + commande vocale _"Thème sombre"_)
 - [ ] Mémorisation du thème choisi (table `settings`)
 - [ ] Personnalisation couleur de chaque tableau (palette de 12 couleurs)
 - [ ] Personnalisation couleur de chaque colonne
@@ -190,6 +191,7 @@ INSERT INTO settings (key, value) VALUES
 ## 🧪 Tests de validation V1.2
 
 ### TEST V1.2-01 — Drag & drop vers la bibliothèque
+
 ```
 🧪 Glisser la carte "Poste 400kV Saint-Étienne-du-Rouvray"
    (avec ses 5 catégories et toutes ses sous-catégories)
@@ -205,6 +207,7 @@ INSERT INTO settings (key, value) VALUES
 ```
 
 ### TEST V1.2-02 — Drag & drop depuis la bibliothèque
+
 ```
 🧪 Glisser le modèle "Poste 400kV" depuis la bibliothèque vers le tableau
 
@@ -221,6 +224,7 @@ INSERT INTO settings (key, value) VALUES
 ```
 
 ### TEST V1.2-03 — Recherche et filtres bibliothèque
+
 ```
 🧪 Saisir "400kV" dans la barre de recherche
 
@@ -238,6 +242,7 @@ INSERT INTO settings (key, value) VALUES
 ```
 
 ### TEST V1.2-04 — Commandes vocales bibliothèque
+
 ```
 🧪 Dire "Sauvegarder comme modèle Poste Standard 400kV"
 
@@ -255,6 +260,7 @@ INSERT INTO settings (key, value) VALUES
 ```
 
 ### TEST V1.2-05 — Thèmes
+
 ```
 🧪 Basculer en thème sombre via le bouton header
 
@@ -270,6 +276,7 @@ INSERT INTO settings (key, value) VALUES
 ```
 
 ### TEST V1.2-06 — Animations
+
 ```
 🧪 Ouvrir et fermer une modal de carte
 
@@ -283,6 +290,7 @@ INSERT INTO settings (key, value) VALUES
 ```
 
 ### TEST V1.2-07 — Indicateurs visuels
+
 ```
 🧪 Créer une carte avec date d'échéance dépassée
 
@@ -297,6 +305,7 @@ INSERT INTO settings (key, value) VALUES
 ```
 
 ### TEST V1.2-08 — Raccourcis clavier
+
 ```
 🧪 Appuyer sur Ctrl + N (colonne active = "Études")
 
@@ -315,6 +324,7 @@ INSERT INTO settings (key, value) VALUES
 ```
 
 ### TEST V1.2-09 — Onboarding
+
 ```
 🧪 Réinitialiser l'état onboarding, redémarrer l'application
 
@@ -329,6 +339,7 @@ INSERT INTO settings (key, value) VALUES
 ```
 
 ### TEST V1.2-10 — Régression V1.1
+
 ```
 🧪 Rejouer les 10 tests V1.1 + 10 tests MVP
 
@@ -342,21 +353,23 @@ INSERT INTO settings (key, value) VALUES
 
 ## 📊 Récapitulatif V1.2
 
-| Critère | Détail |
-|---|---|
-| **Phases couvertes** | Phase 3 complète + Phase 4 enrichi + Phase 10 partielle |
-| **Tâches de développement** | 52 tâches |
-| **Tests de validation** | 10 tests (+ 20 tests régression) |
-| **Bibliothèque** | ✅ Complète avec drag & drop bidirectionnel |
-| **Commandes vocales** | ✅ Complètes (base + bibliothèque) |
-| **Thèmes** | ✅ Clair / Sombre |
-| **Messagerie** | ❌ Non |
-| **Connexion internet** | ❌ Non requise |
+| Critère                     | Détail                                                  |
+| --------------------------- | ------------------------------------------------------- |
+| **Phases couvertes**        | Phase 3 complète + Phase 4 enrichi + Phase 10 partielle |
+| **Tâches de développement** | 52 tâches                                               |
+| **Tests de validation**     | 10 tests (+ 20 tests régression)                        |
+| **Bibliothèque**            | ✅ Complète avec drag & drop bidirectionnel             |
+| **Commandes vocales**       | ✅ Complètes (base + bibliothèque)                      |
+| **Thèmes**                  | ✅ Clair / Sombre                                       |
+| **Messagerie**              | ❌ Non                                                  |
+| **Connexion internet**      | ❌ Non requise                                          |
 
 ---
 
 ## ➡️ Prochaine version : V2.0
+
 Intégration Outlook native — Module messagerie complet
 
 ---
-*D-ProjeT — Version 1.2 — 23 février 2026*
+
+_C-PRojeTs — Version 1.2 — 23 février 2026_

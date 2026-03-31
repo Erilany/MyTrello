@@ -1,4 +1,4 @@
-const STORAGE_KEY = 'd-projet_db';
+const STORAGE_KEY = 'c-projets_db';
 
 const PROJECT_KEYS = [
   'links',
@@ -126,39 +126,39 @@ export const storage = {
   },
 
   getGMRData: () => {
-    const data = localStorage.getItem('d-projet_gmr');
+    const data = localStorage.getItem('c-projets_gmr');
     return data ? JSON.parse(data) : [];
   },
 
   setGMRData: gmrData => {
-    localStorage.setItem('d-projet_gmr', JSON.stringify(gmrData));
+    localStorage.setItem('c-projets_gmr', JSON.stringify(gmrData));
   },
 
   getZonesData: () => {
-    const data = localStorage.getItem('d-projet_zones');
+    const data = localStorage.getItem('c-projets_zones');
     return data ? JSON.parse(data) : [];
   },
 
   setZonesData: zonesData => {
-    localStorage.setItem('d-projet_zones', JSON.stringify(zonesData));
+    localStorage.setItem('c-projets_zones', JSON.stringify(zonesData));
   },
 
   getTagsData: () => {
-    const data = localStorage.getItem('d-projet_tags');
+    const data = localStorage.getItem('c-projets_tags');
     return data ? JSON.parse(data) : [];
   },
 
   setTagsData: tagsData => {
-    localStorage.setItem('d-projet_tags', JSON.stringify(tagsData));
+    localStorage.setItem('c-projets_tags', JSON.stringify(tagsData));
   },
 
   getContracts: () => {
-    const data = localStorage.getItem('d-projet_contracts');
+    const data = localStorage.getItem('c-projets_contracts');
     return data ? JSON.parse(data) : [];
   },
 
   setContracts: contracts => {
-    localStorage.setItem('d-projet_contracts', JSON.stringify(contracts));
+    localStorage.setItem('c-projets_contracts', JSON.stringify(contracts));
   },
 
   clear: () => {

@@ -6,7 +6,7 @@ let db = null;
 let SQL = null;
 
 function getDbPath() {
-  const dbPath = process.env.DB_PATH || './database/d-projet.db';
+  const dbPath = process.env.DB_PATH || './database/c-projets.db';
   if (path.isAbsolute(dbPath)) {
     return dbPath;
   }
@@ -80,7 +80,8 @@ async function initDatabase() {
 
   // Migration for subcategories.milestones
   const subcatTableInfo = db.exec('PRAGMA table_info(subcategories)');
-  const subcatColumns = subcatTableInfo.length > 0 ? subcatTableInfo[0].values.map(row => row[1]) : [];
+  const subcatColumns =
+    subcatTableInfo.length > 0 ? subcatTableInfo[0].values.map(row => row[1]) : [];
   console.log('[DB MIGRATION] subcategories existing columns:', subcatColumns);
 
   if (!subcatColumns.includes('milestones')) {

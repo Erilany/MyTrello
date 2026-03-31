@@ -167,7 +167,7 @@ export const generateExportData = (db, options = {}) => {
       },
       library: (() => {
         try {
-          const e = localStorage.getItem('d-projet_library_editor');
+          const e = localStorage.getItem('c-projets_library_editor');
           return e ? JSON.parse(e) : [];
         } catch {
           return [];
@@ -175,7 +175,7 @@ export const generateExportData = (db, options = {}) => {
       })(),
       contracts: (() => {
         try {
-          const e = localStorage.getItem('d-projet_contracts');
+          const e = localStorage.getItem('c-projets_contracts');
           return e ? JSON.parse(e) : [];
         } catch {
           return [];
@@ -183,7 +183,7 @@ export const generateExportData = (db, options = {}) => {
       })(),
       entreprises: (() => {
         try {
-          const e = localStorage.getItem('d-projet_entreprises');
+          const e = localStorage.getItem('c-projets_entreprises');
           return e ? JSON.parse(e) : [];
         } catch {
           return [];
@@ -192,22 +192,29 @@ export const generateExportData = (db, options = {}) => {
     },
     settings: includeSettings
       ? {
-          theme: localStorage.getItem('d-projet-theme'),
+          theme: localStorage.getItem('c-projets-theme'),
           cardColors: (() => {
             try {
-              return JSON.parse(localStorage.getItem('d-projet-cardColors'));
+              return JSON.parse(localStorage.getItem('c-projets-cardColors'));
             } catch {
               return null;
             }
           })(),
-          username: localStorage.getItem('d-projet-username'),
-          userRole: localStorage.getItem('d-projet-user-role'),
+          username: localStorage.getItem('c-projets-username'),
+          userRole: localStorage.getItem('c-projets-user-role'),
+          chargeResentie: (() => {
+            try {
+              return JSON.parse(localStorage.getItem('c-projets_charge_ressentie') || '{}');
+            } catch {
+              return {};
+            }
+          })(),
         }
       : {},
     projectTime: includeProjectTime
       ? (() => {
           try {
-            return JSON.parse(localStorage.getItem('d-projet_project_time') || '{}');
+            return JSON.parse(localStorage.getItem('c-projets_project_time') || '{}');
           } catch {
             return {};
           }
@@ -216,7 +223,7 @@ export const generateExportData = (db, options = {}) => {
     libraryFavorites: includeLibrary
       ? (() => {
           try {
-            return JSON.parse(localStorage.getItem('d-projet_library_favorites') || '{}');
+            return JSON.parse(localStorage.getItem('c-projets_library_favorites') || '{}');
           } catch {
             return {};
           }
@@ -226,7 +233,7 @@ export const generateExportData = (db, options = {}) => {
       ? (() => {
           try {
             return JSON.parse(
-              localStorage.getItem('d-projet_library_templates') || '{"templates":[]}'
+              localStorage.getItem('c-projets_library_templates') || '{"templates":[]}'
             );
           } catch {
             return { templates: [] };
@@ -244,7 +251,7 @@ export const downloadExport = (data, filename) => {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = filename || `d-projet-backup-${new Date().toISOString().split('T')[0]}.json`;
+  a.download = filename || `c-projets-backup-${new Date().toISOString().split('T')[0]}.json`;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);

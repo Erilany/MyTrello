@@ -2,6 +2,8 @@ import React from 'react';
 import { useApp } from '../../context/AppContext';
 import { Bell, Sun, Moon, HelpCircle, Search } from 'lucide-react';
 
+const APP_VERSION = '1.1.0';
+
 function Header() {
   const { theme, toggleTheme, guideOpen, toggleGuide, searchOpen, toggleSearch } = useApp();
 
@@ -10,7 +12,9 @@ function Header() {
       className="h-14 bg-sidebar border-b border-std flex items-center justify-between px-4"
       style={{ backdropFilter: 'blur(12px)' }}
     >
-      <div className="flex items-center"></div>
+      <div className="flex items-center text-sm text-muted">
+        <span className="px-1.5 py-0.5 bg-card rounded text-xs">v{APP_VERSION}</span>
+      </div>
 
       <div className="flex items-center space-x-2">
         <button

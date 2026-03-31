@@ -79,10 +79,10 @@ function Board2() {
   const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
-    const openTab = localStorage.getItem('d-projet_open_tab');
+    const openTab = localStorage.getItem('c-projets_open_tab');
     if (openTab === 'planning') {
       setActiveTab('planning');
-      localStorage.removeItem('d-projet_open_tab');
+      localStorage.removeItem('c-projets_open_tab');
     }
   }, []);
 
@@ -255,7 +255,7 @@ function Board2() {
   const saveExternalContacts = () => {
     saveToStorage('externalContacts', JSON.stringify(externalContacts));
 
-    const allCurrent = JSON.parse(localStorage.getItem('d-projet_entreprises') || '[]');
+    const allCurrent = JSON.parse(localStorage.getItem('c-projets_entreprises') || '[]');
     const newContacts = externalContacts.filter(ec => ec.entreprise && ec.nom);
     const merged = [...allCurrent];
     newContacts.forEach(newC => {
@@ -269,7 +269,7 @@ function Board2() {
         merged.push(newC);
       }
     });
-    localStorage.setItem('d-projet_entreprises', JSON.stringify(merged));
+    localStorage.setItem('c-projets_entreprises', JSON.stringify(merged));
   };
 
   const getFilteredSuggestions = query => {
@@ -344,7 +344,7 @@ function Board2() {
   const [importData, setImportData] = useState(null);
 
   useEffect(() => {
-    const stored = localStorage.getItem('d-projet_contracts');
+    const stored = localStorage.getItem('c-projets_contracts');
     if (stored) {
       setContracts(JSON.parse(stored));
     }
@@ -819,7 +819,7 @@ Affaire: ${commande.affaire || 'N/A'}
       setExternalContacts(
         JSON.parse(localStorage.getItem(`board-${currentBoard.id}-externalContacts`) || '[]')
       );
-      const savedEntreprises = localStorage.getItem('d-projet_entreprises');
+      const savedEntreprises = localStorage.getItem('c-projets_entreprises');
       if (savedEntreprises) {
         setEntrepriseSuggestions(JSON.parse(savedEntreprises));
       }

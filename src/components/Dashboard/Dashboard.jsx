@@ -255,7 +255,7 @@ export default function Dashboard() {
   } = useApp();
 
   // Load all data from localStorage for dashboard
-  const STORAGE_KEY = 'd-projet_db';
+  const STORAGE_KEY = 'c-projets_db';
   const [storageData, setStorageData] = useState(null);
   const [selectedWeek, setSelectedWeek] = useState(() => getWeekNumber(new Date()));
   const [timeRange, setTimeRange] = useState('week');
@@ -292,7 +292,7 @@ export default function Dashboard() {
   const handleDueDateClick = (e, task) => {
     e.stopPropagation();
     if (task.board?.id) {
-      localStorage.setItem('d-projet_open_tab', 'planning');
+      localStorage.setItem('c-projets_open_tab', 'planning');
       loadBoard(task.board.id);
       navigate('/board');
     }
@@ -310,7 +310,7 @@ export default function Dashboard() {
     const currentWeek = getWeekNumber(new Date());
     if (timeData[currentWeek] && timeData[currentWeek][projectId] !== undefined) {
       timeData[currentWeek][projectId] = 0;
-      localStorage.setItem('d-projet_project_time', JSON.stringify(timeData));
+      localStorage.setItem('c-projets_project_time', JSON.stringify(timeData));
       setRefreshKey(k => k + 1);
     }
   };
@@ -508,7 +508,7 @@ export default function Dashboard() {
   }, [myTasks]);
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="p-6 max-w-full">
       <h1 className="text-2xl font-display font-bold text-primary mb-6">Dashboard</h1>
 
       {/* Toast notification */}
@@ -527,14 +527,14 @@ export default function Dashboard() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-4 py-3 transition-std ${
+              className={`flex items-center px-4 py-2 text-sm font-medium border-b-2 transition-std ${
                 isActive
-                  ? 'bg-card border-b-2 border-b-accent text-accent'
-                  : 'text-secondary hover:bg-card-hover'
+                  ? 'border-accent text-accent'
+                  : 'border-transparent text-secondary hover:text-primary hover:border-std'
               }`}
             >
-              <Icon size={16} />
-              <span className="text-sm font-medium">{tab.label}</span>
+              <Icon size={16} className="mr-2" />
+              {tab.label}
             </button>
           );
         })}

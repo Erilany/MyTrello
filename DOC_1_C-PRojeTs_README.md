@@ -1,4 +1,4 @@
-# 🗂️ D-ProjeT — README
+# 🗂️ C-PRojeTs — README
 
 > Application de gestion de projets à 3 niveaux avec intégration Outlook, Gmail et commandes vocales.
 
@@ -22,8 +22,8 @@
 ### 1. Cloner le dépôt
 
 ```bash
-git clone https://github.com/votre-org/D-ProjeT.git
-cd D-ProjeT
+git clone https://github.com/votre-org/C-PRojeTs.git
+cd C-PRojeTs
 ```
 
 ### 2. Installer les dépendances
@@ -77,7 +77,7 @@ npm run dev
 ## 🏗️ Structure du projet
 
 ```
-D-ProjeT/
+C-PRojeTs/
 ├── .env.example              → Template variables d'environnement
 ├── .eslintrc.js              → Configuration ESLint
 ├── .prettierrc               → Configuration Prettier
@@ -191,4 +191,4 @@ En cas de problème d'installation ou de configuration, consulter `SETUP_ENVIRON
 
 ---
 
-_D-ProjeT — README — 23 février 2026_
+_C-PRojeTs — README — 23 février 2026_

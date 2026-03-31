@@ -1,4 +1,4 @@
-const PRIORITY_STORAGE_KEY = 'd-projet_priority_data';
+const PRIORITY_STORAGE_KEY = 'c-projets_priority_data';
 
 export const defaultPriorityData = [
   { id: 1, label: 'Urgent' },

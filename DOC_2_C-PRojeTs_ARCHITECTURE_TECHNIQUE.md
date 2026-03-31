@@ -1,10 +1,10 @@
-# 🏗️ D-ProjeT — Architecture Technique
+# 🏗️ C-PRojeTs — Architecture Technique
 
 ---
 
 ## 1. Vue d'ensemble
 
-D-ProjeT repose sur **Electron**, qui combine deux processus distincts :
+C-PRojeTs repose sur **Electron**, qui combine deux processus distincts :
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -85,16 +85,18 @@ const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('electron', {
   invoke: (channel, data) => {
     const allowedChannels = [
-      'db:boards:getAll', 'db:boards:create', /* ... */
-      'outlook:emails:list', 'outlook:emails:move', /* ... */
-      'gmail:labels:add', /* ... */
-      'calendar:events:getByTags', /* ... */
+      'db:boards:getAll',
+      'db:boards:create' /* ... */,
+      'outlook:emails:list',
+      'outlook:emails:move' /* ... */,
+      'gmail:labels:add' /* ... */,
+      'calendar:events:getByTags' /* ... */,
     ];
     if (allowedChannels.includes(channel)) {
       return ipcRenderer.invoke(channel, data);
     }
     throw new Error(`Canal IPC non autorisé : ${channel}`);
-  }
+  },
 });
 ```
 
@@ -200,9 +202,9 @@ async function createOutlookService() {
   try {
     const graphService = new OutlookGraphService();
     await graphService.testConnection();
-    return graphService;                    // ✅ Mode cloud
+    return graphService; // ✅ Mode cloud
   } catch (e) {
-    return new OutlookEWSService();         // 🏢 Mode on-premise
+    return new OutlookEWSService(); // 🏢 Mode on-premise
   }
 }
 ```
@@ -211,7 +213,7 @@ async function createOutlookService() {
 
 ## 5. Flux de données — Drag & Drop
 
-### 5.1 Drag & Drop interne D-ProjeT
+### 5.1 Drag & Drop interne C-PRojeTs
 
 ```
 Utilisateur drag une carte
@@ -235,7 +237,7 @@ Réponse IPC → BoardContext met à jour l'état local
 React re-render des composants concernés
 ```
 
-### 5.2 Drag & Drop email → D-ProjeT
+### 5.2 Drag & Drop email → C-PRojeTs
 
 ```
 Utilisateur drag un email depuis le panel Outlook/Gmail
@@ -244,7 +246,7 @@ Utilisateur drag un email depuis le panel Outlook/Gmail
 EmailDraggable → données email mises dans le drag payload
         │
         ▼
-Drop sur une zone D-ProjeT (Carte / Catégorie / Sous-catégorie)
+Drop sur une zone C-PRojeTs (Carte / Catégorie / Sous-catégorie)
         │
         ▼
 Détection du type de zone cible
@@ -296,7 +298,7 @@ Connexion internet disponible ?
         │         - Sync en temps réel ou périodique
         │
         └── NON → Mode hors ligne
-                  - D-ProjeT de base : ✅ 100% fonctionnel (SQLite local)
+                  - C-PRojeTs de base : ✅ 100% fonctionnel (SQLite local)
                   - Outlook / Gmail : ❌ Indisponible
                   - Calendrier      : ✅ Données en cache (TTL 5 min)
                   - Commandes vocales : ✅ Fonctionnel (Web Speech API locale)
@@ -330,16 +332,16 @@ class CacheService {
 
 ## 9. Décisions d'architecture — Justifications
 
-| Décision | Alternative rejetée | Raison du choix |
-|---|---|---|
-| Electron + React | Tauri, NW.js | Maturité, écosystème npm complet, IPC bien documenté |
-| Context API | Redux, Zustand | Suffisant pour ce volume de données, moins de boilerplate |
-| SQLite (better-sqlite3) | IndexedDB, PouchDB | Synchrone, performant, SQL standard, pas de serveur |
-| react-beautiful-dnd | dnd-kit, react-dnd | API simple, supporte les listes imbriquées |
-| framer-motion | CSS transitions, GSAP | Intégration React native, API déclarative |
-| Interface IOutlookService | Deux services indépendants | Code UI identique quel que soit le mode Outlook |
-| electron-store chiffré | localStorage, fichier JSON | Chiffrement natif, adapté aux tokens OAuth |
+| Décision                  | Alternative rejetée        | Raison du choix                                           |
+| ------------------------- | -------------------------- | --------------------------------------------------------- |
+| Electron + React          | Tauri, NW.js               | Maturité, écosystème npm complet, IPC bien documenté      |
+| Context API               | Redux, Zustand             | Suffisant pour ce volume de données, moins de boilerplate |
+| SQLite (better-sqlite3)   | IndexedDB, PouchDB         | Synchrone, performant, SQL standard, pas de serveur       |
+| react-beautiful-dnd       | dnd-kit, react-dnd         | API simple, supporte les listes imbriquées                |
+| framer-motion             | CSS transitions, GSAP      | Intégration React native, API déclarative                 |
+| Interface IOutlookService | Deux services indépendants | Code UI identique quel que soit le mode Outlook           |
+| electron-store chiffré    | localStorage, fichier JSON | Chiffrement natif, adapté aux tokens OAuth                |
 
 ---
 
-*D-ProjeT — Architecture Technique — 23 février 2026*
+_C-PRojeTs — Architecture Technique — 23 février 2026_

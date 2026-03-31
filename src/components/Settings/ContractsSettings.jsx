@@ -12,7 +12,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 
-const STORAGE_KEY = 'd-projet_contracts';
+const STORAGE_KEY = 'c-projets_contracts';
 
 const REQUIRED_FIELDS = [
   { key: 'numeroMarche', label: 'N° de Marché', required: true },
@@ -549,7 +549,7 @@ export default function ContractsSettings() {
                   <thead>
                     <tr className="bg-card-hover">
                       <th className="px-3 py-2 text-left font-semibold text-secondary border border-std w-[180px]">
-                        Champ D-ProjeTs
+                        Champ C-PRojeTs
                       </th>
                       <th className="px-3 py-2 text-left font-semibold text-secondary border border-std">
                         Colonne CSV

@@ -1,4 +1,4 @@
-# 🗄️ D-ProjeT — Schéma Base de Données Complet
+# 🗄️ C-PRojeTs — Schéma Base de Données Complet
 
 > Schéma SQLite complet couvrant toutes les versions MVP → V3.0.
 > Fichier de référence unique à exécuter pour initialiser la base.
@@ -153,7 +153,7 @@ CREATE TABLE IF NOT EXISTS voice_history (
 -- SECTION 3 : MODULE MESSAGERIE (V2.0 / V2.1)
 -- ───────────────────────────────────────────────────────────
 
--- Liens entre emails et éléments D-ProjeT
+-- Liens entre emails et éléments C-PRojeTs
 CREATE TABLE IF NOT EXISTS email_links (
   id          INTEGER PRIMARY KEY AUTOINCREMENT,
   ref_type    TEXT    NOT NULL,   -- 'card'|'category'|'subcategory'
@@ -201,13 +201,13 @@ CREATE TABLE IF NOT EXISTS calendar_events_cache (
 -- SECTION 5 : SYNCHRONISATION TAGS (V3.0)
 -- ───────────────────────────────────────────────────────────
 
--- Mapping tags messagerie / calendrier ↔ étiquettes D-ProjeT
+-- Mapping tags messagerie / calendrier ↔ étiquettes C-PRojeTs
 CREATE TABLE IF NOT EXISTS tag_mapping (
   id              INTEGER PRIMARY KEY AUTOINCREMENT,
   source          TEXT    NOT NULL,   -- 'outlook'|'gmail'|'calendar'
   source_tag      TEXT    NOT NULL,   -- Nom du tag côté source
-  d_projet_label  TEXT    NOT NULL,   -- Étiquette D-ProjeT correspondante
-  d_projet_priority TEXT,             -- Priorité D-ProjeT associée
+  d_projet_label  TEXT    NOT NULL,   -- Étiquette C-PRojeTs correspondante
+  d_projet_priority TEXT,             -- Priorité C-PRojeTs associée
   direction       TEXT    DEFAULT 'both', -- 'to_d_projet'|'to_source'|'both'
   is_active       INTEGER DEFAULT 1,
   created_at      DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -293,7 +293,7 @@ INSERT OR IGNORE INTO settings (key, value) VALUES
   -- Synchronisation
   ('sync_enabled',           'false'),
   ('sync_interval_min',      '10'),
-  ('sync_conflict_rule',     'd-projet'),
+  ('sync_conflict_rule',     'c-projets'),
   ('sync_calendar_enabled',  'false'),
   ('last_sync_outlook',      ''),
   ('last_sync_gmail',        ''),
@@ -313,23 +313,23 @@ INSERT OR IGNORE INTO settings (key, value) VALUES
 
 ## 2. Dictionnaire des tables
 
-| Table                   | Section | Description                     |
-| ----------------------- | ------- | ------------------------------- |
-| `boards`                | MVP     | Tableaux de bord                |
-| `columns`               | MVP     | Colonnes d'un tableau           |
-| `cards`                 | MVP     | Cartes projet (niveau 1)        |
-| `categories`            | MVP     | Catégories (niveau 2)           |
-| `subcategories`         | MVP     | Sous-catégories (niveau 3)      |
-| `comments`              | MVP     | Commentaires (tous niveaux)     |
-| `attachments`           | MVP     | Pièces jointes locales          |
-| `library_items`         | MVP     | Bibliothèque de modèles         |
-| `settings`              | MVP     | Paramètres utilisateur          |
-| `voice_history`         | V1.1    | Historique commandes vocales    |
-| `email_links`           | V2.0    | Liens email ↔ éléments D-ProjeT |
-| `calendar_filters`      | V2.2    | Tags calendrier sélectionnés    |
-| `calendar_events_cache` | V2.2    | Cache local des événements      |
-| `tag_mapping`           | V3.0    | Règles de synchronisation tags  |
-| `sync_history`          | V3.0    | Journal des synchronisations    |
+| Table                   | Section | Description                      |
+| ----------------------- | ------- | -------------------------------- |
+| `boards`                | MVP     | Tableaux de bord                 |
+| `columns`               | MVP     | Colonnes d'un tableau            |
+| `cards`                 | MVP     | Cartes projet (niveau 1)         |
+| `categories`            | MVP     | Catégories (niveau 2)            |
+| `subcategories`         | MVP     | Sous-catégories (niveau 3)       |
+| `comments`              | MVP     | Commentaires (tous niveaux)      |
+| `attachments`           | MVP     | Pièces jointes locales           |
+| `library_items`         | MVP     | Bibliothèque de modèles          |
+| `settings`              | MVP     | Paramètres utilisateur           |
+| `voice_history`         | V1.1    | Historique commandes vocales     |
+| `email_links`           | V2.0    | Liens email ↔ éléments C-PRojeTs |
+| `calendar_filters`      | V2.2    | Tags calendrier sélectionnés     |
+| `calendar_events_cache` | V2.2    | Cache local des événements       |
+| `tag_mapping`           | V3.0    | Règles de synchronisation tags   |
+| `sync_history`          | V3.0    | Journal des synchronisations     |
 
 ---
 
@@ -363,8 +363,8 @@ INSERT OR IGNORE INTO settings (key, value) VALUES
 ### Champ `direction` (tag_mapping)
 
 ```
-'to_d_projet'   → Sync dans un seul sens : messagerie → D-ProjeT
-'to_source'     → Sync dans un seul sens : D-ProjeT → messagerie
+'to_d_projet'   → Sync dans un seul sens : messagerie → C-PRojeTs
+'to_source'     → Sync dans un seul sens : C-PRojeTs → messagerie
 'both'          → Synchronisation bidirectionnelle
 ```
 
@@ -414,4 +414,4 @@ npm run db:migrate:rollback
 
 ---
 
-_D-ProjeT — Schéma BDD Complet — 23 février 2026_
+_C-PRojeTs — Schéma BDD Complet — 23 février 2026_

@@ -133,7 +133,7 @@ function LibraryPanel({ standalone = false }) {
 
   // Load templates from localStorage
   useEffect(() => {
-    const stored = localStorage.getItem('d-projet_templates');
+    const stored = localStorage.getItem('c-projets_templates');
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
@@ -146,7 +146,7 @@ function LibraryPanel({ standalone = false }) {
 
   const saveTemplates = newTemplates => {
     setTemplates(newTemplates);
-    localStorage.setItem('d-projet_templates', JSON.stringify({ templates: newTemplates }));
+    localStorage.setItem('c-projets_templates', JSON.stringify({ templates: newTemplates }));
   };
 
   const handleSaveTemplate = () => {
@@ -217,7 +217,7 @@ function LibraryPanel({ standalone = false }) {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = 'd-projet-templates.json';
+    link.download = 'c-projets-templates.json';
     link.click();
     URL.revokeObjectURL(url);
   };
@@ -274,7 +274,7 @@ function LibraryPanel({ standalone = false }) {
 
   const saveFavorites = newFavorites => {
     setFavorites(newFavorites);
-    localStorage.setItem('d-projet_library_favorites', JSON.stringify(newFavorites));
+    localStorage.setItem('c-projets_library_favorites', JSON.stringify(newFavorites));
     window.dispatchEvent(new Event('library-favorites-updated'));
   };
 
@@ -399,7 +399,7 @@ function LibraryPanel({ standalone = false }) {
   };
 
   useEffect(() => {
-    const stored = localStorage.getItem('d-projet_library_favorites');
+    const stored = localStorage.getItem('c-projets_library_favorites');
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
@@ -417,7 +417,7 @@ function LibraryPanel({ standalone = false }) {
 
   useEffect(() => {
     const handleFavoritesUpdate = () => {
-      const stored = localStorage.getItem('d-projet_library_favorites');
+      const stored = localStorage.getItem('c-projets_library_favorites');
       if (stored) {
         try {
           const parsed = JSON.parse(stored);
@@ -1295,7 +1295,7 @@ function LibraryPanel({ standalone = false }) {
                   null,
                   subcat.duration_days || 1,
                   null,
-                  subcat.tag
+                  subcat.tag || cat.tag || null
                 );
                 console.log('[DEBUG] Created subcategory directly:', subcat.title);
               } catch (e) {
@@ -1927,24 +1927,13 @@ function LibraryPanel({ standalone = false }) {
                                 className="text-yellow-500 flex-shrink-0"
                                 fill="currentColor"
                               />
-                            )}
-                          </div>
-                          {item.tags && (
-                            <div className="flex flex-wrap gap-1 mt-1">
-                              {item.tags.split(',').map((tag, i) => (
-                                <span key={i} className="text-xs text-gray-500">
-                                  #{tag.trim()}
-                                </span>
-                              ))}
+                              )}
                             </div>
-                          )}
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-            </div>
+                      );
+                    })
+                  )}
 
             <div className="flex flex-col overflow-hidden">
               <h2 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">
@@ -2060,6 +2049,11 @@ function LibraryPanel({ standalone = false }) {
                             <p className="text-xs text-gray-500 mt-1">
                               {cat.subcategories.length} sous-catégorie(s)
                             </p>
+                          )}
+                          {cat.tag && (
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              <span className="text-xs text-gray-500">#{cat.tag}</span>
+                            </div>
                           )}
                         </div>
                       </div>
@@ -2673,15 +2667,6 @@ function LibraryPanel({ standalone = false }) {
                           <h4 className="font-medium text-primary text-sm truncate">
                             {item.title}
                           </h4>
-                          {item.tags && (
-                            <div className="flex flex-wrap gap-1 mt-1">
-                              {item.tags.split(',').map((tag, i) => (
-                                <span key={i} className="text-xs text-muted">
-                                  #{tag.trim()}
-                                </span>
-                              ))}
-                            </div>
-                          )}
                         </div>
                         <span className="text-accent text-sm">→</span>
                       </div>

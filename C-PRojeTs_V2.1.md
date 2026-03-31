@@ -1,4 +1,5 @@
-# 📋 D-ProjeT — Version 2.1
+# 📋 C-PRojeTs — Version 2.1
+
 > **Objectif** : Intégration Gmail + cohabitation Outlook / Gmail simultanés
 > **Prérequis** : V2.0 validée et tous les tests V2.0 passés
 > **Basé sur** : Phase 6 + Phase 7 (consolidation) + Phase 8 (complétion) du plan de développement
@@ -7,19 +8,19 @@
 
 ## 🎯 Périmètre V2.1
 
-| Nouveautés V2.1 | Reporté |
-|---|---|
-| Activation Gmail par bouton paramètres | Synchronisation tags complète (V3.0) |
-| Authentification OAuth 2.0 Google | Tests automatisés (V3.0) |
-| Panel email Gmail dans l'interface | Performances avancées (V3.0) |
-| Gestion des libellés Gmail (multi-libellés) | |
-| Drag & drop Gmail → D-ProjeT | |
-| Cohabitation Outlook + Gmail simultanés | |
-| Basculement vocal entre les deux messageries | |
-| Copier / Coller vocal Gmail → D-ProjeT | |
-| Commandes vocales Gmail spécifiques | |
-| Indicateur source email (Outlook / Gmail) | |
-| Historique des liens email (Outlook + Gmail) | |
+| Nouveautés V2.1                              | Reporté                              |
+| -------------------------------------------- | ------------------------------------ |
+| Activation Gmail par bouton paramètres       | Synchronisation tags complète (V3.0) |
+| Authentification OAuth 2.0 Google            | Tests automatisés (V3.0)             |
+| Panel email Gmail dans l'interface           | Performances avancées (V3.0)         |
+| Gestion des libellés Gmail (multi-libellés)  |                                      |
+| Drag & drop Gmail → C-PRojeTs                |                                      |
+| Cohabitation Outlook + Gmail simultanés      |                                      |
+| Basculement vocal entre les deux messageries |                                      |
+| Copier / Coller vocal Gmail → C-PRojeTs      |                                      |
+| Commandes vocales Gmail spécifiques          |                                      |
+| Indicateur source email (Outlook / Gmail)    |                                      |
+| Historique des liens email (Outlook + Gmail) |                                      |
 
 ---
 
@@ -136,37 +137,37 @@ INSERT INTO settings (key, value) VALUES
 - [ ] Indicateur non lus sur chaque onglet
 - [ ] Transition animée entre onglets
 
-### ÉTAPE 6 — Drag & drop Gmail → D-ProjeT
+### ÉTAPE 6 — Drag & drop Gmail → C-PRojeTs
 
 - [ ] Rendre les emails Gmail draggables (même logique qu'Outlook)
 - [ ] Mêmes zones de dépôt que V2.0 (Carte / Catégorie / Sous-catégorie)
-- [ ] Badge source "Gmail" sur l'élément D-ProjeT créé
+- [ ] Badge source "Gmail" sur l'élément C-PRojeTs créé
 - [ ] Enregistrement dans `email_links` avec `source = 'gmail'`
-- [ ] Différenciation visuelle Outlook (bleu) vs Gmail (rouge) dans D-ProjeT
+- [ ] Différenciation visuelle Outlook (bleu) vs Gmail (rouge) dans C-PRojeTs
 
-### ÉTAPE 7 — Copier / Coller vocal Gmail → D-ProjeT
+### ÉTAPE 7 — Copier / Coller vocal Gmail → C-PRojeTs
 
 - [ ] Même logique que V2.0 pour Outlook
 - [ ] La mémoire tampon indique la source (Outlook ou Gmail)
-- [ ] *"Copie email dans D-ProjeT"* fonctionne depuis Gmail
-- [ ] *"Colle l'email ici"* fonctionne quelle que soit la source
+- [ ] _"Copie email dans C-PRojeTs"_ fonctionne depuis Gmail
+- [ ] _"Colle l'email ici"_ fonctionne quelle que soit la source
 
 ### ÉTAPE 8 — Commandes vocales Gmail spécifiques
 
-- [ ] *"Ouvrir Gmail"* → Bascule vers le panel Gmail
-- [ ] *"Basculer messagerie"* → Alterne entre Outlook et Gmail
-- [ ] *"Email suivant"* / *"Email précédent"* → Navigation Gmail
-- [ ] *"Ouvre l'email"* / *"Ferme l'email"* → Aperçu Gmail
-- [ ] *"Répondre"* / *"Transférer à [nom]"* → Gmail
-- [ ] *"Marquer comme lu"* / *"Marquer comme non lu"* → Gmail
-- [ ] *"Supprimer l'email"* → Gmail (avec confirmation)
-- [ ] *"Ajouter le libellé [nom]"* → Libellé Gmail
-- [ ] *"Retirer le libellé [nom]"* → Retire libellé Gmail
-- [ ] *"Archiver"* → Archive l'email Gmail
-- [ ] *"Afficher emails de [projet]"* → Filtre Gmail
-- [ ] *"Crée une carte"* → Depuis email Gmail
-- [ ] *"Copie email dans D-ProjeT"* → Gmail vers mémoire tampon
-- [ ] *"Colle l'email ici"* → Dans élément actif D-ProjeT
+- [ ] _"Ouvrir Gmail"_ → Bascule vers le panel Gmail
+- [ ] _"Basculer messagerie"_ → Alterne entre Outlook et Gmail
+- [ ] _"Email suivant"_ / _"Email précédent"_ → Navigation Gmail
+- [ ] _"Ouvre l'email"_ / _"Ferme l'email"_ → Aperçu Gmail
+- [ ] _"Répondre"_ / _"Transférer à [nom]"_ → Gmail
+- [ ] _"Marquer comme lu"_ / _"Marquer comme non lu"_ → Gmail
+- [ ] _"Supprimer l'email"_ → Gmail (avec confirmation)
+- [ ] _"Ajouter le libellé [nom]"_ → Libellé Gmail
+- [ ] _"Retirer le libellé [nom]"_ → Retire libellé Gmail
+- [ ] _"Archiver"_ → Archive l'email Gmail
+- [ ] _"Afficher emails de [projet]"_ → Filtre Gmail
+- [ ] _"Crée une carte"_ → Depuis email Gmail
+- [ ] _"Copie email dans C-PRojeTs"_ → Gmail vers mémoire tampon
+- [ ] _"Colle l'email ici"_ → Dans élément actif C-PRojeTs
 
 ### ÉTAPE 9 — Historique des liens email
 
@@ -174,13 +175,14 @@ INSERT INTO settings (key, value) VALUES
 - [ ] Liste des emails liés avec : source (Outlook/Gmail), sujet, expéditeur, date
 - [ ] Clic sur un email lié → ouvre l'aperçu dans le panel messagerie correspondant
 - [ ] Indicateur si l'email n'est plus accessible (supprimé côté serveur)
-- [ ] Badge "N emails liés" visible sur chaque élément D-ProjeT
+- [ ] Badge "N emails liés" visible sur chaque élément C-PRojeTs
 
 ---
 
 ## 🧪 Tests de validation V2.1
 
 ### TEST V2.1-01 — Activation Gmail (Outlook déjà actif)
+
 ```
 🧪 Dans Paramètres → Messagerie, cocher "Activer Gmail"
    (Outlook déjà connecté et actif)
@@ -195,6 +197,7 @@ INSERT INTO settings (key, value) VALUES
 ```
 
 ### TEST V2.1-02 — Spécificités libellés Gmail
+
 ```
 🧪 Ajouter deux libellés "Projets 400kV" et "Urgent" sur un même email Gmail
 
@@ -209,6 +212,7 @@ INSERT INTO settings (key, value) VALUES
 ```
 
 ### TEST V2.1-03 — Basculement entre onglets
+
 ```
 🧪 Cliquer sur l'onglet Outlook puis sur l'onglet Gmail
 
@@ -222,7 +226,8 @@ INSERT INTO settings (key, value) VALUES
 ✅ Confirmation visuelle et vocale du basculement
 ```
 
-### TEST V2.1-04 — Drag & drop Gmail → D-ProjeT
+### TEST V2.1-04 — Drag & drop Gmail → C-PRojeTs
+
 ```
 🧪 Glisser un email Gmail vers la carte "Poste 400kV Lyon-Est"
 
@@ -239,13 +244,14 @@ INSERT INTO settings (key, value) VALUES
 ```
 
 ### TEST V2.1-05 — Copier / Coller vocal Gmail
+
 ```
-🧪 Panel Gmail actif, email ouvert, dire "Copie email dans D-ProjeT"
+🧪 Panel Gmail actif, email ouvert, dire "Copie email dans C-PRojeTs"
 
 ✅ L'indicateur affiche "Email Gmail en mémoire tampon"
 ✅ La source Gmail est indiquée dans l'indicateur
 
-🧪 Naviguer vers D-ProjeT, dire "Colle l'email ici"
+🧪 Naviguer vers C-PRojeTs, dire "Colle l'email ici"
 
 ✅ L'élément est créé avec les données de l'email Gmail
 ✅ Badge Gmail visible sur l'élément créé
@@ -253,6 +259,7 @@ INSERT INTO settings (key, value) VALUES
 ```
 
 ### TEST V2.1-06 — Commandes vocales Gmail
+
 ```
 🧪 Panel Gmail actif, dire "Ajouter le libellé Projets 400kV"
 
@@ -263,7 +270,7 @@ INSERT INTO settings (key, value) VALUES
 🧪 Dire "Retirer le libellé Urgent"
 
 ✅ Le libellé "Urgent" est retiré de l'email
-✅ Le badge disparaît dans le panel D-ProjeT
+✅ Le badge disparaît dans le panel C-PRojeTs
 
 🧪 Dire "Archiver"
 
@@ -272,6 +279,7 @@ INSERT INTO settings (key, value) VALUES
 ```
 
 ### TEST V2.1-07 — Historique des liens email
+
 ```
 🧪 Ouvrir la carte "Poste 400kV Lyon-Est" qui contient
    3 emails Outlook liés et 2 emails Gmail liés
@@ -289,32 +297,35 @@ INSERT INTO settings (key, value) VALUES
 ```
 
 ### TEST V2.1-08 — Performances cohabitation
+
 ```
 🧪 Outlook et Gmail tous deux actifs,
    Outlook avec 50 emails, Gmail avec 50 emails
 
 ✅ Les deux listes se chargent en moins de 8 secondes au total
 ✅ Le rafraîchissement automatique des deux services ne provoque pas de lag
-✅ Le drag & drop D-ProjeT reste fluide en présence des deux panels
+✅ Le drag & drop C-PRojeTs reste fluide en présence des deux panels
 ```
 
 ### TEST V2.1-09 — Déconnexion Gmail (Outlook reste actif)
+
 ```
 🧪 Se déconnecter de Gmail dans les paramètres
 
 ✅ Le panel Gmail disparaît (onglets remplacés par panel Outlook direct)
 ✅ Le panel Outlook reste actif et fonctionnel
-✅ Les liens Gmail dans D-ProjeT restent visibles (données locales conservées)
+✅ Les liens Gmail dans C-PRojeTs restent visibles (données locales conservées)
 ✅ Les tokens Google sont supprimés de manière sécurisée
 ```
 
 ### TEST V2.1-10 — Régression V2.0
+
 ```
 🧪 Rejouer les 10 tests V2.0 + 10 tests V1.2 + 10 tests V1.1 + 10 tests MVP
 
 ✅ Tous les tests passent toujours
 ✅ L'ajout de Gmail n'affecte pas le comportement Outlook
-✅ Les fonctionnalités D-ProjeT de base sont intactes
+✅ Les fonctionnalités C-PRojeTs de base sont intactes
 ❌ Une fonctionnalité V2.0 ou antérieure est cassée
 ```
 
@@ -322,22 +333,24 @@ INSERT INTO settings (key, value) VALUES
 
 ## 📊 Récapitulatif V2.1
 
-| Critère | Détail |
-|---|---|
-| **Phases couvertes** | Phase 6 + Phase 7 + Phase 8 complète |
-| **Tâches de développement** | 42 tâches |
-| **Tests de validation** | 10 tests (+ 40 tests régression) |
-| **Drag & drop** | ✅ Email Outlook ET Gmail → D-ProjeT |
-| **Commandes vocales** | ✅ Outlook + Gmail complets |
-| **Outlook** | ✅ Complet (inchangé) |
-| **Gmail** | ✅ Complet |
-| **Cohabitation** | ✅ Les deux simultanément |
-| **Connexion internet** | ✅ Requise pour messagerie uniquement |
+| Critère                     | Détail                                |
+| --------------------------- | ------------------------------------- |
+| **Phases couvertes**        | Phase 6 + Phase 7 + Phase 8 complète  |
+| **Tâches de développement** | 42 tâches                             |
+| **Tests de validation**     | 10 tests (+ 40 tests régression)      |
+| **Drag & drop**             | ✅ Email Outlook ET Gmail → C-PRojeTs |
+| **Commandes vocales**       | ✅ Outlook + Gmail complets           |
+| **Outlook**                 | ✅ Complet (inchangé)                 |
+| **Gmail**                   | ✅ Complet                            |
+| **Cohabitation**            | ✅ Les deux simultanément             |
+| **Connexion internet**      | ✅ Requise pour messagerie uniquement |
 
 ---
 
 ## ➡️ Prochaine version : V3.0
+
 Synchronisation complète + performances + tests automatisés + sécurité + version finale
 
 ---
-*D-ProjeT — Version 2.1 — 23 février 2026*
+
+_C-PRojeTs — Version 2.1 — 23 février 2026_

@@ -18,7 +18,7 @@ import {
 
 const pageGuides = {
   introduction: {
-    title: 'Guide D-ProjeTs',
+    title: 'Guide C-PRojeTs',
     sections: [
       {
         id: 'roles',
@@ -301,7 +301,7 @@ const pageGuides = {
                   <p className="text-muted font-medium mb-1">Fonctionnalités</p>
                   <ul className="space-y-1 text-muted ml-2">
                     <li>
-                      • <strong>Charge ressentie</strong> : boutons emoji (😊 😐 😰) par trimestre
+                      • <strong>Charge ressentie</strong> : boutons couleur (🟢 🟠 🔴) par trimestre
                     </li>
                     <li>
                       • <strong>Filtrage</strong> : toggle "Mes éléments" / "Tous les tags"
@@ -1921,7 +1921,7 @@ function GuidePanel() {
   };
 
   const guideOptions = [
-    { key: 'introduction', label: 'Guide D-ProjeTs' },
+    { key: 'introduction', label: 'Guide C-PRojeTs' },
     { key: 'dashboard', label: 'Dashboard' },
     { key: 'board', label: 'Projet' },
     { key: 'library', label: 'Bibliothèque' },

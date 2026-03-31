@@ -1,4 +1,4 @@
-# ⚙️ D-ProjeT — Guide de configuration de l'environnement
+# ⚙️ C-PRojeTs — Guide de configuration de l'environnement
 
 ---
 
@@ -52,7 +52,7 @@ APP_VERSION=0.1.0
 # ─────────────────────────────────────────────
 # BASE DE DONNÉES
 # ─────────────────────────────────────────────
-DB_PATH=./database/d-projet.db
+DB_PATH=./database/c-projets.db
 DB_MIGRATIONS_PATH=./database/migrations
 
 # ─────────────────────────────────────────────
@@ -61,7 +61,7 @@ DB_MIGRATIONS_PATH=./database/migrations
 # ─────────────────────────────────────────────
 MICROSOFT_CLIENT_ID=your_azure_client_id_here
 MICROSOFT_TENANT_ID=your_azure_tenant_id_here
-MICROSOFT_REDIRECT_URI=d-projet://auth/microsoft/callback
+MICROSOFT_REDIRECT_URI=c-projets://auth/microsoft/callback
 
 # ─────────────────────────────────────────────
 # GOOGLE GMAIL API
@@ -69,7 +69,7 @@ MICROSOFT_REDIRECT_URI=d-projet://auth/microsoft/callback
 # ─────────────────────────────────────────────
 GOOGLE_CLIENT_ID=your_google_client_id_here
 GOOGLE_CLIENT_SECRET=your_google_client_secret_here
-GOOGLE_REDIRECT_URI=d-projet://auth/google/callback
+GOOGLE_REDIRECT_URI=c-projets://auth/google/callback
 
 # ─────────────────────────────────────────────
 # CHIFFREMENT (electron-store)
@@ -81,7 +81,7 @@ ENCRYPTION_KEY=your_32_bytes_hex_key_here
 # LOGS
 # ─────────────────────────────────────────────
 LOG_LEVEL=debug       # debug | info | warn | error
-LOG_FILE=./logs/d-projet.log
+LOG_FILE=./logs/c-projets.log
 ```
 
 > ⚠️ **Le fichier `.env` ne doit JAMAIS être commité dans Git.**
@@ -97,9 +97,9 @@ LOG_FILE=./logs/d-projet.log
 2. Aller dans **Azure Active Directory → Inscriptions d'applications**
 3. Cliquer **Nouvelle inscription**
 4. Remplir :
-   - **Nom** : `D-ProjeT`
+   - **Nom** : `C-PRojeTs`
    - **Types de comptes pris en charge** : `Comptes dans n'importe quel annuaire organisationnel et comptes Microsoft personnels`
-   - **URI de redirection** : `d-projet://auth/microsoft/callback` (type : Public client/natif)
+   - **URI de redirection** : `c-projets://auth/microsoft/callback` (type : Public client/natif)
 5. Cliquer **S'inscrire**
 6. Noter le **ID d'application (client)** → c'est votre `MICROSOFT_CLIENT_ID`
 7. Noter le **ID de l'annuaire (locataire)** → c'est votre `MICROSOFT_TENANT_ID`
@@ -135,7 +135,7 @@ Dans **Authentification** :
 ### 4.1 Créer le projet Google Cloud
 
 1. Se connecter sur [https://console.cloud.google.com](https://console.cloud.google.com)
-2. Créer un nouveau projet : `D-ProjeT`
+2. Créer un nouveau projet : `C-PRojeTs`
 3. Aller dans **APIs et services → Bibliothèque**
 4. Rechercher et activer **Gmail API**
 
@@ -144,7 +144,7 @@ Dans **Authentification** :
 1. Aller dans **APIs et services → Écran de consentement OAuth**
 2. Sélectionner **Externe**
 3. Remplir :
-   - Nom de l'application : `D-ProjeT`
+   - Nom de l'application : `C-PRojeTs`
    - Email d'assistance : votre email
 4. Dans **Champs d'application**, ajouter :
 
@@ -160,7 +160,7 @@ Dans **Authentification** :
 
 1. Aller dans **APIs et services → Identifiants → Créer des identifiants → ID client OAuth 2.0**
 2. Sélectionner **Application de bureau**
-3. Nom : `D-ProjeT Desktop`
+3. Nom : `C-PRojeTs Desktop`
 4. Télécharger le fichier JSON → extraire `client_id` et `client_secret`
 5. Renseigner dans `.env` :
    - `GOOGLE_CLIENT_ID`
@@ -249,4 +249,4 @@ Créer le fichier `.vscode/settings.json` :
 
 ---
 
-_D-ProjeT — Setup Environnement — 23 février 2026_
+_C-PRojeTs — Setup Environnement — 23 février 2026_
