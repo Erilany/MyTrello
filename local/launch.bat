@@ -1,6 +1,6 @@
 @echo off
 title C-PRojeTs - Launcher
-cd /d "K:\CDI\POSTES_CC\POSTE1\AGENTS\DURAND\C-PRojeTs\local"
+cd /d "C:\Users\eric-\Documents\GitHub\MyTrello\local"
 
 echo ========================================
 echo   C-PRojeTs - Mode Dev Electron
