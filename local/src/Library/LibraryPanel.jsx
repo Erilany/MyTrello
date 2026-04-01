@@ -1877,7 +1877,7 @@ function LibraryPanel({ standalone = false }) {
             </div>
           )}
 
-          <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-6 overflow-hidden min-h-[300px]">
+          <div className="flex-1 grid grid-cols-3 gap-6 overflow-hidden min-h-[300px]">
             <div className="flex flex-col overflow-hidden">
               <h2 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">
                 Cartes ({filteredCards.length})
