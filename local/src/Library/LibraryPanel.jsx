@@ -1717,7 +1717,7 @@ function LibraryPanel({ standalone = false }) {
     return (
       <>
         <LibraryEventListener />
-        <div className={standalone ? 'h-full flex flex-col' : 'p-6 h-full flex flex-col'}>
+        <div className={standalone ? 'h-full flex flex-col overflow-hidden' : 'p-6 h-full flex flex-col'}>
           {!standalone && (
             <div className="flex items-center justify-between mb-6">
               <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Bibliothèque</h1>
@@ -1877,7 +1877,7 @@ function LibraryPanel({ standalone = false }) {
             </div>
           )}
 
-          <div className="flex-1 grid grid-cols-3 gap-6 overflow-hidden">
+          <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-6 overflow-hidden min-h-[300px]">
             <div className="flex flex-col overflow-hidden">
               <h2 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">
                 Cartes ({filteredCards.length})
