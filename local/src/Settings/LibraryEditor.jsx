@@ -19,13 +19,9 @@ import {
 import { libraryTemplates } from '../data/libraryData';
 import { loadTagsData } from '../data/TagsData';
 import { parseMSProjectXml } from '../utils/xmlParser';
+import { formatDuration } from '../shared/utils';
 
 const STORAGE_KEY = 'c-projets_library_editor';
-
-function formatDuration(days) {
-  const hours = days * 24;
-  return `PT${hours}H0M0S`;
-}
 
 function convertTreeToLibraryItems(treeData) {
   const libraryItems = [];

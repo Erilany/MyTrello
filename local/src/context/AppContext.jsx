@@ -5,7 +5,6 @@ import React, {
   useEffect,
   useCallback,
   useMemo,
-  useRef,
 } from 'react';
 import { libraryTemplates } from '../data/libraryData';
 import { loadGMRData, saveGMRData } from '../data/GMRData';
@@ -14,7 +13,7 @@ import { loadZonesData, saveZonesData } from '../data/ZonesData';
 import { loadTagsData, saveTagsData } from '../data/TagsData';
 import { loadChaptersOrder, saveChaptersOrder } from '../data/ChaptersData';
 import { normalizeImportData, generateExportData, downloadExport } from '../services/migration';
-import storage from '../services/storage';
+import { UIProvider, SelectionProvider, UserProvider } from './index';
 
 const IMPORTS_PATH = '/imports/';
 
@@ -94,10 +93,9 @@ function migrateLocalStorageKeys() {
   }
 }
 
-function formatDuration(days) {
-  const hours = days * 24;
-  return `PT${hours}H0M0S`;
-}
+import { getWeekNumberISO, formatDuration } from '../shared/utils';
+import { useTimeTracking } from '../hooks/useTimeTracking';
+import { useBoard } from '../hooks/useBoard';
 
 function convertTreeToLibraryItems(treeData) {
   const libraryItems = [];
@@ -459,94 +457,10 @@ function initDefaultData() {
         console.log('[AppContext] Updated libraryItems from library editor');
       } catch (e) {
         console.error('[AppContext] Error loading custom library:', e);
-        // Keep existing data
       }
     }
   }
-  // Plus de projet par défaut - l'application démarre vide sans fichier de sauvegarde
-  /* if (data.boards.length === 0) {
-    const boardId = 1;
-    data.boards.push({
-      id: boardId,
-      title: 'Mon Premier Projet',
-      description: 'Projet par défaut',
-      created_at: new Date().toISOString(),
-      is_archived: 0,
-    });
-    data.columns = [
-      { id: 1, board_id: boardId, title: 'À faire', position: 0, color: '#4A90D9' },
-      { id: 2, board_id: boardId, title: 'En cours', position: 1, color: '#F5A623' },
-      { id: 3, board_id: boardId, title: 'En attente', position: 2, color: '#9CA3AF' },
-      { id: 4, board_id: boardId, title: 'Terminée', position: 3, color: '#7ED321' },
-      { id: 5, board_id: boardId, title: 'Archiver', position: 4, color: '#475569' },
-    ];
-    data.nextIds = {
-      board: 2,
-      column: 6,
-      card: 1,
-      category: 1,
-      subcategory: 1,
-      libraryItem: 1,
-      message: 1,
-      order: 1,
-    };
-  }
-  // Suppression des doublons de projets
-  const titleCounts = {};
-  data.boards.forEach(b => {
-      titleCounts[b.title] = (titleCounts[b.title] || 0) + 1;
-    });
-    for (const [title, count] of Object.entries(titleCounts)) {
-      if (count > 1) {
-        const duplicates = data.boards.filter(b => b.title === title).sort((a, b) => b.id - a.id);
-        const toKeep = duplicates[0];
-        const toRemoveIds = duplicates.slice(1).map(d => d.id);
-        data.columns = data.columns.filter(c => !toRemoveIds.includes(c.board_id));
-        data.cards = data.cards.filter(c => !toRemoveIds.includes(c.column_id));
-        data.boards = data.boards.filter(b => !toRemoveIds.includes(b.id));
-      }
-    }
-  }
-  if (data.boards.length > 0 && data.columns.length === 0) {
-    const boardId = data.boards[0].id;
-    data.columns = [
-      { id: 1, board_id: boardId, title: 'À faire', position: 0, color: '#4A90D9' },
-      { id: 2, board_id: boardId, title: 'En cours', position: 1, color: '#F5A623' },
-      { id: 3, board_id: boardId, title: 'En attente', position: 2, color: '#9CA3AF' },
-      { id: 4, board_id: boardId, title: 'Terminée', position: 3, color: '#7ED321' },
-      { id: 5, board_id: boardId, title: 'Archiver', position: 4, color: '#475569' },
-    ];
-  }
-  /* // Supprimé - plus de projet par défaut
-  if (data.boards.length === 0) {
-    const boardId = 1;
-    data.boards.push({
-      id: boardId,
-      title: 'Mon Premier Projet',
-      description: 'Projet par défaut',
-      created_at: new Date().toISOString(),
-      is_archived: 0,
-    });
-    data.columns.push(
-      { id: 1, board_id: boardId, title: 'À faire', position: 0, color: '#4A90D9' },
-      { id: 2, board_id: boardId, title: 'En cours', position: 1, color: '#F5A623' },
-      { id: 3, board_id: boardId, title: 'En attente', position: 2, color: '#9CA3AF' },
-      { id: 4, board_id: boardId, title: 'Terminée', position: 3, color: '#7ED321' },
-      { id: 5, board_id: boardId, title: 'Archiver', position: 4, color: '#475569' }
-    );
-    data.nextIds = {
-      board: 2,
-      column: 6,
-      card: 1,
-      category: 1,
-      subcategory: 1,
-      libraryItem: 1,
-      message: 1,
-      order: 1,
-    };
-    saveToStorage(data);
-  }
-  // */
+
   return data;
 }
 
@@ -558,6 +472,9 @@ export function AppProvider({ children }) {
   const [cards, setCards] = useState([]);
   const [categories, setCategories] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
+
+  const timeTracking = useTimeTracking();
+  const boardHooks = useBoard();
   const [libraryItems, setLibraryItems] = useState([]);
   const [messages, setMessages] = useState([]);
   const [subcategoryEmails, setSubcategoryEmails] = useState([]);
@@ -777,38 +694,10 @@ export function AppProvider({ children }) {
   );
 
   // Project time tracking functions
-  const getWeekNumber = date => {
-    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-    const dayNum = d.getUTCDay() || 7;
-    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
-    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-    return `${d.getUTCFullYear()}-W${Math.ceil(((d - yearStart) / 86400000 + 1) / 7)
-      .toString()
-      .padStart(2, '0')}`;
-  };
-
-  const loadProjectTime = () => {
-    const stored = localStorage.getItem('c-projets_project_time');
-    return stored ? JSON.parse(stored) : {};
-  };
-
-  const saveProjectTime = data => {
-    localStorage.setItem('c-projets_project_time', JSON.stringify(data));
-  };
-
-  const getWeekKey = (date = new Date()) => {
-    return getWeekNumber(date);
-  };
-
-  const getWeekNumberFromKey = weekKey => {
-    if (!weekKey || typeof weekKey !== 'string') return getWeekNumber(new Date());
-    const parts = weekKey.split('-W');
-    if (parts.length !== 2) return getWeekNumber(new Date());
-    const year = parseInt(parts[0]);
-    const week = parseInt(parts[1]);
-    if (isNaN(year) || isNaN(week)) return getWeekNumber(new Date());
-    return weekKey;
-  };
+  const getWeekNumber = date => getWeekNumberISO(date);
+  const getWeekKey = timeTracking.getWeekKey;
+  const loadProjectTime = timeTracking.loadProjectTime;
+  const saveProjectTime = timeTracking.saveProjectTime;
 
   const getInternalContacts = boardId => {
     const defaultContacts = [
@@ -834,26 +723,9 @@ export function AppProvider({ children }) {
     return defaultContacts;
   };
 
-  const addProjectTime = (projectId, seconds) => {
-    const week = getWeekKey();
-    const data = loadProjectTime();
-    if (!data[week]) data[week] = {};
-    if (!data[week][projectId]) data[week][projectId] = 0;
-    data[week][projectId] += seconds;
-    saveProjectTime(data);
-  };
-
-  const getProjectTime = (projectId, week = null) => {
-    const w = week ? week : getWeekKey();
-    const data = loadProjectTime();
-    return data[w]?.[String(projectId)] || 0;
-  };
-
-  const getAllProjectTime = (week = null) => {
-    const w = week || getWeekKey();
-    const data = loadProjectTime();
-    return data[w] || {};
-  };
+  const addProjectTime = timeTracking.addProjectTime;
+  const getProjectTime = timeTracking.getProjectTime;
+  const getAllProjectTime = timeTracking.getAllProjectTime;
 
   // Ensure libraryItems has data - always check library editor first
   const forceLibraryItems = () => {
@@ -2617,11 +2489,17 @@ export function AppProvider({ children }) {
   };
 
   return (
-    <AppContext.Provider value={value}>
-      <TimerProvider currentBoard={currentBoard} addProjectTime={addProjectTime}>
-        {children}
-      </TimerProvider>
-    </AppContext.Provider>
+    <UIProvider>
+      <UserProvider>
+        <SelectionProvider>
+          <AppContext.Provider value={value}>
+            <TimerProvider currentBoard={currentBoard} addProjectTime={addProjectTime}>
+              {children}
+            </TimerProvider>
+          </AppContext.Provider>
+        </SelectionProvider>
+      </UserProvider>
+    </UIProvider>
   );
 }
 
