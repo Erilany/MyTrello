@@ -221,6 +221,85 @@ function convertTreeToLibraryItems(treeData) {
   return libraryItems;
 }
 
+function convertLibraryItemsToTree(libraryItems) {
+  const chaptersMap = new Map();
+
+  libraryItems.forEach(item => {
+    const tags = item.tags ? item.tags.split(',') : [];
+    const chapterName = tags[0] || 'Sans chapitre';
+
+    let chapter = chaptersMap.get(chapterName);
+    if (!chapter) {
+      chapter = {
+        id: `chap-${chapterName}`,
+        type: 'chapitre',
+        titre: chapterName,
+        data: { chapitre: chapterName },
+        children: [],
+      };
+      chaptersMap.set(chapterName, chapter);
+    }
+
+    if (item.type === 'card') {
+      let content;
+      try {
+        content = JSON.parse(item.content_json);
+      } catch {
+        content = { card: { title: item.title }, categories: [] };
+      }
+
+      const cardNode = {
+        id: `card-${item.id}`,
+        type: 'carte',
+        titre: item.title,
+        data: {
+          carte: item.title,
+          temps: item.duration || 0,
+          skipAction: content.card?.skipAction || false,
+        },
+        children: [],
+      };
+
+      if (content.categories) {
+        content.categories.forEach(cat => {
+          const categoryNode = {
+            id: `cat-${item.id}-${cat.title}`,
+            type: 'categorie',
+            titre: cat.title,
+            data: {
+              categorie: cat.title,
+              temps: cat.duration_days || 0,
+              systemTag: cat.tag || null,
+            },
+            children: [],
+          };
+
+          if (cat.subcategories) {
+            cat.subcategories.forEach(sub => {
+              categoryNode.children.push({
+                id: `sub-${item.id}-${cat.title}-${sub.title}`,
+                type: 'souscategorie',
+                titre: sub.title,
+                data: {
+                  sousCat1: sub.title,
+                  sousCat2: sub.description || '',
+                  temps: sub.duration_days || 0,
+                },
+              });
+            });
+          }
+
+          cardNode.children.push(categoryNode);
+        });
+      }
+
+      chapter.children.push(cardNode);
+    }
+  });
+
+  return Array.from(chaptersMap.values());
+}
+
 const AppContext = createContext();
 
 function addWorkingDays(startDate, days) {
@@ -744,8 +823,8 @@ export function AppProvider({ children }) {
           db.libraryItems && db.libraryItems.length > 0 ? db.libraryItems : libraryTemplates;
       }
     } else if (db.libraryItems && db.libraryItems.length > 0) {
-      itemsToUse = libraryTemplates;
-      console.log('[AppContext] Using libraryTemplates, count:', itemsToUse.length);
+      itemsToUse = db.libraryItems;
+      console.log('[AppContext] Using db.libraryItems, count:', itemsToUse.length);
     } else {
       itemsToUse = libraryTemplates;
       console.log(
@@ -1057,12 +1136,21 @@ export function AppProvider({ children }) {
       if (data.libraryFavorites) {
         localStorage.setItem('c-projets_library_favorites', JSON.stringify(data.libraryFavorites));
       }
-      if (data.databases?.library) {
+      if (data.databases?.library && Array.isArray(data.databases.library) && data.databases.library.length > 0) {
+        console.log('[ImportData] Found library in databases.library, count:', data.databases.library.length);
         const cleanLibraryEditor = deduplicateLibraryEditor(data.databases.library);
         localStorage.setItem('c-projets_library_editor', JSON.stringify(cleanLibraryEditor));
-      } else if (data.libraryEditor) {
+      } else if (data.libraryEditor && Array.isArray(data.libraryEditor) && data.libraryEditor.length > 0) {
+        console.log('[ImportData] Found library in libraryEditor, count:', data.libraryEditor.length);
         const cleanLibraryEditor = deduplicateLibraryEditor(data.libraryEditor);
         localStorage.setItem('c-projets_library_editor', JSON.stringify(cleanLibraryEditor));
+      } else if (dbData.libraryItems && dbData.libraryItems.length > 0) {
+        console.log('[ImportData] Found library in dbData.libraryItems, count:', dbData.libraryItems.length);
+        // Fallback for old exports - convert to tree format
+        const treeData = convertLibraryItemsToTree(dbData.libraryItems);
+        if (treeData.length > 0) {
+          localStorage.setItem('c-projets_library_editor', JSON.stringify(treeData));
+        }
       }
       if (data.libraryTemplates) {
         localStorage.setItem('c-projets_library_templates', JSON.stringify(data.libraryTemplates));

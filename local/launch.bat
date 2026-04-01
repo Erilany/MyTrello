@@ -1,25 +1,25 @@
 @echo off
 title C-PRojeTs - Launcher
-cd /d "C:\Users\eric-\Documents\GitHub\MyTrello\local"
+setlocal enabledelayedexpansion
+
+cd /d "C:\Users\duranderi\Documents\GitHub\MyTrello\local"
 
 echo ========================================
-echo   C-PRojeTs - Mode Dev Electron
+echo   C-PRojeTs - Launcher
 echo ========================================
 echo.
 
-echo [1/4] Verification Node.js...
+echo [1/5] Verification Node.js...
 node --version
-echo [OK]
-
 echo.
-echo [2/4] Arret des anciens processus...
+
+echo [2/5] Arret des anciens processus...
 taskkill /F /IM node.exe >nul 2>&1
-taskkill /F /IM electron.exe >nul 2>&1
-timeout /t 2 >nul
+timeout /t 1 >nul
 echo [OK]
 echo.
 
-echo [2.5/4] Verification des dependances...
+echo [3/5] Verification des dependances...
 if not exist node_modules (
     echo Installation des dependances...
     call npm install
@@ -29,10 +29,28 @@ if not exist node_modules (
 echo [OK]
 echo.
 
-echo [3/4] Lancement application avec Electron...
+echo [4/5] Lancement du serveur Vite...
+start /b "" npm run dev
 echo.
-start /b "" npm run electron:dev
 
+echo [5/5] Attente du serveur Vite...
+:wait_loop
+timeout /t 1 >nul
+netstat -ano | findstr ":5175" >nul
+if errorlevel 1 (
+    echo   Serveur pas encore pret...
+    goto wait_loop
+)
+echo [OK] Serveur pret sur localhost:5175
 echo.
-echo [TERMINE] - La fenetre Electron va s'ouvrir automatiquement
-pause
+
+echo Ouverture du navigateur...
+start http://localhost:5175
+echo.
+
+echo ========================================
+echo   Application ouverte: http://localhost:5175
+echo ========================================
+echo.
+echo Appuyez sur une touche pour quitter...
+pause >nul

@@ -31,12 +31,7 @@ let mainWindow = null;
 let db = null;
 let tray = null;
 
-const isDev = process.env.NODE_ENV !== 'production' || true; // Force dev mode
-
-app.commandLine.appendSwitch('enable-features', 'VoiceInteractionServices');
-app.commandLine.appendSwitch('allow-file-access-from-files');
-app.commandLine.appendSwitch('ignore-certificate-errors');
-app.commandLine.appendSwitch('disable-gpu-sandbox');
+const isDev = process.env.NODE_ENV === 'production' ? false : true;
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -55,24 +50,12 @@ function createWindow() {
   });
 
   if (isDev) {
-    mainWindow.loadURL('http://localhost:5175');
-    mainWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
-      callback({
-        responseHeaders: {
-          ...details.responseHeaders,
-          'Content-Security-Policy': [
-            "default-src * 'unsafe-inline' 'unsafe-eval'; script-src * 'unsafe-inline' 'unsafe-eval'; style-src * 'unsafe-inline' https://fonts.googleapis.com; font-src * data: https:; img-src * data: https:; connect-src * http://localhost:* https://*; media-src *",
-          ],
-        },
-      });
+    mainWindow.loadURL('http://localhost:5175').catch(err => {
+      console.error('[Electron] loadURL failed:', err);
+      mainWindow.loadFile(path.join(__dirname, 'dist', 'index.html'));
     });
+    
     mainWindow.webContents.openDevTools();
-    mainWindow.webContents.on('console-message', (event, level, message, line, sourceId) => {
-      console.log('[RENDERER]', message);
-    });
-    mainWindow.webContents.on('render-process-gone', (event, details) => {
-      console.log('[RENDERER CRASH]', details);
-    });
   } else {
     mainWindow.loadFile(path.join(__dirname, 'dist', 'index.html'));
   }
@@ -221,9 +204,7 @@ function registerGlobalShortcuts() {
 app.whenReady().then(async () => {
   try {
     db = await initDatabase();
-    console.log('Database initialized successfully');
   } catch (error) {
-    console.error('Failed to initialize database:', error);
     dialog.showErrorBox('Erreur de base de données', error.message);
     app.quit();
     return;
