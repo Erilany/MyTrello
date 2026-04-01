@@ -1140,6 +1140,10 @@ export function AppProvider({ children }) {
         console.log('[ImportData] Found library in databases.library, count:', data.databases.library.length);
         const cleanLibraryEditor = deduplicateLibraryEditor(data.databases.library);
         localStorage.setItem('c-projets_library_editor', JSON.stringify(cleanLibraryEditor));
+      } else if (data.databases?.params?.library && Array.isArray(data.databases.params.library) && data.databases.params.library.length > 0) {
+        console.log('[ImportData] Found library in databases.params.library, count:', data.databases.params.library.length);
+        const cleanLibraryEditor = deduplicateLibraryEditor(data.databases.params.library);
+        localStorage.setItem('c-projets_library_editor', JSON.stringify(cleanLibraryEditor));
       } else if (data.libraryEditor && Array.isArray(data.libraryEditor) && data.libraryEditor.length > 0) {
         console.log('[ImportData] Found library in libraryEditor, count:', data.libraryEditor.length);
         const cleanLibraryEditor = deduplicateLibraryEditor(data.libraryEditor);
