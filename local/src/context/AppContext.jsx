@@ -467,8 +467,16 @@ function convertBackupToAppData(backup) {
   
   if (backup.libraryFavorites) {
     data.libraryFavorites = backup.libraryFavorites;
+    localStorage.setItem('c-projets_library_favorites', JSON.stringify(backup.libraryFavorites));
+    console.log('[convertBackupToAppData] Saved libraryFavorites to localStorage');
   }
-  
+
+  if (backup.databases?.library) {
+    const cleanLibraryEditor = deduplicateLibraryEditor(backup.databases.library);
+    localStorage.setItem('c-projets_library_editor', JSON.stringify(cleanLibraryEditor));
+    console.log('[convertBackupToAppData] Saved library editor, count:', backup.databases.library.length);
+  }
+
   return data;
 }
 

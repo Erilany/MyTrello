@@ -35,6 +35,40 @@ function loadBackupFromFile(filePath) {
   }
 }
 
+function deduplicateLibraryEditor(treeData) {
+  const seenCategories = new Set();
+  const seenSubcategories = new Set();
+
+  const deduplicateNode = node => {
+    if (!node.children) return;
+    node.children = node.children.filter(child => {
+      if (child.type === 'categorie') {
+        if (seenCategories.has(child.id)) return false;
+        seenCategories.add(child.id);
+      } else if (child.type === 'souscategorie') {
+        if (seenSubcategories.has(child.id)) return false;
+        seenSubcategories.add(child.id);
+      }
+      deduplicateNode(child);
+      return true;
+    });
+  };
+
+  treeData.forEach(chapter => {
+    seenCategories.clear();
+    seenSubcategories.clear();
+    if (chapter.children) {
+      chapter.children.forEach(card => {
+        seenCategories.clear();
+        seenSubcategories.clear();
+        deduplicateNode(card);
+      });
+    }
+  });
+
+  return treeData;
+}
+
 function convertBackupToAppData(backup) {
   const data = {
     boards: [],
@@ -103,9 +137,55 @@ function convertBackupToAppData(backup) {
   
   if (backup.libraryFavorites) {
     data.libraryFavorites = backup.libraryFavorites;
+    localStorage.setItem('c-projets_library_favorites', JSON.stringify(backup.libraryFavorites));
+    console.log('[BackupLoader] Saved libraryFavorites to localStorage');
+  }
+  
+  if (backup.databases?.library) {
+    const cleanLibraryEditor = deduplicateLibraryEditor(backup.databases.library);
+    localStorage.setItem('c-projets_library_editor', JSON.stringify(cleanLibraryEditor));
+    console.log('[BackupLoader] Saved library editor to localStorage, count:', backup.databases.library.length);
+  } else if (backup.databases?.params?.library) {
+    const cleanLibraryEditor = deduplicateLibraryEditor(backup.databases.params.library);
+    localStorage.setItem('c-projets_library_editor', JSON.stringify(cleanLibraryEditor));
+    console.log('[BackupLoader] Saved library editor from params to localStorage');
   }
   
   return data;
+}
+
+function deduplicateLibraryEditor(treeData) {
+  const seenCategories = new Set();
+  const seenSubcategories = new Set();
+
+  const deduplicateNode = node => {
+    if (!node.children) return;
+    node.children = node.children.filter(child => {
+      if (child.type === 'categorie') {
+        if (seenCategories.has(child.id)) return false;
+        seenCategories.add(child.id);
+      } else if (child.type === 'souscategorie') {
+        if (seenSubcategories.has(child.id)) return false;
+        seenSubcategories.add(child.id);
+      }
+      deduplicateNode(child);
+      return true;
+    });
+  };
+
+  treeData.forEach(chapter => {
+    seenCategories.clear();
+    seenSubcategories.clear();
+    if (chapter.children) {
+      chapter.children.forEach(card => {
+        seenCategories.clear();
+        seenSubcategories.clear();
+        deduplicateNode(card);
+      });
+    }
+  });
+
+  return treeData;
 }
 
 module.exports = {
