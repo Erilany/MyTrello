@@ -1,10 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import LibraryPanel from '../Library/LibraryPanel';
 import ContractsView from './ContractsView';
 import { Library, FileText, FolderOpen } from 'lucide-react';
+import { useApp } from '../context/AppContext';
 
 export default function DonneesPage() {
+  const { loadLibrary } = useApp();
   const [activeTab, setActiveTab] = useState('bibliotheque');
+
+  useEffect(() => {
+    loadLibrary();
+  }, [loadLibrary]);
 
   const tabs = [
     { id: 'bibliotheque', label: 'Bibliothèque', icon: Library },
