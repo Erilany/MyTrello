@@ -1927,13 +1927,24 @@ function LibraryPanel({ standalone = false }) {
                                 className="text-yellow-500 flex-shrink-0"
                                 fill="currentColor"
                               />
-                              )}
-                            </div>
+                            )}
                           </div>
+                          {item.tags && (
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {item.tags.split(',').map((tag, i) => (
+                                <span key={i} className="text-xs text-gray-500">
+                                  #{tag.trim()}
+                                </span>
+                              ))}
+                            </div>
+                          )}
                         </div>
-                      );
-                    })
-                  )}
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
 
             <div className="flex flex-col overflow-hidden">
               <h2 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">
