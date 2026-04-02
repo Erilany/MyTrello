@@ -23,7 +23,6 @@ function SubCategoryModal({ subcategory, onClose }) {
   } = useApp();
 
   const allTags = loadTagsData();
-  const tagInfo = effectiveTag ? allTags.find(t => t.name === effectiveTag) : null;
 
   // Load data directly from localStorage for consistency
   const [libraryItems, setLibraryItems] = useState([]);
@@ -252,6 +251,7 @@ function SubCategoryModal({ subcategory, onClose }) {
   // Tag inheritance: use task tag, or inherit from parent category
   const parentCategory = categories?.find(c => c.id === subcategory.category_id);
   const effectiveTag = subcategory.tag || (parentCategory ? parentCategory.tag : null);
+  const tagInfo = effectiveTag ? allTags.find(t => t.name === effectiveTag) : null;
 
   // Temps repère from library (read-only)
   let tempsRepere = null;

@@ -8,6 +8,10 @@ yarn-error.log*
 node-portable/
 node.zip
 
+# Local development
+local/
+
+
 # Environment
 .env
 .env.local

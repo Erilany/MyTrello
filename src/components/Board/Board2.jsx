@@ -2,16 +2,10 @@ import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { useApp, loadFromStorage } from '../../context/AppContext';
 import { usePlanning } from '../../hooks/usePlanning';
 import Exchange from '../Exchange/Exchange';
-import { libraryTemplates } from '../../data/libraryData';
 import { loadGMRData } from '../../data/GMRData';
 import { loadPriorityData } from '../../data/PriorityData';
 import { loadZonesData } from '../../data/ZonesData';
 import { getOrderedChapters } from '../../data/ChaptersData';
-import {
-  getGanttDateRange as utilsGetGanttDateRange,
-  getGanttDays as utilsGetGanttDays,
-  getTaskBarPosition as utilsGetTaskBarPosition,
-} from '../../utils/ganttUtils';
 import { PlanningView } from '../Planning';
 
 import {
@@ -64,15 +58,6 @@ function Board2() {
     setActiveTabCommande: contextSetActiveTabCommande,
   } = useApp();
 
-  console.log(
-    '[Board2] RENDER, subcategories.length:',
-    subcategories?.length,
-    'categories.length:',
-    categories?.length,
-    'cards.length:',
-    cards?.length
-  );
-
   const activeTab = contextActiveTab;
   const setActiveTab = contextSetActiveTab;
   const previousActiveTabRef = useRef('taches');
@@ -88,8 +73,6 @@ function Board2() {
 
   useEffect(() => {
     if (previousActiveTabRef.current !== activeTab) {
-      console.log('[Board2] Tab changed from', previousActiveTabRef.current, 'to', activeTab);
-      console.log('[Board2] Saving data before tab switch');
       if (isInitialized) {
         saveAllProjectData();
       }
@@ -116,13 +99,11 @@ function Board2() {
   const [libraryUpdateTrigger, setLibraryUpdateTrigger] = useState(0);
 
   useEffect(() => {
-    console.log('[Board2] libraryItems changed, count:', libraryItems?.length || 0);
     setLibraryUpdateTrigger(prev => prev + 1);
   }, [libraryItems]);
 
   useEffect(() => {
     const handleLibraryUpdate = () => {
-      console.log('[Board2] Received library-updated event');
       setLibraryUpdateTrigger(prev => prev + 1);
     };
 
@@ -168,7 +149,6 @@ function Board2() {
   }, [subcategories, categories, cards]);
 
   const projectTasks = useMemo(() => {
-    console.log('[Board2] projectTasks useMemo computing');
     return getProjectTasks();
   }, [getProjectTasks]);
 
@@ -218,10 +198,8 @@ function Board2() {
   const currentBoardIdRef = useRef(null);
 
   useEffect(() => {
-    console.log('[Board2] currentBoard changed:', currentBoard?.id);
     if (currentBoard?.id) {
       currentBoardIdRef.current = currentBoard.id;
-      console.log('[Board2] ref updated to:', currentBoard.id);
       loadBoard(currentBoard.id);
     }
   }, [currentBoard?.id, loadBoard]);
@@ -229,10 +207,8 @@ function Board2() {
   const saveToStorage = (key, value) => {
     const boardId = currentBoardIdRef.current;
     if (boardId) {
-      console.log('[Board2] Saving:', key, 'to board:', boardId, 'value:', value);
       localStorage.setItem(`board-${boardId}-${key}`, value);
     } else {
-      console.log('[Board2] WARNING: Cannot save, no boardId in ref');
     }
   };
 
@@ -803,7 +779,6 @@ Affaire: ${commande.affaire || 'N/A'}
 
   useEffect(() => {
     if (currentBoard) {
-      console.log('[Board2] Loading data for board:', currentBoard.id);
       setIsInitialized(false);
       currentBoardIdRef.current = currentBoard.id;
       setLinks(JSON.parse(localStorage.getItem(`board-${currentBoard.id}-links`) || '[]'));
@@ -826,7 +801,6 @@ Affaire: ${commande.affaire || 'N/A'}
       const gmr = localStorage.getItem(`board-${currentBoard.id}-gmr`) || '';
       const priority = localStorage.getItem(`board-${currentBoard.id}-priority`) || '';
       const zone = localStorage.getItem(`board-${currentBoard.id}-zone`) || '';
-      console.log('[Board2] Loaded - GMR:', gmr, 'Priority:', priority, 'Zone:', zone);
       setBoardGMR(gmr);
       setBoardPriority(priority);
       setBoardZone(zone);
@@ -867,10 +841,8 @@ Affaire: ${commande.affaire || 'N/A'}
   const saveAllProjectData = () => {
     const boardId = currentBoardIdRef.current || currentBoard?.id;
     if (!boardId) {
-      console.log('[Board2] saveAllProjectData: no boardId, skipping');
       return;
     }
-    console.log('[Board2] saveAllProjectData for board:', boardId);
     localStorage.setItem(`board-${boardId}-links`, JSON.stringify(links));
     localStorage.setItem(`board-${boardId}-commandes`, JSON.stringify(commandes));
     localStorage.setItem(`board-${boardId}-eotp`, JSON.stringify(eotpLines));
@@ -879,13 +851,11 @@ Affaire: ${commande.affaire || 'N/A'}
     localStorage.setItem(`board-${boardId}-gmr`, boardGMR);
     localStorage.setItem(`board-${boardId}-priority`, boardPriority);
     localStorage.setItem(`board-${boardId}-zone`, boardZone);
-    console.log('[Board2] saveAllProjectData completed');
   };
 
   const [importing, setImporting] = useState(false);
 
   const handleImportPlanning = async result => {
-    console.log('[Import] handleImportPlanning called, result:', result);
     const { items, createFullChains } = result;
 
     if (!currentBoard) {
@@ -905,17 +875,6 @@ Affaire: ${commande.affaire || 'N/A'}
     }
 
     setImporting(true);
-    console.log(
-      '[Import] Starting import with',
-      items.length,
-      'items, createFullChains:',
-      createFullChains
-    );
-    console.log(
-      '[Import] Items to import:',
-      items.map(i => ({ name: i.name, level: i.outlineLevel, chapter: i.assignedChapter }))
-    );
-
     let cardsCreated = 0;
     let catsCreated = 0;
     let subcatsCreated = 0;
@@ -948,8 +907,6 @@ Affaire: ${commande.affaire || 'N/A'}
           currentCardId = cardId;
           currentCatId = null;
           cardsCreated++;
-          console.log('[Import] Created card:', item.name, 'id:', cardId);
-
           if (createFullChains && cardId) {
             const catId = await createCategory(
               cardId,
@@ -972,8 +929,6 @@ Affaire: ${commande.affaire || 'N/A'}
               duration: item.duration || 1,
             });
             catsCreated++;
-            console.log('[Import] Created category (full chain):', item.name, 'id:', catId);
-
             const subId = await createSubcategory(
               catId,
               item.name,
@@ -985,7 +940,6 @@ Affaire: ${commande.affaire || 'N/A'}
               item.duration || 1
             );
             subcatsCreated++;
-            console.log('[Import] Created subcategory (full chain):', item.name, 'id:', subId);
           }
         } catch (error) {
           console.error('[Import] Error creating card:', error);
@@ -1013,17 +967,6 @@ Affaire: ${commande.affaire || 'N/A'}
             duration: item.duration || 1,
           });
           catsCreated++;
-          console.log(
-            '[Import] Created category:',
-            item.name,
-            'id:',
-            catId,
-            'under card:',
-            currentCardId,
-            'finish:',
-            item.finish
-          );
-
           if (createFullChains && catId) {
             const subId = await createSubcategory(
               catId,
@@ -1036,7 +979,6 @@ Affaire: ${commande.affaire || 'N/A'}
               item.duration || 1
             );
             subcatsCreated++;
-            console.log('[Import] Created subcategory (full chain):', item.name, 'id:', subId);
           }
         } catch (error) {
           console.error('[Import] Error creating category:', error);
@@ -1054,21 +996,11 @@ Affaire: ${commande.affaire || 'N/A'}
             item.duration || 1
           );
           subcatsCreated++;
-          console.log(
-            '[Import] Created subcategory:',
-            item.name,
-            'finish:',
-            item.finish,
-            'start:',
-            item.start
-          );
         } catch (error) {
           console.error('[Import] Error creating subcategory:', error);
         }
       } else if (level === 3 && !currentCardId) {
-        console.log('[Import] Skipping category (no current card):', item.name);
       } else if (level >= 4 && !currentCatId) {
-        console.log('[Import] Skipping subcategory (no current category):', item.name);
       }
     }
 
@@ -1102,7 +1034,6 @@ Affaire: ${commande.affaire || 'N/A'}
 
     if (!createFullChains) {
       const catsWithoutSubcats = createdCategories.filter(cat => !catsWithSubcats.has(cat.id));
-      console.log('[Import] Categories without subcategories:', catsWithoutSubcats.length);
       for (const cat of catsWithoutSubcats) {
         try {
           await createSubcategory(
@@ -1116,36 +1047,16 @@ Affaire: ${commande.affaire || 'N/A'}
             cat.duration || 1
           );
           subcatsCreated++;
-          console.log(
-            '[Import] Created task from empty category:',
-            cat.name,
-            'start:',
-            cat.start,
-            'finish:',
-            cat.finish
-          );
         } catch (error) {
           console.error('[Import] Error creating task for empty category:', error);
         }
       }
     } else {
-      console.log('[Import] Full chains enabled - skipping empty category check');
     }
-
-    console.log(
-      '[Import] Completed:',
-      cardsCreated,
-      'cards,',
-      catsCreated,
-      'categories,',
-      subcatsCreated,
-      'subcategories'
-    );
 
     setImporting(false);
 
     if (currentBoard) {
-      console.log('[Import] Reloading board data...');
       loadBoard(currentBoard.id);
     }
 
@@ -1158,17 +1069,14 @@ Affaire: ${commande.affaire || 'N/A'}
 
   useEffect(() => {
     const handleBeforeUnload = () => {
-      console.log('[Board2] beforeunload - saving all data');
       saveAllProjectData();
     };
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'hidden') {
-        console.log('[Board2] visibilitychange hidden - saving all data');
         saveAllProjectData();
       }
     };
     const handlePageHide = () => {
-      console.log('[Board2] pagehide - saving all data');
       if (isInitialized) {
         saveAllProjectData();
       }
@@ -1177,7 +1085,6 @@ Affaire: ${commande.affaire || 'N/A'}
     window.addEventListener('pagehide', handlePageHide);
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => {
-      console.log('[Board2] Component unmounting');
       window.removeEventListener('beforeunload', handleBeforeUnload);
       window.removeEventListener('pagehide', handlePageHide);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
@@ -1229,7 +1136,6 @@ Affaire: ${commande.affaire || 'N/A'}
 
   const getCardSkipAction = card => {
     if (!card) {
-      console.log('[Board2] getCardSkipAction: no card provided');
       return false;
     }
 
@@ -1240,12 +1146,6 @@ Affaire: ${commande.affaire || 'N/A'}
         try {
           const content = JSON.parse(libraryCard.content_json);
           const skipAction = content.card?.skipAction || false;
-          console.log(
-            '[Board2] getCardSkipAction (by ID):',
-            card.title,
-            '-> skipAction:',
-            skipAction
-          );
           return skipAction;
         } catch (e) {
           console.error(
@@ -1258,7 +1158,6 @@ Affaire: ${commande.affaire || 'N/A'}
 
     // Priority 2: fallback to title matching (for legacy data)
     if (!libraryItems || !Array.isArray(libraryItems)) {
-      console.log('[Board2] getCardSkipAction: libraryItems not available, card:', card.title);
       return false;
     }
 
@@ -1268,19 +1167,16 @@ Affaire: ${commande.affaire || 'N/A'}
     );
 
     if (!libraryCard) {
-      console.log('[Board2] getCardSkipAction: no library card found for:', card.title);
       return false;
     }
 
     if (!libraryCard.content_json) {
-      console.log('[Board2] getCardSkipAction: no content_json for:', libraryCard.title);
       return false;
     }
 
     try {
       const content = JSON.parse(libraryCard.content_json);
       const skipAction = content.card?.skipAction || false;
-      console.log('[Board2] getCardSkipAction:', card.title, '-> skipAction:', skipAction);
       return skipAction;
     } catch (e) {
       console.error('[Board2] getCardSkipAction: error parsing content_json', e);
@@ -1341,53 +1237,55 @@ Affaire: ${commande.affaire || 'N/A'}
 
       {links.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-4">
-          {links.map(link => (
-            <button
-              key={link.id}
-              onClick={() => {
-                if (link.url) {
-                  if (link.type === 'folder') {
-                    const folderPath = link.url;
-                    if (window.electron && window.electron.invoke) {
-                      window.electron
-                        .invoke('shell:openFolder', folderPath)
-                        .then(result => {
-                          if (!result.success) {
-                            console.error('Erreur ouverture dossier:', result.error);
-                            alert("Impossible d'ouvrir le dossier: " + result.error);
-                          }
-                        })
-                        .catch(err => {
-                          console.error('Erreur IPC:', err);
-                          fallbackToBat(folderPath);
-                        });
+          {[...links]
+            .sort((a, b) => (a.title || '').localeCompare(b.title || ''))
+            .map(link => (
+              <button
+                key={link.id}
+                onClick={() => {
+                  if (link.url) {
+                    if (link.type === 'folder') {
+                      const folderPath = link.url;
+                      if (window.electron && window.electron.invoke) {
+                        window.electron
+                          .invoke('shell:openFolder', folderPath)
+                          .then(result => {
+                            if (!result.success) {
+                              console.error('Erreur ouverture dossier:', result.error);
+                              alert("Impossible d'ouvrir le dossier: " + result.error);
+                            }
+                          })
+                          .catch(err => {
+                            console.error('Erreur IPC:', err);
+                            fallbackToBat(folderPath);
+                          });
+                      } else {
+                        fallbackToBat(folderPath);
+                      }
                     } else {
-                      fallbackToBat(folderPath);
+                      window.open(link.url, '_blank');
                     }
                   } else {
-                    window.open(link.url, '_blank');
+                    const url = prompt(
+                      "Entrez l'URL/dossier :",
+                      link.type === 'folder' ? 'C:\\' : 'https://'
+                    );
+                    if (url) {
+                      setLinks(links.map(l => (l.id === link.id ? { ...l, url } : l)));
+                    }
                   }
-                } else {
-                  const url = prompt(
-                    "Entrez l'URL/dossier :",
-                    link.type === 'folder' ? 'C:\\' : 'https://'
-                  );
-                  if (url) {
-                    setLinks(links.map(l => (l.id === link.id ? { ...l, url } : l)));
-                  }
-                }
-              }}
-              className="flex items-center px-3 py-1.5 bg-card hover:bg-card-hover border border-std rounded text-sm text-primary transition-std"
-              style={{ borderLeftColor: link.color, borderLeftWidth: '3px' }}
-            >
-              {link.type === 'web' ? (
-                <ExternalLink size={14} className="mr-2" style={{ color: link.color }} />
-              ) : (
-                <FolderOpen size={14} className="mr-2" style={{ color: link.color }} />
-              )}
-              {link.title}
-            </button>
-          ))}
+                }}
+                className="flex items-center px-3 py-1.5 bg-card hover:bg-card-hover border border-std rounded text-sm text-primary transition-std"
+                style={{ borderLeftColor: link.color, borderLeftWidth: '3px' }}
+              >
+                {link.type === 'web' ? (
+                  <ExternalLink size={14} className="mr-2" style={{ color: link.color }} />
+                ) : (
+                  <FolderOpen size={14} className="mr-2" style={{ color: link.color }} />
+                )}
+                {link.title}
+              </button>
+            ))}
         </div>
       )}
 
@@ -2966,7 +2864,11 @@ Affaire: ${commande.affaire || 'N/A'}
                 <div className="flex items-center gap-2 p-2 bg-card border border-std rounded">
                   <select
                     value={newLink.type}
-                    onChange={e => setNewLink({ ...newLink, type: e.target.value })}
+                    onChange={e => {
+                      const newType = e.target.value;
+                      const defaultColor = newType === 'folder' ? '#22C55E' : '#3B82F6';
+                      setNewLink({ ...newLink, type: newType, color: defaultColor });
+                    }}
                     className="px-2 py-1.5 text-sm bg-input border border-std rounded text-primary"
                   >
                     <option value="web">Internet</option>

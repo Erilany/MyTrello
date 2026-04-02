@@ -1921,6 +1921,11 @@ function LibraryPanel({ standalone = false }) {
                             <h4 className="font-medium text-sm truncate text-gray-800 dark:text-white flex-1">
                               {item.title}
                             </h4>
+                            {!cardSkipAction && (
+                              <span className="px-1.5 py-0.5 text-xs font-bold bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300 rounded">
+                                C
+                              </span>
+                            )}
                             {isCardFavorite(item.id) && (
                               <Star
                                 size={14}

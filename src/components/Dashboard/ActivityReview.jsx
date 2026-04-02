@@ -570,15 +570,41 @@ function ActivityReview({ boards, categories, subcategories, columns, currentUse
                 </tr>
                 {projects.map(project => {
                   const projectItems = taggedItems.filter(item => item.boardId === project.id);
+                  const maxTagsInRow = Math.max(
+                    1,
+                    ...quarterColumns.map((_, colIdx) => {
+                      const itemsInCol = projectItems.filter(item => {
+                        const pos = getItemPosition(item, quarterColumns);
+                        return (
+                          pos && colIdx >= pos.startIndex && colIdx <= pos.endIndex && item.label
+                        );
+                      }).length;
+                      return itemsInCol;
+                    })
+                  );
+                  const rowHeight = Math.max(48, maxTagsInRow * 21 + 6);
                   return (
-                    <tr key={project.id} className="border-b border-std hover:bg-card-hover h-12">
-                      <td className="p-1 text-center font-medium text-accent h-12 align-middle bg-card sticky left-0 z-10">
+                    <tr
+                      key={project.id}
+                      className="border-b border-std hover:bg-card-hover"
+                      style={{ height: `${rowHeight}px` }}
+                    >
+                      <td
+                        className="p-1 text-center font-medium text-accent align-middle bg-card sticky left-0 z-10"
+                        style={{ height: `${rowHeight}px` }}
+                      >
                         {project.activityType}
                       </td>
-                      <td className="p-1 text-center text-secondary h-12 align-middle bg-card sticky left-[64px] z-10">
+                      <td
+                        className="p-1 text-center text-secondary align-middle bg-card sticky left-[64px] z-10"
+                        style={{ height: `${rowHeight}px` }}
+                      >
                         {project.gmr || '-'}
                       </td>
-                      <td className="p-1 text-primary h-12 overflow-hidden align-middle sticky left-[112px] z-10 bg-card-hover">
+                      <td
+                        className="p-1 text-primary overflow-hidden align-middle sticky left-[112px] z-10 bg-card-hover"
+                        style={{ height: `${rowHeight}px` }}
+                      >
                         <div className="text-xs truncate h-full flex items-center">
                           <span className="font-mono bg-card-hover px-1 py-0.5 rounded">
                             {project.priority || '-'}
@@ -592,9 +618,15 @@ function ActivityReview({ boards, categories, subcategories, columns, currentUse
                           )}
                         </div>
                       </td>
-                      <td className="p-1 text-center h-12 align-middle border-r border-std sticky left-[512px] z-10 bg-card-hover">
+                      <td
+                        className="p-1 text-center align-middle border-r border-std sticky left-[512px] z-10 bg-card-hover"
+                        style={{ height: `${rowHeight}px` }}
+                      >
                         {project.links && project.links.length > 0 ? (
-                          <div className="flex flex-col items-center justify-center gap-0.5 h-full">
+                          <div
+                            className="flex flex-col items-center justify-center gap-0.5 h-full"
+                            style={{ height: `${rowHeight}px` }}
+                          >
                             {project.links.slice(0, 3).map((link, idx) => (
                               <button
                                 key={idx}
@@ -630,16 +662,20 @@ function ActivityReview({ boards, categories, subcategories, columns, currentUse
                         return (
                           <td
                             key={colIdx}
-                            className={`p-1 border-r-0 h-12 align-middle ${isCurrentQuarterCol ? 'bg-green-900/30' : 'bg-card-hover'}`}
+                            className={`p-1 border-r-0 align-middle ${isCurrentQuarterCol ? 'bg-green-900/30' : 'bg-card-hover'}`}
                             style={{
                               left: `${leftPos}px`,
                               position: 'sticky',
                               top: 0,
                               zIndex: 5,
                               width: '90px',
+                              height: `${rowHeight}px`,
                             }}
                           >
-                            <div className="flex flex-col overflow-visible h-full relative">
+                            <div
+                              className="flex flex-col overflow-visible h-full relative"
+                              style={{ height: `${rowHeight}px` }}
+                            >
                               {(() => {
                                 const groupedByTag = {};
                                 projectItems.forEach(item => {

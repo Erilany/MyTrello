@@ -29,7 +29,6 @@ function Column({ column, index }) {
     const handleLibraryDrop = e => {
       const { columnId, boardId, data } = e.detail;
       if (columnId === column.id) {
-        console.log('[Column] Library drop handled', { columnId: column.id });
       }
     };
 
@@ -227,10 +226,8 @@ function Column({ column, index }) {
               onDrop={e => {
                 if (!window.__isLibraryDrag) return;
                 e.preventDefault();
-                console.log('[Column] Native drop detected', { columnId: column.id });
                 const data = e.dataTransfer.getData('application/json');
                 if (data) {
-                  console.log('[Column] Native drop data:', data);
                   const event = new CustomEvent('library-drop', {
                     detail: {
                       columnId: column.id,
@@ -240,7 +237,6 @@ function Column({ column, index }) {
                   });
                   window.dispatchEvent(event);
                 } else if (window.__libraryDragData) {
-                  console.log('[Column] Using stored drag data');
                   const event = new CustomEvent('library-drop', {
                     detail: {
                       columnId: column.id,
@@ -266,7 +262,6 @@ function Column({ column, index }) {
                       {...provided.dragHandleProps}
                       className="cursor-grab active:cursor-grabbing"
                       onMouseDown={e => {
-                        console.log('[Column] Card mouse down, isDragging:', snapshot.isDragging);
                       }}
                     >
                       <Card
