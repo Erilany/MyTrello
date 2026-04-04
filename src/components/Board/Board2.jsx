@@ -295,6 +295,12 @@ function Board2() {
     setShowSuggestions(prev => ({ ...prev, [idx]: false }));
   };
 
+  const updateExternalContact = (idx, field, value) => {
+    setExternalContacts(prev =>
+      prev.map((contact, i) => (i === idx ? { ...contact, [field]: value } : contact))
+    );
+  };
+
   const [commandes, setCommandes] = useState([]);
   const [selectedAvenant, setSelectedAvenant] = useState(null);
   const [showAddCommande, setShowAddCommande] = useState(false);
@@ -3470,77 +3476,49 @@ Affaire: ${commande.affaire || 'N/A'}
                       type="text"
                       placeholder="Fonction"
                       value={contact.fonction}
-                      onChange={e => {
-                        const updated = [...externalContacts];
-                        updated[idx].fonction = e.target.value;
-                        setExternalContacts(updated);
-                      }}
+                      onChange={e => updateExternalContact(idx, 'fonction', e.target.value)}
                       className="px-2 py-1 text-sm bg-input border border-std rounded text-primary placeholder-muted focus:outline-none focus:border-accent"
                     />
                     <input
                       type="text"
                       placeholder="Nom"
                       value={contact.nom}
-                      onChange={e => {
-                        const updated = [...externalContacts];
-                        updated[idx].nom = e.target.value;
-                        setExternalContacts(updated);
-                      }}
+                      onChange={e => updateExternalContact(idx, 'nom', e.target.value)}
                       className="px-2 py-1 text-sm bg-input border border-std rounded text-primary placeholder-muted focus:outline-none focus:border-accent"
                     />
                     <input
                       type="text"
                       placeholder="Prénom"
                       value={contact.prenom}
-                      onChange={e => {
-                        const updated = [...externalContacts];
-                        updated[idx].prenom = e.target.value;
-                        setExternalContacts(updated);
-                      }}
+                      onChange={e => updateExternalContact(idx, 'prenom', e.target.value)}
                       className="px-2 py-1 text-sm bg-input border border-std rounded text-primary placeholder-muted focus:outline-none focus:border-accent"
                     />
                     <input
                       type="email"
                       placeholder="Email"
                       value={contact.email}
-                      onChange={e => {
-                        const updated = [...externalContacts];
-                        updated[idx].email = e.target.value;
-                        setExternalContacts(updated);
-                      }}
+                      onChange={e => updateExternalContact(idx, 'email', e.target.value)}
                       className="px-2 py-1 text-sm bg-input border border-std rounded text-primary placeholder-muted focus:outline-none focus:border-accent"
                     />
                     <input
                       type="text"
                       placeholder="Tél. bureau"
                       value={contact.telBureau}
-                      onChange={e => {
-                        const updated = [...externalContacts];
-                        updated[idx].telBureau = e.target.value;
-                        setExternalContacts(updated);
-                      }}
+                      onChange={e => updateExternalContact(idx, 'telBureau', e.target.value)}
                       className="px-2 py-1 text-sm bg-input border border-std rounded text-primary placeholder-muted focus:outline-none focus:border-accent"
                     />
                     <input
                       type="text"
                       placeholder="Portable"
                       value={contact.telPortable}
-                      onChange={e => {
-                        const updated = [...externalContacts];
-                        updated[idx].telPortable = e.target.value;
-                        setExternalContacts(updated);
-                      }}
+                      onChange={e => updateExternalContact(idx, 'telPortable', e.target.value)}
                       className="px-2 py-1 text-sm bg-input border border-std rounded text-primary placeholder-muted focus:outline-none focus:border-accent"
                     />
                     <input
                       type="text"
                       placeholder="Adresse"
                       value={contact.adresse}
-                      onChange={e => {
-                        const updated = [...externalContacts];
-                        updated[idx].adresse = e.target.value;
-                        setExternalContacts(updated);
-                      }}
+                      onChange={e => updateExternalContact(idx, 'adresse', e.target.value)}
                       className="px-2 py-1 text-sm bg-input border border-std rounded text-primary placeholder-muted focus:outline-none focus:border-accent"
                     />
                   </div>
