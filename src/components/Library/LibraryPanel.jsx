@@ -17,6 +17,10 @@ import {
   Upload,
 } from 'lucide-react';
 
+// =============================================================================
+// SECTION: EVENT LISTENER (lignes 20-67)
+// =============================================================================
+
 function LibraryEventListener() {
   const { saveToLibrary, loadLibrary } = useApp();
 
@@ -87,6 +91,10 @@ function LibraryPanel({ standalone = false }) {
     createSubcategory,
     db,
   } = useApp();
+
+  // =============================================================================
+  // SECTION: STATE (useState hooks - ~40 states)
+  // =============================================================================
 
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
@@ -2554,6 +2562,9 @@ function LibraryPanel({ standalone = false }) {
   return (
     <>
       <LibraryEventListener />
+      {/* ============================================================================= */}
+      {/* SECTION: EN-TÊTE ET RECHERCHE (lignes 2562-1610) */}
+      {/* ============================================================================= */}
       <div className="fixed inset-y-0 right-0 w-96 bg-panel shadow-xl z-50 flex flex-col border-l border-std">
         <div className="p-4 border-b border-std">
           <div className="flex items-center justify-between mb-4">
@@ -2924,5 +2935,9 @@ function LibraryPanel({ standalone = false }) {
     </>
   );
 }
+
+// =============================================================================
+// FIN DU COMPOSANT
+// =============================================================================
 
 export default LibraryPanel;
