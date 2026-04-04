@@ -1686,249 +1686,6 @@ Affaire: ${commande.affaire || 'N/A'}
                                             </div>
                                           </div>
                                         )}
-
-                                      {contextActiveTabCommande === 'decompte' && (
-                                        <div className="space-y-6">
-                                          <div className="p-4 bg-card rounded-lg border border-std">
-                                            <h3 className="text-sm font-semibold text-primary mb-4">
-                                              DÉCOMPTE DES PAIEMENTS
-                                            </h3>
-                                            <div className="overflow-x-auto">
-                                              <table className="w-full text-xs">
-                                                <thead>
-                                                  <tr className="bg-std text-secondary">
-                                                    <th className="px-2 py-2 text-left">N°</th>
-                                                    <th className="px-2 py-2 text-left">
-                                                      Désignation
-                                                    </th>
-                                                    <th className="px-2 py-2 text-left">EOTP</th>
-                                                    <th className="px-2 py-2 text-right">
-                                                      Montant
-                                                    </th>
-                                                    <th className="px-2 py-2 text-left">Date</th>
-                                                    <th className="px-2 py-2 text-right">%</th>
-                                                    <th className="px-2 py-2 text-right">
-                                                      Montant
-                                                    </th>
-                                                    <th className="px-2 py-2 text-right">
-                                                      Reste à payer
-                                                    </th>
-                                                  </tr>
-                                                </thead>
-                                                <tbody>
-                                                  {(commandeDetail.autresLignes || []).map(
-                                                    (ligne, idx) => {
-                                                      const totalPaiements = (
-                                                        ligne.paiements || []
-                                                      ).reduce(
-                                                        (sum, p) =>
-                                                          sum + (parseFloat(p.montant) || 0),
-                                                        0
-                                                      );
-                                                      const resteAPayer =
-                                                        (parseFloat(ligne.montant) || 0) -
-                                                        totalPaiements;
-
-                                                      const isAvenantLine =
-                                                        ligne.designation?.startsWith('AV');
-                                                      const isPreviousAvenant =
-                                                        isAvenantLine &&
-                                                        selectedAvenant?.numero &&
-                                                        ligne.designation.startsWith(
-                                                          `AV${selectedAvenant.numero}`
-                                                        ) === false;
-
-                                                      return (
-                                                        <tr
-                                                          key={ligne.id || idx}
-                                                          className="border-b border-std"
-                                                        >
-                                                          <td className="px-2 py-2">
-                                                            {ligne.numero}
-                                                          </td>
-                                                          <td className="px-2 py-2">
-                                                            {isAvenantLine && (
-                                                              <span className="inline-block px-1.5 py-0.5 mr-1 text-xs bg-accent-soft text-accent rounded">
-                                                                {ligne.designation.split(' ')[0]}
-                                                              </span>
-                                                            )}
-                                                            {ligne.designation?.replace(
-                                                              /^AV\d+\s*/,
-                                                              ''
-                                                            ) || ''}
-                                                          </td>
-                                                          <td className="px-2 py-2">
-                                                            {getEotpLabelById(ligne.eotpId)}
-                                                          </td>
-                                                          <td className="px-2 py-2 text-right">
-                                                            {parseFloat(ligne.montant) || 0} €
-                                                          </td>
-                                                          <td className="px-2 py-2">
-                                                            {isPreviousAvenant ? (
-                                                              <span className="text-muted">
-                                                                {(ligne.paiements || [])
-                                                                  .map(p => p.date)
-                                                                  .join(', ')}
-                                                              </span>
-                                                            ) : (
-                                                              <input
-                                                                type="date"
-                                                                value={
-                                                                  (ligne.paiements || [{}])[0]
-                                                                    ?.date || ''
-                                                                }
-                                                                onChange={e => {
-                                                                  const newPaiements = [
-                                                                    ...(ligne.paiements || []),
-                                                                  ];
-                                                                  if (!newPaiements[0])
-                                                                    newPaiements[0] = {};
-                                                                  newPaiements[0] = {
-                                                                    ...newPaiements[0],
-                                                                    date: e.target.value,
-                                                                  };
-                                                                  handleUpdateAutresLigne(
-                                                                    idx,
-                                                                    'paiements',
-                                                                    newPaiements
-                                                                  );
-                                                                }}
-                                                                className="w-28 px-1 py-0.5 text-xs bg-input border border-std rounded"
-                                                              />
-                                                            )}
-                                                          </td>
-                                                          <td className="px-2 py-2">
-                                                            {isPreviousAvenant ? (
-                                                              <span className="text-muted">
-                                                                {(ligne.paiements || [])
-                                                                  .map(p => p.pourcentage)
-                                                                  .join('%, ')}
-                                                                %
-                                                              </span>
-                                                            ) : (
-                                                              <input
-                                                                type="number"
-                                                                min="0"
-                                                                max="100"
-                                                                value={
-                                                                  (ligne.paiements || [{}])[0]
-                                                                    ?.pourcentage || ''
-                                                                }
-                                                                onChange={e => {
-                                                                  const newPaiements = [
-                                                                    ...(ligne.paiements || []),
-                                                                  ];
-                                                                  if (!newPaiements[0])
-                                                                    newPaiements[0] = {};
-                                                                  newPaiements[0] = {
-                                                                    ...newPaiements[0],
-                                                                    pourcentage: e.target.value,
-                                                                    montant: (
-                                                                      ((parseFloat(ligne.montant) ||
-                                                                        0) *
-                                                                        parseFloat(
-                                                                          e.target.value
-                                                                        )) /
-                                                                      100
-                                                                    ).toFixed(2),
-                                                                  };
-                                                                  handleUpdateAutresLigne(
-                                                                    idx,
-                                                                    'paiements',
-                                                                    newPaiements
-                                                                  );
-                                                                }}
-                                                                className="w-16 px-1 py-0.5 text-xs bg-input border border-std rounded text-right"
-                                                              />
-                                                            )}
-                                                          </td>
-                                                          <td className="px-2 py-2 text-right">
-                                                            {isPreviousAvenant ? (
-                                                              <span className="text-muted">
-                                                                {totalPaiements.toFixed(2)} €
-                                                              </span>
-                                                            ) : (
-                                                              <span className="text-secondary">
-                                                                {((ligne.paiements || [{}])[0]
-                                                                  ?.montant
-                                                                  ? parseFloat(
-                                                                      (ligne.paiements || [{}])[0]
-                                                                        .montant
-                                                                    )
-                                                                  : 0
-                                                                ).toFixed(2)}{' '}
-                                                                €
-                                                              </span>
-                                                            )}
-                                                          </td>
-                                                          <td className="px-2 py-2 text-right font-medium text-accent">
-                                                            {resteAPayer.toFixed(2)} €
-                                                          </td>
-                                                        </tr>
-                                                      );
-                                                    }
-                                                  )}
-                                                </tbody>
-                                                <tfoot>
-                                                  <tr className="bg-std font-semibold">
-                                                    <td
-                                                      colSpan={3}
-                                                      className="px-2 py-2 text-right"
-                                                    >
-                                                      TOTAL
-                                                    </td>
-                                                    <td className="px-2 py-2 text-right">
-                                                      {(commandeDetail.autresLignes || [])
-                                                        .reduce(
-                                                          (sum, l) =>
-                                                            sum + (parseFloat(l.montant) || 0),
-                                                          0
-                                                        )
-                                                        .toFixed(2)}{' '}
-                                                      €
-                                                    </td>
-                                                    <td colSpan={2}></td>
-                                                    <td className="px-2 py-2 text-right">
-                                                      {(commandeDetail.autresLignes || [])
-                                                        .reduce((sum, l) => {
-                                                          const totalLigne = (
-                                                            l.paiements || []
-                                                          ).reduce(
-                                                            (s, p) =>
-                                                              s + (parseFloat(p.montant) || 0),
-                                                            0
-                                                          );
-                                                          return sum + totalLigne;
-                                                        }, 0)
-                                                        .toFixed(2)}{' '}
-                                                      €
-                                                    </td>
-                                                    <td className="px-2 py-2 text-right text-accent">
-                                                      {(commandeDetail.autresLignes || [])
-                                                        .reduce((sum, l) => {
-                                                          const totalLigne = (
-                                                            l.paiements || []
-                                                          ).reduce(
-                                                            (s, p) =>
-                                                              s + (parseFloat(p.montant) || 0),
-                                                            0
-                                                          );
-                                                          return (
-                                                            sum +
-                                                            (parseFloat(l.montant) || 0) -
-                                                            totalLigne
-                                                          );
-                                                        }, 0)
-                                                        .toFixed(2)}{' '}
-                                                      €
-                                                    </td>
-                                                  </tr>
-                                                </tfoot>
-                                              </table>
-                                            </div>
-                                          </div>
-                                        </div>
-                                      )}
                                     </div>
                                   )
                                 )
@@ -2951,6 +2708,220 @@ Affaire: ${commande.affaire || 'N/A'}
                                     }
                                     return null;
                                   })}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {contextActiveTabCommande === 'decompte' && (
+                  <div className="space-y-6">
+                    <div className="p-4 bg-card rounded-lg border border-std">
+                      <h3 className="text-sm font-semibold text-primary mb-4">
+                        SUIVI DES PAIEMENTS
+                      </h3>
+                      {(() => {
+                        const allLignes = commandeDetail.autresLignes || [];
+                        const totalCommande = allLignes.reduce(
+                          (sum, l) => sum + (parseFloat(l.montant) || 0),
+                          0
+                        );
+                        const totalPaye = allLignes.reduce((sum, ligne) => {
+                          const paiements = ligne.paiements || [];
+                          return (
+                            sum + paiements.reduce((s, p) => s + (parseFloat(p.montant) || 0), 0)
+                          );
+                        }, 0);
+                        const percentage =
+                          totalCommande > 0 ? (totalPaye / totalCommande) * 100 : 0;
+
+                        return (
+                          <div className="mb-6">
+                            <div className="flex justify-between text-sm mb-2">
+                              <span className="text-secondary">Montant total</span>
+                              <span className="font-semibold text-primary">
+                                {totalCommande.toFixed(2)} €
+                              </span>
+                            </div>
+                            <div className="h-4 bg-std rounded-full overflow-hidden">
+                              <div
+                                className="h-full bg-green-500 transition-all duration-300"
+                                style={{ width: `${Math.min(percentage, 100)}%` }}
+                              />
+                            </div>
+                            <div className="flex justify-between text-sm mt-2">
+                              <span className="text-muted">Payé: {totalPaye.toFixed(2)} €</span>
+                              <span className="text-muted">{percentage.toFixed(1)}%</span>
+                            </div>
+                          </div>
+                        );
+                      })()}
+
+                      <div className="space-y-4">
+                        {(commandeDetail.autresLignes || []).map((ligne, idx) => {
+                          const paiements = ligne.paiements || [];
+                          const ligneMontant = parseFloat(ligne.montant) || 0;
+                          const totalPayeLigne = paiements.reduce(
+                            (sum, p) => sum + (parseFloat(p.montant) || 0),
+                            0
+                          );
+                          const percentageLigne =
+                            ligneMontant > 0 ? (totalPayeLigne / ligneMontant) * 100 : 0;
+
+                          return (
+                            <div
+                              key={idx}
+                              className="p-3 bg-card-hover rounded-lg border border-std"
+                            >
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="flex-1">
+                                  <span className="text-sm font-medium text-primary">
+                                    {ligne.designation || `Ligne ${ligne.numero}`}
+                                  </span>
+                                  <span className="ml-2 text-sm text-accent">
+                                    {ligneMontant.toFixed(2)} €
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    onClick={() => {
+                                      const newPaiement = {
+                                        id: Date.now(),
+                                        date: new Date().toISOString().split('T')[0],
+                                        montant: '',
+                                        pourcentage: '',
+                                      };
+                                      const newLignes = [...(commandeDetail.autresLignes || [])];
+                                      newLignes[idx] = {
+                                        ...newLignes[idx],
+                                        paiements: [...paiements, newPaiement],
+                                      };
+                                      setCommandeDetail(prev => ({
+                                        ...prev,
+                                        autresLignes: newLignes,
+                                      }));
+                                    }}
+                                    className="px-2 py-1 text-xs bg-accent text-white rounded hover:bg-accent/80"
+                                  >
+                                    + Paiement
+                                  </button>
+                                </div>
+                              </div>
+
+                              <div className="h-2 bg-std rounded-full overflow-hidden mb-2">
+                                <div
+                                  className="h-full bg-green-500"
+                                  style={{ width: `${Math.min(percentageLigne, 100)}%` }}
+                                />
+                              </div>
+
+                              <div className="text-xs text-muted mb-2">
+                                Payé: {totalPayeLigne.toFixed(2)} € ({percentageLigne.toFixed(1)}%)
+                              </div>
+
+                              {paiements.length > 0 && (
+                                <div className="space-y-2 mt-3 border-t border-std pt-2">
+                                  {paiements.map((paiement, pIdx) => (
+                                    <div key={pIdx} className="flex items-center gap-2">
+                                      <input
+                                        type="date"
+                                        value={paiement.date || ''}
+                                        onChange={e => {
+                                          const newLignes = [
+                                            ...(commandeDetail.autresLignes || []),
+                                          ];
+                                          newLignes[idx].paiements[pIdx].date = e.target.value;
+                                          setCommandeDetail(prev => ({
+                                            ...prev,
+                                            autresLignes: newLignes,
+                                          }));
+                                        }}
+                                        className="px-2 py-1 text-xs bg-input border border-std rounded"
+                                      />
+                                      <input
+                                        type="number"
+                                        placeholder="Montant"
+                                        value={paiement.montant || ''}
+                                        onChange={e => {
+                                          const newLignes = [
+                                            ...(commandeDetail.autresLignes || []),
+                                          ];
+                                          const newMontant = e.target.value;
+                                          const pct =
+                                            ligneMontant > 0
+                                              ? (
+                                                  ((parseFloat(newMontant) || 0) / ligneMontant) *
+                                                  100
+                                                ).toFixed(2)
+                                              : '';
+                                          newLignes[idx].paiements[pIdx] = {
+                                            ...newLignes[idx].paiements[pIdx],
+                                            montant: newMontant,
+                                            pourcentage: pct,
+                                          };
+                                          setCommandeDetail(prev => ({
+                                            ...prev,
+                                            autresLignes: newLignes,
+                                          }));
+                                        }}
+                                        className="px-2 py-1 text-xs bg-input border border-std rounded w-24"
+                                      />
+                                      <input
+                                        type="number"
+                                        placeholder="%"
+                                        value={paiement.pourcentage || ''}
+                                        onChange={e => {
+                                          const newLignes = [
+                                            ...(commandeDetail.autresLignes || []),
+                                          ];
+                                          const newPct = e.target.value;
+                                          const calcMontant =
+                                            (ligneMontant * (parseFloat(newPct) || 0)) / 100;
+                                          newLignes[idx].paiements[pIdx] = {
+                                            ...newLignes[idx].paiements[pIdx],
+                                            pourcentage: newPct,
+                                            montant: calcMontant > 0 ? calcMontant.toFixed(2) : '',
+                                          };
+                                          setCommandeDetail(prev => ({
+                                            ...prev,
+                                            autresLignes: newLignes,
+                                          }));
+                                        }}
+                                        className="px-2 py-1 text-xs bg-input border border-std rounded w-16"
+                                      />
+                                      <span className="text-xs text-muted">
+                                        {ligneMontant > 0 &&
+                                        (parseFloat(paiement.pourcentage) || 0) > 0
+                                          ? (
+                                              ((parseFloat(paiement.pourcentage) || 0) *
+                                                ligneMontant) /
+                                              100
+                                            ).toFixed(2) + ' €'
+                                          : ''}
+                                      </span>
+                                      <button
+                                        onClick={() => {
+                                          const newLignes = [
+                                            ...(commandeDetail.autresLignes || []),
+                                          ];
+                                          newLignes[idx].paiements = newLignes[
+                                            idx
+                                          ].paiements.filter((_, i) => i !== pIdx);
+                                          setCommandeDetail(prev => ({
+                                            ...prev,
+                                            autresLignes: newLignes,
+                                          }));
+                                        }}
+                                        className="text-muted hover:text-urgent"
+                                      >
+                                        <Trash2 size={14} />
+                                      </button>
+                                    </div>
+                                  ))}
                                 </div>
                               )}
                             </div>
