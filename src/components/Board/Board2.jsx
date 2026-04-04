@@ -215,6 +215,8 @@ function Board2() {
     if (currentBoard?.id) {
       currentBoardIdRef.current = currentBoard.id;
       loadBoard(currentBoard.id);
+      contextSetSelectedCommande(null);
+      setSelectedAvenant(null);
     }
   }, [currentBoard?.id, loadBoard]);
 
@@ -367,6 +369,21 @@ function Board2() {
     }
   }, [eotpLines, contextSelectedCommande, isInitialized]);
 
+  useEffect(() => {
+    if (!isInitialized || !contextSelectedCommande || !commandeDetail || !commandes) return;
+    const currentCommande = commandes.find(c => c.id === contextSelectedCommande.id);
+    if (!currentCommande) return;
+    const previousDetail = currentCommande.detail ? JSON.stringify(currentCommande.detail) : null;
+    const currentDetail = JSON.stringify(commandeDetail);
+    if (previousDetail !== currentDetail && previousDetail !== null) {
+      const updatedCommandes = commandes.map(c =>
+        c.id === contextSelectedCommande.id ? { ...c, detail: commandeDetail } : c
+      );
+      setCommandes(updatedCommandes);
+      localStorage.setItem('c-projets_commandes', JSON.stringify(updatedCommandes));
+    }
+  }, [commandeDetail, contextSelectedCommande, commandes, isInitialized]);
+
   const syncFromLigne010 = field => {
     setCommandeDetail(prev => {
       const ligne010 = prev.autresLignes?.find(l => l.numero === '010');
@@ -463,12 +480,8 @@ function Board2() {
 
   useEffect(() => {
     if (isLoadingCommande) return;
-    if (contextSelectedCommande && commandes.length > 0) {
-      const cmd = commandes.find(c => c.id === contextSelectedCommande.id);
-      if (cmd) {
-        handleSelectCommande(cmd);
-      }
-    }
+    // Ne pas sélectionner automatiquement une commande au chargement
+    // L'utilisateur doit explicitement sélectionner une commande
   }, [contextSelectedCommande, commandes]);
 
   const handleUpdateAffectation = (field, value) => {
@@ -593,12 +606,13 @@ function Board2() {
   };
 
   const handleSelectAllInCategory = categoryKey => {
-    const allChecked = commandeDetail.groupesMarchandises[categoryKey]?.every(i => i.checked);
+    const currentItems = commandeDetail.groupesMarchandises?.[categoryKey] || [];
+    const allChecked = currentItems.every(i => i.checked);
     setCommandeDetail(prev => ({
       ...prev,
       groupesMarchandises: {
         ...prev.groupesMarchandises,
-        [categoryKey]: prev.groupesMarchandises[categoryKey].map(item => ({
+        [categoryKey]: (prev.groupesMarchandises?.[categoryKey] || []).map(item => ({
           ...item,
           checked: !allChecked,
         })),
@@ -607,9 +621,10 @@ function Board2() {
   };
 
   const getCategoryCount = categoryKey => {
-    const items = commandeDetail.groupesMarchandises[categoryKey] || [];
+    const items = commandeDetail.groupesMarchandises?.[categoryKey] || [];
     const checked = items.filter(i => i.checked).length;
-    return { checked, total: items.length };
+    const total = items.filter(i => i.label !== 'AUTRES (champ libre)').length;
+    return { checked, total };
   };
 
   const saveCommandeDetail = useCallback(() => {
@@ -618,6 +633,7 @@ function Board2() {
       c.id === contextSelectedCommande.id ? { ...c, detail: commandeDetail } : c
     );
     setCommandes(updatedCommandes);
+    localStorage.setItem('c-projets_commandes', JSON.stringify(updatedCommandes));
   }, [contextSelectedCommande, commandeDetail, commandes]);
 
   const handleImportFile = event => {
