@@ -16,6 +16,7 @@ import { loadChaptersOrder, saveChaptersOrder } from '../data/ChaptersData';
 import { normalizeImportData, generateExportData, downloadExport } from '../services/migration';
 import storage from '../services/storage';
 import { TimerProvider } from '../hooks/useTimer.jsx';
+import { useSettings } from '../hooks/useSettings.jsx';
 
 const STORAGE_KEY = 'c-projets_db';
 
@@ -450,7 +451,6 @@ export function AppProvider({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [libraryViewMode, setLibraryViewMode] = useState('panel');
-  const [theme, setTheme] = useState('dark');
   const [selectedCard, setSelectedCard] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [selectedSubcategory, setSelectedSubcategory] = useState(null);
@@ -458,37 +458,21 @@ export function AppProvider({ children }) {
   const [activeTabCommande, setActiveTabCommande] = useState('commande');
   const [activeTab, setActiveTab] = useState('taches');
   const [unreadMentions, setUnreadMentions] = useState({});
-  const [cardColors, setCardColors] = useState({
-    etudes: { gradient: ['#6366f1', '#3b82f6'], keywords: ['études', 'etudes'] },
-    enCours: { gradient: ['#f59e0b', '#fbbf24'], keywords: ['cours', 'en cours'] },
-    realise: { gradient: ['#22c55e', '#4ade80'], keywords: ['réalisé', 'realis', 'terminé'] },
-    archive: { gradient: ['#475569', '#475569'], keywords: ['archiv'] },
-  });
+
+  const {
+    theme,
+    setTheme,
+    toggleTheme,
+    cardColors,
+    setCardColors,
+    updateCardColors,
+    resetCardColors,
+  } = useSettings();
 
   const [hiddenMilestones, setHiddenMilestones] = useState(() => {
     const saved = localStorage.getItem('c-projets_hidden_milestones');
     return saved ? new Set(JSON.parse(saved)) : new Set();
   });
-
-  useEffect(() => {
-    const savedTheme = localStorage.getItem('c-projets-theme');
-    if (savedTheme) {
-      setTheme(savedTheme);
-    }
-    const savedColors = localStorage.getItem('c-projets-cardColors');
-    if (savedColors) {
-      setCardColors(JSON.parse(savedColors));
-    }
-  }, []);
-
-  useEffect(() => {
-    document.documentElement.classList.toggle('dark', theme === 'dark');
-    localStorage.setItem('c-projets-theme', theme);
-  }, [theme]);
-
-  useEffect(() => {
-    localStorage.setItem('c-projets-cardColors', JSON.stringify(cardColors));
-  }, [cardColors]);
 
   useEffect(() => {
     const activeBoards = db.boards.filter(b => !b.is_archived);
@@ -522,10 +506,6 @@ export function AppProvider({ children }) {
     }
   }, [db.boards, db.columns, db.cards, db.categories, db.subcategories, currentBoard]);
 
-  const toggleTheme = useCallback(() => {
-    setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
-  }, []);
-
   const [guideOpen, setGuideOpen] = useState(false);
   const toggleGuide = useCallback(() => {
     setGuideOpen(prev => !prev);
@@ -536,19 +516,6 @@ export function AppProvider({ children }) {
   const toggleSearch = useCallback(() => {
     setSearchOpen(prev => !prev);
     setGuideOpen(false);
-  }, []);
-
-  const updateCardColors = useCallback(newColors => {
-    setCardColors(newColors);
-  }, []);
-
-  const resetCardColors = useCallback(() => {
-    setCardColors({
-      etudes: { gradient: ['#6366f1', '#3b82f6'], keywords: ['études', 'etudes'] },
-      enCours: { gradient: ['#f59e0b', '#fbbf24'], keywords: ['cours', 'en cours'] },
-      realise: { gradient: ['#22c55e', '#4ade80'], keywords: ['réalisé', 'realis', 'terminé'] },
-      archive: { gradient: ['#475569', '#475569'], keywords: ['archiv'] },
-    });
   }, []);
 
   const saveDb = useCallback(newDb => {
