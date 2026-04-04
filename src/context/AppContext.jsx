@@ -15,6 +15,7 @@ import { loadTagsData, saveTagsData } from '../data/TagsData';
 import { loadChaptersOrder, saveChaptersOrder } from '../data/ChaptersData';
 import { normalizeImportData, generateExportData, downloadExport } from '../services/migration';
 import storage from '../services/storage';
+import { TimerProvider } from '../hooks/useTimer.jsx';
 
 const STORAGE_KEY = 'c-projets_db';
 
@@ -2386,18 +2387,16 @@ export function AppProvider({ children }) {
     resetCardColors,
     addWorkingDays,
     getWorkingDaysBetween,
-    getProjectTime,
-    getAllProjectTime,
-    loadProjectTime,
     getWeekNumber,
     getInternalContacts,
+    loadProjectTime,
+    getProjectTime,
+    getAllProjectTime,
   };
 
   return (
     <AppContext.Provider value={value}>
-      <TimerProvider currentBoard={currentBoard} addProjectTime={addProjectTime}>
-        {children}
-      </TimerProvider>
+      <TimerProvider currentBoard={currentBoard}>{children}</TimerProvider>
     </AppContext.Provider>
   );
 }
@@ -2406,72 +2405,6 @@ export function useApp() {
   const context = useContext(AppContext);
   if (!context) {
     throw new Error('useApp must be used within an AppProvider');
-  }
-  return context;
-}
-
-const TimerContext = createContext(null);
-
-function TimerProvider({ children, currentBoard, addProjectTime }) {
-  const [projectTimer, setProjectTimer] = useState({
-    activeProjectId: null,
-    startTime: null,
-    intervals: {},
-  });
-
-  useEffect(() => {
-    let interval = null;
-
-    if (projectTimer.activeProjectId && projectTimer.startTime) {
-      interval = setInterval(() => {
-        const now = new Date();
-        const elapsed = Math.floor((now - projectTimer.startTime) / 1000);
-        if (elapsed >= 1) {
-          addProjectTime(projectTimer.activeProjectId, elapsed);
-          setProjectTimer(prev => ({ ...prev, startTime: now }));
-        }
-      }, 1000);
-    }
-
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [projectTimer.activeProjectId, projectTimer.startTime, addProjectTime]);
-
-  useEffect(() => {
-    if (currentBoard) {
-      const now = new Date();
-      setProjectTimer(prev => {
-        if (
-          prev.activeProjectId &&
-          prev.startTime &&
-          prev.activeProjectId !== String(currentBoard.id)
-        ) {
-          const elapsed = Math.floor((now - prev.startTime) / 1000);
-          if (elapsed > 0) {
-            addProjectTime(prev.activeProjectId, elapsed);
-          }
-        }
-        return {
-          activeProjectId: String(currentBoard.id),
-          startTime: now,
-          intervals: {},
-        };
-      });
-    }
-  }, [currentBoard?.id, addProjectTime]);
-
-  return (
-    <TimerContext.Provider value={{ projectTimer, setProjectTimer }}>
-      {children}
-    </TimerContext.Provider>
-  );
-}
-
-export function useProjectTimer() {
-  const context = useContext(TimerContext);
-  if (!context) {
-    throw new Error('useProjectTimer must be used within a TimerProvider');
   }
   return context;
 }
