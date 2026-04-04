@@ -131,7 +131,7 @@ function getUpcomingTasks(subcategories, categories, cards, boards, columns, use
     .filter(sub => {
       if (!sub.due_date) return false;
       const dueDate = new Date(sub.due_date);
-      return dueDate >= now && dueDate <= futureDate;
+      return dueDate <= futureDate;
     })
     .map(sub => {
       const category = categories.find(c => Number(c.id) === Number(sub.category_id));
@@ -166,7 +166,7 @@ function getUpcomingMilestones(subcategories, categories, cards, boards, columns
     milestones.forEach(m => {
       if (m.date) {
         const milestoneDate = new Date(m.date);
-        if (milestoneDate >= now && milestoneDate <= futureDate && !m.done) {
+        if (milestoneDate <= futureDate && !m.done) {
           const category = categories.find(c => Number(c.id) === Number(sub.category_id));
           const card = category ? cards.find(c => Number(c.id) === Number(category.card_id)) : null;
           const column = card
@@ -676,50 +676,56 @@ export default function Dashboard() {
                       </tr>
                     </thead>
                     <tbody>
-                      {myMilestones.map(({ milestone, category, card, board }, idx) => (
-                        <tr
-                          key={'m' + milestone.id + '-' + idx}
-                          className={`border-b border-std ${milestone.done ? 'opacity-60' : 'hover:bg-card-hover cursor-pointer'}`}
-                          onClick={() => {
-                            const sub = allSubcategories.find(
-                              s => Number(s.id) === Number(milestone.subcategoryId)
-                            );
-                            if (sub) handleTaskClick(sub);
-                          }}
-                        >
-                          <td className="py-2 px-3">
-                            <input
-                              type="checkbox"
-                              checked={milestone.done}
-                              onChange={e => handleMilestoneToggle(e, milestone)}
-                              onClick={e => e.stopPropagation()}
-                              className="w-4 h-4 rounded border-std text-accent cursor-pointer"
-                            />
-                          </td>
-                          <td
-                            className={`py-2 px-3 ${milestone.done ? 'line-through text-muted' : 'text-primary'}`}
+                      {myMilestones.map(({ milestone, category, card, board }, idx) => {
+                        const isOverdueMilestone =
+                          !milestone.done &&
+                          milestone.date &&
+                          new Date(milestone.date) < new Date(new Date().toDateString());
+                        return (
+                          <tr
+                            key={'m' + milestone.id + '-' + idx}
+                            className={`border-b border-std ${milestone.done ? 'opacity-60' : 'hover:bg-card-hover cursor-pointer'} ${isOverdueMilestone ? 'bg-red-50 dark:bg-red-900/30' : ''}`}
+                            onClick={() => {
+                              const sub = allSubcategories.find(
+                                s => Number(s.id) === Number(milestone.subcategoryId)
+                              );
+                              if (sub) handleTaskClick(sub);
+                            }}
                           >
-                            {board?.title || '-'}
-                          </td>
-                          <td
-                            className={`py-2 px-3 ${milestone.done ? 'line-through text-muted' : 'text-secondary'}`}
-                          >
-                            {card?.title || '-'}
-                          </td>
-                          <td
-                            className={`py-2 px-3 font-medium ${milestone.done ? 'line-through text-muted' : 'text-primary'}`}
-                          >
-                            {milestone.title}
-                          </td>
-                          <td
-                            className={`py-2 px-3 ${milestone.done ? 'line-through text-muted' : 'text-muted'}`}
-                          >
-                            {milestone.date
-                              ? new Date(milestone.date).toLocaleDateString('fr-FR')
-                              : '-'}
-                          </td>
-                        </tr>
-                      ))}
+                            <td className="py-2 px-3">
+                              <input
+                                type="checkbox"
+                                checked={milestone.done}
+                                onChange={e => handleMilestoneToggle(e, milestone)}
+                                onClick={e => e.stopPropagation()}
+                                className="w-4 h-4 rounded border-std text-accent cursor-pointer"
+                              />
+                            </td>
+                            <td
+                              className={`py-2 px-3 ${milestone.done ? 'line-through text-muted' : 'text-primary'}`}
+                            >
+                              {board?.title || '-'}
+                            </td>
+                            <td
+                              className={`py-2 px-3 ${milestone.done ? 'line-through text-muted' : 'text-secondary'}`}
+                            >
+                              {card?.title || '-'}
+                            </td>
+                            <td
+                              className={`py-2 px-3 font-medium ${milestone.done ? 'line-through text-muted' : isOverdueMilestone ? 'text-red-600 dark:text-red-400' : 'text-primary'}`}
+                            >
+                              {milestone.title}
+                            </td>
+                            <td
+                              className={`py-2 px-3 ${milestone.done ? 'line-through text-muted' : isOverdueMilestone ? 'text-red-600 dark:text-red-400 font-medium' : 'text-muted'}`}
+                            >
+                              {milestone.date
+                                ? new Date(milestone.date).toLocaleDateString('fr-FR')
+                                : '-'}
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -754,58 +760,69 @@ export default function Dashboard() {
                       </tr>
                     </thead>
                     <tbody>
-                      {incompleteTasks.map(task => (
-                        <tr
-                          key={task.id}
-                          className="border-b border-std hover:bg-card-hover cursor-pointer"
-                          onClick={() => handleTaskClick(task)}
-                        >
-                          <td className="py-2 px-3 text-primary">{task.board?.title}</td>
-                          <td className="py-2 px-3 text-secondary">{task.category?.title}</td>
-                          <td className="py-2 px-3 text-primary font-medium">{task.title}</td>
-                          <td className="py-2 px-3">
-                            <span
-                              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs text-white ${getStatusColor(task.status)}`}
+                      {incompleteTasks.map(task => {
+                        const isOverdue =
+                          task.due_date &&
+                          new Date(task.due_date) < new Date(new Date().toDateString());
+                        return (
+                          <tr
+                            key={task.id}
+                            className={`border-b border-std hover:bg-card-hover cursor-pointer ${isOverdue ? 'bg-red-50 dark:bg-red-900/30' : ''}`}
+                            onClick={() => handleTaskClick(task)}
+                          >
+                            <td className="py-2 px-3 text-primary">{task.board?.title}</td>
+                            <td className="py-2 px-3 text-secondary">{task.category?.title}</td>
+                            <td
+                              className={`py-2 px-3 font-medium ${isOverdue ? 'text-red-600 dark:text-red-400' : 'text-primary'}`}
                             >
-                              {task.status === 'in_progress' ? (
-                                <PlayCircle size={12} />
-                              ) : (
-                                <Circle size={12} />
-                              )}
-                              {getStatusLabel(task.status)}
-                            </span>
-                          </td>
-                          <td className="py-2 px-3">
-                            <div className="flex items-center gap-2">
-                              <div className="w-16 h-2 bg-card-hover rounded-full overflow-hidden">
-                                <div
-                                  className={`h-full rounded-full ${
-                                    task.status === 'in_progress'
-                                      ? 'bg-blue-500'
-                                      : task.status === 'waiting'
-                                        ? 'bg-yellow-500'
-                                        : 'bg-gray-400'
-                                  }`}
-                                  style={{ width: `${task.progress || 0}%` }}
-                                />
+                              {task.title}
+                            </td>
+                            <td className="py-2 px-3">
+                              <span
+                                className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs text-white ${getStatusColor(task.status)}`}
+                              >
+                                {task.status === 'in_progress' ? (
+                                  <PlayCircle size={12} />
+                                ) : (
+                                  <Circle size={12} />
+                                )}
+                                {getStatusLabel(task.status)}
+                              </span>
+                            </td>
+                            <td className="py-2 px-3">
+                              <div className="flex items-center gap-2">
+                                <div className="w-16 h-2 bg-card-hover rounded-full overflow-hidden">
+                                  <div
+                                    className={`h-full rounded-full ${
+                                      task.status === 'in_progress'
+                                        ? 'bg-blue-500'
+                                        : task.status === 'waiting'
+                                          ? 'bg-yellow-500'
+                                          : 'bg-gray-400'
+                                    }`}
+                                    style={{ width: `${task.progress || 0}%` }}
+                                  />
+                                </div>
+                                <span className="text-xs text-muted w-8">
+                                  {task.progress || 0}%
+                                </span>
                               </div>
-                              <span className="text-xs text-muted w-8">{task.progress || 0}%</span>
-                            </div>
-                          </td>
-                          <td
-                            className={`py-2 px-3 font-medium ${getPriorityColor(task.priority)}`}
-                          >
-                            {getPriorityLabel(task.priority)}
-                          </td>
-                          <td
-                            className="py-2 px-3 text-muted cursor-pointer hover:text-accent"
-                            onClick={e => handleDueDateClick(e, task)}
-                            title="Cliquez pour ouvrir le planning"
-                          >
-                            {task.due_date}
-                          </td>
-                        </tr>
-                      ))}
+                            </td>
+                            <td
+                              className={`py-2 px-3 font-medium ${getPriorityColor(task.priority)}`}
+                            >
+                              {getPriorityLabel(task.priority)}
+                            </td>
+                            <td
+                              className={`py-2 px-3 cursor-pointer hover:text-accent ${isOverdue ? 'text-red-600 dark:text-red-400 font-medium' : 'text-muted'}`}
+                              onClick={e => handleDueDateClick(e, task)}
+                              title="Cliquez pour ouvrir le planning"
+                            >
+                              {task.due_date}
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>

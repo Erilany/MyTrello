@@ -564,10 +564,7 @@ function SubCategoryModal({ subcategory, onClose }) {
   };
 
   return (
-    <div
-      className="fixed inset-0 bg-black/50 flex items-center justify-center z-[99999]"
-      onClick={onClose}
-    >
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[99999]">
       <div
         className={`bg-card rounded-lg shadow-card w-full ${emailPanelOpen ? 'max-w-4xl' : 'max-w-2xl'} max-h-[95vh] overflow-hidden flex flex-col transition-all duration-300`}
         onClick={e => e.stopPropagation()}
