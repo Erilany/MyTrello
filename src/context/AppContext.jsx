@@ -567,31 +567,18 @@ export function AppProvider({ children }) {
     [db]
   );
 
-  const { getWeekNumber, loadProjectTime, saveProjectTime, getWeekKey, getWeekNumberFromKey } =
-    useProjectTime();
+  const {
+    getWeekNumber,
+    loadProjectTime,
+    saveProjectTime,
+    getWeekKey,
+    getWeekNumberFromKey,
+    addProjectTime,
+    getProjectTime,
+    getAllProjectTime,
+  } = useProjectTime();
 
   const { getInternalContacts } = useInternalContacts();
-
-  const addProjectTime = (projectId, seconds) => {
-    const week = getWeekKey();
-    const data = loadProjectTime();
-    if (!data[week]) data[week] = {};
-    if (!data[week][projectId]) data[week][projectId] = 0;
-    data[week][projectId] += seconds;
-    saveProjectTime(data);
-  };
-
-  const getProjectTime = (projectId, week = null) => {
-    const w = week ? week : getWeekKey();
-    const data = loadProjectTime();
-    return data[w]?.[String(projectId)] || 0;
-  };
-
-  const getAllProjectTime = (week = null) => {
-    const w = week || getWeekKey();
-    const data = loadProjectTime();
-    return data[w] || {};
-  };
 
   // Ensure libraryItems has data - always check library editor first
   const forceLibraryItems = () => {

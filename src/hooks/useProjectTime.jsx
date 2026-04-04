@@ -40,12 +40,45 @@ export function useProjectTime() {
     [getWeekNumber]
   );
 
+  const addProjectTime = useCallback(
+    (projectId, seconds) => {
+      const week = getWeekKey();
+      const data = loadProjectTime();
+      if (!data[week]) data[week] = {};
+      if (!data[week][projectId]) data[week][projectId] = 0;
+      data[week][projectId] += seconds;
+      saveProjectTime(data);
+    },
+    [getWeekKey, loadProjectTime, saveProjectTime]
+  );
+
+  const getProjectTime = useCallback(
+    (projectId, week = null) => {
+      const w = week ? week : getWeekKey();
+      const data = loadProjectTime();
+      return data[w]?.[String(projectId)] || 0;
+    },
+    [getWeekKey, loadProjectTime]
+  );
+
+  const getAllProjectTime = useCallback(
+    (week = null) => {
+      const w = week || getWeekKey();
+      const data = loadProjectTime();
+      return data[w] || {};
+    },
+    [getWeekKey, loadProjectTime]
+  );
+
   return {
     getWeekNumber,
     loadProjectTime,
     saveProjectTime,
     getWeekKey,
     getWeekNumberFromKey,
+    addProjectTime,
+    getProjectTime,
+    getAllProjectTime,
   };
 }
 
