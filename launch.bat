@@ -1,42 +1,32 @@
 @echo off
+chcp 65001 >nul
 
 echo ========================================
-echo   Launcher D-ProjeT - Mode Dev Electron
+echo   Launcher C-PRojeTs - Mode Dev
 echo ========================================
 echo.
 
 set "PROJECT_DIR=%CD%"
-set "NODE_DIR=%PROJECT_DIR%\node"
-set "PATH=%NODE_DIR%;%PATH%"
+set "PATH=%PROJECT_DIR%\node_modules\.bin;%PATH%"
 
-echo Debug - PROJECT_DIR: %PROJECT_DIR%
-echo Debug - NODE_DIR: %NODE_DIR%
-echo.
-
-echo [1/4] Verification Node.js...
-"%NODE_DIR%\node.exe" --version
+echo [1/3] Verification Node.js...
+node --version
 echo [OK]
 
 echo.
-echo [2/4] Arret des anciens processus...
+echo [2/3] Arret des anciens processus...
 taskkill /F /IM node.exe >nul 2>&1
-taskkill /F /IM electron.exe >nul 2>&1
 timeout /t 2 >nul
 echo [OK]
-echo.
-echo [2.5/4] Installation des dependances...
-if not exist node_modules (
-"%NODE_DIR%\npm.cmd" install
-) else (
-echo Les dependances sont deja installees.
-)
-echo [OK]
-echo.
-echo [3/4] Lancement application avec Electron...
-echo.
-cd /d "%PROJECT_DIR%"
-start /b "" "%NODE_DIR%\npm.cmd" run electron:dev
 
 echo.
-echo [TERMINE] - La fenetre Electron va s'ouvrir automatiquement
+echo [3/3] Lancement Vite et ouverture navigateur...
+echo.
+cd /d "%PROJECT_DIR%"
+start http://localhost:5175
+timeout /t 3 >nul
+call npm run dev
+
+echo.
+echo [TERMINE]
 pause

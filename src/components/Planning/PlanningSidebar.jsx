@@ -1,6 +1,16 @@
 import React, { useMemo, useRef, useEffect } from 'react';
-import { Folder, FileText, List, CheckSquare, ChevronDown, ChevronRight } from 'lucide-react';
-import { ROW_HEIGHTS_PX, getRowHeight } from '../../utils/hierarchyUtils';
+import {
+  Folder,
+  FileText,
+  List,
+  CheckSquare,
+  ChevronDown,
+  ChevronRight,
+  Calendar,
+  Clock,
+  User,
+} from 'lucide-react';
+import { ROW_HEIGHTS_PX } from '../../utils/hierarchyUtils';
 
 export default function PlanningSidebar({
   cards = [],
@@ -26,22 +36,8 @@ export default function PlanningSidebar({
       scrollContainerRef.current.scrollTop = ganttScrollTop;
     }
   }, [ganttScrollTop, scrollContainerRef]);
-  console.log('[PlanningSidebar] subcategories.length:', subcategories.length);
-  console.log(
-    '[PlanningSidebar] subcategories (selectedTasks):',
-    subcategories.map(s => ({
-      id: s.id,
-      title: s.title,
-      card_id: s.card_id,
-      card_title: s.card?.title,
-      category_id: s.category_id,
-      category_title: s.category?.title,
-    }))
-  );
-  console.log('[PlanningSidebar] selectedTaskIds:', selectedTaskIds);
 
   const hierarchy = useMemo(() => {
-    console.log('[PlanningSidebar] Building hierarchy from subcategories:', subcategories.length);
     const chapters = {};
 
     subcategories.forEach(sub => {
@@ -75,23 +71,31 @@ export default function PlanningSidebar({
     return chapters;
   }, [subcategories]);
 
+  const formatDate = dateStr => {
+    if (!dateStr) return null;
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
+  };
+
+  const getPriorityBadge = priority => {
+    if (priority === 'urgent') return { class: 'bg-red-500/20 text-red-400', label: 'U' };
+    if (priority === 'high') return { class: 'bg-orange-500/20 text-orange-400', label: 'H' };
+    if (priority === 'low') return { class: 'bg-blue-500/20 text-blue-400', label: 'B' };
+    if (priority === 'done') return { class: 'bg-green-500/20 text-green-400', label: '✓' };
+    return null;
+  };
+
   return (
     <div
       ref={scrollContainerRef}
-      className="w-72 shrink-0 border-r border-std bg-card overflow-y-auto overflow-x-hidden"
+      className="w-80 shrink-0 border-r border-std bg-card overflow-y-auto overflow-x-hidden"
       onScroll={onScroll}
     >
-      <div className="sticky top-0 h-8 bg-card border-b border-std p-2 font-semibold text-sm text-primary flex items-center justify-between z-10">
-        <span>Tâches ({subcategories.length})</span>
-        <button
-          onClick={() => {
-            const allChapters = Object.keys(hierarchy);
-            allChapters.forEach(ch => onToggleChapter(ch));
-          }}
-          className="text-xs px-2 py-0.5 bg-[var(--bg-card-hover)] rounded hover:bg-[var(--border)]"
-        >
-          Tout
-        </button>
+      <div className="sticky top-0 h-10 bg-card border-b border-std px-3 font-semibold text-sm text-primary flex items-center justify-between z-10">
+        <span className="text-primary font-medium">Tâches</span>
+        <span className="text-xs text-muted bg-card-hover px-2 py-0.5 rounded">
+          {selectedTaskIds.length}/{subcategories.length}
+        </span>
       </div>
 
       {Object.entries(hierarchy).map(([chapterName, chapterData], chapterIdx) => {
@@ -109,17 +113,17 @@ export default function PlanningSidebar({
             className="border-b border-[var(--border)]"
           >
             <div
-              className="flex items-center px-2 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 cursor-pointer font-semibold text-blue-900 dark:text-blue-100 text-sm border-l-4 border-blue-400 border-b border-[var(--border)]"
+              className="flex items-center px-3 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 cursor-pointer font-semibold text-blue-900 dark:text-blue-100 text-sm border-l-4 border-blue-500"
               style={{ height: ROW_HEIGHTS_PX.chapter }}
               onClick={() => onToggleChapter(chapterKey)}
             >
-              <span className="mr-1">
-                {isChapterExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+              <span className="mr-2">
+                {isChapterExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
               </span>
-              <Folder size={14} className="mr-1 text-blue-600" />
+              <Folder size={16} className="mr-2 text-blue-600" />
               <span className="truncate flex-1">{chapterName}</span>
-              <span className="text-xs text-blue-500 ml-1">
-                ({cardCount}c/{catCount}cat)
+              <span className="text-xs text-blue-500/70 bg-blue-100 dark:bg-blue-800 px-1.5 py-0.5 rounded">
+                {cardCount}c/{catCount}
               </span>
             </div>
 
@@ -132,16 +136,20 @@ export default function PlanningSidebar({
                 return (
                   <div key={`card-${cardId}`}>
                     <div
-                      className="flex items-center px-2 pl-6 bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30 cursor-pointer text-green-900 dark:text-green-100 text-sm border-l-4 border-green-400 border-b border-[var(--border)]"
+                      className="flex items-center px-3 pl-5 bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30 cursor-pointer text-green-900 dark:text-green-100 text-sm border-l-4 border-green-500"
                       style={{ height: ROW_HEIGHTS_PX.card }}
                       onClick={() => onToggleCard(cardKey)}
                     >
-                      <span className="mr-1">
+                      <span className="mr-2">
                         {isCardExpanded ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
                       </span>
-                      <FileText size={12} className="mr-1 text-green-600" />
-                      <span className="truncate flex-1 text-xs">{card.title || 'Sans titre'}</span>
-                      <span className="text-xs text-green-500">({catCount})</span>
+                      <FileText size={14} className="mr-2 text-green-600" />
+                      <span className="truncate flex-1 text-xs font-medium">
+                        {card.title || 'Sans titre'}
+                      </span>
+                      <span className="text-xs text-green-500/70 bg-green-100 dark:bg-green-800 px-1.5 py-0.5 rounded">
+                        {catCount}
+                      </span>
                     </div>
 
                     {isCardExpanded &&
@@ -152,51 +160,81 @@ export default function PlanningSidebar({
                         return (
                           <div key={`cat-${catId}`}>
                             <div
-                              className="flex items-center px-2 pl-10 bg-yellow-50 dark:bg-yellow-900/20 hover:bg-yellow-100 dark:hover:bg-yellow-900/30 cursor-pointer text-yellow-900 dark:text-yellow-100 text-xs border-l-4 border-yellow-400 border-b border-[var(--border)]"
+                              className="flex items-center px-3 pl-8 bg-yellow-50 dark:bg-yellow-900/20 hover:bg-yellow-100 dark:hover:bg-yellow-900/30 cursor-pointer text-yellow-900 dark:text-yellow-100 text-xs border-l-4 border-yellow-500"
                               style={{ height: ROW_HEIGHTS_PX.category }}
                               onClick={() => onToggleCategory(catKey)}
                             >
-                              <span className="mr-1">
+                              <span className="mr-1.5">
                                 {isCatExpanded ? (
-                                  <ChevronDown size={10} />
+                                  <ChevronDown size={11} />
                                 ) : (
-                                  <ChevronRight size={10} />
+                                  <ChevronRight size={11} />
                                 )}
                               </span>
-                              <List size={10} className="mr-1 text-yellow-600" />
+                              <List size={12} className="mr-1.5 text-yellow-600" />
                               <span className="truncate flex-1">{cat.title || 'Sans titre'}</span>
-                              <span className="text-xs text-yellow-500">
-                                ({cat.subcats.length})
+                              <span className="text-xs text-yellow-500/70 bg-yellow-100 dark:bg-yellow-800 px-1.5 py-0.5 rounded">
+                                {cat.subcats.length}
                               </span>
                             </div>
 
                             {isCatExpanded &&
                               cat.subcats.map((sub, subIdx) => {
                                 const isSelected = selectedTaskIds.includes(sub.id);
+                                const priorityBadge = getPriorityBadge(sub.priority);
+
                                 return (
                                   <div
                                     key={`sub-${sub.id}`}
-                                    className={`flex items-center px-2 pl-14 text-xs cursor-pointer border-l-4 border-gray-300 dark:border-gray-600 border-b border-[var(--border)] ${
-                                      isSelected
-                                        ? 'bg-green-100 dark:bg-green-900/30'
-                                        : 'hover:bg-gray-50 dark:hover:bg-gray-800'
+                                    className={`flex items-center px-3 pl-12 text-xs cursor-pointer border-l-4 border-gray-300 dark:border-gray-600 hover:bg-card-hover transition-std ${
+                                      isSelected ? 'bg-accent/10 border-accent' : 'bg-card'
                                     }`}
                                     style={{ height: ROW_HEIGHTS_PX.task }}
                                     onClick={() => onCenterTask(sub)}
                                     onDoubleClick={() => onEditTask(sub)}
                                   >
-                                    <CheckSquare size={10} className="mr-1 text-gray-500" />
-                                    <span className="truncate flex-1 text-gray-700 dark:text-gray-200">
+                                    <CheckSquare
+                                      size={12}
+                                      className={`mr-2 shrink-0 ${isSelected ? 'text-accent' : 'text-muted'}`}
+                                    />
+                                    <span
+                                      className={`truncate flex-1 ${isSelected ? 'text-accent font-medium' : 'text-primary'}`}
+                                    >
                                       {sub.title}
                                     </span>
-                                    {sub.due_date && (
-                                      <span className="text-xs text-gray-400 ml-1">
-                                        {new Date(sub.due_date).toLocaleDateString('fr-FR', {
-                                          day: '2-digit',
-                                          month: '2-digit',
-                                        })}
-                                      </span>
-                                    )}
+
+                                    <div className="flex items-center gap-1 ml-auto shrink-0">
+                                      {priorityBadge && (
+                                        <span
+                                          className={`text-[10px] px-1 py-0.5 rounded ${priorityBadge.class}`}
+                                        >
+                                          {priorityBadge.label}
+                                        </span>
+                                      )}
+
+                                      {sub.start_date && (
+                                        <Calendar size={10} className="text-muted" />
+                                      )}
+
+                                      {sub.due_date && (
+                                        <span className="text-[10px] text-muted flex items-center gap-0.5">
+                                          {formatDate(sub.due_date)}
+                                        </span>
+                                      )}
+
+                                      {sub.duration_days > 0 && (
+                                        <span className="text-[10px] bg-blue-500/20 text-blue-400 px-1 py-0.5 rounded flex items-center gap-0.5">
+                                          <Clock size={8} />
+                                          {sub.duration_days}j
+                                        </span>
+                                      )}
+
+                                      {sub.assignee && (
+                                        <span className="text-[10px] bg-purple-500/20 text-purple-400 px-1 py-0.5 rounded flex items-center gap-0.5">
+                                          <User size={8} />
+                                        </span>
+                                      )}
+                                    </div>
                                   </div>
                                 );
                               })}

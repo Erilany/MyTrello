@@ -241,6 +241,24 @@ export const generateExportData = (db, options = {}) => {
         })()
       : {},
     projects,
+    planning: includeSettings
+      ? (() => {
+          try {
+            const planningData = {};
+            if (db.boards) {
+              db.boards.forEach(board => {
+                const saved = localStorage.getItem(`planning_${board.id}`);
+                if (saved) {
+                  planningData[board.id] = JSON.parse(saved);
+                }
+              });
+            }
+            return planningData;
+          } catch {
+            return {};
+          }
+        })()
+      : {},
   };
 
   return exportObj;

@@ -283,6 +283,7 @@ function Board2() {
   const [selectedAvenant, setSelectedAvenant] = useState(null);
   const [showAddCommande, setShowAddCommande] = useState(false);
   const [newCommandeTitle, setNewCommandeTitle] = useState('');
+  const [isLoadingCommande, setIsLoadingCommande] = useState(false);
 
   const [commandeDetail, setCommandeDetail] = useState({
     affectation: {
@@ -341,13 +342,16 @@ function Board2() {
   }, [commandeDetail.commande.marcheCadre, contracts]);
 
   useEffect(() => {
-    if (contextSelectedCommande && eotpLines.length > 0 && eotpLines[0].libelle) {
-      setCommandeDetail(prev => ({
-        ...prev,
-        commande: { ...prev.commande, affaire: eotpLines[0].libelle },
-      }));
+    if (contextSelectedCommande && eotpLines.length > 0 && eotpLines[0].libelle && isInitialized) {
+      setCommandeDetail(prev => {
+        if (prev.commande.affaire === eotpLines[0].libelle) return prev;
+        return {
+          ...prev,
+          commande: { ...prev.commande, affaire: eotpLines[0].libelle },
+        };
+      });
     }
-  }, [eotpLines, contextSelectedCommande]);
+  }, [eotpLines, contextSelectedCommande, isInitialized]);
 
   const syncFromLigne010 = field => {
     setCommandeDetail(prev => {
@@ -444,6 +448,7 @@ function Board2() {
   };
 
   useEffect(() => {
+    if (isLoadingCommande) return;
     if (contextSelectedCommande && commandes.length > 0) {
       const cmd = commandes.find(c => c.id === contextSelectedCommande.id);
       if (cmd) {
@@ -501,6 +506,15 @@ function Board2() {
   const handleAddAutresLigne = () => {
     const currentLignes = commandeDetail.autresLignes || [];
     const nextNum = String((currentLignes.length + 1) * 10).padStart(3, '0');
+    const avenantPrefix = selectedAvenant ? `AV${selectedAvenant.numero} ` : '';
+
+    const inheritedEotpId =
+      commandeDetail.otpIdentiqueChecked && currentLignes.length > 0 ? currentLignes[0].eotpId : '';
+    const inheritedDateReception =
+      commandeDetail.dateReceptionUniqueChecked && currentLignes.length > 0
+        ? currentLignes[0].dateReception
+        : '';
+
     setCommandeDetail(prev => ({
       ...prev,
       autresLignes: [
@@ -508,12 +522,13 @@ function Board2() {
         {
           id: Date.now(),
           numero: nextNum,
-          designation: '',
-          eotpId: '',
-          dateReception: '',
+          designation: avenantPrefix || '',
+          eotpId: inheritedEotpId,
+          dateReception: inheritedDateReception,
           quantite: '',
           coutUnitaire: '',
           montant: 0,
+          paiements: [],
         },
       ],
     }));
@@ -590,12 +605,6 @@ function Board2() {
     );
     setCommandes(updatedCommandes);
   }, [contextSelectedCommande, commandeDetail, commandes]);
-
-  useEffect(() => {
-    if (contextSelectedCommande) {
-      saveCommandeDetail();
-    }
-  }, [commandeDetail]);
 
   const handleImportFile = event => {
     const file = event.target.files?.[0];
@@ -843,6 +852,58 @@ Affaire: ${commande.affaire || 'N/A'}
     if (!boardId) {
       return;
     }
+
+    const cleanInvalidAvenants = () => {
+      const removedAvenants = [];
+
+      const updatedCommandes = commandes.map(cmd => {
+        if (!cmd.avenants || cmd.avenants.length === 0) {
+          return cmd;
+        }
+
+        const validAvenants = cmd.avenants.filter(av => {
+          const prefix = `AV${av.numero}`;
+          const avenantLines = (commandeDetail?.autresLignes || []).filter(
+            ligne => ligne.designation && ligne.designation.startsWith(prefix)
+          );
+
+          if (avenantLines.length === 0) {
+            removedAvenants.push(av.title);
+            return false;
+          }
+
+          const hasValidLine = avenantLines.some(ligne => {
+            const designation = ligne.designation?.replace(/^AV\d+\s*/, '').trim();
+            return designation && designation.length > 0;
+          });
+
+          if (!hasValidLine) {
+            removedAvenants.push(av.title);
+            return false;
+          }
+
+          return true;
+        });
+
+        if (validAvenants.length !== cmd.avenants.length) {
+          return { ...cmd, avenants: validAvenants };
+        }
+        return cmd;
+      });
+
+      if (removedAvenants.length > 0) {
+        alert(
+          `Les avenants suivants ont été supprimés car leur ligne est vide : ${removedAvenants.join(', ')}`
+        );
+      }
+
+      if (JSON.stringify(updatedCommandes) !== JSON.stringify(commandes)) {
+        setCommandes(updatedCommandes);
+      }
+    };
+
+    cleanInvalidAvenants();
+
     localStorage.setItem(`board-${boardId}-links`, JSON.stringify(links));
     localStorage.setItem(`board-${boardId}-commandes`, JSON.stringify(commandes));
     localStorage.setItem(`board-${boardId}-eotp`, JSON.stringify(eotpLines));
@@ -1625,6 +1686,249 @@ Affaire: ${commande.affaire || 'N/A'}
                                             </div>
                                           </div>
                                         )}
+
+                                      {contextActiveTabCommande === 'decompte' && (
+                                        <div className="space-y-6">
+                                          <div className="p-4 bg-card rounded-lg border border-std">
+                                            <h3 className="text-sm font-semibold text-primary mb-4">
+                                              DÉCOMPTE DES PAIEMENTS
+                                            </h3>
+                                            <div className="overflow-x-auto">
+                                              <table className="w-full text-xs">
+                                                <thead>
+                                                  <tr className="bg-std text-secondary">
+                                                    <th className="px-2 py-2 text-left">N°</th>
+                                                    <th className="px-2 py-2 text-left">
+                                                      Désignation
+                                                    </th>
+                                                    <th className="px-2 py-2 text-left">EOTP</th>
+                                                    <th className="px-2 py-2 text-right">
+                                                      Montant
+                                                    </th>
+                                                    <th className="px-2 py-2 text-left">Date</th>
+                                                    <th className="px-2 py-2 text-right">%</th>
+                                                    <th className="px-2 py-2 text-right">
+                                                      Montant
+                                                    </th>
+                                                    <th className="px-2 py-2 text-right">
+                                                      Reste à payer
+                                                    </th>
+                                                  </tr>
+                                                </thead>
+                                                <tbody>
+                                                  {(commandeDetail.autresLignes || []).map(
+                                                    (ligne, idx) => {
+                                                      const totalPaiements = (
+                                                        ligne.paiements || []
+                                                      ).reduce(
+                                                        (sum, p) =>
+                                                          sum + (parseFloat(p.montant) || 0),
+                                                        0
+                                                      );
+                                                      const resteAPayer =
+                                                        (parseFloat(ligne.montant) || 0) -
+                                                        totalPaiements;
+
+                                                      const isAvenantLine =
+                                                        ligne.designation?.startsWith('AV');
+                                                      const isPreviousAvenant =
+                                                        isAvenantLine &&
+                                                        selectedAvenant?.numero &&
+                                                        ligne.designation.startsWith(
+                                                          `AV${selectedAvenant.numero}`
+                                                        ) === false;
+
+                                                      return (
+                                                        <tr
+                                                          key={ligne.id || idx}
+                                                          className="border-b border-std"
+                                                        >
+                                                          <td className="px-2 py-2">
+                                                            {ligne.numero}
+                                                          </td>
+                                                          <td className="px-2 py-2">
+                                                            {isAvenantLine && (
+                                                              <span className="inline-block px-1.5 py-0.5 mr-1 text-xs bg-accent-soft text-accent rounded">
+                                                                {ligne.designation.split(' ')[0]}
+                                                              </span>
+                                                            )}
+                                                            {ligne.designation?.replace(
+                                                              /^AV\d+\s*/,
+                                                              ''
+                                                            ) || ''}
+                                                          </td>
+                                                          <td className="px-2 py-2">
+                                                            {getEotpLabelById(ligne.eotpId)}
+                                                          </td>
+                                                          <td className="px-2 py-2 text-right">
+                                                            {parseFloat(ligne.montant) || 0} €
+                                                          </td>
+                                                          <td className="px-2 py-2">
+                                                            {isPreviousAvenant ? (
+                                                              <span className="text-muted">
+                                                                {(ligne.paiements || [])
+                                                                  .map(p => p.date)
+                                                                  .join(', ')}
+                                                              </span>
+                                                            ) : (
+                                                              <input
+                                                                type="date"
+                                                                value={
+                                                                  (ligne.paiements || [{}])[0]
+                                                                    ?.date || ''
+                                                                }
+                                                                onChange={e => {
+                                                                  const newPaiements = [
+                                                                    ...(ligne.paiements || []),
+                                                                  ];
+                                                                  if (!newPaiements[0])
+                                                                    newPaiements[0] = {};
+                                                                  newPaiements[0] = {
+                                                                    ...newPaiements[0],
+                                                                    date: e.target.value,
+                                                                  };
+                                                                  handleUpdateAutresLigne(
+                                                                    idx,
+                                                                    'paiements',
+                                                                    newPaiements
+                                                                  );
+                                                                }}
+                                                                className="w-28 px-1 py-0.5 text-xs bg-input border border-std rounded"
+                                                              />
+                                                            )}
+                                                          </td>
+                                                          <td className="px-2 py-2">
+                                                            {isPreviousAvenant ? (
+                                                              <span className="text-muted">
+                                                                {(ligne.paiements || [])
+                                                                  .map(p => p.pourcentage)
+                                                                  .join('%, ')}
+                                                                %
+                                                              </span>
+                                                            ) : (
+                                                              <input
+                                                                type="number"
+                                                                min="0"
+                                                                max="100"
+                                                                value={
+                                                                  (ligne.paiements || [{}])[0]
+                                                                    ?.pourcentage || ''
+                                                                }
+                                                                onChange={e => {
+                                                                  const newPaiements = [
+                                                                    ...(ligne.paiements || []),
+                                                                  ];
+                                                                  if (!newPaiements[0])
+                                                                    newPaiements[0] = {};
+                                                                  newPaiements[0] = {
+                                                                    ...newPaiements[0],
+                                                                    pourcentage: e.target.value,
+                                                                    montant: (
+                                                                      ((parseFloat(ligne.montant) ||
+                                                                        0) *
+                                                                        parseFloat(
+                                                                          e.target.value
+                                                                        )) /
+                                                                      100
+                                                                    ).toFixed(2),
+                                                                  };
+                                                                  handleUpdateAutresLigne(
+                                                                    idx,
+                                                                    'paiements',
+                                                                    newPaiements
+                                                                  );
+                                                                }}
+                                                                className="w-16 px-1 py-0.5 text-xs bg-input border border-std rounded text-right"
+                                                              />
+                                                            )}
+                                                          </td>
+                                                          <td className="px-2 py-2 text-right">
+                                                            {isPreviousAvenant ? (
+                                                              <span className="text-muted">
+                                                                {totalPaiements.toFixed(2)} €
+                                                              </span>
+                                                            ) : (
+                                                              <span className="text-secondary">
+                                                                {((ligne.paiements || [{}])[0]
+                                                                  ?.montant
+                                                                  ? parseFloat(
+                                                                      (ligne.paiements || [{}])[0]
+                                                                        .montant
+                                                                    )
+                                                                  : 0
+                                                                ).toFixed(2)}{' '}
+                                                                €
+                                                              </span>
+                                                            )}
+                                                          </td>
+                                                          <td className="px-2 py-2 text-right font-medium text-accent">
+                                                            {resteAPayer.toFixed(2)} €
+                                                          </td>
+                                                        </tr>
+                                                      );
+                                                    }
+                                                  )}
+                                                </tbody>
+                                                <tfoot>
+                                                  <tr className="bg-std font-semibold">
+                                                    <td
+                                                      colSpan={3}
+                                                      className="px-2 py-2 text-right"
+                                                    >
+                                                      TOTAL
+                                                    </td>
+                                                    <td className="px-2 py-2 text-right">
+                                                      {(commandeDetail.autresLignes || [])
+                                                        .reduce(
+                                                          (sum, l) =>
+                                                            sum + (parseFloat(l.montant) || 0),
+                                                          0
+                                                        )
+                                                        .toFixed(2)}{' '}
+                                                      €
+                                                    </td>
+                                                    <td colSpan={2}></td>
+                                                    <td className="px-2 py-2 text-right">
+                                                      {(commandeDetail.autresLignes || [])
+                                                        .reduce((sum, l) => {
+                                                          const totalLigne = (
+                                                            l.paiements || []
+                                                          ).reduce(
+                                                            (s, p) =>
+                                                              s + (parseFloat(p.montant) || 0),
+                                                            0
+                                                          );
+                                                          return sum + totalLigne;
+                                                        }, 0)
+                                                        .toFixed(2)}{' '}
+                                                      €
+                                                    </td>
+                                                    <td className="px-2 py-2 text-right text-accent">
+                                                      {(commandeDetail.autresLignes || [])
+                                                        .reduce((sum, l) => {
+                                                          const totalLigne = (
+                                                            l.paiements || []
+                                                          ).reduce(
+                                                            (s, p) =>
+                                                              s + (parseFloat(p.montant) || 0),
+                                                            0
+                                                          );
+                                                          return (
+                                                            sum +
+                                                            (parseFloat(l.montant) || 0) -
+                                                            totalLigne
+                                                          );
+                                                        }, 0)
+                                                        .toFixed(2)}{' '}
+                                                      €
+                                                    </td>
+                                                  </tr>
+                                                </tfoot>
+                                              </table>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      )}
                                     </div>
                                   )
                                 )
@@ -1885,50 +2189,27 @@ Affaire: ${commande.affaire || 'N/A'}
                         <Trash2 size={14} />
                       </button>
                     </div>
-                    {cmd.avenants?.map(av => (
-                      <div key={av.id} className="flex items-center gap-2 ml-4">
-                        <button
-                          onClick={() => {
-                            handleSelectCommande(cmd);
-                            setSelectedAvenant(av);
-                          }}
-                          className={`flex-1 text-left p-2 rounded border text-sm ${
-                            selectedAvenant?.id === av.id
-                              ? 'border-accent bg-accent-soft'
-                              : 'border-std bg-card hover:bg-card-hover'
-                          }`}
-                        >
-                          {av.title}
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (
-                              window.confirm(`Êtes-vous sûr de vouloir supprimer "${av.title}" ?`)
-                            ) {
-                              const updatedCommandes = commandes.map(c =>
-                                c.id === cmd.id
-                                  ? {
-                                      ...c,
-                                      avenants: c.avenants?.filter(a => a.id !== av.id) || [],
-                                    }
-                                  : c
-                              );
-                              setCommandes(updatedCommandes);
-                              if (selectedAvenant?.id === av.id) {
-                                setSelectedAvenant(null);
-                              }
-                            }
-                          }}
-                          className="p-1 text-muted hover:text-urgent"
-                          title="Supprimer"
-                        >
-                          <Trash2 size={14} />
-                        </button>
+                    {cmd.avenants && cmd.avenants.length > 0 && (
+                      <div className="flex flex-wrap gap-1 ml-2 mt-1">
+                        {cmd.avenants.map(av => (
+                          <span
+                            key={av.id}
+                            className="px-2 py-0.5 text-xs font-medium rounded bg-accent-soft text-accent border border-accent"
+                          >
+                            AV{av.numero}
+                          </span>
+                        ))}
                       </div>
-                    ))}
+                    )}
                     <button
                       onClick={() => {
-                        const avenantNumber = (cmd.avenants?.length || 0) + 1;
+                        setIsLoadingCommande(true);
+                        const maxAvenantNumber =
+                          cmd.avenants && cmd.avenants.length > 0
+                            ? Math.max(...cmd.avenants.map(a => a.numero || 0))
+                            : 0;
+                        const avenantNumber = maxAvenantNumber + 1;
+                        const avenantPrefix = `AV${avenantNumber} `;
                         const newAvenant = {
                           id: Date.now(),
                           title: `Avenant ${avenantNumber}`,
@@ -1941,7 +2222,39 @@ Affaire: ${commande.affaire || 'N/A'}
                             : c
                         );
                         setCommandes(updatedCommandes);
+
+                        const currentLignes = commandeDetail.autresLignes || [];
+                        const inheritedEotpId =
+                          commandeDetail.otpIdentiqueChecked && currentLignes.length > 0
+                            ? currentLignes[0].eotpId
+                            : '';
+                        const inheritedDateReception =
+                          commandeDetail.dateReceptionUniqueChecked && currentLignes.length > 0
+                            ? currentLignes[0].dateReception
+                            : '';
+
+                        const updatedDetail = {
+                          ...commandeDetail,
+                          autresLignes: [
+                            ...(commandeDetail.autresLignes || []),
+                            {
+                              id: Date.now(),
+                              numero: String(
+                                ((commandeDetail.autresLignes?.length || 0) + 1) * 10
+                              ).padStart(3, '0'),
+                              designation: avenantPrefix,
+                              eotpId: inheritedEotpId,
+                              dateReception: inheritedDateReception,
+                              quantite: '',
+                              coutUnitaire: '',
+                              montant: 0,
+                              paiements: [],
+                            },
+                          ],
+                        };
+                        setCommandeDetail(updatedDetail);
                         setSelectedAvenant(newAvenant);
+                        setTimeout(() => setIsLoadingCommande(false), 100);
                       }}
                       className="ml-8 mt-1 text-xs text-accent hover:underline"
                     >
@@ -2053,6 +2366,16 @@ Affaire: ${commande.affaire || 'N/A'}
                         }`}
                       >
                         Commande
+                      </button>
+                      <button
+                        onClick={() => contextSetActiveTabCommande('decompte')}
+                        className={`px-3 py-1 text-xs rounded ${
+                          contextActiveTabCommande === 'decompte'
+                            ? 'bg-accent text-white'
+                            : 'border border-accent text-accent hover:bg-accent-soft'
+                        }`}
+                      >
+                        Décompte
                       </button>
                     </div>
                   </div>
@@ -2370,86 +2693,137 @@ Affaire: ${commande.affaire || 'N/A'}
                         </div>
                       </div>
                       <div className="space-y-2">
-                        {(commandeDetail.autresLignes || []).map((ligne, idx) => (
-                          <div
-                            key={ligne.id}
-                            className="flex items-center gap-2 bg-card-hover p-2 rounded"
-                          >
-                            <span className="text-xs text-muted w-8 font-medium">
-                              {ligne.numero}
-                            </span>
-                            <textarea
-                              placeholder="Désignation"
-                              value={ligne.designation}
-                              onChange={e =>
-                                handleUpdateAutresLigne(idx, 'designation', e.target.value)
-                              }
-                              rows={2}
-                              className="flex-[2] px-2 py-1 text-sm bg-input border border-std rounded resize-none"
-                            />
-                            <select
-                              value={ligne.eotpId}
-                              onChange={e => handleUpdateAutresLigne(idx, 'eotpId', e.target.value)}
-                              disabled={commandeDetail.otpIdentiqueChecked}
-                              className={`flex-1 px-2 py-1 text-sm border rounded ${
-                                commandeDetail.otpIdentiqueChecked
-                                  ? 'bg-std text-muted cursor-not-allowed'
-                                  : 'bg-input border-std'
-                              }`}
+                        {(commandeDetail.autresLignes || []).map((ligne, idx) => {
+                          const isAvenantLine = ligne.designation?.startsWith('AV');
+
+                          const avPrefix = isAvenantLine ? ligne.designation.split(' ')[0] : '';
+                          const avNumber = isAvenantLine ? parseInt(avPrefix.replace('AV', '')) : 0;
+                          const designationWithoutPrefix =
+                            ligne.designation?.replace(/^AV\d+\s*/, '') || '';
+
+                          const allAvenantNumbers = (commandeDetail.autresLignes || [])
+                            .filter(l => l.designation?.startsWith('AV'))
+                            .map(l => {
+                              const prefix = l.designation.split(' ')[0];
+                              return parseInt(prefix.replace('AV', ''));
+                            })
+                            .filter(n => !isNaN(n));
+
+                          const maxAvenantNumber =
+                            allAvenantNumbers.length > 0 ? Math.max(...allAvenantNumbers) : 0;
+
+                          const hasAnyAvenant = allAvenantNumbers.length > 0;
+                          const isPreviousAvenant = isAvenantLine && avNumber < maxAvenantNumber;
+                          const isCurrentAvenant = isAvenantLine && avNumber === maxAvenantNumber;
+                          const isBaseCommandLine = !isAvenantLine;
+                          const isBaseLocked = isBaseCommandLine && hasAnyAvenant;
+
+                          return (
+                            <div
+                              key={ligne.id}
+                              className="flex items-center gap-2 bg-card-hover p-2 rounded"
                             >
-                              <option value="">-- EOTP --</option>
-                              {getLevel2Eotp().map(eotp => (
-                                <option key={eotp.id} value={eotp.id}>
-                                  {eotp.numero} - {eotp.libelle}
-                                </option>
-                              ))}
-                            </select>
-                            <input
-                              type="date"
-                              value={ligne.dateReception}
-                              onChange={e =>
-                                handleUpdateAutresLigne(idx, 'dateReception', e.target.value)
-                              }
-                              disabled={commandeDetail.dateReceptionUniqueChecked}
-                              className={`w-28 px-2 py-1 text-sm border rounded ${
-                                commandeDetail.dateReceptionUniqueChecked
-                                  ? 'bg-std text-muted cursor-not-allowed'
-                                  : 'bg-input border-std'
-                              }`}
-                            />
-                            <input
-                              type="number"
-                              placeholder="Qté"
-                              value={ligne.quantite === 0 ? '' : ligne.quantite}
-                              min="0"
-                              onChange={e => {
-                                const val = e.target.value;
-                                handleUpdateAutresLigne(idx, 'quantite', val === '' ? '' : val);
-                              }}
-                              className="w-16 px-2 py-1 text-sm bg-input border border-std rounded"
-                            />
-                            <input
-                              type="number"
-                              placeholder="PU HT"
-                              value={ligne.coutUnitaire === 0 ? '' : ligne.coutUnitaire}
-                              min="0"
-                              onChange={e => {
-                                const val = e.target.value;
-                                handleUpdateAutresLigne(idx, 'coutUnitaire', val === '' ? '' : val);
-                              }}
-                              className="w-20 px-2 py-1 text-sm bg-input border border-std rounded"
-                            />
-                            <span className="w-24 text-right text-sm font-medium text-primary">
-                              {parseFloat(ligne.montant || 0).toFixed(2)} €
-                            </span>
-                            <button
-                              onClick={() => handleDeleteAutresLigne(idx)}
-                              className="text-muted hover:text-urgent p-1"
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                          </div>
-                        ))}
+                              <span className="text-xs text-muted w-8 font-medium">
+                                {ligne.numero}
+                              </span>
+                              {isAvenantLine && (
+                                <span className="px-1.5 py-0.5 text-xs font-medium bg-accent-soft text-accent rounded">
+                                  {avPrefix}
+                                </span>
+                              )}
+                              <textarea
+                                placeholder="Désignation"
+                                value={designationWithoutPrefix}
+                                onChange={e => {
+                                  const newDesignation = avPrefix
+                                    ? `${avPrefix} ${e.target.value}`
+                                    : e.target.value;
+                                  handleUpdateAutresLigne(idx, 'designation', newDesignation);
+                                }}
+                                disabled={isPreviousAvenant || isBaseLocked}
+                                rows={2}
+                                className={`flex-[2] px-2 py-1 text-sm border rounded resize-none ${
+                                  isPreviousAvenant || isBaseLocked
+                                    ? 'bg-std text-muted cursor-not-allowed'
+                                    : 'bg-input border-std'
+                                }`}
+                              />
+                              <select
+                                value={ligne.eotpId}
+                                onChange={e => {
+                                  handleUpdateAutresLigne(idx, 'eotpId', e.target.value);
+                                }}
+                                disabled={
+                                  commandeDetail.otpIdentiqueChecked ||
+                                  isPreviousAvenant ||
+                                  isBaseLocked
+                                }
+                                className={`flex-1 px-2 py-1 text-sm border rounded ${
+                                  commandeDetail.otpIdentiqueChecked ||
+                                  isPreviousAvenant ||
+                                  isBaseLocked
+                                    ? 'bg-std text-muted cursor-not-allowed'
+                                    : 'bg-input border-std'
+                                }`}
+                              >
+                                <option value="">-- EOTP --</option>
+                                {getLevel2Eotp().map(eotp => (
+                                  <option key={eotp.id} value={eotp.id}>
+                                    {eotp.numero} - {eotp.libelle}
+                                  </option>
+                                ))}
+                              </select>
+                              <input
+                                type="date"
+                                value={ligne.dateReception}
+                                onChange={e =>
+                                  handleUpdateAutresLigne(idx, 'dateReception', e.target.value)
+                                }
+                                disabled={commandeDetail.dateReceptionUniqueChecked}
+                                className={`w-28 px-2 py-1 text-sm border rounded ${
+                                  commandeDetail.dateReceptionUniqueChecked
+                                    ? 'bg-std text-muted cursor-not-allowed'
+                                    : 'bg-input border-std'
+                                }`}
+                              />
+                              <input
+                                type="number"
+                                placeholder="Qté"
+                                value={ligne.quantite === 0 ? '' : ligne.quantite}
+                                min="0"
+                                onChange={e => {
+                                  const val = e.target.value;
+                                  handleUpdateAutresLigne(idx, 'quantite', val === '' ? '' : val);
+                                }}
+                                className="w-16 px-2 py-1 text-sm bg-input border border-std rounded"
+                              />
+                              <input
+                                type="number"
+                                placeholder="PU HT"
+                                value={ligne.coutUnitaire === 0 ? '' : ligne.coutUnitaire}
+                                min="0"
+                                onChange={e => {
+                                  const val = e.target.value;
+                                  handleUpdateAutresLigne(
+                                    idx,
+                                    'coutUnitaire',
+                                    val === '' ? '' : val
+                                  );
+                                }}
+                                className="w-20 px-2 py-1 text-sm bg-input border border-std rounded"
+                              />
+                              <span className="w-24 text-right text-sm font-medium text-primary">
+                                {parseFloat(ligne.montant || 0).toFixed(2)} €
+                              </span>
+                              <button
+                                onClick={() => handleDeleteAutresLigne(idx)}
+                                className="text-muted hover:text-urgent p-1"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
+                          );
+                        })}
                         {/* Total line */}
                         {(commandeDetail.autresLignes || []).length > 0 && (
                           <div className="flex items-center justify-end gap-4 pt-2 border-t border-std">

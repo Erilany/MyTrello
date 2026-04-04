@@ -93,13 +93,6 @@ export default function PlanningView({
     }
   }, []);
 
-  console.log(
-    '[PlanningView] RENDER, tasks.length:',
-    tasks?.length,
-    'selectedTaskIds:',
-    selectedTaskIds
-  );
-
   const handleCenterTask = useCallback(
     task => {
       setScrollToTask(null);
@@ -110,25 +103,13 @@ export default function PlanningView({
   );
 
   const selectedTasks = useMemo(() => {
-    console.log('[PlanningView] selectedTasks useMemo computing');
-    console.log('[PlanningView] selectedTaskIds:', selectedTaskIds);
-    console.log('[PlanningView] tasks.length:', tasks.length);
-
     if (selectedTaskIds.length === 0) {
       return [];
     }
 
-    console.log(
-      '[PlanningView] selectedTaskIds types:',
-      selectedTaskIds.map(id => ({ id, type: typeof id }))
-    );
-    console.log('[PlanningView] tasks[0] id type:', typeof tasks[0]?.id, tasks[0]?.id);
-
     const selectedIdsSet = new Set(selectedTaskIds.map(id => Number(id)));
-    console.log('[PlanningView] selectedIdsSet:', [...selectedIdsSet]);
 
     let result = tasks.filter(t => selectedIdsSet.has(Number(t.id)));
-    console.log('[PlanningView] Filtered by ID, result count:', result.length);
 
     if (sortOrder === 'date') {
       result = [...result].sort((a, b) => {
@@ -138,10 +119,6 @@ export default function PlanningView({
       });
     }
 
-    console.log(
-      '[PlanningView] selectedTasks result:',
-      result.map(t => ({ id: t.id, title: t.title }))
-    );
     return result;
   }, [tasks, selectedTaskIds, sortOrder]);
 
@@ -172,28 +149,7 @@ export default function PlanningView({
   }, []);
 
   const flatTaskList = useMemo(() => {
-    console.log('[PlanningView] flatTaskList computing');
-    console.log('[PlanningView] selectedTasks for flatList:', selectedTasks.length);
-    console.log(
-      '[PlanningView] selectedTasks:',
-      selectedTasks.map(t => ({
-        id: t.id,
-        title: t.title,
-        card: t.card?.title,
-        category: t.category?.title,
-      }))
-    );
-    const result = getFlatTaskList(
-      selectedTasks,
-      expandedChapters,
-      expandedCards,
-      expandedCategories
-    );
-    console.log(
-      '[PlanningView] flatTaskList result:',
-      result.map(r => ({ type: r.type, key: r.key, title: r.title, hasTask: !!r.task }))
-    );
-    return result;
+    return getFlatTaskList(selectedTasks, expandedChapters, expandedCards, expandedCategories);
   }, [selectedTasks, expandedChapters, expandedCards, expandedCategories]);
 
   const computedGanttDateRange = useMemo(() => {

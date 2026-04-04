@@ -31,7 +31,7 @@ let mainWindow = null;
 let db = null;
 let tray = null;
 
-const isDev = process.env.NODE_ENV !== 'production' || true; // Force dev mode
+const isDev = process.env.NODE_ENV !== 'production';
 
 app.commandLine.appendSwitch('enable-features', 'VoiceInteractionServices');
 app.commandLine.appendSwitch('allow-file-access-from-files');

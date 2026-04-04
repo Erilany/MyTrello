@@ -22,9 +22,6 @@ export function getFlatTaskList(
   expandedCards,
   expandedCategories
 ) {
-  console.log('[hierarchyUtils] getFlatTaskList called');
-  console.log('[hierarchyUtils] selectedTasks count:', selectedTasks?.length || 0);
-
   if (!selectedTasks || selectedTasks.length === 0) {
     return [];
   }
@@ -125,7 +122,6 @@ export function getFlatTaskList(
     }
   });
 
-  console.log('[hierarchyUtils] Final flatList count:', flatList.length);
   return flatList;
 }
 

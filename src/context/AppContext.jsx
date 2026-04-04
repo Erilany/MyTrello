@@ -259,10 +259,8 @@ export function loadFromStorage() {
   const data = localStorage.getItem(STORAGE_KEY);
   if (data) {
     const parsed = JSON.parse(data);
-    console.log('[loadFromStorage] Loaded, cards:', parsed.cards?.length || 0);
     return parsed;
   }
-  console.log('[loadFromStorage] No data found');
   return {
     boards: [],
     columns: [],
@@ -324,14 +322,12 @@ function initDefaultData() {
 
   // Ensure libraryItems has data - always check library editor first (admin defines the master data)
   if (!data.libraryItems || data.libraryItems.length === 0) {
-    console.log('[AppContext] Loading library templates');
     // Check if custom library data exists in LibraryEditor storage
     const customLibrary = localStorage.getItem('c-projets_library_editor');
     if (customLibrary) {
       try {
         const treeData = JSON.parse(customLibrary);
         data.libraryItems = convertTreeToLibraryItems(treeData);
-        console.log('[AppContext] Loaded custom library from editor');
       } catch (e) {
         console.error('[AppContext] Error loading custom library:', e);
         data.libraryItems = libraryTemplates;
@@ -346,10 +342,8 @@ function initDefaultData() {
       try {
         const treeData = JSON.parse(customLibrary);
         data.libraryItems = convertTreeToLibraryItems(treeData);
-        console.log('[AppContext] Updated libraryItems from library editor');
       } catch (e) {
         console.error('[AppContext] Error loading custom library:', e);
-        // Keep existing data
       }
     }
   }
@@ -569,11 +563,6 @@ export function AppProvider({ children }) {
         setCurrentBoard(board);
         const boardColumns = sourceData.columns.filter(c => Number(c.board_id) === Number(boardId));
         const columnIds = boardColumns.map(c => Number(c.id));
-        console.log(
-          '[loadBoard] boardColumns:',
-          boardColumns.map(c => ({ id: c.id, title: c.title }))
-        );
-        console.log('[loadBoard] columnIds:', columnIds);
         const filteredCards = sourceData.cards.filter(
           c =>
             (columnIds.includes(Number(c.column_id)) ||
@@ -583,10 +572,6 @@ export function AppProvider({ children }) {
               c.column_id === 0 ||
               !c.column_id) &&
             !c.is_archived
-        );
-        console.log(
-          '[loadBoard] filteredCards:',
-          filteredCards.map(c => ({ id: c.id, title: c.title, column_id: c.column_id }))
         );
         setColumns(boardColumns.sort((a, b) => a.position - b.position));
         setCards(filteredCards.sort((a, b) => a.position - b.position));
@@ -698,75 +683,28 @@ export function AppProvider({ children }) {
       try {
         const treeData = JSON.parse(customLibrary);
         itemsToUse = convertTreeToLibraryItems(treeData);
-        console.log('[AppContext] Loading custom library from editor, count:', itemsToUse.length);
       } catch (e) {
-        console.error('[AppContext] Error loading custom library:', e);
-        itemsToUse =
-          db.libraryItems && db.libraryItems.length > 0 ? db.libraryItems : libraryTemplates;
+        console.error('[AppContext] Error reloading library from editor:', e);
       }
-    } else if (db.libraryItems && db.libraryItems.length > 0) {
-      itemsToUse = libraryTemplates;
-      console.log('[AppContext] Using libraryTemplates, count:', itemsToUse.length);
     } else {
-      itemsToUse = libraryTemplates;
-      console.log(
-        '[AppContext] Loading library templates, count:',
-        libraryTemplates.length,
-        'first:',
-        libraryTemplates[0]?.title
-      );
+      // Fallback to main database
+      const mainDb = localStorage.getItem('c-projets_db');
+      if (mainDb) {
+        try {
+          const updatedDb = JSON.parse(mainDb);
+          setLibraryItems([...(updatedDb.libraryItems || [])]);
+        } catch (e) {
+          console.error('[AppContext] Error reloading library:', e);
+        }
+      }
     }
-
-    const newDb = { ...db, libraryItems: itemsToUse };
-    setDb(newDb);
-    setLibraryItems(itemsToUse);
-    saveToStorage(newDb);
+    // Force re-render of all components using libraryItems
+    setTimeout(() => window.dispatchEvent(new Event('library-refreshed')), 0);
   };
 
-  // Check and load library on mount
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => {
-    forceLibraryItems();
-  }, []);
-
-  // Listen for library updates from LibraryEditor
   useEffect(() => {
     const handleLibraryUpdate = () => {
-      // Always prioritize library editor storage
-      const customLibrary = localStorage.getItem('c-projets_library_editor');
-      if (customLibrary) {
-        try {
-          const treeData = JSON.parse(customLibrary);
-          const itemsToUse = convertTreeToLibraryItems(treeData);
-
-          // Update c-projets_db with the new libraryItems
-          let mainDb = localStorage.getItem('c-projets_db');
-          if (mainDb) {
-            const dbObj = JSON.parse(mainDb);
-            dbObj.libraryItems = itemsToUse;
-            localStorage.setItem('c-projets_db', JSON.stringify(dbObj));
-          }
-
-          // Force update by creating new object reference
-          setLibraryItems([...itemsToUse]);
-          console.log('[AppContext] Reloaded library from editor, count:', itemsToUse.length);
-        } catch (e) {
-          console.error('[AppContext] Error reloading library from editor:', e);
-        }
-      } else {
-        // Fallback to main database
-        const mainDb = localStorage.getItem('c-projets_db');
-        if (mainDb) {
-          try {
-            const updatedDb = JSON.parse(mainDb);
-            setLibraryItems([...(updatedDb.libraryItems || [])]);
-          } catch (e) {
-            console.error('[AppContext] Error reloading library:', e);
-          }
-        }
-      }
-      // Force re-render of all components using libraryItems
-      setTimeout(() => window.dispatchEvent(new Event('library-refreshed')), 0);
+      forceLibraryItems();
     };
 
     window.addEventListener('library-updated', handleLibraryUpdate);
@@ -1146,6 +1084,12 @@ export function AppProvider({ children }) {
       if (data.databases?.contracts || data.contracts) {
         const contracts = data.databases?.contracts || data.contracts;
         localStorage.setItem('c-projets_contracts', JSON.stringify(contracts));
+      }
+
+      if (data.planning) {
+        Object.entries(data.planning).forEach(([boardId, planningData]) => {
+          localStorage.setItem(`planning_${boardId}`, JSON.stringify(planningData));
+        });
       }
 
       console.log(

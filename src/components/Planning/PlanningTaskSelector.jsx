@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { X } from 'lucide-react';
+import { X, Calendar, Clock, User } from 'lucide-react';
 
 export default function PlanningTaskSelector({
   tasks,
@@ -11,14 +11,6 @@ export default function PlanningTaskSelector({
   onCenterTask,
   onEditTask,
 }) {
-  console.log('[PlanningTaskSelector] Rendering');
-  console.log('[PlanningTaskSelector] tasks.length:', tasks.length);
-  console.log(
-    '[PlanningTaskSelector] tasks:',
-    tasks.map(t => ({ id: t.id, title: t.title, card: t.card?.title, category: t.category?.title }))
-  );
-  console.log('[PlanningTaskSelector] selectedTaskIds:', selectedTaskIds);
-
   const groupedTasks = useMemo(() => {
     const grouped = {};
 
@@ -40,6 +32,20 @@ export default function PlanningTaskSelector({
   }, [tasks]);
 
   const allTaskIds = useMemo(() => tasks.map(t => t.id), [tasks]);
+
+  const formatDate = dateStr => {
+    if (!dateStr) return null;
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('fr-FR');
+  };
+
+  const getPriorityBadge = priority => {
+    if (priority === 'urgent') return { class: 'bg-red-500/20 text-red-400', label: 'U' };
+    if (priority === 'high') return { class: 'bg-orange-500/20 text-orange-400', label: 'H' };
+    if (priority === 'low') return { class: 'bg-blue-500/20 text-blue-400', label: 'B' };
+    if (priority === 'done') return { class: 'bg-green-500/20 text-green-400', label: '✓' };
+    return null;
+  };
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -67,39 +73,91 @@ export default function PlanningTaskSelector({
         <div className="flex-1 overflow-auto p-4">
           {Object.entries(groupedTasks).map(([key, group]) => (
             <div key={key} className="mb-4">
-              <div className="font-medium text-sm text-primary mb-2">
-                {group.card} → {group.category}
+              <div className="font-medium text-sm text-primary mb-2 flex items-center gap-2">
+                <span className="bg-accent/20 text-accent px-2 py-0.5 rounded text-xs">
+                  {group.card}
+                </span>
+                <span className="text-muted">→</span>
+                <span className="bg-accent-soft text-accent px-2 py-0.5 rounded text-xs">
+                  {group.category}
+                </span>
               </div>
               <div className="space-y-1 ml-4">
-                {group.tasks.map(task => (
-                  <label
-                    key={task.id}
-                    className="flex items-center gap-2 p-2 hover:bg-card-hover rounded cursor-pointer"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={selectedTaskIds.some(id => Number(id) === Number(task.id))}
-                      onChange={() => onToggleTask(task.id, task)}
-                      className="w-4 h-4 rounded border-std text-accent"
-                    />
-                    <span
-                      className="text-sm text-primary hover:underline cursor-pointer"
-                      onClick={e => {
-                        e.stopPropagation();
-                        onCenterTask(task);
-                      }}
-                      onDoubleClick={e => {
-                        e.stopPropagation();
-                        onEditTask(task);
-                      }}
+                {group.tasks.map(task => {
+                  const priorityBadge = getPriorityBadge(task.priority);
+                  const isSelected = selectedTaskIds.some(id => Number(id) === Number(task.id));
+
+                  return (
+                    <label
+                      key={task.id}
+                      className={`flex items-center gap-2 p-2 rounded cursor-pointer border transition-std ${
+                        isSelected
+                          ? 'bg-accent/10 border-accent'
+                          : 'hover:bg-card-hover border-transparent border'
+                      }`}
                     >
-                      {task.title}
-                    </span>
-                    {task.start_date && (
-                      <span className="text-xs text-muted ml-auto">{task.start_date}</span>
-                    )}
-                  </label>
-                ))}
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => onToggleTask(task.id, task)}
+                        className="w-4 h-4 rounded border-std text-accent"
+                      />
+                      <div className="flex-1 min-w-0 flex items-center gap-2">
+                        <span
+                          className="text-sm text-primary hover:underline cursor-pointer truncate"
+                          onClick={e => {
+                            e.stopPropagation();
+                            onCenterTask(task);
+                          }}
+                          onDoubleClick={e => {
+                            e.stopPropagation();
+                            onEditTask(task);
+                          }}
+                        >
+                          {task.title}
+                        </span>
+
+                        <div className="flex items-center gap-1.5 ml-auto shrink-0">
+                          {priorityBadge && (
+                            <span
+                              className={`text-xs px-1.5 py-0.5 rounded ${priorityBadge.class}`}
+                            >
+                              {priorityBadge.label}
+                            </span>
+                          )}
+
+                          {task.start_date && (
+                            <span className="text-xs text-muted flex items-center gap-1">
+                              <Calendar size={10} />
+                              {formatDate(task.start_date)}
+                            </span>
+                          )}
+
+                          {task.due_date && (
+                            <span className="text-xs text-muted flex items-center gap-1">
+                              <Calendar size={10} />
+                              {formatDate(task.due_date)}
+                            </span>
+                          )}
+
+                          {task.duration_days > 0 && (
+                            <span className="text-xs bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded flex items-center gap-1">
+                              <Clock size={10} />
+                              {task.duration_days}j
+                            </span>
+                          )}
+
+                          {task.assignee && (
+                            <span className="text-xs bg-purple-500/20 text-purple-400 px-1.5 py-0.5 rounded flex items-center gap-1">
+                              <User size={10} />
+                              {task.assignee}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </label>
+                  );
+                })}
               </div>
             </div>
           ))}
