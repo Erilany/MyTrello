@@ -17,6 +17,7 @@ import { normalizeImportData, generateExportData, downloadExport } from '../serv
 import storage from '../services/storage';
 import { TimerProvider } from '../hooks/useTimer.jsx';
 import { useSettings } from '../hooks/useSettings.jsx';
+import { useHiddenMilestones } from '../hooks/useHiddenMilestones.jsx';
 
 const STORAGE_KEY = 'c-projets_db';
 
@@ -469,10 +470,13 @@ export function AppProvider({ children }) {
     resetCardColors,
   } = useSettings();
 
-  const [hiddenMilestones, setHiddenMilestones] = useState(() => {
-    const saved = localStorage.getItem('c-projets_hidden_milestones');
-    return saved ? new Set(JSON.parse(saved)) : new Set();
-  });
+  const {
+    hiddenMilestones,
+    addHiddenMilestone,
+    removeHiddenMilestone,
+    clearHiddenMilestones,
+    isHiddenMilestone,
+  } = useHiddenMilestones();
 
   useEffect(() => {
     const activeBoards = db.boards.filter(b => !b.is_archived);
@@ -1779,15 +1783,6 @@ export function AppProvider({ children }) {
     }, 100);
   };
 
-  const addHiddenMilestone = milestoneId => {
-    setHiddenMilestones(prev => {
-      const newSet = new Set(prev);
-      newSet.add(Number(milestoneId));
-      localStorage.setItem('c-projets_hidden_milestones', JSON.stringify([...newSet]));
-      return newSet;
-    });
-  };
-
   const deleteSubcategory = id => {
     const newDb = {
       ...db,
@@ -2330,6 +2325,9 @@ export function AppProvider({ children }) {
     addHiddenMilestone,
     deleteSubcategory,
     moveSubcategory,
+    removeHiddenMilestone,
+    clearHiddenMilestones,
+    isHiddenMilestone,
     addEmailToSubcategory,
     removeEmailFromSubcategory,
     updateEmailSubject,
