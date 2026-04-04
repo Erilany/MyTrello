@@ -8,6 +8,10 @@ import { loadZonesData } from '../../data/ZonesData';
 import { getOrderedChapters } from '../../data/ChaptersData';
 import { PlanningView } from '../Planning';
 
+// =============================================================================
+// SECTION: IMPORTS
+// =============================================================================
+
 import {
   Plus,
   ListTodo,
@@ -30,6 +34,10 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { GROUPES_MARCHANDISES, CATEGORY_KEYS } from '../../data/GroupesMarchandises';
+
+// =============================================================================
+// SECTION: DÉFINITION DU COMPOSANT PRINCIPAL
+// =============================================================================
 
 function Board2() {
   const {
@@ -58,11 +66,16 @@ function Board2() {
     setActiveTabCommande: contextSetActiveTabCommande,
   } = useApp();
 
+  // =============================================================================
+  // SECTION: STATE (useState hooks - 34 states)
+  // =============================================================================
+
   const activeTab = contextActiveTab;
   const setActiveTab = contextSetActiveTab;
   const previousActiveTabRef = useRef('taches');
   const [isInitialized, setIsInitialized] = useState(false);
 
+  // --- États pour Tâches ---
   useEffect(() => {
     const openTab = localStorage.getItem('c-projets_open_tab');
     if (openTab === 'planning') {
@@ -1377,6 +1390,10 @@ Affaire: ${commande.affaire || 'N/A'}
         })}
       </div>
 
+      {/* ============================================================================= */}
+      {/* SECTION: OUTILLET TÂCHES (lignes 1393-1910) */}
+      {/* ============================================================================= */}
+
       {activeTab === 'taches' && (
         <div className="flex-1 overflow-auto p-6">
           <div className="max-w-full">
@@ -1895,6 +1912,10 @@ Affaire: ${commande.affaire || 'N/A'}
           </div>
         </div>
       )}
+
+      {/* ============================================================================= */}
+      {/* SECTION: OUTILET COMMANDES (lignes 1916-2960) */}
+      {/* ============================================================================= */}
 
       {activeTab === 'commandes' && (
         <div className="flex-1 flex overflow-hidden">
@@ -2977,7 +2998,15 @@ Affaire: ${commande.affaire || 'N/A'}
         />
       )}
 
+      {/* ============================================================================= */}
+      {/* SECTION: OUTILET ÉCHANGES (ligne 3001) */}
+      {/* ============================================================================= */}
+
       {activeTab === 'echanges' && currentBoard && <Exchange boardId={currentBoard.id} />}
+
+      {/* ============================================================================= */}
+      {/* SECTION: OUTILET INFORMATIONS (lignes 3003-3850) */}
+      {/* ============================================================================= */}
 
       {activeTab === 'informations' && (
         <div className="flex-1 overflow-y-auto">
