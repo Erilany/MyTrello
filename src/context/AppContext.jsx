@@ -21,6 +21,7 @@ import { useHiddenMilestones } from '../hooks/useHiddenMilestones.jsx';
 import { useUserSettings } from '../hooks/useUserSettings.jsx';
 import { useProjectTime } from '../hooks/useProjectTime.jsx';
 import { useInternalContacts } from '../hooks/useInternalContacts.jsx';
+import { useUI } from '../hooks/useUI.jsx';
 
 const STORAGE_KEY = 'c-projets_db';
 
@@ -450,15 +451,6 @@ export function AppProvider({ children }) {
   const [subcategoryEmails, setSubcategoryEmails] = useState([]);
   const { username, setUsername, userRole, setUserRole } = useUserSettings();
   const [loading, setLoading] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [libraryOpen, setLibraryOpen] = useState(false);
-  const [libraryViewMode, setLibraryViewMode] = useState('panel');
-  const [selectedCard, setSelectedCard] = useState(null);
-  const [selectedCategory, setSelectedCategory] = useState(null);
-  const [selectedSubcategory, setSelectedSubcategory] = useState(null);
-  const [selectedCommande, setSelectedCommande] = useState(null);
-  const [activeTabCommande, setActiveTabCommande] = useState('commande');
-  const [activeTab, setActiveTab] = useState('taches');
   const [unreadMentions, setUnreadMentions] = useState({});
 
   const {
@@ -478,6 +470,33 @@ export function AppProvider({ children }) {
     clearHiddenMilestones,
     isHiddenMilestone,
   } = useHiddenMilestones();
+
+  const {
+    guideOpen,
+    setGuideOpen,
+    toggleGuide,
+    searchOpen,
+    setSearchOpen,
+    toggleSearch,
+    sidebarOpen,
+    setSidebarOpen,
+    libraryOpen,
+    setLibraryOpen,
+    libraryViewMode,
+    setLibraryViewMode,
+    selectedCard,
+    setSelectedCard,
+    selectedCategory,
+    setSelectedCategory,
+    selectedSubcategory,
+    setSelectedSubcategory,
+    selectedCommande,
+    setSelectedCommande,
+    activeTabCommande,
+    setActiveTabCommande,
+    activeTab,
+    setActiveTab,
+  } = useUI();
 
   useEffect(() => {
     const activeBoards = db.boards.filter(b => !b.is_archived);
@@ -510,18 +529,6 @@ export function AppProvider({ children }) {
       );
     }
   }, [db.boards, db.columns, db.cards, db.categories, db.subcategories, currentBoard]);
-
-  const [guideOpen, setGuideOpen] = useState(false);
-  const toggleGuide = useCallback(() => {
-    setGuideOpen(prev => !prev);
-    setSearchOpen(false);
-  }, []);
-
-  const [searchOpen, setSearchOpen] = useState(false);
-  const toggleSearch = useCallback(() => {
-    setSearchOpen(prev => !prev);
-    setGuideOpen(false);
-  }, []);
 
   const saveDb = useCallback(newDb => {
     setDb(newDb);
