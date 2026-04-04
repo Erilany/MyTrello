@@ -83,7 +83,7 @@ function getItemDateRange(item) {
 
 const TAG_VERTICAL_OFFSET = 3;
 
-function ActivityReview({ boards, categories, subcategories, columns, currentUsername, cards }) {
+function ActivityReview({ boards, categories, subcategories, columns, username, cards }) {
   const { syncTagsFromLibrary } = useApp();
   const [projectsData, setProjectsData] = useState([]);
   const [taggedItems, setTaggedItems] = useState([]);
@@ -124,7 +124,7 @@ function ActivityReview({ boards, categories, subcategories, columns, currentUse
   }, []);
 
   useEffect(() => {
-    if (!currentUsername) {
+    if (!username) {
       return;
     }
 
@@ -143,7 +143,7 @@ function ActivityReview({ boards, categories, subcategories, columns, currentUse
       const eotpLines = JSON.parse(localStorage.getItem(`board-${board.id}-eotp`) || '[]');
 
       const userContacts = internalContacts.filter(
-        c => c.name && c.name.toLowerCase().trim() === currentUsername.toLowerCase().trim()
+        c => c.name && c.name.toLowerCase().trim() === username.toLowerCase().trim()
       );
 
       const boardLinks = JSON.parse(localStorage.getItem(`board-${board.id}-links`) || '[]');
@@ -296,7 +296,7 @@ function ActivityReview({ boards, categories, subcategories, columns, currentUse
       const cols = getQuarterColumnsTwoYears();
       setQuarterColumns(cols);
     }
-  }, [categories, subcategories, columns, cards, currentUsername, currentUserRole, refreshKey]);
+  }, [categories, subcategories, columns, cards, username, currentUserRole, refreshKey]);
 
   const groupedByZone = useMemo(() => {
     const groups = {};
@@ -388,7 +388,7 @@ function ActivityReview({ boards, categories, subcategories, columns, currentUse
   const quarterWidth = 90;
   const currentQuarterIdx = quarterColumns.findIndex(col => col.label === currentQuarterKey);
 
-  if (!currentUsername) {
+  if (!username) {
     return (
       <div className="p-6 text-center text-secondary">
         Veuillez configurer votre nom d&apos;utilisateur dans les paramètres pour accéder à cette

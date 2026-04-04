@@ -35,7 +35,7 @@ function Settings() {
     resetCardColors,
     exportData,
     importData,
-    currentUsername,
+    username,
     setUsername,
   } = useApp();
   const [userRole, setUserRole] = useState(() => localStorage.getItem('c-projets-user-role') || '');
@@ -43,12 +43,16 @@ function Settings() {
   const [boardDescription, setBoardDescription] = useState('');
   const [saved, setSaved] = useState(false);
   const [localColors, setLocalColors] = useState(cardColors);
-  const [username, setUsernameLocal] = useState(currentUsername || '');
+  const [localUsername, setLocalUsername] = useState(username || '');
   const [activeTab, setActiveTab] = useState('profile');
 
   useEffect(() => {
     setLocalColors(cardColors);
   }, [cardColors]);
+
+  useEffect(() => {
+    setLocalUsername(username);
+  }, [username]);
 
   useEffect(() => {
     if (currentBoard) {
@@ -198,8 +202,8 @@ function Settings() {
                   </label>
                   <input
                     type="text"
-                    value={username}
-                    onChange={e => setUsernameLocal(e.target.value)}
+                    value={localUsername}
+                    onChange={e => setLocalUsername(e.target.value)}
                     placeholder="Entrez votre nom"
                     className="w-full px-4 py-2 bg-input border border-std rounded-lg text-primary placeholder-muted focus:outline-none focus:border-accent"
                   />
@@ -226,7 +230,7 @@ function Settings() {
                 </div>
                 <button
                   onClick={() => {
-                    setUsername(username);
+                    setUsername(localUsername);
                     setSaved(true);
                     setTimeout(() => setSaved(false), 1000);
                   }}

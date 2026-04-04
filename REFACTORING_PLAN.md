@@ -1,6 +1,52 @@
 # Plan de Refactoring - MyTrello
 
-## Vue d'ensemble
+## État d'avancement (mis à jour le 2026-04-04)
+
+### ✅ Terminé
+
+| Étape | Description                                        | Status     |
+| ----- | -------------------------------------------------- | ---------- |
+| 1.1   | Marqueurs sections Board2 + structure dossiers     | ✅ Terminé |
+| 2     | Extraction PaiementsForm + corrections sauvegardes | ✅ Terminé |
+| 4     | Marqueurs LibraryPanel                             | ✅ Terminé |
+| 5     | Suppression code dupliqué (contacts externes)      | ✅ Terminé |
+| 3.1   | Extraction useTimer (~70 lignes)                   | ✅ Terminé |
+| 3.2   | Extraction useSettings (~40 lignes)                | ✅ Terminé |
+| 3.3   | Extraction useHiddenMilestones (~15 lignes)        | ✅ Terminé |
+
+### 📁 Fichiers créés
+
+```
+src/hooks/
+├── useTimer.jsx              (gestion timer/chronomètre)
+├── useSettings.jsx           (theme + couleurs cartes)
+└── useHiddenMilestones.jsx   (jalons cachés)
+
+src/components/Board/forms/
+└── PaiementsForm.jsx        (suivi des paiements)
+```
+
+### 📊 Réduction
+
+- **AppContext.jsx** : ~2377 → ~2250 lignes (-127 lignes vers hooks)
+- **Board2.jsx** : Marqueurs sections ajoutés, code duppliqué éliminé
+
+---
+
+## Étapes restantes
+
+### Priorité 1 (extraire)
+
+- Extraction de `useBoardData` - gestion boards/columns/cards/categories
+- Extraction de `useSubcategories` - gestion sous-catégories et jalons
+
+### Priorité 2 (refonte)
+
+- Refonte complète de AppContext (complexe, à faire en plusieurs sessions)
+
+---
+
+## Vue d'ensemble (original)
 
 | Étape | Fichier cible                       | Durée estimée | Risque régression      |
 | ----- | ----------------------------------- | ------------- | ---------------------- |

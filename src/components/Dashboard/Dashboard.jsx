@@ -241,7 +241,7 @@ export default function Dashboard() {
     cards,
     categories,
     subcategories,
-    currentUsername,
+    username,
     getProjectTime,
     getAllProjectTime,
     loadProjectTime,
@@ -438,19 +438,11 @@ export default function Dashboard() {
       allCards,
       allBoards,
       allColumns,
-      currentUsername,
+      username,
       days
     );
-    return allTasks.filter(task => task.assignee === currentUsername);
-  }, [
-    allSubcategories,
-    allCategories,
-    allCards,
-    allBoards,
-    allColumns,
-    currentUsername,
-    timeRange,
-  ]);
+    return allTasks.filter(task => task.assignee === username);
+  }, [allSubcategories, allCategories, allCards, allBoards, allColumns, username, timeRange]);
 
   const otherTasks = useMemo(() => {
     const days = timeRange === 'week' ? 7 : timeRange === 'month' ? 30 : 180;
@@ -460,19 +452,11 @@ export default function Dashboard() {
       allCards,
       allBoards,
       allColumns,
-      currentUsername,
+      username,
       days
     );
-    return tasks.filter(task => !task.assignee || task.assignee !== currentUsername);
-  }, [
-    allSubcategories,
-    allCategories,
-    allCards,
-    allBoards,
-    allColumns,
-    currentUsername,
-    timeRange,
-  ]);
+    return tasks.filter(task => !task.assignee || task.assignee !== username);
+  }, [allSubcategories, allCategories, allCards, allBoards, allColumns, username, timeRange]);
 
   const myMilestones = useMemo(() => {
     return getMyMilestones(
@@ -481,7 +465,7 @@ export default function Dashboard() {
       allCards,
       allBoards,
       allColumns,
-      currentUsername
+      username
     ).filter(
       m =>
         !m.milestone.done &&
@@ -494,7 +478,7 @@ export default function Dashboard() {
     allCards,
     allBoards,
     allColumns,
-    currentUsername,
+    username,
     hiddenMilestones,
     recentlyCompletedMilestones,
   ]);
@@ -1056,7 +1040,7 @@ export default function Dashboard() {
             subcategories={allSubcategories}
             columns={allColumns}
             cards={allCards}
-            currentUsername={currentUsername}
+            username={username}
           />
         </div>
       )}

@@ -18,6 +18,9 @@ import storage from '../services/storage';
 import { TimerProvider } from '../hooks/useTimer.jsx';
 import { useSettings } from '../hooks/useSettings.jsx';
 import { useHiddenMilestones } from '../hooks/useHiddenMilestones.jsx';
+import { useUserSettings } from '../hooks/useUserSettings.jsx';
+import { useProjectTime } from '../hooks/useProjectTime.jsx';
+import { useInternalContacts } from '../hooks/useInternalContacts.jsx';
 
 const STORAGE_KEY = 'c-projets_db';
 
@@ -445,9 +448,7 @@ export function AppProvider({ children }) {
   const [libraryItems, setLibraryItems] = useState([]);
   const [messages, setMessages] = useState([]);
   const [subcategoryEmails, setSubcategoryEmails] = useState([]);
-  const [currentUsername, setCurrentUsername] = useState(
-    () => localStorage.getItem('c-projets-username') || ''
-  );
+  const { username, setUsername, userRole, setUserRole } = useUserSettings();
   const [loading, setLoading] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [libraryOpen, setLibraryOpen] = useState(false);
@@ -566,63 +567,10 @@ export function AppProvider({ children }) {
     [db]
   );
 
-  // Project time tracking functions
-  const getWeekNumber = date => {
-    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-    const dayNum = d.getUTCDay() || 7;
-    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
-    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-    return `${d.getUTCFullYear()}-W${Math.ceil(((d - yearStart) / 86400000 + 1) / 7)
-      .toString()
-      .padStart(2, '0')}`;
-  };
+  const { getWeekNumber, loadProjectTime, saveProjectTime, getWeekKey, getWeekNumberFromKey } =
+    useProjectTime();
 
-  const loadProjectTime = () => {
-    const stored = localStorage.getItem('c-projets_project_time');
-    return stored ? JSON.parse(stored) : {};
-  };
-
-  const saveProjectTime = data => {
-    localStorage.setItem('c-projets_project_time', JSON.stringify(data));
-  };
-
-  const getWeekKey = (date = new Date()) => {
-    return getWeekNumber(date);
-  };
-
-  const getWeekNumberFromKey = weekKey => {
-    if (!weekKey || typeof weekKey !== 'string') return getWeekNumber(new Date());
-    const parts = weekKey.split('-W');
-    if (parts.length !== 2) return getWeekNumber(new Date());
-    const year = parseInt(parts[0]);
-    const week = parseInt(parts[1]);
-    if (isNaN(year) || isNaN(week)) return getWeekNumber(new Date());
-    return weekKey;
-  };
-
-  const getInternalContacts = boardId => {
-    const defaultContacts = [
-      { id: 1, title: 'Manager de projets' },
-      { id: 2, title: 'Chargé(e) de Concertation' },
-      { id: 3, title: "Chargé(e) d'Etudes LA" },
-      { id: 4, title: "Chargé(e) d'Etudes LS" },
-      { id: 5, title: "Chargé(e) d'Etudes Poste HT" },
-      { id: 6, title: "Chargé(e) d'Etudes Poste BT et CC" },
-      { id: 7, title: "Chargé(e) d'Etudes SPC" },
-      { id: 8, title: 'Contrôleur Travaux' },
-      { id: 9, title: 'Assistant(e) Etudes' },
-    ];
-    if (!boardId) return defaultContacts;
-    const saved = localStorage.getItem(`board-${boardId}-internalContacts`);
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        return defaultContacts;
-      }
-    }
-    return defaultContacts;
-  };
+  const { getInternalContacts } = useInternalContacts();
 
   const addProjectTime = (projectId, seconds) => {
     const week = getWeekKey();
@@ -948,9 +896,11 @@ export function AppProvider({ children }) {
         }
         if (data.settings.username) {
           localStorage.setItem('c-projets-username', data.settings.username);
+          setUsername(data.settings.username);
         }
         if (data.settings.userRole) {
           localStorage.setItem('c-projets-user-role', data.settings.userRole);
+          setUserRole(data.settings.userRole);
         }
         if (data.settings.chargeResentie) {
           localStorage.setItem(
@@ -958,6 +908,14 @@ export function AppProvider({ children }) {
             JSON.stringify(data.settings.chargeResentie)
           );
         }
+      }
+      if (data.username) {
+        localStorage.setItem('c-projets-username', data.username);
+        setUsername(data.username);
+      }
+      if (data.userRole) {
+        localStorage.setItem('c-projets-user-role', data.userRole);
+        setUserRole(data.userRole);
       }
 
       const databases = data.databases?.params || data.databases;
@@ -2158,7 +2116,7 @@ export function AppProvider({ children }) {
       const newMessage = {
         id: db.nextIds.message++,
         board_id: boardId,
-        author: currentUsername,
+        author: username,
         content,
         mentions,
         attachments: attachments.map(att => ({
@@ -2168,7 +2126,7 @@ export function AppProvider({ children }) {
           size: att.size,
         })),
         created_at: new Date().toISOString(),
-        read_by: [currentUsername],
+        read_by: [username],
       };
       const newDb = {
         ...db,
@@ -2180,7 +2138,7 @@ export function AppProvider({ children }) {
       if (mentions.length > 0) {
         const newUnread = { ...unreadMentions };
         mentions.forEach(user => {
-          if (user !== currentUsername) {
+          if (user !== username) {
             if (!newUnread[user]) newUnread[user] = [];
             newUnread[user].push(newMessage.id);
           }
@@ -2189,15 +2147,15 @@ export function AppProvider({ children }) {
       }
       return newMessage;
     },
-    [db, currentUsername, saveDb, unreadMentions]
+    [db, username, saveDb, unreadMentions]
   );
 
   const markMessagesAsRead = useCallback(
     boardId => {
       const boardMessages = (db.messages || []).filter(m => Number(m.board_id) === Number(boardId));
       const updatedMessages = boardMessages.map(msg => {
-        if (!msg.read_by.includes(currentUsername)) {
-          return { ...msg, read_by: [...msg.read_by, currentUsername] };
+        if (!msg.read_by.includes(username)) {
+          return { ...msg, read_by: [...msg.read_by, username] };
         }
         return msg;
       });
@@ -2212,30 +2170,24 @@ export function AppProvider({ children }) {
       saveDb(newDb);
       setMessages(newDb.messages);
 
-      if (unreadMentions[currentUsername]) {
+      if (unreadMentions[username]) {
         const newUnread = { ...unreadMentions };
-        delete newUnread[currentUsername];
+        delete newUnread[username];
         setUnreadMentions(newUnread);
       }
     },
-    [db, currentUsername, saveDb, unreadMentions]
+    [db, username, saveDb, unreadMentions]
   );
 
   const getUnreadCount = useCallback(
     boardId => {
-      if (!currentUsername) return 0;
+      if (!username) return 0;
       const boardMessages = (db.messages || []).filter(m => Number(m.board_id) === Number(boardId));
-      return boardMessages.filter(
-        msg => !msg.read_by.includes(currentUsername) && msg.author !== currentUsername
-      ).length;
+      return boardMessages.filter(msg => !msg.read_by.includes(username) && msg.author !== username)
+        .length;
     },
-    [db.messages, currentUsername]
+    [db.messages, username]
   );
-
-  const setUsername = useCallback(name => {
-    setCurrentUsername(name);
-    localStorage.setItem('c-projets-username', name);
-  }, []);
 
   const addComment = (refType, refId, content) => {
     return true;
@@ -2258,8 +2210,10 @@ export function AppProvider({ children }) {
     messages,
     subcategoryEmails,
     db,
-    currentUsername,
+    username,
     setUsername,
+    userRole,
+    setUserRole,
     addMessage,
     getMessages,
     markMessagesAsRead,

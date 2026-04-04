@@ -60,7 +60,11 @@ export const migrateFromV1ToV2 = data => {
       contracts: data.contracts || [],
     },
 
-    settings: data.settings || {},
+    settings: data.settings ||
+      data.data?.settings || {
+        username: data.data?.username || '',
+        userRole: data.data?.userRole || '',
+      },
 
     projectTime: data.projectTime || {},
 
