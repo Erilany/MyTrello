@@ -22,6 +22,7 @@ import { useUserSettings } from '../hooks/useUserSettings.jsx';
 import { useProjectTime } from '../hooks/useProjectTime.jsx';
 import { useInternalContacts } from '../hooks/useInternalContacts.jsx';
 import { useUI } from '../hooks/useUI.jsx';
+import { useArchived } from '../hooks/useArchived.jsx';
 
 const STORAGE_KEY = 'c-projets_db';
 

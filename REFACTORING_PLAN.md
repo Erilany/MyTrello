@@ -1,6 +1,6 @@
 # Plan de Refactoring - MyTrello
 
-## État d'avancement (mis à jour le 2026-04-04)
+## État d'avancement (mis à jour le 2026-04-05)
 
 ### ✅ Terminé
 
@@ -13,6 +13,16 @@
 | 3.1   | Extraction useTimer (~70 lignes)                   | ✅ Terminé |
 | 3.2   | Extraction useSettings (~40 lignes)                | ✅ Terminé |
 | 3.3   | Extraction useHiddenMilestones (~15 lignes)        | ✅ Terminé |
+| 3.4   | Extraction useUserSettings                         | ✅ Terminé |
+| 3.5   | Extraction useProjectTime                          | ✅ Terminé |
+| 3.6   | Extraction useInternalContacts                     | ✅ Terminé |
+| 3.7   | Extraction useUI (intégré)                         | ✅ Terminé |
+| 3.8   | Extraction useOrders                               | ✅ Terminé |
+| 3.9   | Extraction useBoardCrud                            | ✅ Terminé |
+| 3.10  | Extraction useCardCrud                             | ✅ Terminé |
+| 3.11  | Extraction useCategorySubcategoryCrud              | ✅ Terminé |
+| 3.12  | Extraction useArchived (intégré)                   | ✅ Terminé |
+| 3.13  | Extraction useSubcategoryEmails                    | ✅ Terminé |
 
 ### 📁 Fichiers créés
 
@@ -20,7 +30,20 @@
 src/hooks/
 ├── useTimer.jsx              (gestion timer/chronomètre)
 ├── useSettings.jsx           (theme + couleurs cartes)
-└── useHiddenMilestones.jsx   (jalons cachés)
+├── useHiddenMilestones.jsx   (jalons cachés)
+├── useUserSettings.jsx       (username/userRole)
+├── useProjectTime.jsx        (gestion temps projet)
+├── useInternalContacts.jsx   (contacts internes)
+├── useUI.jsx                 (état UI) - INTÉGRÉ
+├── useOrders.jsx             (commandes/avenants)
+├── useBoardCrud.jsx          (boards/colonnes)
+├── useCardCrud.jsx           (cartes)
+├── useCategorySubcategoryCrud.jsx (catégories/sous-catégories)
+├── useArchived.jsx           (archives) - INTÉGRÉ
+├── useSubcategoryEmails.jsx  (emails sous-catégories)
+├── useLibrary.jsx            (bibliothèque)
+├── useLibraryCrud.jsx        (CRUD bibliothèque)
+└── useMessages.jsx           (messages)
 
 src/components/Board/forms/
 └── PaiementsForm.jsx        (suivi des paiements)
@@ -28,8 +51,8 @@ src/components/Board/forms/
 
 ### 📊 Réduction
 
-- **AppContext.jsx** : ~2377 → ~2250 lignes (-127 lignes vers hooks)
-- **Board2.jsx** : Marqueurs sections ajoutés, code duppliqué éliminé
+- **AppContext.jsx** : ~2400 → ~2323 lignes
+- **Board2.jsx** : 3644 lignes, marqueurs sections ajoutés
 
 ---
 
