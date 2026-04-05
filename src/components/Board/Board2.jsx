@@ -1236,6 +1236,11 @@ Affaire: ${commande.affaire || 'N/A'}
       return false;
     }
 
+    // Priority 0: Check if card has skip_action field directly
+    if (card.skip_action !== undefined) {
+      return card.skip_action;
+    }
+
     // Priority 1: use library_item_id if present
     if (card.library_item_id && libraryItems) {
       const libraryCard = libraryItems.find(item => item.id === card.library_item_id);

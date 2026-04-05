@@ -558,6 +558,7 @@ function LibraryPanel({ standalone = false }) {
   const toggleCardOnly = (card, forceState = null) => {
     const cardCategories = getCardCategories(card);
     const cardTitle = card.title;
+    const skipAction = getCardSkipAction(card);
     const isSelected = selectedCards.some(c => c.id === card.id);
     const shouldSelect = forceState !== null ? forceState : !isSelected;
 
@@ -567,29 +568,45 @@ function LibraryPanel({ standalone = false }) {
         return [...prev, card];
       });
 
-      cardCategories.forEach(cat => {
-        const catWithCard = { ...cat, cardTitle };
-        setSelectedCategories(prev => {
-          if (prev.some(c => c.title === cat.title && c.cardTitle === cardTitle)) return prev;
-          return [...prev, catWithCard];
-        });
-
-        (cat.subcategories || []).forEach(subcat => {
-          const subcatWithParents = { ...subcat, categoryTitle: cat.title, cardTitle };
-          setSelectedSubcategories(prev => {
-            if (
-              prev.some(
-                s =>
-                  s.title === subcat.title &&
-                  s.categoryTitle === cat.title &&
-                  s.cardTitle === cardTitle
-              )
-            )
-              return prev;
-            return [...prev, subcatWithParents];
+      if (skipAction) {
+        const allSubcats = [];
+        cardCategories.forEach(cat => {
+          (cat.subcategories || []).forEach(subcat => {
+            allSubcats.push({ ...subcat, categoryTitle: cat.title, cardTitle });
           });
         });
-      });
+        if (allSubcats.length === 1) {
+          setSelectedSubcategories(prev => {
+            const sub = allSubcats[0];
+            if (prev.some(s => s.title === sub.title && s.cardTitle === cardTitle)) return prev;
+            return [...prev, sub];
+          });
+        }
+      } else {
+        cardCategories.forEach(cat => {
+          const catWithCard = { ...cat, cardTitle };
+          setSelectedCategories(prev => {
+            if (prev.some(c => c.title === cat.title && c.cardTitle === cardTitle)) return prev;
+            return [...prev, catWithCard];
+          });
+
+          (cat.subcategories || []).forEach(subcat => {
+            const subcatWithParents = { ...subcat, categoryTitle: cat.title, cardTitle };
+            setSelectedSubcategories(prev => {
+              if (
+                prev.some(
+                  s =>
+                    s.title === subcat.title &&
+                    s.categoryTitle === cat.title &&
+                    s.cardTitle === cardTitle
+                )
+              )
+                return prev;
+              return [...prev, subcatWithParents];
+            });
+          });
+        });
+      }
     } else {
       setSelectedCards(prev => prev.filter(c => c.id !== card.id));
       setSelectedCategories(prevCats => prevCats.filter(c => c.cardTitle !== cardTitle));
@@ -1245,7 +1262,9 @@ function LibraryPanel({ standalone = false }) {
             null,
             null,
             null,
-            chapter
+            chapter,
+            card.id,
+            content.card?.skipAction || false
           );
           isNewCard = true;
           console.log('[DEBUG] Created new card, cardId:', cardId, 'isNewCard:', isNewCard);
@@ -1303,7 +1322,7 @@ function LibraryPanel({ standalone = false }) {
                   null,
                   subcat.duration_days || 1,
                   null,
-                  subcat.tag || cat.tag || null
+                  subcat.tag || subcat.systemTag || null
                 );
                 console.log('[DEBUG] Created subcategory directly:', subcat.title);
               } catch (e) {
