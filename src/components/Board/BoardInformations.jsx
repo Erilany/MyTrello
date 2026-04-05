@@ -12,7 +12,9 @@ import {
   Mail,
   X,
 } from 'lucide-react';
-import { loadGMRData, loadPriorityData, loadZonesData } from '../../data/GMRData';
+import { loadGMRData } from '../../data/GMRData';
+import { loadPriorityData } from '../../data/PriorityData';
+import { loadZonesData } from '../../data/ZonesData';
 
 function saveToStorage(key, value) {
   localStorage.setItem(`c-projets_board_${key}`, value);
