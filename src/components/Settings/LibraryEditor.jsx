@@ -19,13 +19,16 @@ import {
 import { libraryTemplates } from '../../data/libraryData';
 import { loadTagsData } from '../../data/TagsData';
 import { parseMSProjectXml } from '../../utils/xmlParser';
+import {
+  formatDuration,
+  parsePTDuration,
+  convertLibraryDataToTree,
+  parseCSV,
+  buildTree,
+  treeToCSV,
+} from './libraryEditorUtils';
 
 const STORAGE_KEY = 'c-projets_library_editor';
-
-function formatDuration(days) {
-  const hours = days * 24;
-  return `PT${hours}H0M0S`;
-}
 
 function convertTreeToLibraryItems(treeData) {
   const libraryItems = [];
@@ -165,14 +168,6 @@ function convertTreeToLibraryItems(treeData) {
   return libraryItems;
 }
 
-function parsePTDuration(ptStr) {
-  if (!ptStr || !ptStr.startsWith('PT')) return 0;
-  const match = ptStr.match(/PT(\d+)H(\d+)M(\d+)S/);
-  if (!match) return 0;
-  const hours = parseInt(match[1]) || 0;
-  return Math.floor(hours / 24);
-}
-
 // Fonction de migration pour restaurer les champs tags/temps manquants
 function migrateLibraryTree(tree) {
   const newTree = JSON.parse(JSON.stringify(tree));
@@ -208,121 +203,6 @@ function migrateLibraryTree(tree) {
 
   traverseNodes(newTree);
   return newTree;
-}
-
-function convertLibraryDataToTree(libraryItems) {
-  const tree = [];
-  const chapterMap = new Map();
-  const carteMap = new Map();
-
-  libraryItems.forEach(item => {
-    try {
-      const content = item.content_json
-        ? JSON.parse(item.content_json)
-        : { card: {}, categories: [] };
-      const cardTitle = content.card?.title || item.title;
-
-      const tagsStr = item.tags || '';
-      const tags = tagsStr.split(',');
-      const chapterTitle = tags[0] || 'Autre';
-
-      let chapter = chapterMap.get(chapterTitle);
-      if (!chapter) {
-        chapter = {
-          id: `chap_${chapterTitle}`,
-          type: 'chapitre',
-          titre: chapterTitle,
-          data: {
-            chapitre: chapterTitle,
-            carte: '',
-            categorie: '',
-            sousCat1: '',
-            sousCat2: '',
-            sousCat3: '',
-            temps: 0,
-          },
-          children: [],
-          expanded: true,
-        };
-        chapterMap.set(chapterTitle, chapter);
-        tree.push(chapter);
-      }
-
-      let carte = carteMap.get(`${chapterTitle}_${cardTitle}`);
-      if (!carte) {
-        carte = {
-          id: `carte_${chapterTitle}_${cardTitle}`,
-          type: 'carte',
-          titre: cardTitle,
-          data: {
-            chapitre: chapterTitle,
-            carte: cardTitle,
-            categorie: '',
-            sousCat1: '',
-            sousCat2: '',
-            sousCat3: '',
-            temps: item.duration || 0,
-            systemTag: '',
-            skipAction: content.card?.skipAction || false,
-          },
-          children: [],
-          expanded: true,
-        };
-        carteMap.set(`${chapterTitle}_${cardTitle}`, carte);
-        chapter.children.push(carte);
-      }
-
-      if (content.categories) {
-        content.categories.forEach(cat => {
-          const catId = `${chapterTitle}_${cardTitle}_${cat.title}`;
-          const categoryNode = {
-            id: `cat_${catId}`,
-            type: 'categorie',
-            titre: cat.title,
-            data: {
-              chapitre: chapterTitle,
-              carte: cardTitle,
-              categorie: cat.title,
-              sousCat1: '',
-              sousCat2: '',
-              sousCat3: '',
-              temps: cat.duration_days || 0,
-              systemTag: cat.tag || '',
-            },
-            children: [],
-            expanded: true,
-          };
-
-          if (cat.subcategories) {
-            cat.subcategories.forEach(subcat => {
-              const subcatNode = {
-                id: `subcat_${catId}_${subcat.title}`,
-                type: 'souscategorie',
-                titre: subcat.title,
-                data: {
-                  chapitre: chapterTitle,
-                  carte: cardTitle,
-                  categorie: cat.title,
-                  sousCat1: subcat.title,
-                  sousCat2: '',
-                  sousCat3: '',
-                  temps: subcat.duration_days || 0,
-                  systemTag: cat.tag || subcat.tag || '',
-                },
-                children: [],
-              };
-              categoryNode.children.push(subcatNode);
-            });
-          }
-          carte.children.push(categoryNode);
-        });
-      }
-    } catch (e) {
-      console.error('Error processing item:', item, e);
-    }
-  });
-
-  return tree;
 }
 
 const defaultCsvData = `N°;Chapitre;Carte;Action;Tâche;Temps;Tag Revue d'activité;Sans Action
@@ -623,203 +503,7 @@ const defaultCsvData = `N°;Chapitre;Carte;Action;Tâche;Temps;Tag Revue d'activ
 299;Etudes;Etudes;Etudes détaillées;;;;;;PT3003H0M0S;Etudes;
 300;Etudes;Etudes;Etudes détaillées;Etudes Postes;;;;;;PT2765H0M0S;Etudes;`;
 
-function parseCSV(csv) {
-  const lines = csv.trim().split('\n');
-  const items = [];
-
-  for (let i = 1; i < lines.length; i++) {
-    const values = lines[i].split(';');
-    if (values.length < 2) continue;
-
-    const isOldFormat = values.length >= 10;
-
-    const item = {
-      id: i,
-      numero: values[0] || '',
-      chapitre: values[1] || '',
-      carte: values[2] || '',
-      categorie: values[3] || '',
-      sousCat1: values[4] || '',
-      sousCat2: isOldFormat ? values[5] || '' : '',
-      sousCat3: isOldFormat ? values[6] || '' : '',
-      temps: parsePTDuration(isOldFormat ? values[7] : values[5]),
-      systemTag: isOldFormat ? values[8] || '' : values[6] || '',
-      skipAction: values.length > 7 ? values[7]?.toUpperCase() === 'OUI' : false,
-    };
-    items.push(item);
-  }
-  return items;
-}
-
-function buildTree(items) {
-  const root = [];
-  const chapitreMap = new Map();
-  const carteMap = new Map();
-
-  items.forEach(item => {
-    if (!item.chapitre) return;
-
-    let chapitre = chapitreMap.get(item.chapitre);
-    if (!chapitre) {
-      chapitre = {
-        id: `chap_${item.chapitre}`,
-        type: 'chapitre',
-        titre: item.chapitre,
-        data: { ...item, carte: '', categorie: '', sousCat1: '', sousCat2: '', sousCat3: '' },
-        children: [],
-        expanded: true,
-      };
-      chapitreMap.set(item.chapitre, chapitre);
-      root.push(chapitre);
-    }
-
-    if (item.carte) {
-      let carte = carteMap.get(`${item.chapitre}_${item.carte}`);
-      if (!carte) {
-        carte = {
-          id: `carte_${item.chapitre}_${item.carte}`,
-          type: 'carte',
-          titre: item.carte,
-          data: {
-            ...item,
-            sousCat1: '',
-            sousCat2: '',
-            sousCat3: '',
-            systemTag: '',
-            skipAction: item.skipAction || false,
-          },
-          children: [],
-          expanded: true,
-        };
-        carteMap.set(`${item.chapitre}_${item.carte}`, carte);
-        chapitre.children.push(carte);
-      }
-
-      if (item.categorie || item.sousCat1) {
-        const catId = `cat_${item.chapitre}_${item.carte}_${item.categorie || 'nocategory'}_${item.sousCat1 || 'nosouscat'}`;
-
-        let existingCat = null;
-        for (const child of carte.children) {
-          if (child.id === catId) {
-            existingCat = child;
-            break;
-          }
-        }
-
-        if (!existingCat) {
-          const cat = {
-            id: catId,
-            type: 'categorie',
-            titre: item.categorie || item.sousCat1 || '(Sans catégorie)',
-            data: { ...item, systemTag: '' },
-            children: [],
-            expanded: true,
-          };
-          carte.children.push(cat);
-
-          if (item.sousCat1) {
-            cat.children.push({
-              id: `${catId}_sc1_${item.sousCat1}`,
-              type: 'souscategorie',
-              titre: item.sousCat1,
-              data: { ...item, sousCat2: '', sousCat3: '' },
-              children: [],
-              expanded: true,
-            });
-          }
-          if (item.sousCat2) {
-            cat.children.push({
-              id: `${catId}_sc2_${item.sousCat2}`,
-              type: 'souscategorie',
-              titre: item.sousCat2,
-              data: { ...item, sousCat3: '' },
-              children: [],
-              expanded: true,
-            });
-          }
-          if (item.sousCat3) {
-            cat.children.push({
-              id: `${catId}_sc3_${item.sousCat3}`,
-              type: 'souscategorie',
-              titre: item.sousCat3,
-              data: { ...item },
-              children: [],
-              expanded: true,
-            });
-          }
-        }
-      }
-    }
-  });
-
-  return root;
-}
-
-function treeToCSV(nodes) {
-  let csv = "N°;Chapitre;Carte;Action;Tâche;Temps;Tag Revue d'activité;Sans Action\n";
-  let counter = 1;
-  const exportedCards = new Set();
-
-  const processNode = (node, chapitre = '', carte = '', categorie = '', skipAction = false) => {
-    let currentChapitre = chapitre;
-    let currentCarte = carte;
-    let currentCategorie = categorie;
-    let currentSkipAction = skipAction;
-
-    if (node.type === 'chapitre') {
-      currentChapitre = node.data.chapitre || node.titre;
-    } else if (node.type === 'carte') {
-      currentCarte = node.data.carte || node.titre;
-      currentSkipAction = node.data.skipAction || false;
-    } else if (node.type === 'categorie') {
-      currentCategorie = node.data.categorie || node.titre;
-    }
-
-    if (node.type === 'categorie' || node.type === 'souscategorie') {
-      const row = [
-        counter++,
-        currentChapitre,
-        currentCarte,
-        currentCategorie,
-        node.data.sousCat1 || '',
-        formatDuration(node.data.temps || 0),
-        node.data.systemTag || '',
-        '',
-      ];
-      csv += row.join(';') + '\n';
-    }
-
-    if (node.type === 'carte' && node.children && node.children.length > 0) {
-      const hasOnlySubcategories = node.children.every(c => c.type === 'souscategorie');
-      if (hasOnlySubcategories && currentSkipAction) {
-        node.children.forEach(child => {
-          const row = [
-            counter++,
-            currentChapitre,
-            currentCarte,
-            '',
-            child.data.sousCat1 || child.data.sousCat2 || child.data.sousCat3 || child.titre || '',
-            formatDuration(child.data.temps || 0),
-            child.data.systemTag || '',
-            'OUI',
-          ];
-          csv += row.join(';') + '\n';
-        });
-      } else {
-        node.children.forEach(child =>
-          processNode(child, currentChapitre, currentCarte, currentCategorie, currentSkipAction)
-        );
-      }
-    } else if (node.children) {
-      node.children.forEach(child =>
-        processNode(child, currentChapitre, currentCarte, currentCategorie, currentSkipAction)
-      );
-    }
-  };
-
-  nodes.forEach(node => processNode(node));
-  return csv;
-}
+// parseCSV, buildTree, treeToCSV imported from libraryEditorUtils
 
 function TreeNode({
   node,
