@@ -11,6 +11,8 @@ import {
   Clock,
   Archive,
   FolderOpen,
+  ArrowRight,
+  ArrowLeft,
 } from 'lucide-react';
 
 export const pageGuides = {
@@ -1867,6 +1869,5 @@ export const pageGuides = {
     ],
   },
 };
-
 
 export default pageGuides;
