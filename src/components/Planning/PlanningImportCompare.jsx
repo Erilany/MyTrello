@@ -1,23 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { X, Upload, Folder, FileText, List, CheckSquare, GripVertical, Trash2 } from 'lucide-react';
 import { parseMSProjectXmlWithDates } from '../../utils/xmlParser';
-
-const LEVEL_ICONS = {
-  1: Folder,
-  2: FileText,
-  3: List,
-  4: CheckSquare,
-};
-
-function formatDate(dateStr) {
-  if (!dateStr) return '-';
-  try {
-    const [year, month, day] = dateStr.split('-');
-    return `${day}/${month}/${year.slice(2)}`;
-  } catch {
-    return '-';
-  }
-}
+import { formatDate } from './planningUtils';
 
 function normalizeChapter(str) {
   if (!str) return '';
