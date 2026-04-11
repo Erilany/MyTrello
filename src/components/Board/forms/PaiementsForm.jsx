@@ -117,6 +117,9 @@ export function PaiementsForm({ autresLignes, setCommandeDetail }) {
               <div key={idx} className="p-3 bg-card-hover rounded-lg border border-std">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex-1">
+                    <span className="text-xs font-medium text-muted mr-2">
+                      {String(ligne.numero || '').padStart(3, '0')}.
+                    </span>
                     <span className="text-sm font-medium text-primary">
                       {ligne.designation || `Ligne ${ligne.numero}`}
                     </span>
