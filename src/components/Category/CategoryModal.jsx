@@ -3,6 +3,7 @@ import { useApp } from '../../context/AppContext';
 import { X, Bookmark } from 'lucide-react';
 import { loadTagsData } from '../../data/TagsData';
 import { addWorkingDays, subtractWorkingDays } from '../SubCategory/workingDaysUtils';
+import { COLORS } from '../../utils/colors';
 
 function CategoryModal({ category, onClose }) {
   const {
@@ -141,17 +142,6 @@ function CategoryModal({ category, onClose }) {
     { value: 'high', label: 'Haute', color: '#F97316' },
     { value: 'normal', label: 'Normale', color: '#22C55E' },
     { value: 'low', label: 'Basse', color: '#6B7280' },
-  ];
-
-  const colors = [
-    '#6366f1',
-    '#f59e0b',
-    '#22c55e',
-    '#ef4444',
-    '#3b82f6',
-    '#8b5cf6',
-    '#ec4899',
-    '#14b8a6',
   ];
 
   return (
@@ -318,7 +308,7 @@ function CategoryModal({ category, onClose }) {
           <div>
             <label className="block text-sm font-medium text-secondary mb-1">Couleur</label>
             <div className="flex gap-2">
-              {colors.map(c => (
+              {COLORS.map(c => (
                 <button
                   key={c}
                   onClick={() => setColor(c)}

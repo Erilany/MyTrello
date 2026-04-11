@@ -3,6 +3,7 @@ import { Droppable, Draggable } from '@hello-pangea/dnd';
 import { useApp } from '../../context/AppContext';
 import Card from '../Card/Card';
 import { MoreHorizontal, Plus, Pencil, Trash2, Palette } from 'lucide-react';
+import { COLORS } from '../../utils/colors';
 
 function Column({ column, index }) {
   const { cards, createCard, updateColumn, deleteColumn, currentBoard, cardColors } = useApp();
@@ -102,17 +103,6 @@ function Column({ column, index }) {
     setShowColorPicker(false);
   };
 
-  const colors = [
-    '#6366f1',
-    '#f59e0b',
-    '#22c55e',
-    '#ef4444',
-    '#3b82f6',
-    '#8b5cf6',
-    '#ec4899',
-    '#14b8a6',
-  ];
-
   const getAnimationClass = () => {
     return '';
   };
@@ -185,7 +175,7 @@ function Column({ column, index }) {
                 </button>
                 {showColorPicker && (
                   <div className="absolute left-full top-0 ml-1 bg-card rounded-lg shadow-card p-2 grid grid-cols-4 gap-1.5 z-[99999]">
-                    {colors.map(color => (
+                    {COLORS.map(color => (
                       <button
                         key={color}
                         onClick={() => handleColorChange(color)}
@@ -261,8 +251,7 @@ function Column({ column, index }) {
                       {...provided.draggableProps}
                       {...provided.dragHandleProps}
                       className="cursor-grab active:cursor-grabbing"
-                      onMouseDown={e => {
-                      }}
+                      onMouseDown={e => {}}
                     >
                       <Card
                         card={card}
