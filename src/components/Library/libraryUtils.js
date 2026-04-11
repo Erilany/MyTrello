@@ -1,35 +1,8 @@
-export function getCardCategories(cardItem) {
-  if (!cardItem || !cardItem.content_json) return [];
-  try {
-    const content = JSON.parse(cardItem.content_json);
-    return content.categories || [];
-  } catch {
-    return [];
-  }
-}
-
-export function getCardSkipAction(cardItem) {
-  if (!cardItem || !cardItem.content_json) return false;
-  try {
-    const content = JSON.parse(cardItem.content_json);
-    return content.card?.skipAction || false;
-  } catch {
-    return false;
-  }
-}
-
-export function getCardSubcategories(cardItem) {
-  const categories = getCardCategories(cardItem);
-  const subcategories = [];
-  categories.forEach(cat => {
-    if (cat.subcategories) {
-      cat.subcategories.forEach(subcat => {
-        subcategories.push({ ...subcat, categoryTitle: cat.title });
-      });
-    }
-  });
-  return subcategories;
-}
+export {
+  getCardCategories,
+  getCardSkipAction,
+  getCardSubcategories,
+} from '../Settings/favoritesUtils';
 
 export function getCategorySubcategories(category) {
   if (!category) return [];
