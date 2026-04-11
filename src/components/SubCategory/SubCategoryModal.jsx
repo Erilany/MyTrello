@@ -5,8 +5,6 @@ import 'react-quill/dist/quill.snow.css';
 import { X, Bookmark, Trash2, Mail, FileText, GripVertical } from 'lucide-react';
 import { loadTagsData } from '../../data/TagsData';
 import {
-  addWorkingDays,
-  subtractWorkingDays,
   sortEmails,
   handleDrop,
   handleOpenEmail,
@@ -19,6 +17,7 @@ import {
   quillModules,
   quillFormats,
 } from './subCategoryUtils';
+import { addWorkingDays, subtractWorkingDays } from './workingDaysUtils';
 
 function SubCategoryModal({ subcategory, onClose }) {
   const {

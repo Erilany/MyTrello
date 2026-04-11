@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { X, Bookmark } from 'lucide-react';
 import { loadTagsData } from '../../data/TagsData';
+import { addWorkingDays, subtractWorkingDays } from '../SubCategory/workingDaysUtils';
 
 function CategoryModal({ category, onClose }) {
   const {
@@ -60,36 +61,6 @@ function CategoryModal({ category, onClose }) {
       tempsRepere = cat?.duration_days || null;
     }
   }
-
-  // Helper to add working days (excluding weekends)
-  const addWorkingDays = (startDateStr, days) => {
-    if (!startDateStr || days <= 0) return '';
-    const date = new Date(startDateStr);
-    let daysAdded = 0;
-    while (daysAdded < days) {
-      date.setDate(date.getDate() + 1);
-      const dayOfWeek = date.getDay();
-      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-        daysAdded++;
-      }
-    }
-    return date.toISOString().split('T')[0];
-  };
-
-  // Helper to subtract working days
-  const subtractWorkingDays = (endDateStr, days) => {
-    if (!endDateStr || days <= 0) return '';
-    const date = new Date(endDateStr);
-    let daysSubtracted = 0;
-    while (daysSubtracted < days) {
-      date.setDate(date.getDate() - 1);
-      const dayOfWeek = date.getDay();
-      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-        daysSubtracted++;
-      }
-    }
-    return date.toISOString().split('T')[0];
-  };
 
   const handleDurationChange = newDuration => {
     const duration = parseInt(newDuration) || 1;
