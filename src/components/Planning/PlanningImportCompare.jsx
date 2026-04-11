@@ -1,17 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { X, Upload, Folder, FileText, List, CheckSquare, GripVertical, Trash2 } from 'lucide-react';
 import { parseMSProjectXmlWithDates } from '../../utils/xmlParser';
-import { formatDate } from './planningUtils';
-
-function normalizeChapter(str) {
-  if (!str) return '';
-  return str
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/s$/, '')
-    .trim();
-}
+import { formatDate, normalizeChapter } from './planningUtils';
 
 function PlanningImportCompare({
   isOpen,

@@ -5,6 +5,16 @@ export const LEVEL_ICONS = {
   4: 'CheckSquare',
 };
 
+export function normalizeChapter(str) {
+  if (!str) return '';
+  return str
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/s$/, '')
+    .trim();
+}
+
 export function formatDate(dateStr) {
   if (!dateStr) return '-';
   try {
