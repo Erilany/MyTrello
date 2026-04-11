@@ -1,11 +1,6 @@
-import React from 'react';
-import { BrowserRouter, Routes, Route, useLocation, useParams } from 'react-router-dom';
+import React, { lazy, Suspense, useEffect, useState } from 'react';
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { AppProvider, useApp } from './context/AppContext';
-import Board2 from './components/Board/Board2';
-import Settings from './components/Settings/Settings';
-import SystemSettings from './components/Settings/SystemSettings';
-import Archives from './components/Archives/Archives';
-import DonneesPage from './components/Donnees/DonneesPage';
 import Sidebar from './components/Sidebar/Sidebar';
 import Dashboard from './components/Dashboard/Dashboard';
 import Header from './components/Header/Header';
@@ -15,6 +10,20 @@ import CategoryModal from './components/Category/CategoryModal';
 import SubCategoryModal from './components/SubCategory/SubCategoryModal';
 import GuidePanel from './components/Guide/GuidePanel';
 import SearchPanel from './components/Search/SearchPanel';
+
+const Board2 = lazy(() => import('./components/Board/Board2'));
+const Settings = lazy(() => import('./components/Settings/Settings'));
+const SystemSettings = lazy(() => import('./components/Settings/SystemSettings'));
+const Archives = lazy(() => import('./components/Archives/Archives'));
+const DonneesPage = lazy(() => import('./components/Donnees/DonneesPage'));
+
+function LoadingFallback() {
+  return (
+    <div className="flex items-center justify-center h-full">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent"></div>
+    </div>
+  );
+}
 
 function Modals() {
   const {
@@ -46,13 +55,13 @@ function AppContent() {
   const { theme, boards, loadBoard, currentBoard, guideOpen, searchOpen } = useApp();
   const location = useLocation();
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (!currentBoard && boards.length > 0 && location.pathname === '/') {
       loadBoard(boards[0].id);
     }
   }, [boards, currentBoard, loadBoard, location.pathname]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const match = location.pathname.match(/^\/board(\/2)?\/(\d+)$/);
     if (match && currentBoard?.id !== parseInt(match[2])) {
       loadBoard(parseInt(match[2]));
@@ -71,17 +80,19 @@ function AppContent() {
         >
           <Header />
           <main className="flex-1 overflow-auto p-4 bg-app">
-            <Routes>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/board" element={<Board2 key={boardKey} />} />
-              <Route path="/board/:boardId" element={<Board2 key={boardKey} />} />
-              <Route path="/board2" element={<Board2 key={boardKey} />} />
-              <Route path="/board2/:boardId" element={<Board2 key={boardKey} />} />
-              <Route path="/library" element={<DonneesPage />} />
-              <Route path="/archives" element={<Archives />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/system-settings" element={<SystemSettings />} />
-            </Routes>
+            <Suspense fallback={<LoadingFallback />}>
+              <Routes>
+                <Route path="/" element={<Dashboard />} />
+                <Route path="/board" element={<Board2 key={boardKey} />} />
+                <Route path="/board/:boardId" element={<Board2 key={boardKey} />} />
+                <Route path="/board2" element={<Board2 key={boardKey} />} />
+                <Route path="/board2/:boardId" element={<Board2 key={boardKey} />} />
+                <Route path="/library" element={<DonneesPage />} />
+                <Route path="/archives" element={<Archives />} />
+                <Route path="/settings" element={<Settings />} />
+                <Route path="/system-settings" element={<SystemSettings />} />
+              </Routes>
+            </Suspense>
           </main>
         </div>
         {guideOpen && <GuidePanel />}
