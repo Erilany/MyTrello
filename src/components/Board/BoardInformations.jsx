@@ -225,82 +225,80 @@ export function BoardInformations({
       <div className="mb-6">
         <h3 className="text-sm font-semibold text-primary mb-3 flex items-center">
           <User size={16} className="mr-2" />
-          Contacts internes
+          Interlocuteurs internes
         </h3>
-        <div className="space-y-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           {internalContacts.map(contact => (
-            <div
-              key={contact.id}
-              className="flex items-center gap-2 p-2 bg-card rounded border border-std"
-            >
-              <Building size={14} className="text-muted" />
-              <span className="flex-1 text-sm text-primary">{contact.title}</span>
-              <button
-                onClick={() =>
-                  setInternalContacts(internalContacts.filter(c => c.id !== contact.id))
-                }
-                className="p-1 hover:bg-[var(--bg-card-hover)] rounded"
-              >
-                <Trash2 size={12} className="text-muted" />
-              </button>
+            <div key={contact.id} className="p-3 bg-card rounded-lg border border-std">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-primary">{contact.title}</span>
+                <button
+                  onClick={() =>
+                    setInternalContacts(internalContacts.filter(c => c.id !== contact.id))
+                  }
+                  className="text-muted hover:text-urgent"
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
+              <input
+                type="text"
+                placeholder="Nom et prénom"
+                value={contact.name || ''}
+                onChange={e => {
+                  const updated = internalContacts.map(c =>
+                    c.id === contact.id ? { ...c, name: e.target.value } : c
+                  );
+                  setInternalContacts(updated);
+                }}
+                className="w-full px-2 py-1 text-sm bg-input border border-std rounded text-primary placeholder-muted focus:outline-none focus:border-accent"
+              />
             </div>
           ))}
           {showAddInternal ? (
-            <div className="flex items-center gap-2">
+            <div className="p-3 bg-card rounded-lg border border-std">
               <input
                 type="text"
+                placeholder="Fonction"
                 value={newInternalTitle}
                 onChange={e => setNewInternalTitle(e.target.value)}
-                placeholder="Nom du contact"
-                className="flex-1 px-3 py-2 text-sm bg-input border border-std rounded text-primary focus:outline-none focus:border-accent"
-                onKeyDown={e => {
-                  if (e.key === 'Enter' && newInternalTitle.trim()) {
-                    setInternalContacts([
-                      ...internalContacts,
-                      { id: Date.now(), title: newInternalTitle.trim() },
-                    ]);
-                    setNewInternalTitle('');
-                    setShowAddInternal(false);
-                  }
-                  if (e.key === 'Escape') {
-                    setShowAddInternal(false);
-                    setNewInternalTitle('');
-                  }
-                }}
+                className="w-full px-2 py-1 text-sm bg-input border border-std rounded text-primary mb-2 focus:outline-none focus:border-accent"
                 autoFocus
               />
-              <button
-                onClick={() => {
-                  if (newInternalTitle.trim()) {
-                    setInternalContacts([
-                      ...internalContacts,
-                      { id: Date.now(), title: newInternalTitle.trim() },
-                    ]);
-                    setNewInternalTitle('');
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    if (newInternalTitle.trim()) {
+                      setInternalContacts([
+                        ...internalContacts,
+                        { id: Date.now(), title: newInternalTitle.trim() },
+                      ]);
+                      setNewInternalTitle('');
+                      setShowAddInternal(false);
+                    }
+                  }}
+                  className="px-2 py-1 text-xs bg-accent text-white rounded"
+                >
+                  Ajouter
+                </button>
+                <button
+                  onClick={() => {
                     setShowAddInternal(false);
-                  }
-                }}
-                className="px-3 py-2 bg-accent text-white rounded text-sm"
-              >
-                <Plus size={14} />
-              </button>
-              <button
-                onClick={() => {
-                  setShowAddInternal(false);
-                  setNewInternalTitle('');
-                }}
-                className="p-2 hover:bg-[var(--bg-card-hover)] rounded"
-              >
-                <X size={14} className="text-muted" />
-              </button>
+                    setNewInternalTitle('');
+                  }}
+                  className="px-2 py-1 text-xs text-secondary"
+                >
+                  Annuler
+                </button>
+              </div>
             </div>
           ) : (
             <button
               onClick={() => setShowAddInternal(true)}
-              className="w-full p-3 bg-card/50 rounded-lg border border-dashed border-std text-secondary hover:text-primary hover:border-accent transition-std flex items-center justify-center"
+              className="p-3 bg-card/50 rounded-lg border border-dashed border-std text-secondary hover:text-primary hover:border-accent transition-std flex items-center justify-center"
             >
               <PlusCircle size={16} className="mr-2" />
-              Ajouter un contact interne
+              Ajouter
             </button>
           )}
         </div>
