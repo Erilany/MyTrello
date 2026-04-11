@@ -3,6 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { LibraryEventListener } from './LibraryEventListener';
 import {
+  getCardCategories,
+  getCardSkipAction,
+  getCardSubcategories,
+  getCategorySubcategories,
+} from './libraryUtils';
+import {
   Trash2,
   Copy,
   Search,
@@ -446,44 +452,6 @@ function LibraryPanel({ standalone = false }) {
   const allTags = [
     ...new Set(libraryItems.flatMap(item => (item.tags || '').split(',').filter(Boolean))),
   ];
-
-  const getCardCategories = cardItem => {
-    if (!cardItem || !cardItem.content_json) return [];
-    try {
-      const content = JSON.parse(cardItem.content_json);
-      return content.categories || [];
-    } catch {
-      return [];
-    }
-  };
-
-  const getCardSkipAction = cardItem => {
-    if (!cardItem || !cardItem.content_json) return false;
-    try {
-      const content = JSON.parse(cardItem.content_json);
-      return content.card?.skipAction || false;
-    } catch {
-      return false;
-    }
-  };
-
-  const getCardSubcategories = cardItem => {
-    const categories = getCardCategories(cardItem);
-    const subcategories = [];
-    categories.forEach(cat => {
-      if (cat.subcategories) {
-        cat.subcategories.forEach(subcat => {
-          subcategories.push({ ...subcat, categoryTitle: cat.title });
-        });
-      }
-    });
-    return subcategories;
-  };
-
-  const getCategorySubcategories = category => {
-    if (!category) return [];
-    return category.subcategories || [];
-  };
 
   const handleCardClick = cardItem => {
     setSelectedLibraryCard(cardItem);
