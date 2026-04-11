@@ -42,7 +42,9 @@ function Sidebar() {
   const [menuOpenId, setMenuOpenId] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [showProjectsDropdown, setShowProjectsDropdown] = useState(false);
+  const [isHoveringDropdown, setIsHoveringDropdown] = useState(false);
   const dropdownRef = useRef(null);
+  const hideTimeoutRef = useRef(null);
 
   useEffect(() => {
     const handleClickOutside = event => {
@@ -99,13 +101,13 @@ function Sidebar() {
 
   if (!sidebarOpen) {
     return (
-      <div className="w-[80px] bg-sidebar flex flex-col border-r border-std">
+      <div className="w-[60px] bg-sidebar flex flex-col border-r border-std">
         <button
           onClick={() => setSidebarOpen(true)}
-          className="icon-btn text-secondary hover:text-primary m-2"
+          className="icon-btn text-secondary hover:text-primary p-2 mx-auto mt-1"
           title="Ouvrir le menu"
         >
-          <Layout size={20} />
+          <Layout size={18} />
         </button>
 
         <div className="flex-1 overflow-y-auto flex flex-col gap-1 py-2">
@@ -119,7 +121,19 @@ function Sidebar() {
             <Home size={20} />
           </NavLink>
 
-          <div className="relative" ref={dropdownRef}>
+          <div
+            className="relative"
+            ref={dropdownRef}
+            onMouseEnter={() => {
+              if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
+              setShowProjectsDropdown(true);
+            }}
+            onMouseLeave={() => {
+              hideTimeoutRef.current = setTimeout(() => {
+                if (!isHoveringDropdown) setShowProjectsDropdown(false);
+              }, 100);
+            }}
+          >
             <button
               onClick={() => setShowProjectsDropdown(!showProjectsDropdown)}
               className={`icon-btn ${showProjectsDropdown ? 'text-accent' : 'text-secondary hover:text-primary'}`}
@@ -128,7 +142,18 @@ function Sidebar() {
               <FolderOpen size={20} />
             </button>
             {showProjectsDropdown && (
-              <div className="absolute left-full top-0 ml-2 bg-sidebar border border-std rounded-lg shadow-lg z-50 min-w-[200px] max-h-[400px] overflow-y-auto">
+              <div
+                className="fixed bg-sidebar border border-std rounded-lg shadow-lg z-[100] min-w-[200px] max-h-[400px] overflow-y-auto"
+                style={{ left: '68px', top: '45px' }}
+                onMouseEnter={() => {
+                  if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
+                  setIsHoveringDropdown(true);
+                }}
+                onMouseLeave={() => {
+                  setIsHoveringDropdown(false);
+                  setShowProjectsDropdown(false);
+                }}
+              >
                 <div className="p-2 border-b border-std">
                   <span className="text-xs font-semibold text-muted uppercase">Projets</span>
                 </div>
