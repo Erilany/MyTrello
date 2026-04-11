@@ -4,7 +4,21 @@ import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import { X, Bookmark, Trash2, Mail, FileText, GripVertical } from 'lucide-react';
 import { loadTagsData } from '../../data/TagsData';
-import { parseMsgFile, isValidMsgFile } from '../../utils/msgParser';
+import {
+  addWorkingDays,
+  subtractWorkingDays,
+  sortEmails,
+  handleDrop,
+  handleOpenEmail,
+  sortMilestones,
+  createMilestone,
+  getMaxPositionWithoutDate,
+  priorities,
+  statuses,
+  getStatusBadgeClass,
+  quillModules,
+  quillFormats,
+} from './subCategoryUtils';
 
 function SubCategoryModal({ subcategory, onClose }) {
   const {
@@ -81,45 +95,6 @@ function SubCategoryModal({ subcategory, onClose }) {
     setEmails(loadedEmails);
   }, [subcategory.id]);
 
-  // Tri des emails
-  const sortEmails = emailsToSort => {
-    if (sortMode === 'date') {
-      return [...emailsToSort].sort((a, b) => new Date(a.date) - new Date(b.date));
-    }
-
-    if (sortMode === 'object-date') {
-      // 1. Calculer la date max par objet
-      const objectMaxDates = {};
-      emailsToSort.forEach(email => {
-        const date = new Date(email.date);
-        if (!objectMaxDates[email.subject] || date > objectMaxDates[email.subject]) {
-          objectMaxDates[email.subject] = date;
-        }
-      });
-
-      // 2. Objets triés par date max (récent → ancien), puis alphabétique
-      const sortedSubjects = Object.keys(objectMaxDates).sort((a, b) => {
-        const dateDiff = objectMaxDates[b] - objectMaxDates[a];
-        if (dateDiff !== 0) return dateDiff;
-        return a.localeCompare(b);
-      });
-
-      // 3. Construire le résultat: objets → emails triés (récent → ancien)
-      const sorted = [];
-      sortedSubjects.forEach(subject => {
-        const subjectEmails = emailsToSort
-          .filter(e => e.subject === subject)
-          .sort((a, b) => new Date(b.date) - new Date(a.date));
-        sorted.push(...subjectEmails);
-      });
-
-      return sorted;
-    }
-
-    return emailsToSort;
-  };
-
-  // Drag & drop handlers
   const handleDragOver = e => {
     e.preventDefault();
     e.stopPropagation();
@@ -132,88 +107,13 @@ function SubCategoryModal({ subcategory, onClose }) {
     setIsDragOver(false);
   };
 
-  const handleDrop = async e => {
+  const onDrop = async e => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragOver(false);
-
     const files = Array.from(e.dataTransfer.files);
-    const msgFiles = files.filter(f => isValidMsgFile(f));
-
-    if (msgFiles.length === 0) {
-      alert('Seuls les fichiers .msg sont acceptés');
-      return;
-    }
-
-    for (const file of msgFiles) {
-      try {
-        const metadata = await parseMsgFile(file);
-
-        // Convert file to base64 for storage
-        const reader = new FileReader();
-        reader.onload = event => {
-          const base64Data = event.target.result;
-          const emailData = {
-            date: metadata.date,
-            subject: metadata.subject,
-            filepath: base64Data,
-            filename: metadata.filename,
-          };
-          const emailId = addEmailToSubcategory(subcategory.id, emailData);
-
-          // Update local state with all data including filepath
-          setEmails(prev => [
-            ...prev,
-            {
-              id: emailId,
-              subcategory_id: subcategory.id,
-              ...emailData,
-            },
-          ]);
-        };
-        reader.readAsDataURL(file);
-      } catch (error) {
-        console.error('Error processing MSG file:', error);
-        alert('Erreur lors du traitement du fichier');
-      }
-    }
-  };
-
-  const handleOpenEmail = async email => {
-    const fileData = email.filepath;
-    if (!fileData) {
-      console.error('[handleOpenEmail] No filepath in email:', email);
-      alert('Fichier email non disponible');
-      return;
-    }
-
-    console.log('[handleOpenEmail] Opening email:', email.filename);
-
-    try {
-      const base64Response = fileData.includes(',') ? fileData.split(',')[1] : fileData;
-      const binaryString = atob(base64Response);
-      const bytes = new Uint8Array(binaryString.length);
-      for (let i = 0; i < binaryString.length; i++) {
-        bytes[i] = binaryString.charCodeAt(i);
-      }
-
-      const blob = new Blob([bytes], { type: 'application/vnd.ms-outlook' });
-      const url = URL.createObjectURL(blob);
-
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = email.filename || 'email.msg';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-      setTimeout(() => URL.revokeObjectURL(url), 60000);
-
-      console.log('[handleOpenEmail] File downloaded:', email.filename);
-    } catch (error) {
-      console.error('[handleOpenEmail] Error:', error);
-      alert("Erreur lors de l'ouverture du fichier: " + error.message);
-    }
+    const newEmails = await handleDrop(files, subcategory.id, addEmailToSubcategory);
+    setEmails(prev => [...prev, ...newEmails]);
   };
 
   const handleDeleteEmail = emailId => {
@@ -234,13 +134,6 @@ function SubCategoryModal({ subcategory, onClose }) {
     setEditingEmailId(null);
     setEditingSubject('');
   };
-
-  // Quill toolbar configuration
-  const modules = {
-    toolbar: [['bold', 'underline'], [{ color: ['#000000', '#ef4444', '#3b82f6', '#22c55e'] }]],
-  };
-
-  const formats = ['bold', 'underline', 'color'];
 
   // MS Project fields
   const [startDate, setStartDate] = useState(subcategory.start_date || '');
@@ -281,14 +174,6 @@ function SubCategoryModal({ subcategory, onClose }) {
   const [newMilestoneDate, setNewMilestoneDate] = useState('');
   const [draggedId, setDraggedId] = useState(null);
 
-  const sortMilestones = ms => {
-    const withoutDate = ms
-      .filter(m => !m.date)
-      .sort((a, b) => (a.position || 0) - (b.position || 0));
-    const withDate = ms.filter(m => m.date).sort((a, b) => new Date(a.date) - new Date(b.date));
-    return [...withoutDate, ...withDate];
-  };
-
   useEffect(() => {
     const handleMilestoneUpdated = () => {
       const data = localStorage.getItem('c-projets_db');
@@ -313,38 +198,6 @@ function SubCategoryModal({ subcategory, onClose }) {
   useEffect(() => {
     setMilestones(sortMilestones(subcategory.milestones || []));
   }, [subcategory.id]);
-
-  // Helper to add working days (excluding weekends)
-  const addWorkingDays = (startDateStr, days) => {
-    if (!startDateStr || days < 0) return '';
-    if (days === 0) return startDateStr;
-    const date = new Date(startDateStr);
-    let daysAdded = 0;
-    while (daysAdded < days) {
-      date.setDate(date.getDate() + 1);
-      const dayOfWeek = date.getDay();
-      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-        daysAdded++;
-      }
-    }
-    return date.toISOString().split('T')[0];
-  };
-
-  // Helper to subtract working days
-  const subtractWorkingDays = (endDateStr, days) => {
-    if (!endDateStr || days < 0) return '';
-    if (days === 0) return endDateStr;
-    const date = new Date(endDateStr);
-    let daysSubtracted = 0;
-    while (daysSubtracted < days) {
-      date.setDate(date.getDate() - 1);
-      const dayOfWeek = date.getDay();
-      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-        daysSubtracted++;
-      }
-    }
-    return date.toISOString().split('T')[0];
-  };
 
   const handleDurationChange = newDuration => {
     const duration = parseInt(newDuration) || 0;
@@ -536,33 +389,6 @@ function SubCategoryModal({ subcategory, onClose }) {
     setDraggedId(null);
   };
 
-  const priorities = [
-    { value: 'urgent', label: 'Urgent' },
-    { value: 'high', label: 'Haute' },
-    { value: 'normal', label: 'Normale' },
-    { value: 'low', label: 'Basse' },
-  ];
-
-  const statuses = [
-    { value: 'todo', label: 'À faire' },
-    { value: 'in_progress', label: 'En cours' },
-    { value: 'waiting', label: 'En attente' },
-    { value: 'done', label: 'Terminé' },
-  ];
-
-  const getStatusBadgeClass = s => {
-    switch (s) {
-      case 'done':
-        return 'bg-green-100 text-green-700 border-green-300';
-      case 'in_progress':
-        return 'bg-yellow-100 text-yellow-700 border-yellow-300';
-      case 'waiting':
-        return 'bg-blue-100 text-blue-700 border-blue-300';
-      default:
-        return 'bg-orange-100 text-orange-700 border-orange-300';
-    }
-  };
-
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[99999]">
       <div
@@ -630,8 +456,8 @@ function SubCategoryModal({ subcategory, onClose }) {
                   theme="snow"
                   value={description}
                   onChange={setDescription}
-                  modules={modules}
-                  formats={formats}
+                  modules={quillModules}
+                  formats={quillFormats}
                   className="text-primary"
                 />
               </div>
@@ -943,7 +769,7 @@ function SubCategoryModal({ subcategory, onClose }) {
                   className={`w-40 flex-shrink-0 p-3 border-r border-std flex flex-col items-center justify-center transition-colors h-[300px] ${isDragOver ? 'bg-accent-soft border-accent' : ''}`}
                   onDragOver={handleDragOver}
                   onDragLeave={handleDragLeave}
-                  onDrop={handleDrop}
+                  onDrop={onDrop}
                 >
                   <GripVertical size={32} className="text-muted mb-3" />
                   <p className="text-sm text-muted text-center font-medium">Drop .msg</p>
@@ -956,7 +782,7 @@ function SubCategoryModal({ subcategory, onClose }) {
                   {emails.length === 0 ? (
                     <p className="text-xs text-muted text-center py-4">Aucun email</p>
                   ) : (
-                    sortEmails(emails).map(email => (
+                    sortEmails(emails, sortMode).map(email => (
                       <div
                         key={email.id}
                         className="p-2 bg-card-hover rounded hover:bg-card-hover/80 transition-colors group"
