@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
-import { X, Calendar, Plus, Folder } from 'lucide-react';
+import { X, Calendar, Plus, Folder, Mail } from 'lucide-react';
 
 function CardModal({ card, onClose }) {
   const {
@@ -11,11 +11,35 @@ function CardModal({ card, onClose }) {
     createCategory,
     cards,
     libraryItems,
+    getEmailsForSubcategory,
   } = useApp();
 
   const [title, setTitle] = useState(card.title);
+
+  useEffect(() => {
+    console.log('[CardModal] MOUNTED for card:', card.id, card.title);
+  }, []);
   const [description, setDescription] = useState(card.description || '');
   const [dueDate, setDueDate] = useState(card.due_date || '');
+
+  const filteredSubs = subcategories?.filter(s => s && Number(s.card_id) === Number(card.id)) || [];
+  let totalEmails = 0;
+  for (const sub of filteredSubs) {
+    try {
+      const emails = getEmailsForSubcategory ? getEmailsForSubcategory(sub.id) : [];
+      const count = emails?.length || 0;
+      if (count > 0) console.log('[CardModal] FOUND sub:', sub.id, sub.title, 'emails:', count);
+      totalEmails += count;
+    } catch (e) {}
+  }
+  console.log(
+    '[CardModal] card:',
+    card.title,
+    'filtered subs:',
+    filteredSubs.length,
+    'totalEmails:',
+    totalEmails
+  );
   const [newCategoryTitle, setNewCategoryTitle] = useState('');
 
   // MS Project fields
@@ -152,12 +176,20 @@ function CardModal({ card, onClose }) {
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center justify-between p-4 border-b border-std">
-          <input
-            type="text"
-            value={title}
-            onChange={e => setTitle(e.target.value)}
-            className="text-lg font-display font-bold flex-1 mr-4 border-none focus:outline-none bg-transparent text-primary"
-          />
+          <div className="flex items-center gap-2 flex-1">
+            {totalEmails > 0 && (
+              <div className="flex items-center gap-1 px-2 py-1 bg-blue-500/20 text-blue-400 rounded-full text-sm">
+                <Mail size={14} />
+                <span>{totalEmails}</span>
+              </div>
+            )}
+            <input
+              type="text"
+              value={title}
+              onChange={e => setTitle(e.target.value)}
+              className="text-lg font-display font-bold flex-1 mr-4 border-none focus:outline-none bg-transparent text-primary"
+            />
+          </div>
           <button onClick={onClose} className="icon-btn">
             <X size={20} />
           </button>
