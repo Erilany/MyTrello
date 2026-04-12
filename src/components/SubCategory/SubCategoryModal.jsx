@@ -396,6 +396,12 @@ function SubCategoryModal({ subcategory, onClose }) {
       >
         <div className="p-4 border-b border-std flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
+            {emails.length > 0 && (
+              <div className="flex items-center gap-1 px-2 py-1 bg-blue-500/20 text-blue-400 rounded-full text-sm">
+                <Mail size={14} />
+                <span>{emails.length}</span>
+              </div>
+            )}
             <input
               type="text"
               value={title}
@@ -405,8 +411,8 @@ function SubCategoryModal({ subcategory, onClose }) {
             />
             <button
               onClick={() => setEmailPanelOpen(!emailPanelOpen)}
-              className={`p-2 rounded-lg transition-colors ${emailPanelOpen ? 'bg-accent text-white' : 'bg-card-hover text-secondary hover:text-accent'}`}
-              title="Afficher/Masquer les emails"
+              className={`p-2 rounded-lg transition-colors ${emailPanelOpen ? 'bg-accent text-white' : emails.length > 0 ? 'bg-blue-500 text-white' : 'bg-card-hover text-secondary hover:text-accent'}`}
+              title={emails.length > 0 ? `${emails.length} email(s) lié(s)` : 'Aucun email'}
             >
               <Mail size={18} />
             </button>

@@ -3,7 +3,15 @@ import { Draggable } from '@hello-pangea/dnd';
 import { useApp } from '../../context/AppContext';
 import SubCategory from '../SubCategory/SubCategory';
 import CategoryModal from './CategoryModal';
-import { MoreHorizontal, ChevronDown, ChevronRight, Trash2, BookMarked, Plus } from 'lucide-react';
+import {
+  MoreHorizontal,
+  ChevronDown,
+  ChevronRight,
+  Trash2,
+  BookMarked,
+  Plus,
+  Mail,
+} from 'lucide-react';
 
 function Category({ category, isDragging = false, dragHandleProps, depth = 0 }) {
   const {
@@ -16,7 +24,13 @@ function Category({ category, isDragging = false, dragHandleProps, depth = 0 }) 
     createCategory,
     moveCategory,
     moveSubcategory,
+    getEmailsForSubcategory,
   } = useApp();
+
+  const catSubcategories = subcategories?.filter(s => s.category_id === category.id) || [];
+  const hasEmails = catSubcategories.some(
+    sub => getEmailsForSubcategory && getEmailsForSubcategory(sub.id)?.length > 0
+  );
 
   const [showMenu, setShowMenu] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -250,6 +264,13 @@ function Category({ category, isDragging = false, dragHandleProps, depth = 0 }) 
 
               {category.assignee && (
                 <span className="badge badge-category">{category.assignee}</span>
+              )}
+
+              {hasEmails && (
+                <span className="badge bg-blue-500/20 text-blue-400 flex items-center gap-1">
+                  <Mail size={12} />
+                  Email
+                </span>
               )}
             </div>
           </div>

@@ -1,10 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import SubCategoryModal from './SubCategoryModal';
-import { MoreHorizontal, Trash2, BookMarked } from 'lucide-react';
+import { MoreHorizontal, Trash2, BookMarked, Mail } from 'lucide-react';
 
 function SubCategory({ subcategory, isDragging = false }) {
-  const { updateSubcategory, deleteSubcategory, saveToLibrary, setSelectedSubcategory } = useApp();
+  const {
+    updateSubcategory,
+    deleteSubcategory,
+    saveToLibrary,
+    setSelectedSubcategory,
+    getEmailsForSubcategory,
+  } = useApp();
+
+  const hasEmails = getEmailsForSubcategory && getEmailsForSubcategory(subcategory.id)?.length > 0;
 
   const [showMenu, setShowMenu] = useState(false);
 
@@ -128,6 +136,13 @@ function SubCategory({ subcategory, isDragging = false }) {
 
             {subcategory.assignee && (
               <span className="badge badge-category">{subcategory.assignee}</span>
+            )}
+
+            {hasEmails && (
+              <span className="badge bg-blue-500/20 text-blue-400 flex items-center gap-1">
+                <Mail size={12} />
+                Email
+              </span>
             )}
           </div>
         </div>
