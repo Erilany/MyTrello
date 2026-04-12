@@ -10,6 +10,7 @@ import {
   Archive,
   Trash2,
   BookMarked,
+  Mail,
 } from 'lucide-react';
 
 function Card({ card, isDragging, columnColor, columnTitle }) {
@@ -18,13 +19,10 @@ function Card({ card, isDragging, columnColor, columnTitle }) {
     updateCard,
     deleteCard,
     archiveCard,
+    setSelectedCard,
     saveToLibrary,
     subcategories,
-    setSelectedCard,
-    selectedCard,
-    cardColors,
-    moveCategory,
-    moveSubcategory,
+    getEmailsForSubcategory,
   } = useApp();
 
   const [showMenu, setShowMenu] = useState(false);
@@ -120,6 +118,21 @@ function Card({ card, isDragging, columnColor, columnTitle }) {
     };
   };
 
+  const cardSubcategories = subcategories?.filter(s => s.card_id === card.id) || [];
+  let hasEmails = false;
+  for (const sub of cardSubcategories) {
+    if (getEmailsForSubcategory) {
+      const emails = getEmailsForSubcategory(sub.id);
+      if (emails && emails.length > 0) {
+        hasEmails = true;
+        break;
+      }
+    }
+  }
+  if (hasEmails) {
+    console.log('[Card] EMAIL DETECTED for card:', card.id, card.title);
+  }
+
   const priorityBadge = getPriorityBadge();
   const dateInfo = formatDate(card.due_date);
 
@@ -200,6 +213,13 @@ function Card({ card, isDragging, columnColor, columnTitle }) {
                 )}
 
                 {card.assignee && <span className="badge badge-category">{card.assignee}</span>}
+
+                {hasEmails && (
+                  <span className="badge bg-blue-500/20 text-blue-400 flex items-center gap-1">
+                    <Mail size={12} />
+                    Email
+                  </span>
+                )}
               </div>
             </div>
 
