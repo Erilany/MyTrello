@@ -10,6 +10,21 @@ export function normalizeChapter(str) {
     .trim();
 }
 
+export function isSpacer(item) {
+  return typeof item === 'string' && item.startsWith('__spacer_');
+}
+
+export function fallbackToBat(folderPath) {
+  const batContent = `@echo off\nstart explorer "${folderPath}"`;
+  const blob = new Blob([batContent], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'open_folder.bat';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
 export function normalizeString(str) {
   if (!str) return '';
   return str.toLowerCase().trim().replace(/\s+/g, ' ');

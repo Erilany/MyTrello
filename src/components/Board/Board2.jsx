@@ -8,6 +8,8 @@ import { PaiementsForm } from './forms/PaiementsForm';
 import {
   normalizeChapter,
   normalizeString,
+  isSpacer,
+  fallbackToBat,
   getCardSkipAction,
   getCardTasks,
   getLibraryCardForProjectCard,
@@ -231,17 +233,6 @@ function Board2() {
       localStorage.setItem(`board-${boardId}-${key}`, value);
     } else {
     }
-  };
-
-  const fallbackToBat = folderPath => {
-    const batContent = `@echo off\nstart explorer "${folderPath}"`;
-    const blob = new Blob([batContent], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'open_folder.bat';
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
 
   const saveLinks = () => saveToStorage('links', JSON.stringify(links));
@@ -1320,7 +1311,6 @@ Affaire: ${commande.affaire || 'N/A'}
             <div className="mb-4 flex flex-wrap gap-2">
               {(() => {
                 const orderedChapters = getOrderedChapters();
-                const isSpacer = item => typeof item === 'string' && item.startsWith('__spacer_');
 
                 return orderedChapters.map((chapter, idx) => {
                   const spacer = isSpacer(chapter);
