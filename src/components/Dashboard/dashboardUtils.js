@@ -132,7 +132,18 @@ export function getUpcomingTasks(
       const card = category ? cards.find(c => Number(c.id) === Number(category.card_id)) : null;
       const column = card ? columns.find(col => Number(col.id) === Number(card.column_id)) : null;
       const board = column ? boards.find(b => Number(b.id) === Number(column.board_id)) : null;
-      return { ...sub, category, card, board };
+      let milestones = sub.milestones;
+      if (typeof milestones === 'string') {
+        try {
+          milestones = JSON.parse(milestones);
+        } catch (e) {
+          milestones = [];
+        }
+      }
+      const taskMilestones = Array.isArray(milestones)
+        ? milestones.filter(m => !m.done && m.date)
+        : [];
+      return { ...sub, category, card, board, milestones: taskMilestones };
     })
     .filter(task => task.board)
     .sort((a, b) => new Date(a.due_date) - new Date(b.due_date));
