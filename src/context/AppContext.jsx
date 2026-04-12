@@ -1756,6 +1756,7 @@ export function AppProvider({ children }) {
       subject: emailData.subject,
       filepath: emailData.filepath,
       filename: emailData.filename,
+      status: 'pending',
       created_at: new Date().toISOString(),
     };
     const newDb = {
@@ -1784,6 +1785,16 @@ export function AppProvider({ children }) {
       ...db,
       subcategoryEmails: (db.subcategoryEmails || []).map(e =>
         Number(e.id) === Number(emailId) ? { ...e, subject: newSubject } : e
+      ),
+    };
+    saveDb(newDb);
+  };
+
+  const updateEmailStatus = (emailId, newStatus) => {
+    const newDb = {
+      ...db,
+      subcategoryEmails: (db.subcategoryEmails || []).map(e =>
+        Number(e.id) === Number(emailId) ? { ...e, status: newStatus } : e
       ),
     };
     saveDb(newDb);
@@ -2280,6 +2291,7 @@ export function AppProvider({ children }) {
     addEmailToSubcategory,
     removeEmailFromSubcategory,
     updateEmailSubject,
+    updateEmailStatus,
     getEmailsForSubcategory,
     saveEmailFile,
     getEmailFile,

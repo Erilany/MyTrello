@@ -72,6 +72,7 @@ function Board2() {
     setSelectedCommande: contextSetSelectedCommande,
     activeTabCommande: contextActiveTabCommande,
     setActiveTabCommande: contextSetActiveTabCommande,
+    getEmailsForSubcategory,
   } = useApp();
 
   // =============================================================================
@@ -1482,7 +1483,7 @@ Affaire: ${commande.affaire || 'N/A'}
                                             <div className="text-sm text-[var(--txt-primary)] truncate">
                                               {sub.title}
                                             </div>
-                                            <div className="flex items-center gap-2 text-xs text-[var(--txt-muted)]">
+                                            <div className="flex items-center gap-[10px] text-xs text-[var(--txt-muted)]">
                                               {sub.assignee && (
                                                 <span className="truncate">👤 {sub.assignee}</span>
                                               )}
@@ -1494,6 +1495,30 @@ Affaire: ${commande.affaire || 'N/A'}
                                                   )}
                                                 </span>
                                               )}
+                                              {getEmailsForSubcategory &&
+                                                getEmailsForSubcategory(sub.id)?.length > 0 &&
+                                                (() => {
+                                                  const emails = getEmailsForSubcategory(sub.id);
+                                                  const hasPending = emails.some(
+                                                    e => !e.status || e.status === 'pending'
+                                                  );
+                                                  return (
+                                                    <span
+                                                      style={{
+                                                        color: hasPending
+                                                          ? '#ef4444 !important'
+                                                          : '#22c55e !important',
+                                                      }}
+                                                    >
+                                                      <Mail
+                                                        size={14}
+                                                        style={{
+                                                          color: hasPending ? '#ef4444' : '#22c55e',
+                                                        }}
+                                                      />
+                                                    </span>
+                                                  );
+                                                })()}
                                             </div>
                                           </div>
                                         </div>
@@ -1591,7 +1616,7 @@ Affaire: ${commande.affaire || 'N/A'}
                                                       <div className="text-xs text-[var(--txt-primary)] truncate">
                                                         {sub.title}
                                                       </div>
-                                                      <div className="flex items-center gap-2 text-xs text-[var(--txt-muted)]">
+                                                      <div className="flex items-center gap-[10px] text-xs text-[var(--txt-muted)]">
                                                         {sub.assignee && (
                                                           <span className="truncate">
                                                             👤 {sub.assignee}
@@ -1605,6 +1630,38 @@ Affaire: ${commande.affaire || 'N/A'}
                                                             ).toLocaleDateString('fr-FR')}
                                                           </span>
                                                         )}
+                                                        {getEmailsForSubcategory &&
+                                                          getEmailsForSubcategory(sub.id)?.length >
+                                                            0 && (
+                                                            <span
+                                                              style={{
+                                                                color: getEmailsForSubcategory(
+                                                                  sub.id
+                                                                ).some(
+                                                                  e =>
+                                                                    !e.status ||
+                                                                    e.status === 'pending'
+                                                                )
+                                                                  ? '#ef4444 !important'
+                                                                  : '#22c55e !important',
+                                                              }}
+                                                            >
+                                                              <Mail
+                                                                size={14}
+                                                                style={{
+                                                                  color: getEmailsForSubcategory(
+                                                                    sub.id
+                                                                  ).some(
+                                                                    e =>
+                                                                      !e.status ||
+                                                                      e.status === 'pending'
+                                                                  )
+                                                                    ? '#ef4444'
+                                                                    : '#22c55e',
+                                                                }}
+                                                              />
+                                                            </span>
+                                                          )}
                                                       </div>
                                                     </div>
                                                   </div>
@@ -1706,15 +1763,28 @@ Affaire: ${commande.affaire || 'N/A'}
                                     <Trash2 size={14} />
                                   </button>
                                 </div>
-                                <div className="flex items-center gap-3 mt-1 text-xs text-muted pl-7">
+                                <div className="flex items-center gap-[10px] mt-1 text-xs text-muted pl-7">
                                   {subcat.assignee && (
-                                    <span className="flex items-center gap-1">
+                                    <span className="flex items-center gap-[10px]">
                                       👤 {subcat.assignee}
                                     </span>
                                   )}
                                   {subcat.due_date && (
-                                    <span className="flex items-center gap-1">
+                                    <span className="flex items-center gap-[10px]">
                                       📅 {new Date(subcat.due_date).toLocaleDateString('fr-FR')}
+                                      {getEmailsForSubcategory &&
+                                        getEmailsForSubcategory(subcat.id)?.length > 0 && (
+                                          <Mail
+                                            size={14}
+                                            style={{
+                                              color: getEmailsForSubcategory(subcat.id).some(
+                                                e => !e.status || e.status === 'pending'
+                                              )
+                                                ? '#ef4444'
+                                                : '#22c55e',
+                                            }}
+                                          />
+                                        )}
                                     </span>
                                   )}
                                 </div>
@@ -2554,7 +2624,7 @@ Affaire: ${commande.affaire || 'N/A'}
                                   )}
                                   <span className="font-semibold">{category.label}</span>
                                 </div>
-                                <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-[10px]">
                                   <span className="text-xs font-medium">
                                     {count.checked}/{count.total}
                                   </span>

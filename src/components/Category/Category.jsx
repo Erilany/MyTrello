@@ -263,10 +263,13 @@ function Category({ category, isDragging = false, dragHandleProps, depth = 0 }) 
               )}
 
               {category.assignee && (
-                <span className="badge badge-category">{category.assignee}</span>
+                <span className="badge badge-category">
+                  {category.assignee}
+                  {hasEmails && <Mail size={12} className="ml-1" />}
+                </span>
               )}
 
-              {hasEmails && (
+              {hasEmails && !category.assignee && (
                 <span className="badge bg-blue-500/20 text-blue-400 flex items-center gap-1">
                   <Mail size={12} />
                   Email

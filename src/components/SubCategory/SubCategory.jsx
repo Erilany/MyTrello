@@ -12,7 +12,9 @@ function SubCategory({ subcategory, isDragging = false }) {
     getEmailsForSubcategory,
   } = useApp();
 
-  const hasEmails = getEmailsForSubcategory && getEmailsForSubcategory(subcategory.id)?.length > 0;
+  const hasEmails = getEmailsForSubcategory
+    ? getEmailsForSubcategory(subcategory.id)?.length > 0
+    : false;
 
   const [showMenu, setShowMenu] = useState(false);
 
@@ -136,10 +138,13 @@ function SubCategory({ subcategory, isDragging = false }) {
             )}
 
             {subcategory.assignee && (
-              <span className="badge badge-category">{subcategory.assignee}</span>
+              <span className="badge badge-category">
+                {subcategory.assignee}
+                {hasEmails && <Mail size={12} className="ml-1" />}
+              </span>
             )}
 
-            {hasEmails && (
+            {hasEmails && !subcategory.assignee && (
               <span className="badge bg-blue-500/20 text-blue-400 flex items-center gap-1">
                 <Mail size={12} />
                 Email

@@ -29,6 +29,7 @@ function SubCategoryModal({ subcategory, onClose }) {
     addEmailToSubcategory,
     removeEmailFromSubcategory,
     updateEmailSubject,
+    updateEmailStatus,
     getEmailsForSubcategory,
     saveEmailFile,
     getEmailFile,
@@ -824,6 +825,23 @@ function SubCategoryModal({ subcategory, onClose }) {
                               </span>
                             )}
                           </div>
+                          <button
+                            onClick={() => {
+                              const newStatus = email.status === 'pending' ? 'done' : 'pending';
+                              updateEmailStatus(email.id, newStatus);
+                              setEmails(prev =>
+                                prev.map(e => (e.id === email.id ? { ...e, status: newStatus } : e))
+                              );
+                            }}
+                            className={`px-2 py-0.5 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity ${
+                              email.status === 'pending'
+                                ? 'bg-red-500/20 text-red-500 hover:bg-red-500/30'
+                                : 'bg-green-500/20 text-green-500 hover:bg-green-500/30'
+                            }`}
+                            title={email.status === 'pending' ? 'À traiter' : 'Traité'}
+                          >
+                            {email.status === 'pending' ? 'À traiter' : 'Traité'}
+                          </button>
                           <button
                             onClick={() => handleDeleteEmail(email.id)}
                             className="p-1 text-muted hover:text-urgent opacity-0 group-hover:opacity-100 transition-opacity"

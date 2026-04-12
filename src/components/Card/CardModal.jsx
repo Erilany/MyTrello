@@ -22,24 +22,19 @@ function CardModal({ card, onClose }) {
   const [description, setDescription] = useState(card.description || '');
   const [dueDate, setDueDate] = useState(card.due_date || '');
 
-  const filteredSubs = subcategories?.filter(s => s && Number(s.card_id) === Number(card.id)) || [];
+  // Get categories for this card, then subcategories, then emails
+  const cardCategories = categories?.filter(c => Number(c.card_id) === Number(card.id)) || [];
   let totalEmails = 0;
-  for (const sub of filteredSubs) {
-    try {
-      const emails = getEmailsForSubcategory ? getEmailsForSubcategory(sub.id) : [];
-      const count = emails?.length || 0;
-      if (count > 0) console.log('[CardModal] FOUND sub:', sub.id, sub.title, 'emails:', count);
-      totalEmails += count;
-    } catch (e) {}
+  for (const cat of cardCategories) {
+    const catSubcategories =
+      subcategories?.filter(s => Number(s.category_id) === Number(cat.id)) || [];
+    for (const sub of catSubcategories) {
+      try {
+        const emails = getEmailsForSubcategory ? getEmailsForSubcategory(sub.id) : [];
+        totalEmails += emails?.length || 0;
+      } catch (e) {}
+    }
   }
-  console.log(
-    '[CardModal] card:',
-    card.title,
-    'filtered subs:',
-    filteredSubs.length,
-    'totalEmails:',
-    totalEmails
-  );
   const [newCategoryTitle, setNewCategoryTitle] = useState('');
 
   // MS Project fields
@@ -118,11 +113,6 @@ function CardModal({ card, onClose }) {
   };
 
   const handleSave = async () => {
-    console.log('[CardModal] Saving card:', card.id, {
-      due_date: dueDate,
-      start_date: startDate,
-      duration_days: durationDays,
-    });
     await updateCard(card.id, {
       title,
       description,
@@ -136,7 +126,7 @@ function CardModal({ card, onClose }) {
   };
 
   const handleSaveToLibrary = async () => {
-    const cardCategories = categories.filter(c => Number(c.card_id) === Number(card.id));
+    const cats = categories.filter(c => Number(c.card_id) === Number(card.id));
     const content = {
       card: {
         title,
@@ -145,7 +135,7 @@ function CardModal({ card, onClose }) {
         start_date: startDate,
         duration_days: durationDays,
       },
-      categories: cardCategories.map(cat => ({
+      categories: cats.map(cat => ({
         ...cat,
         subcategories: subcategories.filter(sc => Number(sc.category_id) === Number(cat.id)),
       })),
@@ -162,8 +152,6 @@ function CardModal({ card, onClose }) {
       setNewCategoryTitle('');
     }
   };
-
-  const cardCategories = categories.filter(c => Number(c.card_id) === Number(card.id));
 
   return (
     <div
@@ -313,11 +301,11 @@ function CardModal({ card, onClose }) {
           <div className="pt-4 border-t border-std">
             <h4 className="text-sm font-medium text-secondary mb-2">
               <Folder size={14} className="inline mr-1" />
-              Catégories ({cardCategories.length})
+              Catégories ({(cardCategories || []).length})
             </h4>
 
             <div className="space-y-2 mb-3">
-              {cardCategories.map(cat => (
+              {(cardCategories || []).map(cat => (
                 <div
                   key={cat.id}
                   className="bg-card-hover rounded p-2 flex items-center justify-between"
