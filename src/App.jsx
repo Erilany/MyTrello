@@ -55,11 +55,9 @@ function AppContent() {
   const { theme, boards, loadBoard, currentBoard, guideOpen, searchOpen } = useApp();
   const location = useLocation();
 
-  useEffect(() => {
-    if (!currentBoard && boards.length > 0 && location.pathname === '/') {
-      loadBoard(boards[0].id);
-    }
-  }, [boards, currentBoard, loadBoard, location.pathname]);
+  // Ne plus charger automatiquement un projet au démarrage
+  // L'utilisateur doit sélectionner explicitement un projet via le Sidebar
+  // pour charger ses données dans le Board
 
   useEffect(() => {
     const match = location.pathname.match(/^\/board(\/2)?\/(\d+)$/);

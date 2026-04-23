@@ -10,20 +10,16 @@ import {
   User,
   Star,
   Settings as SettingsIcon,
+  GitMerge,
+  Search,
+  Plus,
+  X,
+  Users,
+  Trash2,
 } from 'lucide-react';
 import LibraryFavorites from './LibraryFavorites';
-
-const DEFAULT_ROLES = [
-  'Manager de projets',
-  'Chargé(e) de Concertation',
-  "Chargé(e) d'Etudes LA",
-  "Chargé(e) d'Etudes LS",
-  "Chargé(e) d'Etudes Poste HT",
-  "Chargé(e) d'Etudes Poste BT et CC",
-  "Chargé(e) d'Etudes SPC",
-  'Contrôleur Travaux',
-  'Assistant(e) Etudes',
-];
+import { mergeExportData } from '../../services/migration';
+import { loadFunctionsFromAllProjects } from '../../data/FunctionsData';
 
 function Settings() {
   const {
@@ -37,6 +33,14 @@ function Settings() {
     importData,
     username,
     setUsername,
+    filterMyProjects,
+    setFilterMyProjects,
+    searchUsers,
+    addNewUser,
+    formatUserName,
+    usersList,
+    setUsersList,
+    getUsers,
   } = useApp();
   const [userRole, setUserRole] = useState(() => localStorage.getItem('c-projets-user-role') || '');
   const [boardTitle, setBoardTitle] = useState('');
@@ -45,6 +49,80 @@ function Settings() {
   const [localColors, setLocalColors] = useState(cardColors);
   const [localUsername, setLocalUsername] = useState(username || '');
   const [activeTab, setActiveTab] = useState('profile');
+  const [userSearch, setUserSearch] = useState('');
+  const [showUserDropdown, setShowUserDropdown] = useState(false);
+  const [newUserName, setNewUserName] = useState('');
+  const [showNewUserInput, setShowNewUserInput] = useState(false);
+  const allRoles = loadFunctionsFromAllProjects();
+
+  const getContactsForBoard = boardId => {
+    const defaultContacts = [
+      { id: 1, title: 'Manager de projets' },
+      { id: 2, title: 'Chargé(e) de Concertation' },
+      { id: 3, title: "Chargé(e) d'Etudes LA" },
+      { id: 4, title: "Chargé(e) d'Etudes LS" },
+      { id: 5, title: "Chargé(e) d'Etudes Poste HT" },
+      { id: 6, title: "Chargé(e) d'Etudes Poste BT et CC" },
+      { id: 7, title: "Chargé(e) d'Etudes SPC" },
+      { id: 8, title: 'Contrôleur Travaux' },
+      { id: 9, title: 'Assistant(e) Etudes' },
+    ];
+    const saved = localStorage.getItem(`board-${boardId}-internalContacts`);
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        return defaultContacts;
+      }
+    }
+    return defaultContacts;
+  };
+
+  const allUsers = getUsers();
+  const sortedUsers = [...allUsers].sort((a, b) => formatUserName(a.name).localeCompare(formatUserName(b.name)));
+  const filteredUsers = userSearch ? sortedUsers.filter(u => formatUserName(u.name).toLowerCase().includes(userSearch.toLowerCase())) : sortedUsers;
+
+  const handleSelectUser = user => {
+    setLocalUsername(user.name);
+    setUserSearch('');
+    setShowUserDropdown(false);
+    setShowNewUserInput(false);
+  };
+
+  const handleCreateUser = () => {
+    if (newUserName.trim()) {
+      const formatted = formatUserName(newUserName);
+      const user = addNewUser(formatted);
+      setLocalUsername(formatted);
+      setNewUserName('');
+      setShowNewUserInput(false);
+      setShowUserDropdown(false);
+      setUserSearch('');
+    }
+  };
+
+  useEffect(() => {
+    setLocalUsername(username || '');
+  }, [username]);
+
+  useEffect(() => {
+    const handleClickOutside = e => {
+      if (showUserDropdown && !e.target.closest('.user-dropdown')) {
+        setShowUserDropdown(false);
+      }
+    };
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [showUserDropdown]);
+
+  const [mergeState, setMergeState] = useState({
+    userA: null,
+    userB: null,
+    userAFile: null,
+    userBFile: null,
+    conflicts: [],
+    resolved: {},
+  });
 
   useEffect(() => {
     setLocalColors(cardColors);
@@ -97,10 +175,8 @@ function Settings() {
   };
 
   const handleExport = () => {
-    console.log('[Export] Button clicked');
     try {
-      exportData();
-      console.log('[Export] Export completed');
+      exportData(localUsername);
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
     } catch (err) {
@@ -142,6 +218,127 @@ function Settings() {
     input.click();
   };
 
+  const handleMergeFileSelect = user => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = e => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = event => {
+        try {
+          const data = JSON.parse(event.target?.result);
+          if (user === 'A') {
+            setMergeState(prev => ({ ...prev, userA: data, userAFile: file.name }));
+          } else {
+            setMergeState(prev => ({ ...prev, userB: data, userBFile: file.name }));
+          }
+        } catch (err) {
+          alert('Erreur lors de la lecture du fichier: ' + err.message);
+        }
+      };
+      reader.readAsText(file);
+    };
+    input.click();
+  };
+
+  const handleMerge = () => {
+    if (!mergeState.userA || !mergeState.userB) {
+      alert('Veuillez sélectionner les deux fichiers à fusionner');
+      return;
+    }
+
+    const result = mergeExportData(mergeState.userA, mergeState.userB);
+    setMergeState(prev => ({
+      ...prev,
+      conflicts: result.conflicts,
+      merged: result.merged,
+      userAName: result.userAName,
+      userBName: result.userBName,
+      step: 'resolve',
+    }));
+  };
+
+  const handleResolveConflict = (index, choice) => {
+    setMergeState(prev => ({
+      ...prev,
+      resolved: { ...prev.resolved, [index]: choice },
+    }));
+  };
+
+  const handleDownloadMerged = () => {
+    const { merged, conflicts, resolved } = mergeState;
+
+    if (conflicts.length > 0 && Object.keys(resolved).length < conflicts.length) {
+      alert('Veuillez résoudre tous les conflits avant de télécharger');
+      return;
+    }
+
+    let finalData = JSON.parse(JSON.stringify(merged));
+
+    if (conflicts.length > 0) {
+      conflicts.forEach((conflict, index) => {
+        if (resolved[index] === 'A') {
+          const target =
+            finalData.databases.core[conflict.type] ||
+            finalData.databases[conflict.type] ||
+            finalData.projects;
+          const item = target?.find(t => t.id === conflict.id);
+          if (item) {
+            item.source = mergeState.userAName;
+            Object.assign(item, conflict.userA.data);
+          }
+        } else if (resolved[index] === 'B') {
+          const target =
+            finalData.databases.core[conflict.type] ||
+            finalData.databases[conflict.type] ||
+            finalData.projects;
+          const item = target?.find(t => t.id === conflict.id);
+          if (item) {
+            item.source = mergeState.userBName;
+            Object.assign(item, conflict.userB.data);
+          }
+        }
+      });
+    }
+
+    const blob = new Blob([JSON.stringify(finalData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `mytrello-merged-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    setMergeState({
+      userA: null,
+      userB: null,
+      userAFile: null,
+      userBFile: null,
+      conflicts: [],
+      resolved: {},
+      merged: null,
+      step: null,
+    });
+  };
+
+  const handleResetMerge = () => {
+    setMergeState({
+      userA: null,
+      userB: null,
+      userAFile: null,
+      userBFile: null,
+      conflicts: [],
+      resolved: {},
+      merged: null,
+      step: null,
+    });
+  };
+
   const colorTypes = [
     { key: 'etudes', label: 'Études', keywords: localColors.etudes?.keywords?.join(', ') || '' },
     {
@@ -155,6 +352,7 @@ function Settings() {
 
   const tabs = [
     { id: 'profile', label: 'Profil', icon: User },
+    { id: 'interlocuteurs', label: 'Interlocuteurs', icon: Users },
     { id: 'favorites', label: 'Favoris Bibliothèque', icon: Star },
     { id: 'backup', label: 'Sauvegarde', icon: Download },
   ];
@@ -200,13 +398,85 @@ function Settings() {
                   <label className="block text-sm font-medium text-secondary mb-2">
                     Votre nom (pour les échanges)
                   </label>
-                  <input
-                    type="text"
-                    value={localUsername}
-                    onChange={e => setLocalUsername(e.target.value)}
-                    placeholder="Entrez votre nom"
-                    className="w-full px-4 py-2 bg-input border border-std rounded-lg text-primary placeholder-muted focus:outline-none focus:border-accent"
-                  />
+                  <div className="relative user-dropdown">
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={showNewUserInput ? newUserName : (localUsername ? formatUserName(localUsername) : '')}
+                        onChange={e => {
+                          if (showNewUserInput) {
+                            setNewUserName(e.target.value);
+                          } else {
+                            setLocalUsername(e.target.value);
+                            setUserSearch(e.target.value);
+                            setShowUserDropdown(true);
+                          }
+                        }}
+                        onFocus={() => {
+                          if (!showNewUserInput) {
+                            setUserSearch(localUsername || '');
+                            setShowUserDropdown(true);
+                          }
+                        }}
+                        placeholder="Rechercher ou créer un utilisateur"
+                        className="w-full px-4 py-2 bg-input border border-std rounded-lg text-primary placeholder-muted focus:outline-none focus:border-accent pr-20"
+                      />
+                      <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1">
+                        {!showNewUserInput && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowNewUserInput(true);
+                              setNewUserName(localUsername);
+                            }}
+                            className="p-1 text-muted hover:text-accent"
+                            title="Créer un nouvel utilisateur"
+                          >
+                            <Plus size={16} />
+                          </button>
+                        )}
+                        {showNewUserInput && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setShowNewUserInput(false);
+                              setNewUserName('');
+                            }}
+                            className="p-1 text-muted hover:text-urgent"
+                            title="Annuler"
+                          >
+                            <X size={16} />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    {showNewUserInput ? (
+                      <div className="mt-2 p-3 bg-card-hover rounded-lg border border-std">
+                        <p className="text-xs text-muted mb-2">
+                          Le nom sera formaté: <strong>{formatUserName(newUserName) || '...'}</strong>
+                        </p>
+                        <button
+                          onClick={handleCreateUser}
+                          disabled={!newUserName.trim()}
+                          className="w-full px-3 py-1.5 text-sm bg-accent text-white rounded hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          Créer l'utilisateur
+                        </button>
+                      </div>
+                    ) : showUserDropdown && filteredUsers.length > 0 ? (
+                      <div className="absolute z-50 w-full mt-1 bg-card border border-std rounded-lg shadow-lg max-h-60 overflow-auto">
+                        {filteredUsers.map(user => (
+                          <button
+                            key={user.id}
+                            onClick={() => handleSelectUser(user)}
+                            className="w-full px-4 py-2 text-left text-sm hover:bg-card-hover text-primary"
+                          >
+                            {formatUserName(user.name)}
+                          </button>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
                 </div>
                 <div className="mb-4">
                   <label className="block text-sm font-medium text-secondary mb-2">
@@ -221,12 +491,27 @@ function Settings() {
                     className="w-full px-4 py-2 bg-input border border-std rounded-lg text-primary focus:outline-none focus:border-accent"
                   >
                     <option value="">Sélectionner votre fonction...</option>
-                    {DEFAULT_ROLES.map(role => (
+                    {allRoles.map(role => (
                       <option key={role} value={role}>
                         {role}
                       </option>
                     ))}
                   </select>
+                </div>
+                <div className="mb-4 flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    id="filterMyProjects"
+                    checked={filterMyProjects}
+                    onChange={e => {
+                      setFilterMyProjects(e.target.checked);
+                      localStorage.setItem('c-projets-filter-my-projects', e.target.checked);
+                    }}
+                    className="w-4 h-4 accent-accent"
+                  />
+                  <label htmlFor="filterMyProjects" className="text-sm text-secondary">
+                    Ne voir que les projets où je suis interlocuteur interne
+                  </label>
                 </div>
                 <button
                   onClick={() => {
@@ -250,32 +535,238 @@ function Settings() {
             </>
           )}
 
+          {activeTab === 'interlocuteurs' && (
+            <>
+              <div className="bg-card rounded-lg border border-std p-6">
+                <h2 className="text-lg font-semibold text-primary mb-4 flex items-center">
+                  <Users size={20} className="mr-2" />
+                  Base des interlocuteurs
+                </h2>
+                <p className="text-sm text-muted mb-4">
+                  Cette liste contient tous les interlocuteurs utilisés dans les projets. Elle est automatiquement mise à jour lors de la création de nouveaux interlocuteurs.
+                </p>
+                {usersList.length === 0 ? (
+                  <p className="text-sm text-muted text-center py-4">Aucun interlocuteur dans la base</p>
+                ) : (
+                  <>
+                    <div className="grid grid-cols-12 gap-2 p-2 text-xs font-semibold text-muted border-b border-std">
+                      <div className="col-span-4">Nom</div>
+                      <div className="col-span-4">Fonction(s)</div>
+                      <div className="col-span-3">Projet(s)</div>
+                      <div className="col-span-1"></div>
+                    </div>
+                    <div className="space-y-1 max-h-[60vh] overflow-y-auto">
+                      {[...usersList].sort((a, b) => formatUserName(a.name).localeCompare(formatUserName(b.name))).map(user => {
+                        const userProjects = [];
+                        const userFunctions = new Set();
+                        boards.forEach(board => {
+                          const contacts = getContactsForBoard(board.id);
+                          contacts.forEach(c => {
+                            if (c.name && c.name.toLowerCase() === user.name.toLowerCase()) {
+                              userProjects.push(board.title);
+                              if (c.title) userFunctions.add(c.title);
+                            }
+                          });
+                        });
+                        const functionsList = Array.from(userFunctions);
+                        const projectsList = userProjects;
+                        return (
+                          <div
+                            key={user.id}
+                            className="grid grid-cols-12 gap-2 p-2 bg-card-hover rounded-lg border border-std items-center"
+                          >
+                            <div className="col-span-4 text-sm font-medium text-primary">{formatUserName(user.name)}</div>
+                            <div className="col-span-4 text-xs text-secondary">
+                              {functionsList.length > 0 ? (
+                                <div className="max-h-16 overflow-y-auto">
+                                  {functionsList.map((f, i) => (
+                                    <div key={i} title={f}>{f}</div>
+                                  ))}
+                                </div>
+                              ) : '-'}
+                            </div>
+                            <div className="col-span-3 text-xs text-muted">
+                              {projectsList.length > 0 ? (
+                                <div className="max-h-16 overflow-y-auto">
+                                  {projectsList.map((p, i) => (
+                                    <div key={i} title={p}>{p}</div>
+                                  ))}
+                                </div>
+                              ) : '-'}
+                            </div>
+                            <div className="col-span-1">
+                              <button
+                                onClick={() => {
+                                  if (window.confirm(`Supprimer "${formatUserName(user.name)}" de la base ?`)) {
+                                    const newList = usersList.filter(u => u.id !== user.id);
+                                    setUsersList(newList);
+                                    localStorage.setItem('c-projets-users', JSON.stringify(newList));
+                                  }
+                                }}
+                                className="text-muted hover:text-urgent"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
+              </div>
+            </>
+          )}
+
           {activeTab === 'favorites' && <LibraryFavorites />}
 
           {activeTab === 'backup' && (
-            <div className="bg-card rounded-lg border border-std p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-semibold text-primary">Sauvegarde</h2>
-                <div className="flex gap-2">
-                  <button
-                    onClick={handleExport}
-                    className="flex items-center px-3 py-1.5 text-sm bg-accent text-white rounded hover:opacity-90"
-                  >
-                    <Download size={14} className="mr-2" />
-                    Exporter
-                  </button>
-                  <button
-                    onClick={handleImport}
-                    className="flex items-center px-3 py-1.5 text-sm bg-card hover:bg-card-hover border border-std rounded"
-                  >
-                    <Upload size={14} className="mr-2" />
-                    Importer
-                  </button>
+            <div className="space-y-6">
+              <div className="bg-card rounded-lg border border-std p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-semibold text-primary">Sauvegarde</h2>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleExport}
+                      className="flex items-center px-3 py-1.5 text-sm bg-accent text-white rounded hover:opacity-90"
+                    >
+                      <Download size={14} className="mr-2" />
+                      Exporter
+                    </button>
+                    <button
+                      onClick={handleImport}
+                      className="flex items-center px-3 py-1.5 text-sm bg-card hover:bg-card-hover border border-std rounded"
+                    >
+                      <Upload size={14} className="mr-2" />
+                      Importer
+                    </button>
+                  </div>
                 </div>
+                <p className="text-sm text-secondary">
+                  Exporter vos données en fichier JSON pour sauvegarder ou transférer votre projet.
+                </p>
               </div>
-              <p className="text-sm text-secondary">
-                Exporter vos données en fichier JSON pour sauvegarder ou transférer votre projet.
-              </p>
+
+              <div className="bg-card rounded-lg border border-std p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-semibold text-primary flex items-center">
+                    <GitMerge size={20} className="mr-2" />
+                    Fusionner deux utilisateurs
+                  </h2>
+                </div>
+                <p className="text-sm text-secondary mb-4">
+                  Sélectionnez les fichiers JSON de deux utilisateurs différents pour fusionner
+                  leurs données.
+                </p>
+
+                {!mergeState.step && (
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-4">
+                      <div className="flex-1">
+                        <label className="block text-sm font-medium text-secondary mb-2">
+                          Fichier utilisateur 1
+                        </label>
+                        <button
+                          onClick={() => handleMergeFileSelect('A')}
+                          className="w-full flex items-center px-4 py-2 bg-input border border-std rounded-lg text-primary hover:border-accent transition-std"
+                        >
+                          <Upload size={16} className="mr-2" />
+                          {mergeState.userAFile || 'Sélectionner un fichier...'}
+                        </button>
+                      </div>
+                      <div className="flex-1">
+                        <label className="block text-sm font-medium text-secondary mb-2">
+                          Fichier utilisateur 2
+                        </label>
+                        <button
+                          onClick={() => handleMergeFileSelect('B')}
+                          className="w-full flex items-center px-4 py-2 bg-input border border-std rounded-lg text-primary hover:border-accent transition-std"
+                        >
+                          <Upload size={16} className="mr-2" />
+                          {mergeState.userBFile || 'Sélectionner un fichier...'}
+                        </button>
+                      </div>
+                    </div>
+                    <button
+                      onClick={handleMerge}
+                      disabled={!mergeState.userA || !mergeState.userB}
+                      className="flex items-center px-4 py-2 text-sm bg-accent text-white rounded hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <GitMerge size={14} className="mr-2" />
+                      Fusionner
+                    </button>
+                  </div>
+                )}
+
+                {mergeState.step === 'resolve' && mergeState.conflicts.length > 0 && (
+                  <div className="space-y-4">
+                    <div className="p-4 bg-yellow-500/10 border border-yellow-500 rounded-lg">
+                      <p className="text-sm font-medium text-yellow-500">
+                        {mergeState.conflicts.length} conflit(s) détecté(s). Veuillez choisir quelle
+                        version conserver :
+                      </p>
+                    </div>
+                    <div className="space-y-3 max-h-64 overflow-y-auto">
+                      {mergeState.conflicts.map((conflict, index) => (
+                        <div key={index} className="p-3 bg-input border border-std rounded-lg">
+                          <p className="text-sm font-medium text-primary mb-2">
+                            {conflict.type} (ID: {conflict.id})
+                          </p>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => handleResolveConflict(index, 'A')}
+                              className={`flex-1 px-3 py-2 text-sm rounded border ${
+                                mergeState.resolved[index] === 'A'
+                                  ? 'bg-accent text-white border-accent'
+                                  : 'bg-card border-std hover:border-accent'
+                              }`}
+                            >
+                              {mergeState.userAName}
+                            </button>
+                            <button
+                              onClick={() => handleResolveConflict(index, 'B')}
+                              className={`flex-1 px-3 py-2 text-sm rounded border ${
+                                mergeState.resolved[index] === 'B'
+                                  ? 'bg-accent text-white border-accent'
+                                  : 'bg-card border-std hover:border-accent'
+                              }`}
+                            >
+                              {mergeState.userBName}
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {mergeState.step === 'resolve' && mergeState.conflicts.length === 0 && (
+                  <div className="p-4 bg-green-500/10 border border-green-500 rounded-lg">
+                    <p className="text-sm font-medium text-green-500">
+                      Fusion réussie ! Aucune incohérence détectée.
+                    </p>
+                  </div>
+                )}
+
+                {(mergeState.step === 'resolve' ||
+                  (mergeState.userA && mergeState.userB && mergeState.step !== 'resolve')) && (
+                  <div className="flex gap-2 mt-4">
+                    <button
+                      onClick={handleDownloadMerged}
+                      className="flex items-center px-4 py-2 text-sm bg-accent text-white rounded hover:opacity-90"
+                    >
+                      <Download size={14} className="mr-2" />
+                      Télécharger fichier fusionné
+                    </button>
+                    <button
+                      onClick={handleResetMerge}
+                      className="flex items-center px-4 py-2 text-sm bg-card hover:bg-card-hover border border-std rounded"
+                    >
+                      Réinitialiser
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>

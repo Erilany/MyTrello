@@ -3,8 +3,10 @@ import { useApp, loadFromStorage } from '../../context/AppContext';
 import { usePlanning } from '../../hooks/usePlanning';
 import Exchange from '../Exchange/Exchange';
 import { getOrderedChapters } from '../../data/ChaptersData';
+import { formatDateFrench } from '../../utils/dateUtils';
 import { PlanningView } from '../Planning';
 import { PaiementsForm } from './forms/PaiementsForm';
+import { loadFunctionsFromAllProjects, addFunction as addFunctionToGlobal, importFunctionsFromProjects } from '../../data/FunctionsData';
 import {
   normalizeChapter,
   normalizeString,
@@ -195,17 +197,11 @@ function Board2() {
   const [newLink, setNewLink] = useState({ title: '', url: '', type: 'web', color: '#22C55E' });
 
   const [eotpLines, setEotpLines] = useState([]);
-  const defaultInternalContacts = [
-    { id: 1, title: 'Manager de projets' },
-    { id: 2, title: 'Chargé(e) de Concertation' },
-    { id: 3, title: "Chargé(e) d'Etudes LA" },
-    { id: 4, title: "Chargé(e) d'Etudes LS" },
-    { id: 5, title: "Chargé(e) d'Etudes Poste HT" },
-    { id: 6, title: "Chargé(e) d'Etudes Poste BT et CC" },
-    { id: 7, title: "Chargé(e) d'Etudes SPC" },
-    { id: 8, title: 'Contrôleur Travaux' },
-    { id: 9, title: 'Assistant(e) Etudes' },
-  ];
+  const allFunctions = loadFunctionsFromAllProjects();
+  const defaultInternalContacts = allFunctions.map((func, idx) => ({
+    id: idx + 1,
+    title: func,
+  }));
   const [internalContacts, setInternalContacts] = useState(defaultInternalContacts);
   const [showAddInternal, setShowAddInternal] = useState(false);
   const [newInternalTitle, setNewInternalTitle] = useState('');
@@ -437,7 +433,7 @@ function Board2() {
   };
 
   const getEotpLabelById = eotpId => {
-    const eotp = getLevel2Eotp().find(e => e.id === eotpId);
+    const eotp = getLevel2Eotp().find(e => String(e.id) === String(eotpId));
     return eotp ? `${eotp.numero} - ${eotp.libelle}` : '';
   };
 
@@ -708,7 +704,7 @@ function Board2() {
   };
 
   const handleGenerateEmail = () => {
-    if (!commandeDetail) return;
+    if (!commandeDetail || !currentBoard) return;
 
     const { affectation, commande, autresLignes, groupesMarchandises } = commandeDetail;
     const checkedItems = [];
@@ -718,8 +714,14 @@ function Board2() {
     });
 
     const getEotpLabel = eotpId => {
-      const eotp = getLevel2Eotp().find(e => e.id === eotpId);
+      if (!eotpId) return '-';
+      const eotp = getLevel2Eotp().find(e => String(e.id) === String(eotpId));
       return eotp ? `${eotp.numero} - ${eotp.libelle}` : 'Non renseigne';
+    };
+
+    const formatDateFr = dateStr => {
+      if (!dateStr) return '-';
+      return formatDateFrench(dateStr);
     };
 
     const totalHT = autresLignes?.reduce((sum, l) => sum + (parseFloat(l.montant) || 0), 0) || 0;
@@ -742,7 +744,7 @@ table { border-collapse: collapse; width: auto; }
 <h3>DONNEES DE LA COMMANDE</h3>
 <p>
 N&#176; Commande: ${commande.numeroCommande || 'N/A'}<br>
-Date: ${commande.dateCommande || 'N/A'}<br>
+Date: ${formatDateFr(commande.dateCommande)}<br>
 Redacteur: ${commande.redacteur || 'N/A'}<br>
 Signataire final: ${commande.signataireFinal || 'N/A'}<br>
 Marche cadre: ${commande.marcheCadre || 'N/A'}<br>
@@ -779,7 +781,7 @@ Affaire: ${commande.affaire || 'N/A'}
     <td style="${cellStyle}">${ligne.numero}</td>
     <td style="${cellStyle}">${ligne.designation || '-'}</td>
     <td style="${cellStyle}">${getEotpLabel(ligne.eotpId)}</td>
-    <td style="${cellStyle}">${ligne.dateReception || '-'}</td>
+    <td style="${cellStyle}">${formatDateFr(ligne.dateReception)}</td>
     <td style="${cellStyle}">${ligne.quantite || '-'}</td>
     <td style="${cellStyle}">${pu}</td>
     <td style="${cellStyle}">${montant}</td>
@@ -799,7 +801,7 @@ Affaire: ${commande.affaire || 'N/A'}
 </body>
 </html>`;
 
-    const dateStr = new Date().toISOString().split('T')[0];
+    const dateStr = formatDateFrench(new Date().toISOString());
     const numCmd = commande.numeroCommande || 'new';
     let fileName;
     if (selectedAvenant) {
@@ -810,13 +812,7 @@ Affaire: ${commande.affaire || 'N/A'}
 
     const blob = new Blob([htmlBody], { type: 'text/html;charset=utf-8' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = fileName;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    window.open(url, '_blank');
   };
 
   useEffect(() => {
@@ -896,7 +892,21 @@ Affaire: ${commande.affaire || 'N/A'}
 
         const validAvenants = cmd.avenants.filter(av => {
           const prefix = `AV${av.numero}`;
-          const avenantLines = (commandeDetail?.autresLignes || []).filter(
+
+          const savedLignes = cmd.detail?.autresLignes || [];
+          const currentLignes =
+            cmd.id === contextSelectedCommande?.id ? commandeDetail?.autresLignes || [] : [];
+
+          const allLignesMap = new Map();
+          [...savedLignes, ...currentLignes].forEach(ligne => {
+            const key = ligne.id || ligne.numero;
+            if (!allLignesMap.has(key)) {
+              allLignesMap.set(key, ligne);
+            }
+          });
+          const allLignes = Array.from(allLignesMap.values());
+
+          const avenantLines = allLignes.filter(
             ligne => ligne.designation && ligne.designation.startsWith(prefix)
           );
 
@@ -2437,7 +2447,8 @@ Affaire: ${commande.affaire || 'N/A'}
                                     if (e.target.checked) syncFromLigne010('dateReception');
                                   }}
                                 />
-                                Date réception unique ({ligne010?.dateReception || '—'})
+                                Date réception unique (
+                                {formatDateFrench(ligne010?.dateReception) || '—'})
                               </label>
                             );
                           })()}
@@ -2794,6 +2805,7 @@ Affaire: ${commande.affaire || 'N/A'}
           fallbackToBat={fallbackToBat}
           internalContacts={internalContacts}
           setInternalContacts={setInternalContacts}
+          allFunctions={allFunctions}
           externalContacts={externalContacts}
           setExternalContacts={setExternalContacts}
           updateExternalContact={updateExternalContact}
@@ -2801,6 +2813,8 @@ Affaire: ${commande.affaire || 'N/A'}
           setShowAddInternal={setShowAddInternal}
           newInternalTitle={newInternalTitle}
           setNewInternalTitle={setNewInternalTitle}
+          eotpLines={eotpLines}
+          setEotpLines={setEotpLines}
         />
       )}
 

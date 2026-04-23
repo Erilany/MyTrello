@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { X, Upload, Folder, FileText, List, CheckSquare, GripVertical, Trash2 } from 'lucide-react';
 import { parseMSProjectXmlWithDates } from '../../utils/xmlParser';
-import { formatDate, normalizeChapter } from './planningUtils';
+import { formatDate, normalizeChapter, LEVEL_ICONS } from './planningUtils';
 
 function PlanningImportCompare({
   isOpen,

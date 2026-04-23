@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useApp } from '../../context/AppContext';
+import { useNavigate } from 'react-router-dom';
 import VoiceService from '../../services/voice';
 import { Mic, MicOff, Volume2, X } from 'lucide-react';
 
 function VoiceControl() {
+  const navigate = useNavigate();
   const {
     createCard,
     createCategory,
@@ -13,12 +15,26 @@ function VoiceControl() {
     currentBoard,
     addComment,
     setLibraryOpen,
+    archiveCard,
+    updateCard,
+    setSelectedCard,
+    deleteCard,
+    deleteCategory,
+    updateCategory,
+    deleteSubcategory,
+    setSelectedSubcategory,
+    setActiveTab,
+    categories,
+    setSearchOpen,
+    searchOpen,
   } = useApp();
 
   const [isListening, setIsListening] = useState(false);
   const [lastCommand, setLastCommand] = useState(null);
+  const [displayedTranscript, setDisplayedTranscript] = useState('');
   const [showHelp, setShowHelp] = useState(false);
   const [notification, setNotification] = useState(null);
+  const displayTimeoutRef = useRef(null);
   const voiceServiceRef = useRef(null);
 
   useEffect(() => {
@@ -29,7 +45,11 @@ function VoiceControl() {
     });
 
     voiceServiceRef.current.setOnResult(result => {
+      console.log('[VoiceControl] Received result:', JSON.stringify(result));
       setLastCommand(result);
+      setDisplayedTranscript(result.original || '');
+      if (displayTimeoutRef.current) clearTimeout(displayTimeoutRef.current);
+      displayTimeoutRef.current = setTimeout(() => setDisplayedTranscript(''), 3000);
       handleVoiceCommand(result);
     });
 
@@ -58,6 +78,43 @@ function VoiceControl() {
     setTimeout(() => setNotification(null), 3000);
   }, []);
 
+  // Fonction pour trouver une carte par son nom
+  const findCardByName = useCallback(
+    name => {
+      const searchTerm = name.toLowerCase();
+      return cards.find(card => card.title && card.title.toLowerCase().includes(searchTerm));
+    },
+    [cards]
+  );
+
+  // Fonction pour trouver une catégorie par son nom
+  const findCategoryByName = useCallback(
+    name => {
+      const searchTerm = name.toLowerCase();
+      return categories.find(cat => cat.title && cat.title.toLowerCase().includes(searchTerm));
+    },
+    [categories]
+  );
+
+  // Fonction pour trouver une colonne par son nom
+  const findColumnByName = useCallback(
+    name => {
+      const searchTerm = name.toLowerCase();
+      // Essayer de trouver une colonne correspondante
+      if (searchTerm.includes('attente') || searchTerm.includes('en attente')) {
+        return columns.find(col => col.title.toLowerCase().includes('attente'));
+      }
+      if (searchTerm.includes('cours') || searchTerm.includes('en cours')) {
+        return columns.find(col => col.title.toLowerCase().includes('cours'));
+      }
+      if (searchTerm.includes('termine') || searchTerm.includes('terminé')) {
+        return columns.find(col => col.title.toLowerCase().includes('termine'));
+      }
+      return columns[0]; // Par défaut, retourne la première colonne
+    },
+    [columns]
+  );
+
   const handleVoiceCommand = useCallback(
     async command => {
       if (!voiceServiceRef.current) return;
@@ -67,7 +124,10 @@ function VoiceControl() {
       try {
         switch (action) {
           case 'activate':
-            showNotification('En écoute...', 'info');
+            if (!isListening) {
+              voiceServiceRef.current.start();
+              showNotification('En écoute...', 'info');
+            }
             break;
 
           case 'stop':
@@ -75,81 +135,326 @@ function VoiceControl() {
             showNotification("Arrêt de l'écoute", 'info');
             break;
 
+          // CRÉER UNE CARTE - Implémenté correctement
           case 'createCard':
             if (params.title && currentBoard) {
-              const activeColumn = columns[0];
-              if (activeColumn) {
-                await createCard(activeColumn.id, params.title);
+              let targetColumn = columns[0];
+
+              // Si l'utilisateur a mentionné une colonne
+              if (params.column) {
+                const foundColumn = findColumnByName(params.column);
+                if (foundColumn) targetColumn = foundColumn;
+              }
+
+              if (targetColumn) {
+                await createCard(targetColumn.id, params.title);
                 showNotification(`Carte créée : ${params.title}`, 'success');
                 voiceServiceRef.current.playSuccessSound();
+              } else {
+                showNotification('Aucune colonne trouvée', 'error');
               }
+            } else if (!currentBoard) {
+              showNotification('Aucun projet sélectionné', 'error');
             }
             break;
 
+          // CRÉER UNE CATÉGORIE - Implémenté correctement
           case 'createCategory':
             if (params.title && cards.length > 0) {
-              const activeCard = cards[0];
-              if (activeCard) {
-                await createCategory(activeCard.id, params.title);
+              let targetCard = cards[0];
+
+              // Si l'utilisateur a mentionné une carte
+              if (params.cardName) {
+                const foundCard = findCardByName(params.cardName);
+                if (foundCard) targetCard = foundCard;
+              }
+
+              if (targetCard) {
+                await createCategory(targetCard.id, params.title);
                 showNotification(`Catégorie créée : ${params.title}`, 'success');
                 voiceServiceRef.current.playSuccessSound();
               }
+            } else if (cards.length === 0) {
+              showNotification('Aucune carte dans ce projet', 'error');
             }
             break;
 
-          case 'createSubcategory':
-            if (params.title) {
-              showNotification("Veuillez sélectionner une catégorie d'abord", 'info');
-            }
-            break;
-
+          // OUVRIR UNE CARTE - Implémenté correctement
           case 'openCard':
-            showNotification(`Ouverture de "${params.name}"`, 'info');
+            if (params.name) {
+              const card = findCardByName(params.name);
+              if (card) {
+                setSelectedCard(card);
+                showNotification(`Carte "${card.title}" ouverte`, 'success');
+                voiceServiceRef.current.playSuccessSound();
+              } else {
+                showNotification(`Carte "${params.name}" non trouvée`, 'error');
+              }
+            }
             break;
 
+          // FERMER - Ferme la modal actuellement ouverte
+          case 'close':
+            setSelectedCard(null);
+            setSelectedSubcategory(null);
+            showNotification('Fermé', 'info');
+            break;
+
+          // DÉFINIR PRIORITÉ - Implémenté correctement
           case 'setPriority':
             if (params.priority) {
-              showNotification(`Priorité "${params.priority}" appliquée`, 'info');
+              let targetCard = cards[0];
+              if (params.cardName) {
+                const foundCard = findCardByName(params.cardName);
+                if (foundCard) targetCard = foundCard;
+              }
+
+              // Mapper les priorités parlées vers les valeurs attendues
+              const priorityMap = {
+                urgent: 'urgent',
+                haute: 'high',
+                basse: 'low',
+                normal: 'normal',
+                terminé: 'done',
+                termine: 'done',
+              };
+              const priorityValue = priorityMap[params.priority.toLowerCase()] || params.priority;
+
+              if (targetCard) {
+                await updateCard(targetCard.id, { priority: priorityValue });
+                showNotification(
+                  `Priorité "${params.priority}" appliquée à "${targetCard.title}"`,
+                  'success'
+                );
+                voiceServiceRef.current.playSuccessSound();
+              }
             }
             break;
 
+          // ASSIGNE - Implémenté correctement
           case 'setAssignee':
             if (params.name) {
-              showNotification(`Assigné à "${params.name}"`, 'info');
+              let targetCard = cards[0];
+              if (params.cardName) {
+                const foundCard = findCardByName(params.cardName);
+                if (foundCard) targetCard = foundCard;
+              }
+
+              if (targetCard) {
+                await updateCard(targetCard.id, { assignee: params.name });
+                showNotification(`Assigné à "${params.name}" sur "${targetCard.title}"`, 'success');
+                voiceServiceRef.current.playSuccessSound();
+              }
             }
             break;
 
+          // ARCHIVER - Implémenté correctement
           case 'archiveCard':
-            showNotification('Carte archivée', 'info');
-            break;
+            let cardToArchive = cards[0];
+            if (params.cardName) {
+              const foundCard = findCardByName(params.cardName);
+              if (foundCard) cardToArchive = foundCard;
+            }
 
-          case 'addComment':
-            if (params.text && cards.length > 0) {
-              await addComment('card', cards[0].id, params.text);
-              showNotification('Commentaire ajouté', 'success');
+            if (cardToArchive) {
+              await archiveCard(cardToArchive.id);
+              showNotification(`Carte "${cardToArchive.title}" archivée`, 'success');
               voiceServiceRef.current.playSuccessSound();
             }
             break;
 
+          // SUPPRIMER - Supprime une carte ou catégorie
+          case 'delete':
+            if (params.target === 'card' && params.name) {
+              const cardToDelete = findCardByName(params.name);
+              if (cardToDelete) {
+                await deleteCard(cardToDelete.id);
+                showNotification(`Carte "${cardToDelete.title}" supprimée`, 'success');
+                voiceServiceRef.current.playSuccessSound();
+              }
+            } else if (params.target === 'categorie' && params.name) {
+              const categoryToDelete = findCategoryByName(params.name);
+              if (categoryToDelete) {
+                await deleteCategory(categoryToDelete.id);
+                showNotification(`Catégorie "${categoryToDelete.title}" supprimée`, 'success');
+                voiceServiceRef.current.playSuccessSound();
+              }
+            }
+            break;
+
+          // AJOUTER UN COMMENTAIRE - Fonctionne
+          case 'addComment':
+            if (params.text) {
+              let targetCard = cards[0];
+              if (params.cardName) {
+                const foundCard = findCardByName(params.cardName);
+                if (foundCard) targetCard = foundCard;
+              }
+
+              if (targetCard) {
+                await addComment('card', targetCard.id, params.text);
+                showNotification('Commentaire ajouté', 'success');
+                voiceServiceRef.current.playSuccessSound();
+              }
+            }
+            break;
+
+          // OUVRIR LA BIBLIOTHÈQUE - Fonctionne
           case 'openLibrary':
             setLibraryOpen(true);
+            navigate('/library');
             showNotification('Bibliothèque ouverte', 'info');
             break;
 
+          // NAVIGATION - Avec ou sans onglet
+          case 'navigate': {
+            const dest = params.destination?.toLowerCase() || '';
+            const tabId = params.tab;
+
+            console.log('[Voice] navigate:', dest, 'tab:', tabId);
+
+            if (dest.includes('dashboard') || dest === 'accueil') {
+              navigate('/');
+              if (tabId) setActiveTab(tabId);
+              showNotification(tabId ? `Dashboard onglet ${tabId}` : 'Dashboard ouvert', 'info');
+            } else if (dest.includes('projet') || dest.includes('board')) {
+              const targetPath = currentBoard ? `/board/${currentBoard.id}` : '/board';
+              navigate(targetPath);
+              if (tabId) setActiveTab(tabId);
+              showNotification(tabId ? `Board onglet ${tabId}` : 'Board ouvert', 'info');
+            } else if (dest.includes('bibliothèque') || dest.includes('library')) {
+              navigate('/library');
+              setLibraryOpen(true);
+              showNotification('Bibliothèque ouverte', 'info');
+            } else if (dest.includes('archive')) {
+              navigate('/archives');
+              showNotification('Archives ouvertes', 'info');
+            } else if (dest.includes('paramètre') || dest.includes('setting')) {
+              navigate('/settings');
+              showNotification('Paramètres ouverts', 'info');
+            }
+            break;
+          }
+
+          case 'navigateWithTab':
+            break;
+
+          // AIDE
           case 'help':
             setShowHelp(true);
             break;
 
+          // ANNULER
           case 'cancel':
             showNotification('Action annulée', 'info');
             break;
 
+          // RÉPÉTER
           case 'repeat':
             if (lastCommand) {
               handleVoiceCommand(lastCommand);
             }
             break;
 
+          // OUVRIR SOUS-CATÉGORIE
+          case 'openSubcategory':
+            if (params.name) {
+              // Chercher dans les catégories et sous-catégories
+              const cats = categories.filter(
+                c => c.title && c.title.toLowerCase().includes(params.name.toLowerCase())
+              );
+              if (cats.length > 0) {
+                setSelectedCategory(cats[0]);
+                showNotification(`Catégorie "${cats[0].title}" sélectionnée`, 'info');
+              }
+            }
+            break;
+
+          // RECHERCHE - Phase 3: Commandes de recherche
+          case 'search':
+            if (params.query) {
+              setSearchOpen(true);
+              showNotification(`Recherche: "${params.query}"`, 'info');
+              // La recherche sera effectuée via le panneau de recherche
+            }
+            break;
+
+          // PLANNING - Phase 3: Commandes Planning
+          case 'planningCommand':
+            if (params.action) {
+              const action = params.action.toLowerCase();
+              setActiveTab('planning');
+
+              if (action.includes('semaine') || action.includes('semain')) {
+                showNotification('Vue semaine activée - Utilisez le panneau pour naviguer', 'info');
+              } else if (action.includes('mois') || action.includes('moi')) {
+                showNotification('Vue mois activée - Utilisez le panneau pour naviguer', 'info');
+              } else if (action.includes('aujourd') || action.includes('jour')) {
+                showNotification("Aller à aujourd'hui", 'info');
+              } else if (action.includes('zoom') || action.includes('zoom avant')) {
+                showNotification('Zoom avant', 'info');
+              } else if (action.includes('zoom arrière') || action.includes('dézoom')) {
+                showNotification('Zoom arrière', 'info');
+              } else {
+                showNotification(`Planning: ${params.action}`, 'info');
+              }
+            }
+            break;
+
+          // SETTINGS - Phase 3: Commandes Paramètres
+          case 'settingsCommand':
+            if (params.section) {
+              const section = params.section.toLowerCase();
+              navigate('/settings');
+
+              if (section.includes('utilisateur') || section.includes('user')) {
+                showNotification('Paramètres utilisateur', 'info');
+              } else if (section.includes('projet') || section.includes('board')) {
+                showNotification('Paramètres des projets', 'info');
+              } else if (section.includes('couleur') || section.includes('color')) {
+                showNotification('Paramètres des couleurs', 'info');
+              } else if (section.includes('système') || section.includes('system')) {
+                navigate('/system-settings');
+                showNotification('Paramètres système', 'info');
+              } else {
+                showNotification(`Paramètres: ${params.section}`, 'info');
+              }
+            }
+            break;
+
+          // DASHBOARD - Phase 3: Commandes Dashboard
+          case 'dashboardCommand':
+            if (params.filter) {
+              const filter = params.filter.toLowerCase();
+
+              if (filter.includes('jalon') || filter.includes('milestone')) {
+                setActiveTab('taches');
+                showNotification('Filtrer sur les jalons', 'info');
+              } else if (filter.includes('tâche') || filter.includes('task')) {
+                showNotification('Filtrer sur les tâches', 'info');
+              } else if (filter.includes('temps')) {
+                showNotification('Afficher le temps passé', 'info');
+              } else if (filter.includes('tout') || filter.includes('tout afficher')) {
+                showNotification('Afficher tout', 'info');
+              } else {
+                showNotification(`Filtre Dashboard: ${params.filter}`, 'info');
+              }
+            }
+            break;
+
+          // OUVRIR PARAMÈTRES
+          case 'openSettings':
+            navigate('/settings');
+            showNotification('Paramètres ouverts', 'info');
+            break;
+
+          // OUVRIR RECHERCHE
+          case 'openSearch':
+            setSearchOpen(true);
+            showNotification('Panneau de recherche ouvert', 'info');
+            break;
+
+          // COMMANDES INCONNUES
           case 'unknown':
           default:
             showNotification('Commande non reconnue', 'error');
@@ -157,7 +462,7 @@ function VoiceControl() {
         }
       } catch (error) {
         console.error('Error executing command:', error);
-        showNotification("Erreur lors de l'exécution", 'error');
+        showNotification("Erreur lors de l'exécution: " + error.message, 'error');
       }
     },
     [
@@ -170,7 +475,19 @@ function VoiceControl() {
       addComment,
       lastCommand,
       setLibraryOpen,
-      showNotification,
+      archiveCard,
+      updateCard,
+      setSelectedCard,
+      deleteCard,
+      deleteCategory,
+      findCardByName,
+      findCategoryByName,
+      findColumnByName,
+      navigate,
+      setSelectedSubcategory,
+      setActiveTab,
+      categories,
+      setSearchOpen,
     ]
   );
 
@@ -185,19 +502,69 @@ function VoiceControl() {
   };
 
   const helpCommands = [
-    { cmd: 'Hey C-PRojeTs / Écoute', desc: "Activer l'écoute" },
+    // Commandes de base
+    { cmd: 'Hey C-PROJETS / Écoute', desc: "Activer l'écoute" },
     { cmd: 'Stop / Pause', desc: "Désactiver l'écoute" },
-    { cmd: 'Crée une carte [nom]', desc: 'Créer une carte' },
-    { cmd: 'Crée une catégorie [nom]', desc: 'Créer une catégorie' },
-    { cmd: 'Ouvre [nom]', desc: 'Ouvrir une carte' },
-    { cmd: 'Ferme', desc: 'Fermer la modal' },
-    { cmd: 'Tag [priorité]', desc: 'Définir la priorité' },
-    { cmd: 'Assigne à [nom]', desc: 'Assigner la tâche' },
-    { cmd: 'Archive', desc: 'Archiver la carte' },
-    { cmd: 'Ajoute un commentaire [texte]', desc: 'Ajouter un commentaire' },
-    { cmd: 'Ouvre la bibliothèque', desc: 'Ouvrir la bibliothèque' },
     { cmd: 'Aide', desc: 'Afficher les commandes' },
     { cmd: 'Annule', desc: "Annuler l'action" },
+    { cmd: 'Répète', desc: 'Répéter la dernière commande' },
+
+    // Gestion des cartes
+    { cmd: 'Crée une carte [nom]', desc: 'Créer une carte' },
+    { cmd: 'Crée une carte [nom] colonne [colonne]', desc: 'Créer dans une colonne spécifique' },
+    { cmd: 'Ouvre [nom de la carte]', desc: 'Ouvrir une carte' },
+    { cmd: 'Ferme', desc: 'Fermer la modal' },
+    { cmd: 'Archive', desc: 'Archiver la carte active' },
+    { cmd: 'Supprime [carte/catégorie] [nom]', desc: 'Supprimer un élément' },
+
+    // Catégories et sous-catégories
+    { cmd: 'Crée une catégorie [nom]', desc: 'Créer une catégorie' },
+    { cmd: 'Ouvre [nom de la catégorie]', desc: 'Ouvrir une sous-catégorie' },
+
+    // Propriétés des tâches
+    { cmd: 'Priorité [urgent/haute/basse/normal]', desc: 'Définir la priorité' },
+    { cmd: 'Assigne à [nom]', desc: 'Assigner la tâche' },
+    { cmd: 'Ajoute un commentaire [texte]', desc: 'Ajouter un commentaire' },
+
+    // Navigation
+    { cmd: 'Ouvre le dashboard', desc: 'Ouvrir le Dashboard' },
+    { cmd: 'Ouvre revue activité', desc: 'Revue activité' },
+    { cmd: 'Ouvre mes tâches', desc: 'Mes tâches' },
+    { cmd: 'Ouvre temps passé', desc: 'Temps passé' },
+    { cmd: 'Ouvre le projet', desc: 'Ouvrir le Board projet' },
+    { cmd: 'Ouvre les tâches', desc: 'Onglet Tâches du Board' },
+    { cmd: 'Ouvre les commandes', desc: 'Onglet Commandes du Board' },
+    { cmd: 'Ouvre le planning', desc: 'Ouvrir le Planning' },
+    { cmd: 'Ouvre les échanges', desc: 'Onglet Échanges du Board' },
+    { cmd: 'Ouvre les informations', desc: 'Onglet Informations du Board' },
+    { cmd: 'Ouvre la bibliothèque', desc: 'Ouvrir la Bibliothèque' },
+    { cmd: 'Ouvre les archives', desc: 'Ouvrir les Archives' },
+    { cmd: 'Ouvre les paramètres', desc: 'Ouvrir les Paramètres' },
+
+    // Recherche
+    { cmd: 'Recherche [terme]', desc: 'Effectuer une recherche' },
+    { cmd: 'Ouvre la recherche', desc: 'Ouvrir le panneau de recherche' },
+
+    // Bibliothèque
+    { cmd: 'Ouvre la bibliothèque', desc: 'Ouvrir la bibliothèque' },
+
+    // Planning (Phase 3)
+    { cmd: 'Planning semaine', desc: 'Basculer en vue semaine' },
+    { cmd: 'Planning mois', desc: 'Basculer en vue mois' },
+    { cmd: "Va à aujourd'hui", desc: 'Aller à la date du jour' },
+    { cmd: 'Zoom avant', desc: 'Zoomer sur le planning' },
+    { cmd: 'Zoom arrière', desc: 'Dézoomer sur le planning' },
+
+    // Paramètres (Phase 3)
+    { cmd: 'Paramètres utilisateur', desc: 'Ouvrir les paramètres utilisateur' },
+    { cmd: 'Paramètres couleurs', desc: 'Ouvrir les paramètres de couleurs' },
+    { cmd: 'Paramètres système', desc: 'Ouvrir les paramètres système' },
+
+    // Dashboard (Phase 3)
+    { cmd: 'Dashboard jalons', desc: 'Afficher les jalons' },
+    { cmd: 'Dashboard tâches', desc: 'Afficher les tâches' },
+    { cmd: 'Dashboard temps', desc: 'Afficher le temps passé' },
+    { cmd: 'Dashboard tout', desc: 'Afficher tout' },
   ];
 
   return (
@@ -221,16 +588,16 @@ function VoiceControl() {
           {isListening && (
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-3 animate-pulse border dark:border-gray-700">
               <p className="text-sm text-blue-600 dark:text-blue-400 font-medium">En écoute...</p>
-              {lastCommand && (
+              {displayedTranscript && (
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  "{lastCommand.original}"
+                  "{displayedTranscript}"
                 </p>
               )}
             </div>
           )}
 
           {showHelp && (
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 w-72 max-h-80 overflow-y-auto border dark:border-gray-700">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 w-80 max-h-96 overflow-y-auto border dark:border-gray-700">
               <div className="flex justify-between items-center mb-2">
                 <h3 className="font-semibold text-sm dark:text-white">Commandes vocales</h3>
                 <button

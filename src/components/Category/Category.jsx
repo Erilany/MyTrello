@@ -13,7 +13,7 @@ import {
   Mail,
 } from 'lucide-react';
 
-function Category({ category, isDragging = false, dragHandleProps, depth = 0 }) {
+function Category({ category, isDragging = false, dragHandleProps, depth = 0, cardId }) {
   const {
     subcategories,
     categories,
@@ -26,6 +26,10 @@ function Category({ category, isDragging = false, dragHandleProps, depth = 0 }) 
     moveSubcategory,
     getEmailsForSubcategory,
   } = useApp();
+
+  useEffect(() => {
+    console.log('[Category] Render - categoryId:', category.id, 'title:', category.title);
+  }, [category.id, category.title]);
 
   const catSubcategories = subcategories?.filter(s => s.category_id === category.id) || [];
   const hasEmails = catSubcategories.some(

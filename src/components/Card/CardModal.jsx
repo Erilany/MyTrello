@@ -1,6 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
-import { X, Calendar, Plus, Folder, Mail } from 'lucide-react';
+import {
+  X,
+  Calendar,
+  Plus,
+  Folder,
+  Mail,
+  Pencil,
+  Trash2,
+  Check,
+  X as XIcon,
+  ChevronUp,
+  ChevronDown,
+} from 'lucide-react';
 
 function CardModal({ card, onClose }) {
   const {
@@ -9,21 +21,42 @@ function CardModal({ card, onClose }) {
     subcategories,
     saveToLibrary,
     createCategory,
+    updateCategory,
+    deleteCategory,
     cards,
     libraryItems,
     getEmailsForSubcategory,
   } = useApp();
 
   const [title, setTitle] = useState(card.title);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     console.log('[CardModal] MOUNTED for card:', card.id, card.title);
   }, []);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setRefreshKey(k => k + 1);
+    }, 500);
+    return () => clearInterval(interval);
+  }, []);
+
+  const triggerRefresh = () => {
+    setRefreshKey(k => k + 1);
+  };
+
   const [description, setDescription] = useState(card.description || '');
   const [dueDate, setDueDate] = useState(card.due_date || '');
 
-  // Get categories for this card, then subcategories, then emails
-  const cardCategories = categories?.filter(c => Number(c.card_id) === Number(card.id)) || [];
+  const cardCategories = useMemo(() => {
+    const cats =
+      categories
+        ?.filter(c => Number(c.card_id) === Number(card.id))
+        .sort((a, b) => (a.position || 0) - (b.position || 0)) || [];
+    return cats;
+  }, [categories, card.id]);
+
   let totalEmails = 0;
   for (const cat of cardCategories) {
     const catSubcategories =
@@ -36,20 +69,20 @@ function CardModal({ card, onClose }) {
     }
   }
   const [newCategoryTitle, setNewCategoryTitle] = useState('');
+  const [editingCategoryId, setEditingCategoryId] = useState(null);
+  const [editingCategoryTitle, setEditingCategoryTitle] = useState('');
+  const [deletingCategoryId, setDeletingCategoryId] = useState(null);
 
-  // MS Project fields
   const [startDate, setStartDate] = useState(card.start_date || '');
   const [durationDays, setDurationDays] = useState(card.duration_days || 1);
   const [parentId, setParentId] = useState(card.parent_id || null);
   const [predecessorId, setPredecessorId] = useState(card.predecessor_id || null);
 
-  // Temps repère from library (read-only)
   const libraryCard = libraryItems?.find(item => item.type === 'card' && item.title === card.title);
   const tempsRepere = libraryCard
     ? JSON.parse(libraryCard.content_json)?.card?.duration_days || libraryCard.duration || null
     : null;
 
-  // Helper to add working days (excluding weekends)
   const addWorkingDays = (startDateStr, days) => {
     if (!startDateStr || days <= 0) return '';
     const date = new Date(startDateStr);
@@ -64,7 +97,6 @@ function CardModal({ card, onClose }) {
     return date.toISOString().split('T')[0];
   };
 
-  // Helper to subtract working days
   const subtractWorkingDays = (endDateStr, days) => {
     if (!endDateStr || days <= 0) return '';
     const date = new Date(endDateStr);
@@ -84,11 +116,9 @@ function CardModal({ card, onClose }) {
     setDurationDays(duration);
 
     if (startDate && !dueDate) {
-      // Calculate due date from start date + duration
       const calculatedDueDate = addWorkingDays(startDate, duration);
       setDueDate(calculatedDueDate);
     } else if (dueDate && !startDate) {
-      // Calculate start date from due date - duration
       const calculatedStartDate = subtractWorkingDays(dueDate, duration);
       setStartDate(calculatedStartDate);
     }
@@ -97,7 +127,6 @@ function CardModal({ card, onClose }) {
   const handleStartDateChange = newStartDate => {
     setStartDate(newStartDate);
     if (newStartDate && durationDays > 0 && !dueDate) {
-      // Calculate due date from start date + duration
       const calculatedDueDate = addWorkingDays(newStartDate, durationDays);
       setDueDate(calculatedDueDate);
     }
@@ -106,7 +135,6 @@ function CardModal({ card, onClose }) {
   const handleDueDateChange = newDueDate => {
     setDueDate(newDueDate);
     if (newDueDate && durationDays > 0 && !startDate) {
-      // Calculate start date from due date - duration
       const calculatedStartDate = subtractWorkingDays(newDueDate, durationDays);
       setStartDate(calculatedStartDate);
     }
@@ -153,13 +181,68 @@ function CardModal({ card, onClose }) {
     }
   };
 
+  const handleStartEditCategory = cat => {
+    setEditingCategoryId(cat.id);
+    setEditingCategoryTitle(cat.title);
+  };
+
+  const handleSaveEditCategory = async () => {
+    if (editingCategoryTitle.trim() && editingCategoryId) {
+      await updateCategory(editingCategoryId, { title: editingCategoryTitle.trim() });
+      setEditingCategoryId(null);
+      setEditingCategoryTitle('');
+      triggerRefresh();
+    }
+  };
+
+  const handleCancelEditCategory = () => {
+    setEditingCategoryId(null);
+    setEditingCategoryTitle('');
+  };
+
+  const handleDeleteCategory = async catId => {
+    if (window.confirm('Voulez-vous vraiment supprimer cette catégorie?')) {
+      await deleteCategory(catId);
+      setDeletingCategoryId(null);
+      triggerRefresh();
+    }
+  };
+
+  const handleMoveCategoryUp = catId => {
+    const currentCategories = categories
+      .filter(c => Number(c.card_id) === Number(card.id))
+      .sort((a, b) => (a.position || 0) - (b.position || 0));
+    const idx = currentCategories.findIndex(c => c.id === catId);
+    if (idx <= 0) return;
+    const newOrder = [...currentCategories];
+    const temp = newOrder[idx - 1];
+    newOrder[idx - 1] = newOrder[idx];
+    newOrder[idx] = temp;
+    newOrder.forEach((cat, i) => updateCategory(cat.id, { position: i }));
+    triggerRefresh();
+  };
+
+  const handleMoveCategoryDown = catId => {
+    const currentCategories = categories
+      .filter(c => Number(c.card_id) === Number(card.id))
+      .sort((a, b) => (a.position || 0) - (b.position || 0));
+    const idx = currentCategories.findIndex(c => c.id === catId);
+    if (idx === -1 || idx >= currentCategories.length - 1) return;
+    const newOrder = [...currentCategories];
+    const temp = newOrder[idx];
+    newOrder[idx] = newOrder[idx + 1];
+    newOrder[idx + 1] = temp;
+    newOrder.forEach((cat, i) => updateCategory(cat.id, { position: i }));
+    triggerRefresh();
+  };
+
   return (
     <div
       className="fixed inset-0 bg-black/50 flex items-center justify-center z-[99999]"
       onClick={onClose}
     >
       <div
-        className="bg-card rounded-lg shadow-card w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col"
+        className="bg-card rounded-lg shadow-card w-full max-w-3xl h-[90vh] overflow-hidden flex flex-col"
         style={{ width: 'calc(100vw * 0.35)', minWidth: '400px' }}
         onClick={e => e.stopPropagation()}
       >
@@ -183,7 +266,7 @@ function CardModal({ card, onClose }) {
           </button>
         </div>
 
-        <div className="p-4 space-y-4 overflow-y-auto flex-1">
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
           <div>
             <label className="block text-sm font-medium text-secondary mb-1">Description</label>
             <textarea
@@ -305,24 +388,81 @@ function CardModal({ card, onClose }) {
             </h4>
 
             <div className="space-y-2 mb-3">
-              {(cardCategories || []).map(cat => (
+              {(cardCategories || []).map((cat, idx) => (
                 <div
                   key={cat.id}
-                  className="bg-card-hover rounded p-2 flex items-center justify-between"
+                  className="bg-card-hover rounded p-2 flex items-center justify-between transition-all"
                 >
-                  <span className="text-sm text-primary">{cat.title}</span>
-                  {cat.priority !== 'normal' && (
-                    <span
-                      className={`badge ${
-                        cat.priority === 'urgent'
-                          ? 'badge-urgent'
-                          : cat.priority === 'high'
-                            ? 'badge-waiting'
-                            : 'badge-normal'
-                      }`}
-                    >
-                      {cat.priority}
-                    </span>
+                  {editingCategoryId === cat.id ? (
+                    <div className="flex items-center gap-2 flex-1">
+                      <input
+                        type="text"
+                        value={editingCategoryTitle}
+                        onChange={e => setEditingCategoryTitle(e.target.value)}
+                        className="flex-1 px-2 py-1 bg-input border border-std rounded text-sm text-primary focus:outline-none focus:border-accent"
+                        autoFocus
+                      />
+                      <button
+                        onClick={handleSaveEditCategory}
+                        className="p-1 text-green-500 hover:text-green-400"
+                      >
+                        <Check size={14} />
+                      </button>
+                      <button
+                        onClick={handleCancelEditCategory}
+                        className="p-1 text-red-500 hover:text-red-400"
+                      >
+                        <XIcon size={14} />
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-2 flex-1">
+                        <span className="text-xs text-muted w-4">{idx + 1}</span>
+                        <span className="text-sm text-primary">{cat.title}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => handleMoveCategoryUp(cat.id)}
+                          disabled={idx === 0}
+                          className="p-1 text-muted hover:text-primary disabled:opacity-30"
+                        >
+                          <ChevronUp size={14} />
+                        </button>
+                        <button
+                          onClick={() => handleMoveCategoryDown(cat.id)}
+                          disabled={idx === cardCategories.length - 1}
+                          className="p-1 text-muted hover:text-primary disabled:opacity-30"
+                        >
+                          <ChevronDown size={14} />
+                        </button>
+                        <button
+                          onClick={() => handleStartEditCategory(cat)}
+                          className="p-1 text-muted hover:text-primary"
+                        >
+                          <Pencil size={14} />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteCategory(cat.id)}
+                          className="p-1 text-muted hover:text-red-500"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                        {cat.priority !== 'normal' && (
+                          <span
+                            className={`badge ${
+                              cat.priority === 'urgent'
+                                ? 'badge-urgent'
+                                : cat.priority === 'high'
+                                  ? 'badge-waiting'
+                                  : 'badge-normal'
+                            }`}
+                          >
+                            {cat.priority}
+                          </span>
+                        )}
+                      </div>
+                    </>
                   )}
                 </div>
               ))}

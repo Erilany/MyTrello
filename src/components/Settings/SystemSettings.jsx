@@ -30,18 +30,7 @@ import {
 import { loadZonesData, addZoneItem, updateZoneItem, deleteZoneItem } from '../../data/ZonesData';
 import { loadTagsData, addTag, updateTag, deleteTag, resetTagsData } from '../../data/TagsData';
 import { getOrderedChapters, saveChaptersOrder } from '../../data/ChaptersData';
-
-const AVAILABLE_FUNCTIONS = [
-  'Manager de projets',
-  'Chargé(e) de Concertation',
-  "Chargé(e) d'Etudes LA",
-  "Chargé(e) d'Etudes LS",
-  "Chargé(e) d'Etudes Poste HT",
-  "Chargé(e) d'Etudes Poste BT et CC",
-  "Chargé(e) d'Etudes SPC",
-  'Contrôleur Travaux',
-  'Assistant(e) Etudes',
-];
+import { loadFunctionsFromAllProjects } from '../../data/FunctionsData';
 
 function SystemSettings() {
   const [activeTab, setActiveTab] = useState('database');
@@ -51,6 +40,7 @@ function SystemSettings() {
   const [zonesData, setZonesData] = useState([]);
   const [tagsData, setTagsData] = useState([]);
   const [chaptersOrder, setChaptersOrder] = useState([]);
+  const allFunctions = loadFunctionsFromAllProjects();
 
   useEffect(() => {
     setGmrData(loadGMRData());
@@ -104,7 +94,7 @@ function SystemSettings() {
   ];
 
   const tagsMultiSelectOptions = {
-    functions: AVAILABLE_FUNCTIONS,
+    functions: allFunctions,
   };
 
   const handleGMRAdd = values => addGMRItem(values.code, values.label);

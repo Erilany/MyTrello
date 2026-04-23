@@ -1,5 +1,6 @@
 import React from 'react';
 import { Trash2, PlusCircle } from 'lucide-react';
+import { formatDateFrench } from '../../../utils/dateUtils';
 
 export function AutresLignesTable({
   autresLignes,
@@ -54,7 +55,7 @@ export function AutresLignesTable({
                 if (e.target.checked && syncFromLigne010) syncFromLigne010('dateReception');
               }}
             />
-            Date réception unique ({ligne010?.dateReception || '—'})
+            Date réception unique ({formatDateFrench(ligne010?.dateReception) || '—'})
           </label>
           <button
             onClick={handleAddAutresLigne}

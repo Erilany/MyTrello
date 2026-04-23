@@ -1,5 +1,5 @@
 import React, { useMemo, useEffect, useRef, useState } from 'react';
-import { getWeekNumber } from '../../utils/dateUtils';
+import { getWeekNumber, formatDateFrench } from '../../utils/dateUtils';
 import { ROW_HEIGHTS_PX } from '../../utils/hierarchyUtils';
 
 function getTaskStatusColor(status) {
@@ -320,7 +320,7 @@ function TaskBar({ task, pos, rowHeight, dayWidth }) {
         width: `${pos.duration * dayWidth}px`,
         top: `${topOffset}px`,
       }}
-      title={`${task.title} (${task.start_date || '?'} - ${task.due_date || '?'})`}
+      title={`${task.title} (${formatDateFrench(task.start_date) || '?'} - ${formatDateFrench(task.due_date) || '?'})`}
     >
       {task.progress > 0 && task.progress < 100 && (
         <div

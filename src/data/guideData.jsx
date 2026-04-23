@@ -180,8 +180,8 @@ export const pageGuides = {
         ),
       },
       {
-        id: 'onglets',
-        title: '3 onglets du Dashboard',
+        id: 'temps',
+        title: 'Temps passé',
         content: (
           <div className="space-y-4 text-sm">
             <div className="p-3 bg-card-hover rounded">
@@ -234,7 +234,7 @@ export const pageGuides = {
                       <strong>Projet, Action, Tâche, État, Avancement, Priorité, Échéance</strong>
                     </li>
                     <li>
-                      • Code couleur :{' '}
+                      • Code couleur État :{' '}
                       <span className="inline-flex items-center gap-1">
                         <span className="w-2 h-2 bg-green-500 rounded"></span>Terminé
                       </span>
@@ -252,8 +252,14 @@ export const pageGuides = {
                       </span>
                     </li>
                     <li>
-                      • Priorités : <span className="text-red-500">Urgent</span>,{' '}
-                      <span className="text-orange-500">Haute</span>, Normale
+                      • <strong>Barre d'avancement</strong> : couleur = couleur de la colonne État
+                    </li>
+                    <li>
+                      • <strong>Priorité</strong> : priorité du PROJET (URGENT, Haute, Normale,
+                      Basse) -{' '}
+                      <span className="text-muted italic">
+                        définie dans les paramètres du projet
+                      </span>
                     </li>
                   </ul>
                 </div>
@@ -324,11 +330,10 @@ export const pageGuides = {
                   <p className="text-muted font-medium mb-1">Données affichées</p>
                   <ul className="space-y-1 text-muted ml-2">
                     <li>
-                      • Projets où l'utilisateur est assigné dans <strong>contacts internes</strong>
+                      • <strong>Cartes</strong> avec tag : affichées dans la timeline
                     </li>
                     <li>
-                      • Catégories/Sous-catégories{' '}
-                      <strong>taguées avec date de début ET fin</strong>
+                      • <strong>Sans tag</strong> : non affichées (mais comptabilisées)
                     </li>
                   </ul>
                 </div>
@@ -427,34 +432,6 @@ export const pageGuides = {
             <div className="flex items-center gap-2 p-2 bg-blue-500/10 rounded">
               <span className="text-blue-500 font-medium">Référents</span>
               <span className="text-muted">- Préparation des modèles</span>
-            </div>
-          </div>
-        ),
-      },
-      {
-        id: 'onglets',
-        title: '5 onglets',
-        content: (
-          <div className="space-y-2 text-sm">
-            <div className="p-2 bg-card-hover rounded">
-              <p className="font-medium text-primary mb-1">1. Informations</p>
-              <p className="text-muted">Liens, EOTP, interlocuteurs internes/externes.</p>
-            </div>
-            <div className="p-2 bg-card-hover rounded">
-              <p className="font-medium text-primary mb-1">2. Tâches</p>
-              <p className="text-muted">Chapitres, cartes, catégories, tâches.</p>
-            </div>
-            <div className="p-2 bg-card-hover rounded">
-              <p className="font-medium text-primary mb-1">3. Commandes</p>
-              <p className="text-muted">Gestion des commandes fournisseurs.</p>
-            </div>
-            <div className="p-2 bg-card-hover rounded">
-              <p className="font-medium text-primary mb-1">4. Planning</p>
-              <p className="text-muted">Vue Gantt chronologique.</p>
-            </div>
-            <div className="p-2 bg-card-hover rounded">
-              <p className="font-medium text-primary mb-1">5. Échanges</p>
-              <p className="text-muted">Messages et notifications.</p>
             </div>
           </div>
         ),
@@ -619,6 +596,27 @@ export const pageGuides = {
                 </li>
               </ul>
             </div>
+            <div className="p-2 bg-accent/10 border border-accent/30 rounded">
+              <p className="font-medium text-accent mb-2">Emails .msg (Outlook)</p>
+              <ul className="space-y-1 text-muted text-xs">
+                <li>
+                  • <strong>Drag & drop</strong> : glisser-déposer des fichiers .msg sur la tâche
+                </li>
+                <li>
+                  • <strong>Parsing automatique</strong> : date, objet, corps du message
+                </li>
+                <li>
+                  • <strong>Modifier l'objet</strong> : clic sur le sujet pour le renommer
+                </li>
+                <li>
+                  → Le nouveau nom est <strong>enregistré dans l'appli</strong> (champ
+                  customSubject)
+                </li>
+                <li>
+                  → <strong>Outlook non modifié</strong> : le fichier .msg original garde son objet
+                </li>
+              </ul>
+            </div>
           </div>
         ),
       },
@@ -707,15 +705,6 @@ export const pageGuides = {
                 <li>
                   • <strong>Notifications</strong> pour messages non lus
                 </li>
-              </ul>
-            </div>
-            <div className="p-2 bg-card-hover rounded">
-              <p className="font-medium text-primary mb-2">Intégration emails</p>
-              <ul className="space-y-1 text-muted">
-                <li>
-                  • <strong>Drag & drop</strong> fichiers .msg (Outlook)
-                </li>
-                <li>• Parsing automatique des emails</li>
               </ul>
             </div>
           </div>
@@ -832,6 +821,43 @@ export const pageGuides = {
   subcategory: {
     title: 'Formulaire Tâche',
     sections: [
+      {
+        id: 'emails',
+        title: 'Intégration Emails',
+        content: (
+          <div className="space-y-3 text-sm">
+            <div className="p-2 bg-card-hover rounded">
+              <p className="font-medium text-primary mb-2">Fichiers .msg (Outlook)</p>
+              <ul className="space-y-1 text-muted">
+                <li>
+                  • <strong>Drag & drop</strong> : glisser-déposer des fichiers .msg sur la tâche
+                </li>
+                <li>
+                  • <strong>Parsing automatique</strong> : date, objet, corps du message
+                </li>
+                <li>
+                  • <strong>Ouvrir</strong> : clic sur l'icône email pour ouvrir dans Outlook
+                </li>
+              </ul>
+            </div>
+            <div className="p-2 bg-accent/10 border border-accent/30 rounded">
+              <p className="font-medium text-accent mb-2">Modifier l'objet</p>
+              <ul className="space-y-1 text-muted text-xs">
+                <li>
+                  • <strong>Clic sur le sujet</strong> pour le renommer
+                </li>
+                <li>
+                  • Le nouveau nom est <strong>enregistré dans l'appli</strong> (champ
+                  customSubject)
+                </li>
+                <li>
+                  • <strong>Outlook non modifié</strong> : le fichier .msg original garde son objet
+                </li>
+              </ul>
+            </div>
+          </div>
+        ),
+      },
       {
         id: 'utilisateurs',
         title: 'Utilisateurs',
@@ -1366,26 +1392,6 @@ export const pageGuides = {
         ),
       },
       {
-        id: 'onglets',
-        title: '2 onglets',
-        content: (
-          <div className="space-y-2 text-sm">
-            <div className="p-2 bg-card-hover rounded">
-              <p className="font-medium text-primary mb-1">1. Bibliothèque</p>
-              <p className="text-muted">
-                Gestion des modèles réutilisables (cartes, catégories, tâches).
-              </p>
-            </div>
-            <div className="p-2 bg-card-hover rounded">
-              <p className="font-medium text-primary mb-1">2. Contrats</p>
-              <p className="text-muted">
-                Tableau des marchés avec liens DOKI (N° Marché, Fournisseur, Dates...).
-              </p>
-            </div>
-          </div>
-        ),
-      },
-      {
         id: 'bibliotheque-detail',
         title: 'Onglet 1 - Bibliothèque',
         content: (
@@ -1620,7 +1626,7 @@ export const pageGuides = {
       },
     ],
   },
-  userSettings: {
+  appSettings: {
     title: 'Paramètres Utilisateur',
     sections: [
       {
@@ -1630,28 +1636,6 @@ export const pageGuides = {
           <div className="space-y-2 text-sm">
             <div className="flex items-center gap-2 p-2 bg-green-500/10 rounded">
               <span className="text-green-500 font-medium">Tous les utilisateurs</span>
-            </div>
-          </div>
-        ),
-      },
-      {
-        id: 'onglets',
-        title: '3 onglets',
-        content: (
-          <div className="space-y-2 text-sm">
-            <div className="p-2 bg-card-hover rounded">
-              <p className="font-medium text-primary mb-1">Profil</p>
-              <p className="text-muted text-xs">
-                Nom (pour les échanges) et Fonction (tags visibles)
-              </p>
-            </div>
-            <div className="p-2 bg-card-hover rounded">
-              <p className="font-medium text-primary mb-1">Favoris Bibliothèque</p>
-              <p className="text-muted text-xs">Gestion des favoris</p>
-            </div>
-            <div className="p-2 bg-card-hover rounded">
-              <p className="font-medium text-primary mb-1">Sauvegarde</p>
-              <p className="text-muted text-xs">Exporter/Importer JSON</p>
             </div>
           </div>
         ),
@@ -1706,145 +1690,186 @@ export const pageGuides = {
       },
     ],
   },
-  userSettings: {
-    title: 'Paramètres',
-    sections: [
-      {
-        id: 'util',
-        title: 'Utilisateurs',
-        content: (
-          <div className="space-y-3 text-sm">
-            <div className="flex items-center gap-2 p-2 bg-green-500/10 rounded">
-              <span className="text-green-500 font-medium">Tous les utilisateurs</span>
-            </div>
-          </div>
-        ),
-      },
-      {
-        id: 'onglets',
-        title: '3 onglets',
-        content: (
-          <div className="space-y-3 text-sm">
-            <div className="p-2 bg-card-hover rounded">
-              <p className="font-medium text-primary mb-2">Profil</p>
-              <ul className="space-y-1 text-muted">
-                <li>
-                  • <strong>Nom</strong> : utilisé pour les échanges (@mention)
-                </li>
-                <li>
-                  • <strong>Fonction</strong> : définit les tags visibles
-                </li>
-              </ul>
-            </div>
-            <div className="p-2 bg-card-hover rounded">
-              <p className="font-medium text-primary mb-2">Favoris Bibliothèque</p>
-              <ul className="space-y-1 text-muted">
-                <li>• Gestion des favoris</li>
-              </ul>
-            </div>
-            <div className="p-2 bg-card-hover rounded">
-              <p className="font-medium text-primary mb-2">Sauvegarde</p>
-              <ul className="space-y-1 text-muted">
-                <li>
-                  • <strong>Exporter</strong> en JSON
-                </li>
-                <li>
-                  • <strong>Importer</strong> depuis JSON
-                </li>
-              </ul>
-            </div>
-          </div>
-        ),
-      },
-    ],
-  },
   systemSettings: {
     title: 'Paramètres Système',
     sections: [
       {
-        id: 'util',
+        id: 'utilisateurs',
         title: 'Utilisateurs',
         content: (
-          <div className="space-y-3 text-sm">
+          <div className="space-y-2 text-sm">
             <div className="flex items-center gap-2 p-2 bg-blue-500/10 rounded">
               <span className="text-blue-500 font-medium">Référents ONLY</span>
+              <span className="text-muted">- Accès complet</span>
             </div>
+            <p className="text-muted text-xs mt-2">
+              Seul les utilisateurs avec le rôle "Référent" peuvent accéder à cette page pour
+              configurer les éléments globaux de l'application.
+            </p>
           </div>
         ),
       },
       {
-        id: 'onglets',
-        title: '5 onglets',
+        id: 'base-de-donnees',
+        title: 'Base de données',
         content: (
           <div className="space-y-3 text-sm">
             <div className="p-2 bg-card-hover rounded">
-              <p className="font-medium text-primary mb-2">Base de données</p>
+              <p className="font-medium text-primary mb-2">Chapitres</p>
               <ul className="space-y-1 text-muted">
                 <li>
-                  • <strong>Chapitres</strong> : drag &amp; drop
+                  • <strong>Drag & drop</strong> : réorganiser l'ordre des chapitres
                 </li>
                 <li>
-                  • <strong>GMR</strong> : code 4 caractères
+                  • <strong>Ordre persistant</strong> : sauvegardé dans la bibliothèque
                 </li>
                 <li>
-                  • <strong>Catégories projets</strong>
-                </li>
-                <li>
-                  • <strong>Zones</strong>
-                </li>
-                <li>
-                  • <strong>Tags Revue d'activité</strong>
+                  • <strong>Synchronisation</strong> : se met à jour automatiquement avec la
+                  bibliothèque
                 </li>
               </ul>
             </div>
             <div className="p-2 bg-card-hover rounded">
-              <p className="font-medium text-primary mb-1">Stockage</p>
-              <p className="text-muted text-xs">À venir</p>
-            </div>
-            <div className="p-2 bg-card-hover rounded">
-              <p className="font-medium text-primary mb-1">Sauvegarde auto</p>
-              <p className="text-muted text-xs">À venir</p>
-            </div>
-            <div className="p-2 bg-card-hover rounded">
-              <p className="font-medium text-primary mb-2">Modèles Bibliothèque</p>
+              <p className="font-medium text-primary mb-2">GMR (Groupe Métrique Référentiel)</p>
               <ul className="space-y-1 text-muted">
-                <li>• Arborescence des modèles</li>
-                <li>• Import/Export JSON</li>
+                <li>
+                  • <strong>Code</strong> : 4 caractères maximum (identifiant projet)
+                </li>
+                <li>
+                  • <strong>Libellé</strong> : nom descriptif
+                </li>
+                <li>
+                  • <strong>Usage</strong> : filtrage et identification dans les projets
+                </li>
               </ul>
             </div>
             <div className="p-2 bg-card-hover rounded">
-              <p className="font-medium text-primary mb-2">Contrats</p>
+              <p className="font-medium text-primary mb-2">Priorités de projet</p>
               <ul className="space-y-1 text-muted">
-                <li>• Import CSV</li>
+                <li>
+                  • <strong>Libellé</strong> : Urgent, Haute, Normale, Basse
+                </li>
+                <li>
+                  • <strong>Reset</strong> : bouton pour réinitialiser aux valeurs par défaut
+                </li>
+                <li>
+                  • <strong>Usage</strong> : priorité définie dans les paramètres de chaque projet
+                </li>
+              </ul>
+            </div>
+            <div className="p-2 bg-card-hover rounded">
+              <p className="font-medium text-primary mb-2">Zones géographiques</p>
+              <ul className="space-y-1 text-muted">
+                <li>
+                  • <strong>Libellé</strong> : nom de la zone (ex: Normandie, Bretagne...)
+                </li>
+                <li>
+                  • <strong>Usage</strong> : regroupement dans la Revue d'activité
+                </li>
+              </ul>
+            </div>
+            <div className="p-2 bg-accent/10 border border-accent/30 rounded">
+              <p className="font-medium text-accent mb-2">Tags Revue d'activité</p>
+              <ul className="space-y-2 text-muted">
+                <li>
+                  • <strong>Nom</strong> : nom du tag affiché dans la timeline
+                </li>
+                <li>
+                  • <strong>Couleur</strong> : couleur de fond des éléments tagués
+                </li>
+                <li>
+                  • <strong>Fonctions</strong> :filtrable par fonction (multi-sélection)
+                </li>
+                <li className="text-xs text-muted mt-1">
+                  <strong>Fonctions disponibles :</strong>
+                  <br />
+                  Manager de projets, Chargé(e) de Concertation, Chargé(e) d'Etudes LA, Chargé(e)
+                  d'Etudes LS, Chargé(e) d'Etudes Poste HT, Chargé(e) d'Etudes Poste BT et CC,
+                  Chargé(e) d'Etudes SPC, Contrôleur Travaux, Assistant(e) Etudes
+                </li>
               </ul>
             </div>
           </div>
         ),
       },
       {
-        id: 'liens',
-        title: 'Liens avec Ressources',
+        id: 'stockage',
+        title: 'Stockage',
         content: (
           <div className="space-y-2 text-sm">
             <div className="p-2 bg-card-hover rounded">
+              <p className="text-muted">Espace de stockage utilisé par l'application.</p>
+              <p className="text-xs text-muted mt-1 font-medium text-orange-500">
+                Fonctionnalité à venir.
+              </p>
+            </div>
+            <div className="p-2 bg-card-hover rounded opacity-50">
+              <p className="font-medium text-primary mb-1">Informations prévues</p>
+              <ul className="space-y-1 text-muted text-xs">
+                <li>• Capacité totale</li>
+                <li>• Espace utilisé</li>
+                <li>• Répartition par type de données</li>
+              </ul>
+            </div>
+          </div>
+        ),
+      },
+      {
+        id: 'sauvegarde-auto',
+        title: 'Sauvegarde auto',
+        content: (
+          <div className="space-y-2 text-sm">
+            <div className="p-2 bg-card-hover rounded">
+              <p className="text-muted">Sauvegardes automatiques des données système.</p>
+              <p className="text-xs text-muted mt-1 font-medium text-orange-500">
+                Fonctionnalité à venir.
+              </p>
+            </div>
+            <div className="p-2 bg-card-hover rounded opacity-50">
+              <p className="font-medium text-primary mb-1">Options prévues</p>
+              <ul className="space-y-1 text-muted text-xs">
+                <li>• Intervalle de sauvegarde (quotidien/hebdomadaire)</li>
+                <li>• Destination (local/cloud)</li>
+                <li>• Nombre de versions conservées</li>
+                <li>• Restauration depuis une sauvegarde</li>
+              </ul>
+            </div>
+          </div>
+        ),
+      },
+      {
+        id: 'modeles-bibliotheque',
+        title: 'Modèles Bibliothèque',
+        content: (
+          <div className="space-y-3 text-sm">
+            <div className="p-2 bg-card-hover rounded">
+              <p className="font-medium text-primary mb-2">Gestion des modèles</p>
+              <ul className="space-y-1 text-muted">
+                <li>
+                  • <strong>Importer</strong> : ajout de modèles depuis fichier JSON externe
+                </li>
+                <li>
+                  • <strong>Exporter</strong> : sauvegarde des modèles en JSON
+                </li>
+                <li>
+                  • <strong>Supprimer</strong> : retire les modèles de la bibliothèque
+                </li>
+              </ul>
+            </div>
+            <div className="p-2 bg-accent/10 border border-accent/30 rounded">
+              <p className="font-medium text-accent mb-2">Composition des modèles</p>
               <ul className="space-y-1 text-muted text-xs">
                 <li>
-                  • <strong>Chapitres</strong> → filtrage des cartes
+                  • <strong>Cartes</strong> : structure de base avec chapitres
                 </li>
                 <li>
-                  • <strong>GMR</strong> → Revue d'activité
+                  • <strong>Catégories</strong> : sections au sein des cartes
                 </li>
                 <li>
-                  • <strong>Zones</strong> → regroupement géographique
+                  • <strong>Sous-catégories</strong> : tâches avec ou sans jalons
                 </li>
                 <li>
-                  • <strong>Tags</strong> → filtrage par fonction
-                </li>
-                <li>
-                  • <strong>Modèles</strong> → Bibliothèque
-                </li>
-                <li>
-                  • <strong>Contrats</strong> → Ressources → Contrats
+                  • <strong>Métadonnées</strong> : temps repère, couleurs, assignations
                 </li>
               </ul>
             </div>
@@ -1852,15 +1877,66 @@ export const pageGuides = {
         ),
       },
       {
-        id: 'regles',
-        title: 'Règles automatiques',
+        id: 'contrats',
+        title: 'Contrats',
         content: (
-          <div className="space-y-2 text-sm">
+          <div className="space-y-3 text-sm">
             <div className="p-2 bg-card-hover rounded">
+              <p className="font-medium text-primary mb-2">Marchés-cadres</p>
+              <ul className="space-y-1 text-muted">
+                <li>
+                  • <strong>Tableau</strong> : liste des marchés avec détails
+                </li>
+                <li>
+                  • <strong>Lien DOKI</strong> : vers la fiche marché externe
+                </li>
+                <li>
+                  • <strong>Import</strong> : récupération depuis fichiers externes
+                </li>
+              </ul>
+            </div>
+            <div className="p-2 bg-card-hover rounded">
+              <p className="font-medium text-primary mb-2">Colonnes du tableau</p>
               <ul className="space-y-1 text-muted text-xs">
-                <li>• Synchronisation automatique des données</li>
-                <li>• Tags mis à jour depuis Bibliothèque</li>
-                <li>• Chapitres synchronisés avec Bibliothèque</li>
+                <li>• N° Marché</li>
+                <li>• Fournisseur</li>
+                <li>• Date début</li>
+                <li>• Date fin</li>
+                <li>• Montant</li>
+                <li>• Lien DOKI</li>
+              </ul>
+            </div>
+          </div>
+        ),
+      },
+      {
+        id: 'annuaire-entreprises',
+        title: 'Annuaire Entreprises',
+        content: (
+          <div className="space-y-3 text-sm">
+            <div className="p-2 bg-card-hover rounded">
+              <p className="font-medium text-primary mb-2">Annuaire</p>
+              <ul className="space-y-1 text-muted">
+                <li>
+                  • <strong>Entreprises</strong> :nom, adresse, téléphone, email
+                </li>
+                <li>
+                  • <strong>Contacts</strong> : personnes par entreprise (nom, fonction,
+                  coordonnées)
+                </li>
+                <li>
+                  • <strong>Recherche</strong> : filtrage par nom d'entreprise
+                </li>
+              </ul>
+            </div>
+            <div className="p-2 bg-accent/10 border border-accent/30 rounded">
+              <p className="font-medium text-accent mb-2">Usage dans les projets</p>
+              <ul className="space-y-1 text-muted text-xs">
+                <li>
+                  • Les contacts entreprise sont disponibles dans les{' '}
+                  <strong>interlocuteurs externes</strong> des projets
+                </li>
+                <li>• Sélection depuis la liste des contacts enregistrés</li>
               </ul>
             </div>
           </div>

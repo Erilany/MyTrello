@@ -453,6 +453,71 @@ export function AppProvider({ children }) {
   const { username, setUsername, userRole, setUserRole } = useUserSettings();
   const [loading, setLoading] = useState(false);
   const [unreadMentions, setUnreadMentions] = useState({});
+  const [filterMyProjects, setFilterMyProjects] = useState(() => localStorage.getItem('c-projets-filter-my-projects') === 'true');
+  const [usersList, setUsersList] = useState(() => {
+    const saved = localStorage.getItem('c-projets-users');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const formatUserName = name => {
+    if (!name) return '';
+    const parts = name.trim().split(/\s+/);
+    if (parts.length === 1) return parts[0].toUpperCase();
+    const lastName = parts[parts.length - 1].toUpperCase();
+    const firstName = parts.slice(0, -1).map(p => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()).join(' ');
+    return `${lastName} ${firstName}`;
+  };
+
+  const addNewUser = name => {
+    if (!name.trim()) return null;
+    const formattedName = formatUserName(name);
+    const existing = usersList.find(u => u.name.toLowerCase() === formattedName.toLowerCase());
+    if (existing) return existing;
+    const newUser = { id: Date.now(), name: formattedName };
+    const newList = [...(usersList || []), newUser].sort((a, b) => a.name.localeCompare(b.name));
+    setUsersList(newList);
+    localStorage.setItem('c-projets-users', JSON.stringify(newList));
+    return newUser;
+  };
+
+  const getUsers = () => usersList.sort((a, b) => a.name.localeCompare(b.name));
+
+  const searchUsers = query => {
+    if (!query) return getUsers();
+    const lowerQuery = query.toLowerCase();
+    return usersList.filter(u => u.name.toLowerCase().includes(lowerQuery));
+  };
+
+  const migrateUsersFromBoards = () => {
+    const existingUsers = new Set(usersList.map(u => u.name));
+    const allBoards = db.boards || [];
+    let migrated = 0;
+    allBoards.forEach(board => {
+      const contacts = getInternalContacts(board.id) || [];
+      contacts.forEach(contact => {
+        if (contact.name && contact.name.trim()) {
+          const formatted = formatUserName(contact.name);
+          if (!existingUsers.has(formatted)) {
+            const newUser = { id: Date.now() + Math.random(), name: formatted };
+            usersList.push(newUser);
+            existingUsers.add(formatted);
+            migrated++;
+          }
+        }
+      });
+    });
+    if (migrated > 0) {
+      const newList = [...usersList].sort((a, b) => a.name.localeCompare(b.name));
+      setUsersList(newList);
+      localStorage.setItem('c-projets-users', JSON.stringify(newList));
+    }
+  };
+
+  useEffect(() => {
+    if (db.boards && db.boards.length > 0 && usersList.length === 0) {
+      migrateUsersFromBoards();
+    }
+  }, [db.boards]);
 
   const {
     theme,
@@ -499,48 +564,39 @@ export function AppProvider({ children }) {
     setActiveTab,
   } = useUI();
 
-  useEffect(() => {
-    const activeBoards = db.boards.filter(b => !b.is_archived);
-    setBoards(activeBoards.sort((a, b) => a.title.localeCompare(b.title)));
-    if (activeBoards.length > 0 && !currentBoard) {
-      const firstBoard = activeBoards[0];
-      setCurrentBoard(firstBoard);
-      const boardColumns = db.columns.filter(c => Number(c.board_id) === Number(firstBoard.id));
-      const columnIds = boardColumns.map(c => Number(c.id));
-      setCards(
-        db.cards
-          .filter(c => columnIds.includes(Number(c.column_id)) && !c.is_archived)
-          .sort((a, b) => a.position - b.position)
-      );
-      const cardIds = db.cards
-        .filter(c => columnIds.includes(Number(c.column_id)))
-        .map(c => Number(c.id));
-      setCategories(
-        db.categories
-          .filter(c => cardIds.includes(Number(c.card_id)))
-          .sort((a, b) => a.position - b.position)
-      );
-      const catIds = db.categories
-        .filter(c => cardIds.includes(Number(c.card_id)))
-        .map(c => Number(c.id));
-      setSubcategories(
-        db.subcategories
-          .filter(s => catIds.includes(Number(s.category_id)))
-          .sort((a, b) => a.position - b.position)
-      );
-    }
-  }, [db.boards, db.columns, db.cards, db.categories, db.subcategories, currentBoard]);
+  const { getInternalContacts } = useInternalContacts();
 
-  const saveDb = useCallback(newDb => {
-    setDb(newDb);
-    saveToStorage(newDb);
+  useEffect(() => {
+    let activeBoards = db.boards.filter(b => !b.is_archived);
+    if (filterMyProjects && username) {
+      activeBoards = activeBoards.filter(board => {
+        const contacts = getInternalContacts(board.id) || [];
+        return contacts.some(c => c.name && c.name.toLowerCase() === username.toLowerCase());
+      });
+    }
+    setBoards(activeBoards.sort((a, b) => a.title.localeCompare(b.title)));
+  }, [db.boards, username, getInternalContacts, filterMyProjects]);
+
+  const saveDb = useCallback(newDbOrFn => {
+    if (typeof newDbOrFn === 'function') {
+      setDb(currentDb => {
+        const newDb = newDbOrFn(currentDb);
+        saveToStorage(newDb);
+        return newDb;
+      });
+    } else {
+      setDb(newDbOrFn);
+      saveToStorage(newDbOrFn);
+    }
   }, []);
 
   const loadBoard = useCallback(
     (boardId, data = null) => {
+      console.log('[loadBoard] Called with boardId:', boardId);
       const sourceData = data || db;
       const board = sourceData.boards.find(b => Number(b.id) === Number(boardId));
       if (board) {
+        console.log('[loadBoard] Board found:', board.title);
         setCurrentBoard(board);
         const boardColumns = sourceData.columns.filter(c => Number(c.board_id) === Number(boardId));
         const columnIds = boardColumns.map(c => Number(c.id));
@@ -557,11 +613,17 @@ export function AppProvider({ children }) {
         setColumns(boardColumns.sort((a, b) => a.position - b.position));
         setCards(filteredCards.sort((a, b) => a.position - b.position));
         const cardIds = filteredCards.map(c => Number(c.id));
-        setCategories(
-          sourceData.categories
-            .filter(c => cardIds.includes(Number(c.card_id)))
-            .sort((a, b) => a.position - b.position)
+        console.log('[loadBoard] cardIds for filtering categories:', cardIds);
+        console.log('[loadBoard] All categories in sourceData:', sourceData.categories.length);
+        const filteredCategories = sourceData.categories
+          .filter(c => cardIds.includes(Number(c.card_id)))
+          .sort((a, b) => a.position - b.position);
+        console.log(
+          '[loadBoard] Filtered categories:',
+          filteredCategories.length,
+          filteredCategories.map(c => c.title)
         );
+        setCategories(filteredCategories);
         const catIds = sourceData.categories
           .filter(c => cardIds.includes(Number(c.card_id)))
           .map(c => Number(c.id));
@@ -586,18 +648,17 @@ export function AppProvider({ children }) {
     getAllProjectTime,
   } = useProjectTime();
 
-  const { getInternalContacts } = useInternalContacts();
-
   // Ensure libraryItems has data - always check library editor first
   const forceLibraryItems = () => {
     // Always check if custom library data exists in LibraryEditor storage
     const customLibrary = localStorage.getItem('c-projets_library_editor');
-    let itemsToUse;
+    let itemsToUse = null;
 
     if (customLibrary) {
       try {
         const treeData = JSON.parse(customLibrary);
         itemsToUse = convertTreeToLibraryItems(treeData);
+        setLibraryItems(itemsToUse);
       } catch (e) {
         console.error('[AppContext] Error reloading library from editor:', e);
       }
@@ -748,12 +809,10 @@ export function AppProvider({ children }) {
     loadBoard(currentBoard.id, newDb);
   };
 
-  const exportData = () => {
-    console.log('[ExportData] Starting export with migration layer...');
+  const exportData = (usernameForExport = null) => {
     try {
       const exportObj = generateExportData(db);
-      downloadExport(exportObj);
-      console.log('[ExportData] Export completed successfully');
+      downloadExport(exportObj, usernameForExport);
     } catch (err) {
       console.error('[ExportData] Error during export:', err);
       throw err;
@@ -902,6 +961,13 @@ export function AppProvider({ children }) {
             'c-projets_charge_ressentie',
             JSON.stringify(data.settings.chargeResentie)
           );
+        }
+        if (data.settings.filterMyProjects !== undefined && data.settings.filterMyProjects !== null) {
+          localStorage.setItem('c-projets-filter-my-projects', data.settings.filterMyProjects);
+          setFilterMyProjects(data.settings.filterMyProjects === 'true');
+        }
+        if (data.settings.usersList && Array.isArray(data.settings.usersList)) {
+          localStorage.setItem('c-projets-users', JSON.stringify(data.settings.usersList));
         }
       }
       if (data.username) {
@@ -1557,6 +1623,14 @@ export function AppProvider({ children }) {
   };
 
   const updateCategory = (id, updates) => {
+    console.log(
+      '[updateCategory] Called with id:',
+      id,
+      'updates:',
+      updates,
+      'currentBoard:',
+      currentBoard?.id
+    );
     const newDb = {
       ...db,
       categories: db.categories.map(c =>
@@ -1564,7 +1638,12 @@ export function AppProvider({ children }) {
       ),
     };
     saveDb(newDb);
-    if (currentBoard) loadBoard(currentBoard.id, newDb);
+    if (currentBoard) {
+      console.log('[updateCategory] Calling loadBoard with boardId:', currentBoard.id);
+      loadBoard(currentBoard.id, newDb);
+    } else {
+      console.log('[updateCategory] currentBoard is null, skipping loadBoard');
+    }
   };
 
   const deleteCategory = id => {
@@ -1784,7 +1863,7 @@ export function AppProvider({ children }) {
     const newDb = {
       ...db,
       subcategoryEmails: (db.subcategoryEmails || []).map(e =>
-        Number(e.id) === Number(emailId) ? { ...e, subject: newSubject } : e
+        Number(e.id) === Number(emailId) ? { ...e, customSubject: newSubject } : e
       ),
     };
     saveDb(newDb);
@@ -2315,6 +2394,15 @@ export function AppProvider({ children }) {
     getWorkingDaysBetween,
     getWeekNumber,
     getInternalContacts,
+    filterMyProjects,
+    setFilterMyProjects,
+    usersList,
+    setUsersList,
+    addNewUser,
+    getUsers,
+    searchUsers,
+    formatUserName,
+    migrateUsersFromBoards,
     loadProjectTime,
     getProjectTime,
     getAllProjectTime,

@@ -27,6 +27,19 @@ function Card({ card, isDragging, columnColor, columnTitle }) {
 
   const [showMenu, setShowMenu] = useState(false);
 
+  const cardCategories = categories
+    .filter(cat => Number(cat.card_id) === Number(card.id))
+    .sort((a, b) => (a.position || 0) - (b.position || 0));
+
+  useEffect(() => {
+    console.log(
+      '[Card] categories changed, cardId:',
+      card.id,
+      'categories:',
+      categories.filter(c => Number(c.card_id) === Number(card.id)).map(c => c.title)
+    );
+  }, [categories, card.id]);
+
   const handleDoubleClick = () => {
     setSelectedCard(card);
   };
@@ -49,7 +62,7 @@ function Card({ card, isDragging, columnColor, columnTitle }) {
 
   const cardCategories = categories
     .filter(cat => Number(cat.card_id) === Number(card.id))
-    .sort((a, b) => a.position - b.position);
+    .sort((a, b) => (a.position || 0) - (b.position || 0));
 
   const getAccentBarStyle = () => {
     const t = (columnTitle || '').toLowerCase();
@@ -313,24 +326,7 @@ function Card({ card, isDragging, columnColor, columnTitle }) {
               }}
             >
               {cardCategories.map((category, index) => (
-                <div
-                  key={category.id}
-                  draggable
-                  onDragStart={e => {
-                    e.dataTransfer.setData(
-                      'application/json',
-                      JSON.stringify({
-                        type: 'category',
-                        categoryId: category.id,
-                        sourceCardId: card.id,
-                      })
-                    );
-                    e.dataTransfer.effectAllowed = 'move';
-                  }}
-                  className="cursor-grab active:cursor-grabbing"
-                >
-                  <Category category={category} />
-                </div>
+                <Category key={category.id} category={category} cardId={card.id} />
               ))}
             </div>
           )}

@@ -244,7 +244,7 @@ function ActivityReview({ boards, categories, subcategories, columns, username, 
       }
     });
 
-    const sortedGroups = Object.entries(groups).sort(([a], [b]) => a.localeCompare(b));
+    const sortedGroups = Object.entries(groups).sort((a, b) => String(a[0]).localeCompare(String(b[0])));
 
     if (horsZone.length > 0) {
       sortedGroups.push(['Hors zone', horsZone]);
@@ -499,7 +499,7 @@ function ActivityReview({ boards, categories, subcategories, columns, username, 
                     );
                   })}
                 </tr>
-                {projects.map(project => {
+                {projects.map((project, projIdx) => {
                   const projectItems = taggedItems.filter(item => item.boardId === project.id);
                   const maxTagsInRow = Math.max(
                     1,
@@ -513,28 +513,29 @@ function ActivityReview({ boards, categories, subcategories, columns, username, 
                       return itemsInCol;
                     })
                   );
-                  const rowHeight = Math.max(48, maxTagsInRow * 21 + 6);
+                  const rowHeight = maxTagsInRow <= 2 ? Math.max(48, maxTagsInRow * 21 + 6) : Math.max(48, maxTagsInRow * 21 + 18);
+                  const minRowHeight = projIdx === 0 ? rowHeight : Math.max(rowHeight, 48 + 12);
                   return (
                     <tr
                       key={project.id}
                       className="border-b border-std hover:bg-card-hover"
-                      style={{ height: `${rowHeight}px` }}
+                      style={{ minHeight: `${minRowHeight}px`, height: `${minRowHeight}px` }}
                     >
                       <td
                         className="p-1 text-center font-medium text-accent align-middle bg-card sticky left-0 z-10"
-                        style={{ height: `${rowHeight}px` }}
+                        style={{ minHeight: `${minRowHeight}px`, height: `${minRowHeight}px` }}
                       >
                         {project.activityType}
                       </td>
                       <td
                         className="p-1 text-center text-secondary align-middle bg-card sticky left-[64px] z-10"
-                        style={{ height: `${rowHeight}px` }}
+                        style={{ minHeight: `${minRowHeight}px`, height: `${minRowHeight}px` }}
                       >
                         {project.gmr || '-'}
                       </td>
                       <td
                         className="p-1 text-primary overflow-hidden align-middle sticky left-[112px] z-10 bg-card-hover"
-                        style={{ height: `${rowHeight}px` }}
+                        style={{ minHeight: `${minRowHeight}px`, height: `${minRowHeight}px` }}
                       >
                         <div className="text-xs truncate h-full flex items-center">
                           <span className="font-mono bg-card-hover px-1 py-0.5 rounded">
@@ -551,12 +552,12 @@ function ActivityReview({ boards, categories, subcategories, columns, username, 
                       </td>
                       <td
                         className="p-1 text-center align-middle border-r border-std sticky left-[512px] z-10 bg-card-hover"
-                        style={{ height: `${rowHeight}px` }}
+                        style={{ minHeight: `${minRowHeight}px`, height: `${minRowHeight}px` }}
                       >
                         {project.links && project.links.length > 0 ? (
                           <div
                             className="flex flex-col items-center justify-center gap-0.5 h-full"
-                            style={{ height: `${rowHeight}px` }}
+                            style={{ minHeight: `${minRowHeight}px`, height: `${minRowHeight}px` }}
                           >
                             {project.links.slice(0, 3).map((link, idx) => (
                               <button
@@ -605,7 +606,7 @@ function ActivityReview({ boards, categories, subcategories, columns, username, 
                           >
                             <div
                               className="flex flex-col overflow-visible h-full relative"
-                              style={{ height: `${rowHeight}px` }}
+                              style={{ minHeight: `${minRowHeight}px`, height: `${minRowHeight}px` }}
                             >
                               {(() => {
                                 const groupedByTag = {};

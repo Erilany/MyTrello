@@ -16,7 +16,6 @@ import {
   AlertCircle,
 } from 'lucide-react';
 
-
 import { pageGuides } from '../../data/guideData';
 
 function GuidePanel() {
@@ -25,44 +24,53 @@ function GuidePanel() {
   const [selectedGuide, setSelectedGuide] = React.useState(null);
 
   const getCurrentGuide = () => {
-    if (selectedGuide) {
+    // If a specific guide is manually selected, use it
+    if (selectedGuide && pageGuides[selectedGuide]) {
       return pageGuides[selectedGuide];
     }
-    if (location.pathname === '/') {
-      return pageGuides.introduction;
-    }
+
+    // Context-based selection
     if (selectedSubcategory) {
-      return pageGuides.subcategory;
+      return pageGuides.subcategory || pageGuides.board;
     }
     if (selectedCategory) {
-      return pageGuides.category;
+      return pageGuides.category || pageGuides.board;
     }
     if (selectedCard) {
-      return pageGuides.card;
+      return pageGuides.card || pageGuides.board;
     }
 
     const path = location.pathname;
+    if (path === '/') {
+      return pageGuides.introduction || { title: 'Guide', sections: [] };
+    }
     if (path.startsWith('/board') || path.startsWith('/board2')) {
-      return pageGuides.board;
+      return pageGuides.board || { title: 'Projet', sections: [] };
     }
     if (path === '/library') {
-      return pageGuides.library;
+      return pageGuides.library || { title: 'Bibliothèque', sections: [] };
     }
     if (path === '/archives') {
-      return pageGuides.archives;
-    }
-    if (path === '/system-settings') {
-      return pageGuides.systemSettings;
+      return pageGuides.archives || { title: 'Archives', sections: [] };
     }
     if (path === '/settings') {
-      return pageGuides.userSettings;
+      return pageGuides.appSettings || { title: 'Paramètres', sections: [] };
     }
-    return pageGuides.dashboard;
+    if (path === '/system-settings') {
+      return pageGuides.systemSettings || { title: 'Paramètres Système', sections: [] };
+    }
+    return pageGuides.dashboard || { title: 'Dashboard', sections: [] };
   };
 
   const currentGuide = getCurrentGuide();
-  const firstSectionId = currentGuide?.sections[0]?.id;
+  const firstSectionId = currentGuide?.sections?.[0]?.id;
   const [expandedSection, setExpandedSection] = React.useState(firstSectionId);
+
+  React.useEffect(() => {
+    if (currentGuide?.sections?.[0]?.id) {
+      setExpandedSection(currentGuide.sections[0].id);
+    }
+  }, [selectedGuide, currentGuide]);
 
   const toggleSection = section => {
     setExpandedSection(expandedSection === section ? null : section);
@@ -128,13 +136,15 @@ function GuidePanel() {
 
       <div className="flex-1 overflow-y-auto p-4">
         <div className="space-y-2">
-          {currentGuide.sections.map(section => (
+          {(currentGuide.sections || []).map(section => (
             <div key={section.id} className="border border-std rounded-lg overflow-hidden">
               <button
                 onClick={() => toggleSection(section.id)}
                 className="w-full flex items-center gap-2 p-3 bg-card-hover hover:bg-card-hover/70 transition-std text-left"
               >
-                <span className="flex-1 font-medium text-primary">{section.title}</span>
+                <span className="flex-1 font-medium text-primary">
+                  {section?.title || 'Section'}
+                </span>
                 {expandedSection === section.id ? (
                   <ChevronDown size={16} className="text-muted" />
                 ) : (
@@ -142,7 +152,7 @@ function GuidePanel() {
                 )}
               </button>
               {expandedSection === section.id && (
-                <div className="p-3 bg-card border-t border-std">{section.content}</div>
+                <div className="p-3 bg-card border-t border-std">{section?.content || null}</div>
               )}
             </div>
           ))}

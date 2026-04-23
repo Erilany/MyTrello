@@ -39,14 +39,32 @@ export function PaiementsForm({ autresLignes, setCommandeDetail }) {
     }));
   };
 
+  const calculateCurrentPaye = (ligneIdx, paiementIdx) => {
+    const ligne = allLignes[ligneIdx];
+    const paiements = ligne.paiements || [];
+    return paiements.reduce((sum, p, idx) => {
+      if (idx === paiementIdx) return sum;
+      return sum + (parseFloat(p.montant) || 0);
+    }, 0);
+  };
+
+  const getMaxMontantForPaiement = (ligneIdx, paiementIdx, ligneMontant) => {
+    const totalDejaPaye = calculateCurrentPaye(ligneIdx, paiementIdx);
+    const restePourCommande = totalCommande - totalPaye;
+    const maxPourCetteLigne = ligneMontant - totalDejaPaye;
+    return Math.min(maxPourCetteLigne, restePourCommande);
+  };
+
   const updatePaiementMontant = (ligneIdx, paiementIdx, montant, ligneMontant) => {
     const newLignes = [...allLignes];
-    const newMontant = montant;
+    const inputMontant = parseFloat(montant) || 0;
+    const maxAllowed = getMaxMontantForPaiement(ligneIdx, paiementIdx, ligneMontant);
+    const newMontant = inputMontant > maxAllowed ? maxAllowed : inputMontant;
     const pct =
-      ligneMontant > 0 ? (((parseFloat(newMontant) || 0) / ligneMontant) * 100).toFixed(2) : '';
+      ligneMontant > 0 ? ((newMontant / ligneMontant) * 100).toFixed(2) : '';
     newLignes[ligneIdx].paiements[paiementIdx] = {
       ...newLignes[ligneIdx].paiements[paiementIdx],
-      montant: newMontant,
+      montant: newMontant > 0 ? newMontant : '',
       pourcentage: pct,
     };
     setCommandeDetail(prev => ({
@@ -55,13 +73,23 @@ export function PaiementsForm({ autresLignes, setCommandeDetail }) {
     }));
   };
 
+  const getMaxPourcentageForPaiement = (ligneIdx, paiementIdx, ligneMontant) => {
+    const totalDejaPaye = calculateCurrentPaye(ligneIdx, paiementIdx);
+    const restePourCommande = totalCommande - totalPaye;
+    if (ligneMontant <= 0 || restePourCommande <= 0) return 0;
+    const maxPourCetteLigne = Math.min(ligneMontant - totalDejaPaye, restePourCommande);
+    return (maxPourCetteLigne / ligneMontant) * 100;
+  };
+
   const updatePaiementPourcentage = (ligneIdx, paiementIdx, pourcentage, ligneMontant) => {
     const newLignes = [...allLignes];
-    const newPct = pourcentage;
-    const calcMontant = (ligneMontant * (parseFloat(newPct) || 0)) / 100;
+    const newPctInput = parseFloat(pourcentage) || 0;
+    const maxPct = getMaxPourcentageForPaiement(ligneIdx, paiementIdx, ligneMontant);
+    const newPct = newPctInput > maxPct ? maxPct : newPctInput;
+    const calcMontant = (ligneMontant * newPct) / 100;
     newLignes[ligneIdx].paiements[paiementIdx] = {
       ...newLignes[ligneIdx].paiements[paiementIdx],
-      pourcentage: newPct,
+      pourcentage: newPct > 0 ? newPct.toFixed(2) : '',
       montant: calcMontant > 0 ? calcMontant.toFixed(2) : '',
     };
     setCommandeDetail(prev => ({
@@ -101,6 +129,11 @@ export function PaiementsForm({ autresLignes, setCommandeDetail }) {
             <span className="text-muted">Payé: {totalPaye.toFixed(2)} €</span>
             <span className="text-muted">{percentage.toFixed(1)}%</span>
           </div>
+          {totalPaye >= totalCommande && totalCommande > 0 && (
+            <div className="mt-2 text-xs text-urgent font-medium">
+              Montant maximal atteint
+            </div>
+          )}
         </div>
 
         <div className="space-y-4">

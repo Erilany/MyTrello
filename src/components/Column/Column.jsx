@@ -6,7 +6,8 @@ import { MoreHorizontal, Plus, Pencil, Trash2, Palette } from 'lucide-react';
 import { COLORS } from '../../utils/colors';
 
 function Column({ column, index }) {
-  const { cards, createCard, updateColumn, deleteColumn, currentBoard, cardColors } = useApp();
+  const { cards, createCard, updateColumn, deleteColumn, currentBoard, cardColors, categories } =
+    useApp();
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState(column.title);
   const [showMenu, setShowMenu] = useState(false);
@@ -254,7 +255,11 @@ function Column({ column, index }) {
                       onMouseDown={e => {}}
                     >
                       <Card
+                        key={card.id + '-refresh-' + (card.updated_at || '')}
                         card={card}
+                        cardCategories={categories
+                          .filter(cat => Number(cat.card_id) === Number(card.id))
+                          .sort((a, b) => (a.position || 0) - (b.position || 0))}
                         isDragging={snapshot.isDragging}
                         columnColor={column.color}
                         columnTitle={column.title}

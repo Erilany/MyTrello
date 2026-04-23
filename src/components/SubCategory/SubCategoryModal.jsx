@@ -125,7 +125,7 @@ function SubCategoryModal({ subcategory, onClose }) {
 
   const handleStartEditSubject = email => {
     setEditingEmailId(email.id);
-    setEditingSubject(email.subject);
+    setEditingSubject(email.customSubject || email.subject);
   };
 
   const handleSaveSubject = emailId => {
@@ -821,7 +821,7 @@ function SubCategoryModal({ subcategory, onClose }) {
                                 onClick={() => handleStartEditSubject(email)}
                                 title="Cliquez pour modifier"
                               >
-                                {email.subject}
+                                {email.customSubject || email.subject}
                               </span>
                             )}
                           </div>
@@ -833,7 +833,7 @@ function SubCategoryModal({ subcategory, onClose }) {
                                 prev.map(e => (e.id === email.id ? { ...e, status: newStatus } : e))
                               );
                             }}
-                            className={`px-2 py-0.5 text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity ${
+                            className={`px-2 py-0.5 text-xs rounded transition-opacity ${
                               email.status === 'pending'
                                 ? 'bg-red-500/20 text-red-500 hover:bg-red-500/30'
                                 : 'bg-green-500/20 text-green-500 hover:bg-green-500/30'

@@ -1,8 +1,10 @@
+import { Folder, FileText, List, CheckSquare } from 'lucide-react';
+
 export const LEVEL_ICONS = {
-  1: 'Folder',
-  2: 'FileText',
-  3: 'List',
-  4: 'CheckSquare',
+  1: Folder,
+  2: FileText,
+  3: List,
+  4: CheckSquare,
 };
 
 export function normalizeChapter(str) {
@@ -18,8 +20,9 @@ export function normalizeChapter(str) {
 export function formatDate(dateStr) {
   if (!dateStr) return '-';
   try {
-    const [year, month, day] = dateStr.split('-');
-    return `${day}/${month}/${year.slice(2)}`;
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return '-';
+    return date.toLocaleDateString('fr-FR');
   } catch {
     return '-';
   }

@@ -45,29 +45,20 @@ export function getStatusLabel(status) {
 }
 
 export function getPriorityColor(priority) {
-  switch (priority) {
-    case 'high':
-      return 'text-red-500';
-    case 'medium':
-      return 'text-yellow-500';
-    case 'low':
-      return 'text-green-500';
-    default:
-      return 'text-gray-400';
-  }
+  const normalized = (priority || '').toLowerCase().trim();
+  if (normalized === 'urgent' || normalized === 'high') return 'text-red-600';
+  if (normalized === 'haute' || normalized === 'medium') return 'text-yellow-500';
+  if (normalized === 'basse' || normalized === 'low') return 'text-green-500';
+  return 'text-gray-400';
 }
 
 export function getPriorityLabel(priority) {
-  switch (priority) {
-    case 'high':
-      return 'Haute';
-    case 'medium':
-      return 'Moyenne';
-    case 'low':
-      return 'Basse';
-    default:
-      return 'Normale';
-  }
+  const normalized = (priority || '').toLowerCase().trim();
+  if (normalized === 'urgent' || normalized === 'high') return 'Urgent';
+  if (normalized === 'haute' || normalized === 'medium') return 'Haute';
+  if (normalized === 'basse' || normalized === 'low') return 'Basse';
+  if (normalized === 'normale') return 'Normale';
+  return priority || 'Normale';
 }
 
 export function getTaskProgress(status) {
@@ -143,7 +134,7 @@ export function getUpcomingTasks(
       const taskMilestones = Array.isArray(milestones)
         ? milestones.filter(m => !m.done && m.date)
         : [];
-      return { ...sub, category, card, board, milestones: taskMilestones };
+      return { ...sub, category, card, board, column, milestones: taskMilestones };
     })
     .filter(task => task.board)
     .sort((a, b) => new Date(a.due_date) - new Date(b.due_date));
@@ -177,11 +168,16 @@ export function getUpcomingMilestones(subcategories, categories, cards, boards, 
             ? columns.find(col => Number(col.id) === Number(card.column_id))
             : null;
           const board = column ? boards.find(b => Number(b.id) === Number(column.board_id)) : null;
+          const boardPriority = board
+            ? localStorage.getItem(`board-${board.id}-priority`) || ''
+            : '';
           milestonesList.push({
             milestone: { ...m, subcategoryId: sub.id, subcategoryTitle: sub.title },
             category,
             card,
             board,
+            column,
+            boardPriority,
           });
         }
       }
@@ -212,11 +208,14 @@ export function getMyMilestones(subcategories, categories, cards, boards, column
       const card = category ? cards.find(c => Number(c.id) === Number(category.card_id)) : null;
       const column = card ? columns.find(col => Number(col.id) === Number(card.column_id)) : null;
       const board = column ? boards.find(b => Number(b.id) === Number(column.board_id)) : null;
+      const boardPriority = board ? localStorage.getItem(`board-${board.id}-priority`) || '' : '';
       milestonesList.push({
         milestone: { ...m, subcategoryId: sub.id, subcategoryTitle: sub.title },
         category,
         card,
         board,
+        column,
+        boardPriority,
       });
     });
   });

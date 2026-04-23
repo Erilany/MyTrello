@@ -518,14 +518,11 @@ export default function Dashboard() {
                                 <div className="flex items-center gap-2">
                                   <div className="w-16 h-2 bg-card-hover rounded-full overflow-hidden">
                                     <div
-                                      className={`h-full rounded-full ${
-                                        task.status === 'in_progress'
-                                          ? 'bg-blue-500'
-                                          : task.status === 'waiting'
-                                            ? 'bg-yellow-500'
-                                            : 'bg-gray-400'
-                                      }`}
-                                      style={{ width: `${task.progress || 0}%` }}
+                                      className="h-full rounded-full"
+                                      style={{
+                                        width: `${task.progress || 0}%`,
+                                        backgroundColor: task.column?.color || '#6B7280',
+                                      }}
                                     />
                                   </div>
                                   <span className="text-xs text-muted w-8">
@@ -667,8 +664,11 @@ export default function Dashboard() {
                                 <div className="flex items-center gap-2">
                                   <div className="w-16 h-2 bg-green-500 rounded-full overflow-hidden">
                                     <div
-                                      className="h-full bg-green-500 rounded-full"
-                                      style={{ width: '100%' }}
+                                      className="h-full rounded-full"
+                                      style={{
+                                        width: '100%',
+                                        backgroundColor: task.column?.color || '#10B981',
+                                      }}
                                     />
                                   </div>
                                   <span className="text-xs text-muted w-8">100%</span>
