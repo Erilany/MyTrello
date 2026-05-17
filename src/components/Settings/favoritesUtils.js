@@ -1,5 +1,21 @@
 export const FAVORITES_KEY = 'c-projets_library_favorites';
 
+// Helper: Find library item by ID (handles both numeric IDs and UUIDs)
+// library_item_id should be the tree node UUID, but libraryItems may have numeric IDs
+export const findLibraryItemById = (libraryItems, id) => {
+  if (!id || !libraryItems || !Array.isArray(libraryItems)) return null;
+  const strId = String(id);
+
+  // If it's a UUID (contains dashes), match on treeNodeId first
+  if (strId.includes('-')) {
+    const item = libraryItems.find(item => String(item.treeNodeId) === strId);
+    if (item) return item;
+  }
+
+  // Fallback: try direct match on id (handles numeric IDs)
+  return libraryItems.find(item => String(item.id) === strId);
+};
+
 export const getCardCategories = cardItem => {
   if (!cardItem || !cardItem.content_json) return [];
   try {
@@ -18,6 +34,101 @@ export const getCardSkipAction = cardItem => {
   } catch {
     return false;
   }
+};
+
+export const getSubcategoryTagFromLibrary = (libraryItemId, libraryItems) => {
+  console.log(
+    '[getSubcategoryTagFromLibrary] libraryItemId:',
+    libraryItemId,
+    'libraryItems:',
+    libraryItems?.length
+  );
+  if (!libraryItemId || !libraryItems) return null;
+  const libraryItem = findLibraryItemById(libraryItems, libraryItemId);
+  console.log(
+    '[getSubcategoryTagFromLibrary] found item:',
+    libraryItem?.title,
+    'tags:',
+    libraryItem?.tags
+  );
+  if (!libraryItem) return null;
+  // If tags contains a card name, it's the parent card - return it as the display name
+  if (libraryItem.tags) {
+    return libraryItem.tags;
+  }
+  if (!libraryItem.content_json) return null;
+  try {
+    const content = JSON.parse(libraryItem.content_json);
+    if (content.subcategory?.tag) return content.subcategory.tag;
+    if (content.category?.tag) return content.category.tag;
+    return null;
+  } catch {
+    return null;
+  }
+};
+
+// Get the dynamic name for a library item from its ID
+// Always returns item.title - this is the card name that updates dynamically
+// When user renames card in library, title changes and project items reflect it
+export const getLibraryItemTitle = (libraryItemId, libraryItems) => {
+  if (!libraryItemId || !libraryItems) {
+    console.log('[getLibraryItemTitle] No libraryItemId or libraryItems');
+    return null;
+  }
+  const item = findLibraryItemById(libraryItems, libraryItemId);
+  if (!item) {
+    console.log('[getLibraryItemTitle] No item found for ID:', libraryItemId);
+    return null;
+  }
+  console.log('[getLibraryItemTitle] ID:', libraryItemId, 'item.title:', item.title);
+  return item.title || null;
+};
+
+// Get the parent card's title for a subcategory/category by following library_item_id
+// This maintains a dynamic link - when user renames the card in library, it updates automatically
+export const getParentCardTitle = (item, libraryItems) => {
+  if (!item?.library_item_id || !libraryItems) return null;
+  const parentCard = findLibraryItemById(libraryItems, item.library_item_id);
+  return parentCard?.title || null;
+};
+
+// Get the systemTag for a subcategory from the library tree
+// Follows library_item_id to find the subcategory in the library tree and get its systemTag
+export const getSubcategorySystemTag = (subcategory, libraryItems) => {
+  if (!subcategory?.library_item_id || !libraryItems) return null;
+
+  // Find the subcategory in libraryItems using library_item_id
+  const librarySub = findLibraryItemById(libraryItems, subcategory.library_item_id);
+  if (librarySub?.systemTag) return librarySub.systemTag;
+
+  // Fallback: try to get systemTag from the tree using the library_item_id (which should be a tree node UUID)
+  try {
+    const treeRaw = localStorage.getItem('c-projets_library_editor');
+    if (treeRaw) {
+      const treeData = JSON.parse(treeRaw);
+      const nodes = treeData.children || treeData;
+      const treeNodeId = String(subcategory.library_item_id);
+
+      const findTag = nodes => {
+        for (const node of nodes) {
+          if (node.id === treeNodeId && node.data?.systemTag) {
+            return node.data.systemTag;
+          }
+          if (node.children && node.children.length > 0) {
+            const found = findTag(node.children);
+            if (found) return found;
+          }
+        }
+        return null;
+      };
+
+      return findTag(nodes);
+    }
+  } catch (e) {
+    console.error('[getSubcategorySystemTag] Error:', e);
+  }
+
+  return null;
 };
 
 export const getCardSubcategories = cardItem => {

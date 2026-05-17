@@ -88,6 +88,7 @@ export function useCategoryCrud(db, saveDb, saveToStorage) {
         ),
       };
       saveDb(newDb);
+      window.dispatchEvent(new Event('project-updated'));
     },
     [db, saveDb]
   );
@@ -100,6 +101,7 @@ export function useCategoryCrud(db, saveDb, saveToStorage) {
         subcategories: db.subcategories.filter(s => Number(s.category_id) !== Number(id)),
       };
       saveDb(newDb);
+      window.dispatchEvent(new Event('project-updated'));
     },
     [db, saveDb]
   );
@@ -195,6 +197,7 @@ export function useSubcategoryCrud(db, saveDb, saveToStorage) {
         ),
       };
       saveDb(newDb);
+      window.dispatchEvent(new Event('project-updated'));
     },
     [db, saveDb]
   );
@@ -209,6 +212,7 @@ export function useSubcategoryCrud(db, saveDb, saveToStorage) {
         ),
       };
       saveDb(newDb);
+      window.dispatchEvent(new Event('project-updated'));
     },
     [db, saveDb]
   );

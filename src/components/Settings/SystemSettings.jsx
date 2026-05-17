@@ -9,6 +9,7 @@ import {
   Building,
 } from 'lucide-react';
 import LibraryEditor from './LibraryEditor';
+import BDLibraryView from './BDLibraryView';
 import { DataTable } from './DataTable';
 import ChaptersDragDrop from './ChaptersDragDrop';
 import ContractsSettings from './ContractsSettings';
@@ -74,6 +75,7 @@ function SystemSettings() {
     { id: 'storage', label: 'Stockage', icon: HardDrive },
     { id: 'backup', label: 'Sauvegarde auto', icon: Clock },
     { id: 'library', label: 'Modèles Bibliothèque', icon: BookOpen },
+    { id: 'bd-library', label: 'BD Modèle Bibliothèque', icon: BookOpen },
     { id: 'contracts', label: 'Contrats', icon: FileText },
     { id: 'entreprises', label: 'Annuaire Entreprises', icon: Building },
   ];
@@ -307,6 +309,12 @@ function SystemSettings() {
           {activeTab === 'library' && (
             <div className="h-full -m-6">
               <LibraryEditor />
+            </div>
+          )}
+
+          {activeTab === 'bd-library' && (
+            <div className="h-full -m-6">
+              <BDLibraryView />
             </div>
           )}
 

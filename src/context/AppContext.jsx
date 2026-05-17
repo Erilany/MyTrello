@@ -132,6 +132,7 @@ function convertTreeToLibraryItems(treeData) {
       if (!cardItem) {
         cardItem = {
           id: itemId++,
+          treeNodeId: node.type === 'carte' ? node.id : undefined, // Link to tree node ID
           title: currentCarte,
           type: 'card',
           tags: tags,
@@ -173,6 +174,7 @@ function convertTreeToLibraryItems(treeData) {
 
         libraryItems.push({
           id: itemId++,
+          treeNodeId: node.type === 'categorie' ? node.id : undefined, // Link to tree node ID
           title: currentCategorie,
           type: 'category',
           tags: tags,
@@ -199,6 +201,7 @@ function convertTreeToLibraryItems(treeData) {
 
           libraryItems.push({
             id: itemId++,
+            treeNodeId: node.id, // Link to tree node ID (stable reference)
             title: node.data.sousCat1,
             type: 'subcategory',
             tags: tags,
@@ -266,8 +269,15 @@ function getWorkingDaysBetween(startDate, endDate) {
 export function loadFromStorage() {
   const data = localStorage.getItem(STORAGE_KEY);
   if (data) {
-    const parsed = JSON.parse(data);
-    return parsed;
+    try {
+      const parsed = JSON.parse(data);
+      if (parsed && parsed.boards?.length > 0) {
+        storage.setDb(parsed).catch(() => {});
+        return parsed;
+      }
+    } catch (e) {
+      console.log('[AppContext] Erreur:', e);
+    }
   }
   return {
     boards: [],
@@ -292,18 +302,16 @@ export function loadFromStorage() {
 }
 
 function saveToStorage(data) {
-  try {
+  return storage.setDb(data).catch(e => {
+    console.log('[saveToStorage] Erreur:', e.message);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  } catch (e) {
-    console.error('[saveToStorage] Error:', e);
-  }
+  });
 }
 
 function initDefaultData() {
-  // Migrer les anciennes clés localStorage si nécessaire
   migrateLocalStorageKeys();
-
   const data = loadFromStorage();
+  console.log('[initDefaultData] Loaded boards:', data.boards?.length);
   if (!data.orders) {
     data.orders = [];
   }
@@ -440,7 +448,26 @@ function initDefaultData() {
 }
 
 export function AppProvider({ children }) {
-  const [db, setDb] = useState(() => initDefaultData());
+  const [db, setDb] = useState({
+    boards: [],
+    columns: [],
+    cards: [],
+    categories: [],
+    subcategories: [],
+    libraryItems: [],
+    messages: [],
+    subcategoryEmails: [],
+    nextIds: {
+      board: 1,
+      column: 1,
+      card: 1,
+      category: 1,
+      subcategory: 1,
+      libraryItem: 1,
+      message: 1,
+      email: 1,
+    },
+  });
   const [boards, setBoards] = useState([]);
   const [currentBoard, setCurrentBoard] = useState(null);
   const [columns, setColumns] = useState([]);
@@ -453,7 +480,9 @@ export function AppProvider({ children }) {
   const { username, setUsername, userRole, setUserRole } = useUserSettings();
   const [loading, setLoading] = useState(false);
   const [unreadMentions, setUnreadMentions] = useState({});
-  const [filterMyProjects, setFilterMyProjects] = useState(() => localStorage.getItem('c-projets-filter-my-projects') === 'true');
+  const [filterMyProjects, setFilterMyProjects] = useState(
+    () => localStorage.getItem('c-projets-filter-my-projects') === 'true'
+  );
   const [usersList, setUsersList] = useState(() => {
     const saved = localStorage.getItem('c-projets-users');
     return saved ? JSON.parse(saved) : [];
@@ -464,7 +493,10 @@ export function AppProvider({ children }) {
     const parts = name.trim().split(/\s+/);
     if (parts.length === 1) return parts[0].toUpperCase();
     const lastName = parts[parts.length - 1].toUpperCase();
-    const firstName = parts.slice(0, -1).map(p => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase()).join(' ');
+    const firstName = parts
+      .slice(0, -1)
+      .map(p => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase())
+      .join(' ');
     return `${lastName} ${firstName}`;
   };
 
@@ -512,6 +544,21 @@ export function AppProvider({ children }) {
       localStorage.setItem('c-projets-users', JSON.stringify(newList));
     }
   };
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const stored = await storage.getDb();
+        if (stored && stored.boards?.length > 0) {
+          console.log('[AppContext] Chargement IndexedDB, boards:', stored.boards.length);
+          setDb(stored);
+        }
+      } catch (e) {
+        console.log('[AppContext] Erreur loadData:', e);
+      }
+    }
+    loadData();
+  }, []);
 
   useEffect(() => {
     if (db.boards && db.boards.length > 0 && usersList.length === 0) {
@@ -582,11 +629,15 @@ export function AppProvider({ children }) {
       setDb(currentDb => {
         const newDb = newDbOrFn(currentDb);
         saveToStorage(newDb);
+        // Notify that project data changed
+        setTimeout(() => window.dispatchEvent(new Event('project-updated')), 50);
         return newDb;
       });
     } else {
       setDb(newDbOrFn);
       saveToStorage(newDbOrFn);
+      // Notify that project data changed
+      setTimeout(() => window.dispatchEvent(new Event('project-updated')), 50);
     }
   }, []);
 
@@ -598,7 +649,47 @@ export function AppProvider({ children }) {
       if (board) {
         console.log('[loadBoard] Board found:', board.title);
         setCurrentBoard(board);
-        const boardColumns = sourceData.columns.filter(c => Number(c.board_id) === Number(boardId));
+
+        let boardColumns = sourceData.columns.filter(c => Number(c.board_id) === Number(boardId));
+
+        // Create default columns if none exist
+        if (boardColumns.length === 0) {
+          console.log('[loadBoard] No columns found, creating defaults');
+          const nextColId = Math.max(0, ...(sourceData.columns || []).map(c => c.id)) + 1;
+          boardColumns = [
+            { id: nextColId, board_id: boardId, title: 'À faire', position: 0, color: '#4A90D9' },
+            {
+              id: nextColId + 1,
+              board_id: boardId,
+              title: 'En cours',
+              position: 1,
+              color: '#F5A623',
+            },
+            {
+              id: nextColId + 2,
+              board_id: boardId,
+              title: 'En attente',
+              position: 2,
+              color: '#9CA3AF',
+            },
+            {
+              id: nextColId + 3,
+              board_id: boardId,
+              title: 'Terminée',
+              position: 3,
+              color: '#7ED321',
+            },
+            {
+              id: nextColId + 4,
+              board_id: boardId,
+              title: 'Archiver',
+              position: 4,
+              color: '#475569',
+            },
+          ];
+          sourceData.columns = [...sourceData.columns, ...boardColumns];
+        }
+
         const columnIds = boardColumns.map(c => Number(c.id));
         const filteredCards = sourceData.cards.filter(
           c =>
@@ -678,9 +769,76 @@ export function AppProvider({ children }) {
     setTimeout(() => window.dispatchEvent(new Event('library-refreshed')), 0);
   };
 
+  // Migration: Convert numeric library_item_id to tree node UUIDs
+  const migrateLibraryItemIds = () => {
+    try {
+      const dbRaw = localStorage.getItem('c-projets_db');
+      if (!dbRaw) return;
+      const db = JSON.parse(dbRaw);
+      if (!db.libraryItems || !Array.isArray(db.libraryItems)) return;
+
+      // Build mapping: numericId -> treeNodeId (UUID)
+      const idMapping = {};
+      db.libraryItems.forEach(item => {
+        if (item.id && item.treeNodeId) {
+          idMapping[String(item.id)] = String(item.treeNodeId);
+        }
+      });
+
+      if (Object.keys(idMapping).length === 0) {
+        console.log('[Migration] No mapping found, skipping');
+        return;
+      }
+
+      let updated = 0;
+
+      // Update categories
+      if (db.categories && Array.isArray(db.categories)) {
+        db.categories.forEach(cat => {
+          if (cat.library_item_id && idMapping[String(cat.library_item_id)]) {
+            cat.library_item_id = idMapping[String(cat.library_item_id)];
+            updated++;
+          }
+        });
+      }
+
+      // Update subcategories
+      if (db.subcategories && Array.isArray(db.subcategories)) {
+        db.subcategories.forEach(sub => {
+          if (sub.library_item_id && idMapping[String(sub.library_item_id)]) {
+            sub.library_item_id = idMapping[String(sub.library_item_id)];
+            updated++;
+          }
+        });
+      }
+
+      if (updated > 0) {
+        localStorage.setItem('c-projets_db', JSON.stringify(db));
+        console.log('[Migration] Updated', updated, 'library_item_id from numeric to UUID');
+        // Reload board if needed
+        if (currentBoard) {
+          setTimeout(() => loadBoard(currentBoard.id, db), 100);
+        }
+      } else {
+        console.log('[Migration] No items needed migration');
+      }
+    } catch (e) {
+      console.error('[Migration] Error:', e);
+    }
+  };
+
+  useEffect(() => {
+    // Run migration on mount
+    migrateLibraryItemIds();
+  }, []);
+
   useEffect(() => {
     const handleLibraryUpdate = () => {
       forceLibraryItems();
+      // Auto-sync tags from library to projects when library is updated
+      setTimeout(() => {
+        syncTagsFromLibrary();
+      }, 100);
     };
 
     window.addEventListener('library-updated', handleLibraryUpdate);
@@ -853,7 +1011,7 @@ export function AppProvider({ children }) {
     return treeData;
   };
 
-  const importData = jsonData => {
+  const importData = async jsonData => {
     try {
       const parsed = typeof jsonData === 'string' ? JSON.parse(jsonData) : jsonData;
 
@@ -921,8 +1079,8 @@ export function AppProvider({ children }) {
         }
       });
 
+      await saveToStorage(dbData);
       setDb(dbData);
-      saveToStorage(dbData);
 
       if (data.projectTime) {
         localStorage.setItem('c-projets_project_time', JSON.stringify(data.projectTime));
@@ -962,7 +1120,10 @@ export function AppProvider({ children }) {
             JSON.stringify(data.settings.chargeResentie)
           );
         }
-        if (data.settings.filterMyProjects !== undefined && data.settings.filterMyProjects !== null) {
+        if (
+          data.settings.filterMyProjects !== undefined &&
+          data.settings.filterMyProjects !== null
+        ) {
           localStorage.setItem('c-projets-filter-my-projects', data.settings.filterMyProjects);
           setFilterMyProjects(data.settings.filterMyProjects === 'true');
         }
@@ -1368,7 +1529,8 @@ export function AppProvider({ children }) {
       let cardId;
 
       setDb(currentDb => {
-        cardId = currentDb.nextIds.card;
+        const safeDb = currentDb || { cards: [], nextIds: { card: 1 } };
+        cardId = safeDb.nextIds?.card || 1;
         const newCard = {
           id: cardId,
           column_id: Number(columnId),
@@ -1389,15 +1551,15 @@ export function AppProvider({ children }) {
           skip_action: skipAction,
         };
 
-        const maxPos = currentDb.cards
+        const maxPos = (safeDb.cards || [])
           .filter(c => Number(c.column_id) === Number(columnId))
-          .reduce((max, c) => Math.max(max, c.position), -1);
+          .reduce((max, c) => Math.max(max, c.position || 0), -1);
         newCard.position = maxPos + 1;
 
         const newDb = {
           ...currentDb,
           cards: [...currentDb.cards, newCard],
-          nextIds: { ...currentDb.nextIds, card: cardId + 1 },
+          nextIds: { ...safeDb.nextIds, card: cardId + 1 },
         };
         saveToStorage(newDb);
         console.log(
@@ -1411,15 +1573,13 @@ export function AppProvider({ children }) {
         return newDb;
       });
 
-      // Wait longer and verify state update
-      setTimeout(() => {
-        // Force a re-render by reading db
-        setDb(currentDb => {
-          console.log('[createCard] After wait, cards in db:', currentDb.cards.length);
-          return currentDb;
-        });
+      if (cardId) {
         resolve(cardId);
-      }, 200);
+      } else {
+        setTimeout(() => {
+          resolve(cardId);
+        }, 300);
+      }
     });
   };
 
@@ -1558,9 +1718,19 @@ export function AppProvider({ children }) {
     parentId = null,
     durationDays = 1,
     reloadBoardId = null,
-    tag = null
+    tag = null,
+    libraryItemId = null
   ) => {
-    console.log('[createCategory] Called with cardId:', cardId, 'title:', title, 'tag:', tag);
+    console.log(
+      '[createCategory] Called with cardId:',
+      cardId,
+      'title:',
+      title,
+      'tag:',
+      tag,
+      'libraryItemId:',
+      libraryItemId
+    );
 
     // Check for duplicate category title for this card
     const existingCategory = db.categories.find(
@@ -1590,8 +1760,9 @@ export function AppProvider({ children }) {
         } else {
           filter = [];
         }
-        const maxPos = filter.reduce((max, c) => Math.max(max, c.position), -1);
-        catId = currentDb.nextIds.category;
+        const maxPos = filter.reduce((max, c) => Math.max(max, c.position || 0), -1);
+        const safeDb = currentDb || { nextIds: { category: 1 }, categories: [] };
+        catId = safeDb.nextIds?.category || 1;
         const newCategory = {
           id: catId,
           card_id: cardId ? Number(cardId) : null,
@@ -1605,6 +1776,7 @@ export function AppProvider({ children }) {
           start_date: null,
           duration_days: durationDays,
           tag,
+          library_item_id: libraryItemId || null,
           created_at: new Date().toISOString(),
         };
         const newDb = {
@@ -1644,6 +1816,8 @@ export function AppProvider({ children }) {
     } else {
       console.log('[updateCategory] currentBoard is null, skipping loadBoard');
     }
+    // Notify BDLibraryView that project data changed
+    window.dispatchEvent(new Event('project-updated'));
   };
 
   const deleteCategory = id => {
@@ -1654,6 +1828,7 @@ export function AppProvider({ children }) {
     };
     saveDb(newDb);
     if (currentBoard) loadBoard(currentBoard.id, newDb);
+    window.dispatchEvent(new Event('project-updated'));
   };
 
   const moveCategory = (categoryId, newCardId, newPosition) => {
@@ -1715,8 +1890,10 @@ export function AppProvider({ children }) {
     startDate = null,
     durationDays = 1,
     reloadBoardId = null,
-    tag = null
+    tag = null,
+    libraryItemId = null
   ) => {
+    console.log('[createSubcategory] tag:', tag, 'libraryItemId:', libraryItemId);
     // Check for duplicate subcategory title for this category
     const existingSubcategory = db.subcategories.find(
       s =>
@@ -1735,10 +1912,11 @@ export function AppProvider({ children }) {
       let subcatId;
       let newDbRef;
       setDb(currentDb => {
-        const maxPos = currentDb.subcategories
+        const maxPos = (currentDb?.subcategories || [])
           .filter(s => Number(s.category_id) === Number(categoryId))
-          .reduce((max, s) => Math.max(max, s.position), -1);
-        subcatId = currentDb.nextIds.subcategory;
+          .reduce((max, s) => Math.max(max, s.position || 0), -1);
+        const safeDb = currentDb || { nextIds: { subcategory: 1 }, subcategories: [] };
+        subcatId = safeDb.nextIds?.subcategory || 1;
         const newSubcategory = {
           id: subcatId,
           category_id: Number(categoryId),
@@ -1750,14 +1928,15 @@ export function AppProvider({ children }) {
           position: maxPos + 1,
           start_date: startDate,
           duration_days: durationDays,
-          tag,
+          tag: tag,
+          library_item_id: libraryItemId,
           created_at: new Date().toISOString(),
           predecessors: [],
         };
         const newDb = {
-          ...currentDb,
-          subcategories: [...currentDb.subcategories, newSubcategory],
-          nextIds: { ...currentDb.nextIds, subcategory: subcatId + 1 },
+          ...safeDb,
+          subcategories: [...(safeDb.subcategories || []), newSubcategory],
+          nextIds: { ...safeDb.nextIds, subcategory: subcatId + 1 },
         };
         newDbRef = newDb;
         saveToStorage(newDb);
@@ -1785,6 +1964,8 @@ export function AppProvider({ children }) {
     if (currentBoard) {
       setTimeout(() => loadBoard(currentBoard.id, newDb), 100);
     }
+    // Notify BDLibraryView that project data changed
+    window.dispatchEvent(new Event('project-updated'));
   };
 
   const toggleMilestone = (subcategoryId, milestoneId) => {
@@ -1824,6 +2005,7 @@ export function AppProvider({ children }) {
     if (currentBoard) {
       setTimeout(() => loadBoard(currentBoard.id, newDb), 100);
     }
+    window.dispatchEvent(new Event('project-updated'));
   };
 
   const addEmailToSubcategory = (subcategoryId, emailData) => {
@@ -2005,181 +2187,145 @@ export function AppProvider({ children }) {
   };
 
   const syncTagsFromLibrary = () => {
-    const treeRaw = localStorage.getItem('c-projets_library_editor');
-    console.log('[syncTagsFromLibrary] treeRaw exists:', !!treeRaw);
-    const categoriesWithTags = [];
-    const subcategoriesWithTags = [];
+    console.log('[syncTagsFromLibrary] Starting sync - library is source of truth');
+    let updatedCount = 0;
 
+    // Read fresh db from localStorage to avoid stale closure
+    let currentDb;
+    try {
+      const dbRaw = localStorage.getItem('c-projets_db');
+      currentDb = dbRaw ? JSON.parse(dbRaw) : db;
+    } catch (e) {
+      currentDb = db;
+    }
+
+    // Build tree lookup: treeNodeId (UUID) -> systemTag
+    const treeTagsByNodeId = {};
+    const treeRaw = localStorage.getItem('c-projets_library_editor');
     if (treeRaw) {
       try {
         const treeData = JSON.parse(treeRaw);
-        const findTagsInNodes = nodes => {
-          nodes.forEach(node => {
-            if (node.data && node.data.systemTag && node.data.systemTag.trim()) {
-              if (node.type === 'categorie' && node.data.categorie) {
-                categoriesWithTags.push({
-                  title: node.data.categorie,
-                  tag: node.data.systemTag.trim(),
-                });
-              }
-              if (node.type === 'souscategorie' && node.data.sousCat1) {
-                subcategoriesWithTags.push({
-                  title: node.data.sousCat1,
-                  tag: node.data.systemTag.trim(),
-                });
-              }
+        const extractTags = nodes => {
+          (nodes || []).forEach(node => {
+            if (node.id && node.data?.systemTag && node.data.systemTag.trim()) {
+              treeTagsByNodeId[String(node.id)] = node.data.systemTag.trim();
             }
-            if (node.children) {
-              findTagsInNodes(node.children);
-            }
+            if (node.children && node.children.length > 0) extractTags(node.children);
           });
         };
-        findTagsInNodes(treeData);
+        extractTags(treeData.children || treeData);
       } catch (e) {
         console.error('[syncTagsFromLibrary] Error parsing tree:', e);
       }
     }
 
-    const libraryItems = db.libraryItems || [];
-    libraryItems.forEach(item => {
-      if (item.type === 'category' && item.content_json) {
-        try {
-          const content = JSON.parse(item.content_json);
-          if (content.category && content.category.tag) {
-            categoriesWithTags.push({
-              title: item.title,
-              tag: content.category.tag,
-            });
-          }
-        } catch (e) {}
-      }
-      if (item.type === 'subcategory' && item.content_json) {
-        try {
-          const content = JSON.parse(item.content_json);
-          if (content.subcategory && content.subcategory.tag) {
-            subcategoriesWithTags.push({
-              title: item.title,
-              tag: content.subcategory.tag,
-            });
-          }
-        } catch (e) {}
-      }
-      if (item.type === 'card' && item.content_json) {
-        try {
-          const content = JSON.parse(item.content_json);
-          if (content.categories) {
-            content.categories.forEach(cat => {
-              if (cat.tag) {
-                categoriesWithTags.push({
-                  title: cat.title,
-                  tag: cat.tag,
-                });
-              }
-              if (cat.subcategories) {
-                cat.subcategories.forEach(subcat => {
-                  if (subcat.tag) {
-                    subcategoriesWithTags.push({
-                      title: subcat.title,
-                      tag: subcat.tag,
-                    });
-                  }
-                });
-              }
-            });
-          }
-        } catch (e) {}
+    // Build mapping: numeric libraryItemId -> treeNodeId (UUID)
+    // This handles legacy data where library_item_id was numeric
+    const numericIdToUUID = {};
+    (currentDb.libraryItems || []).forEach(item => {
+      if (item.id && item.treeNodeId) {
+        numericIdToUUID[String(item.id)] = String(item.treeNodeId);
       }
     });
+    console.log('[syncTagsFromLibrary] numericIdToUUID mapping:', numericIdToUUID);
 
-    console.log('[syncTagsFromLibrary] Categories from library:', categoriesWithTags);
-    console.log('[syncTagsFromLibrary] Subcategories from library:', subcategoriesWithTags);
-    console.log(
-      '[syncTagsFromLibrary] Categories in DB:',
-      db.categories.map(c => ({ id: c.id, title: c.title, tag: c.tag }))
-    );
-    console.log(
-      '[syncTagsFromLibrary] Subcategories in DB:',
-      db.subcategories.map(s => ({ id: s.id, title: s.title, tag: s.tag }))
-    );
+    // Helper: resolve library_item_id to tree node ID
+    const resolveToTreeNodeId = libItemId => {
+      if (!libItemId) return null;
+      const strId = String(libItemId);
+      // If it's already a UUID (contains dashes), use it directly
+      if (strId.includes('-')) return strId;
+      // Otherwise, look up in our mapping (legacy numeric ID)
+      return numericIdToUUID[strId] || null;
+    };
 
-    let updatedCount = 0;
+    // Sync subcategories: library is source of truth for tags
+    const newSubcategories = currentDb.subcategories.map(sub => {
+      if (!sub.library_item_id) return sub; // No link to library
 
-    const normalizeTitle = title => (title ? title.toLowerCase().trim().replace(/\s+/g, ' ') : '');
-
-    const newCategories = db.categories.map(cat => {
-      if (cat.tag) return cat;
-      const catTitle = normalizeTitle(cat.title);
-
-      // Exact match first
-      let matchingLibraryCat = categoriesWithTags.find(lc => catTitle === normalizeTitle(lc.title));
-
-      // If no exact match, try partial match
-      if (!matchingLibraryCat) {
-        matchingLibraryCat = categoriesWithTags.find(
-          lc =>
-            catTitle.includes(normalizeTitle(lc.title)) ||
-            normalizeTitle(lc.title).includes(catTitle)
-        );
-      }
-
-      if (matchingLibraryCat) {
+      // Resolve to tree node ID (handle both UUID and legacy numeric IDs)
+      const treeNodeId = resolveToTreeNodeId(sub.library_item_id);
+      if (!treeNodeId) {
         console.log(
-          '[syncTagsFromLibrary] MATCH category:',
-          cat.title,
-          '->',
-          matchingLibraryCat.tag
-        );
-        updatedCount++;
-        return { ...cat, tag: matchingLibraryCat.tag };
-      }
-      return cat;
-    });
-
-    const newSubcategories = db.subcategories.map(sub => {
-      if (sub.tag) return sub;
-      const subTitle = normalizeTitle(sub.title);
-
-      // Exact match first
-      let matchingLibrarySub = subcategoriesWithTags.find(
-        ls => subTitle === normalizeTitle(ls.title)
-      );
-
-      // If no exact match, try partial match
-      if (!matchingLibrarySub) {
-        matchingLibrarySub = subcategoriesWithTags.find(
-          ls =>
-            subTitle.includes(normalizeTitle(ls.title)) ||
-            normalizeTitle(ls.title).includes(subTitle)
-        );
-      }
-
-      if (matchingLibrarySub) {
-        console.log(
-          '[syncTagsFromLibrary] MATCH subcategory:',
+          '[syncTagsFromLibrary] No tree node ID found for sub:',
           sub.title,
+          'library_item_id:',
+          sub.library_item_id
+        );
+        return sub;
+      }
+
+      const tagFromTree = treeTagsByNodeId[treeNodeId];
+      if (!tagFromTree) {
+        console.log(
+          '[syncTagsFromLibrary] No tag in tree for node:',
+          treeNodeId,
+          'sub:',
+          sub.title
+        );
+        return sub;
+      }
+
+      // Force update: library is source of truth
+      if (tagFromTree !== sub.tag) {
+        console.log(
+          '[syncTagsFromLibrary] Updating subcategory:',
+          sub.title,
+          'tag:',
+          sub.tag,
           '->',
-          matchingLibrarySub.tag
+          tagFromTree,
+          '(library is source of truth)'
         );
         updatedCount++;
-        return { ...sub, tag: matchingLibrarySub.tag };
+        return { ...sub, tag: tagFromTree };
       }
       return sub;
     });
 
-    const newDb = {
-      ...db,
-      categories: newCategories,
-      subcategories: newSubcategories,
-    };
-    saveDb(newDb);
+    // Sync categories similarly
+    const newCategories = currentDb.categories.map(cat => {
+      if (!cat.library_item_id) return cat;
 
-    if (currentBoard) {
-      setTimeout(() => loadBoard(currentBoard.id, newDb), 100);
+      const treeNodeId = resolveToTreeNodeId(cat.library_item_id);
+      if (!treeNodeId) return cat;
+
+      const tagFromTree = treeTagsByNodeId[treeNodeId];
+      if (!tagFromTree) return cat;
+
+      if (tagFromTree !== cat.tag) {
+        console.log(
+          '[syncTagsFromLibrary] Updating category:',
+          cat.title,
+          'tag:',
+          cat.tag,
+          '->',
+          tagFromTree
+        );
+        updatedCount++;
+        return { ...cat, tag: tagFromTree };
+      }
+      return cat;
+    });
+
+    if (updatedCount > 0) {
+      const newDb = {
+        ...currentDb,
+        categories: newCategories,
+        subcategories: newSubcategories,
+      };
+      saveDb(newDb);
+
+      if (currentBoard) {
+        setTimeout(() => loadBoard(currentBoard.id, newDb), 100);
+      }
+      console.log('[syncTagsFromLibrary] Updated', updatedCount, 'items from library');
+    } else {
+      console.log('[syncTagsFromLibrary] All tags already in sync');
     }
 
     return updatedCount;
   };
-
   const getArchivedCards = () => {
     return db.cards.filter(c => c.is_archived);
   };

@@ -42,6 +42,7 @@ export function convertLibraryDataToTree(libraryItems) {
             type: 'chapitre',
             titre: chapter || 'Sans chapitre',
             expanded: true,
+            data: { chapitre: chapter || 'Sans chapitre', temps: 0 },
             children: [],
           };
           tree.children.push(chapters[chapter]);
@@ -52,7 +53,12 @@ export function convertLibraryDataToTree(libraryItems) {
           type: 'carte',
           titre: item.title,
           expanded: true,
-          data: { ...content.card, skipAction: content.card?.skipAction || false },
+          data: {
+            carte: item.title,
+            temps: content.card?.duration_days || 0,
+            skipAction: content.card?.skipAction || false,
+            systemTag: '',
+          },
           children: [],
         };
 
@@ -63,7 +69,11 @@ export function convertLibraryDataToTree(libraryItems) {
               type: 'categorie',
               titre: cat.title,
               expanded: true,
-              data: { ...cat, systemTag: cat.tag || '' },
+              data: {
+                categorie: cat.title,
+                temps: cat.duration_days || 0,
+                systemTag: cat.tag || '',
+              },
               children: [],
             };
 
@@ -73,7 +83,11 @@ export function convertLibraryDataToTree(libraryItems) {
                   id: `sub_${item.id}_${cat.title}_${sub.title}`,
                   type: 'souscategorie',
                   titre: sub.title,
-                  data: { ...sub, systemTag: sub.tag || '' },
+                  data: {
+                    sousCat1: sub.title,
+                    temps: sub.duration_days || 0,
+                    systemTag: sub.tag || '',
+                  },
                   children: [],
                 });
               });

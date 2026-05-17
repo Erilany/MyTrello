@@ -1,202 +1,156 @@
+import Dexie from 'dexie';
+
+const DB_NAME = 'c-projets-db';
+const DB_VERSION = 1;
+
+class CProjetsDB extends Dexie {
+  constructor() {
+    super(DB_NAME);
+
+    this.version(DB_VERSION).stores({
+      boards: '++id, title',
+      columns: '++id, board_id, position',
+      cards: '++id, board_id, title',
+      categories: '++id, card_id, title',
+      subcategories: '++id, category_id, title',
+      library: '++id, type, title, tags',
+    });
+
+    this.boards = this.table('boards');
+    this.columns = this.table('columns');
+    this.cards = this.table('cards');
+    this.categories = this.table('categories');
+    this.subcategories = this.table('subcategories');
+    this.library = this.table('library');
+  }
+}
+
+const db = new CProjetsDB();
 const STORAGE_KEY = 'c-projets_db';
 
-const PROJECT_KEYS = [
-  'links',
-  'commandes',
-  'eotp',
-  'internalContacts',
-  'externalContacts',
-  'gmr',
-  'priority',
-  'zone',
-];
-
 export const storage = {
-  isSQLite: false,
+  isSQLite: true,
 
-  getItem: key => {
-    return localStorage.getItem(key);
+  async init() {
+    if (!db.isOpen()) {
+      await db.open();
+    }
   },
+
+  getItem: key => localStorage.getItem(key),
 
   setItem: (key, value) => {
-    localStorage.setItem(key, JSON.stringify(value));
-  },
-
-  removeItem: key => {
-    localStorage.removeItem(key);
-  },
-
-  getDb: () => {
-    const data = localStorage.getItem(STORAGE_KEY);
-    if (data) {
-      try {
-        return JSON.parse(data);
-      } catch (e) {
-        console.error('[Storage] Erreur parsing db:', e);
-        return null;
-      }
+    try {
+      localStorage.setItem(key, JSON.stringify(value));
+    } catch (e) {
+      console.error('[Storage] Erreur setItem:', e.message);
     }
-    return null;
   },
 
-  setDb: dbData => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(dbData));
-  },
+  removeItem: key => localStorage.removeItem(key),
 
-  getBoards: () => {
-    const db = storage.getDb();
-    return db?.boards || [];
-  },
-
-  getBoard: boardId => {
-    const db = storage.getDb();
-    return db?.boards?.find(b => b.id === boardId) || null;
-  },
-
-  getColumns: boardId => {
-    const db = storage.getDb();
-    return db?.columns?.filter(c => Number(c.board_id) === Number(boardId)) || [];
-  },
-
-  getCards: boardId => {
-    const db = storage.getDb();
-    return db?.cards?.filter(c => Number(c.board_id) === Number(boardId)) || [];
-  },
-
-  getAllCards: () => {
-    const db = storage.getDb();
-    return db?.cards || [];
-  },
-
-  getCategories: cardId => {
-    const db = storage.getDb();
-    return db?.categories?.filter(c => Number(c.card_id) === Number(cardId)) || [];
-  },
-
-  getAllCategories: () => {
-    const db = storage.getDb();
-    return db?.categories || [];
-  },
-
-  getSubcategories: categoryId => {
-    const db = storage.getDb();
-    return db?.subcategories?.filter(s => Number(s.category_id) === Number(categoryId)) || [];
-  },
-
-  getAllSubcategories: () => {
-    const db = storage.getDb();
-    return db?.subcategories || [];
-  },
-
-  getProjectData: (boardId, key) => {
-    const data = localStorage.getItem(`board-${boardId}-${key}`);
-    if (data) {
-      try {
-        return JSON.parse(data);
-      } catch {
-        return data;
-      }
+  async getDb() {
+    try {
+      await storage.init();
+      const data = {
+        boards: await db.boards.toArray(),
+        columns: await db.columns.toArray(),
+        cards: await db.cards.toArray(),
+        categories: await db.categories.toArray(),
+        subcategories: await db.subcategories.toArray(),
+        libraryItems: await db.library.toArray(),
+        messages: [],
+        subcategoryEmails: [],
+      };
+      if (data.boards.length > 0) return data;
+    } catch (e) {
+      console.log('[Storage] IndexedDB non dispo, fallback localStorage');
     }
-    return null;
+    const fallback = localStorage.getItem(STORAGE_KEY);
+    return fallback ? JSON.parse(fallback) : null;
   },
 
-  setProjectData: (boardId, key, value) => {
-    localStorage.setItem(`board-${boardId}-${key}`, JSON.stringify(value));
+  async setDb(dbData) {
+    if (!dbData) return;
+
+    // Always save to localStorage as backup
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(dbData));
+      console.log('[Storage] Sauvegardé localStorage');
+      window.dispatchEvent(new StorageEvent('storage', { key: STORAGE_KEY }));
+    } catch (e) {
+      console.log('[Storage] Erreur localStorage:', e.message);
+    }
+
+    // Also save to IndexedDB
+    try {
+      await storage.init();
+      await db.transaction(
+        'rw',
+        db.boards,
+        db.columns,
+        db.cards,
+        db.categories,
+        db.subcategories,
+        db.library,
+        async () => {
+          await db.boards.clear();
+          await db.columns.clear();
+          await db.cards.clear();
+          await db.categories.clear();
+          await db.subcategories.clear();
+          await db.library.clear();
+
+          if (dbData.boards?.length) await db.boards.bulkPut(dbData.boards);
+          if (dbData.columns?.length) await db.columns.bulkPut(dbData.columns);
+          if (dbData.cards?.length) await db.cards.bulkPut(dbData.cards);
+          if (dbData.categories?.length) await db.categories.bulkPut(dbData.categories);
+          if (dbData.subcategories?.length) await db.subcategories.bulkPut(dbData.subcategories);
+          if (dbData.libraryItems?.length) await db.library.bulkPut(dbData.libraryItems);
+        }
+      );
+      console.log('[Storage] Sauvegardé IndexedDB');
+    } catch (e) {
+      console.log('[Storage] Erreur IndexedDB:', e.message);
+    }
   },
 
-  getAllProjectData: boardId => {
-    const result = {};
-    PROJECT_KEYS.forEach(key => {
-      const data = storage.getProjectData(boardId, key);
-      if (data !== null) {
-        result[key] = data;
-      }
-    });
-    return result;
-  },
-
-  getProjectContacts: (boardId, type = 'internal') => {
-    const key = type === 'internal' ? 'internalContacts' : 'externalContacts';
-    return storage.getProjectData(boardId, key) || [];
-  },
-
-  setProjectContacts: (boardId, contacts, type = 'internal') => {
-    const key = type === 'internal' ? 'internalContacts' : 'externalContacts';
-    storage.setProjectData(boardId, key, contacts);
-  },
+  getProjectData: (boardId, key) => localStorage.getItem(`board-${boardId}-${key}`),
+  setProjectData: (boardId, key, value) =>
+    localStorage.setItem(`board-${boardId}-${key}`, JSON.stringify(value)),
 
   getGMRData: () => {
-    const data = localStorage.getItem('c-projets_gmr');
-    return data ? JSON.parse(data) : [];
+    const d = localStorage.getItem('c-projets_gmr');
+    return d ? JSON.parse(d) : [];
   },
-
-  setGMRData: gmrData => {
-    localStorage.setItem('c-projets_gmr', JSON.stringify(gmrData));
-  },
+  setGMRData: v => localStorage.setItem('c-projets_gmr', JSON.stringify(v)),
 
   getZonesData: () => {
-    const data = localStorage.getItem('c-projets_zones');
-    return data ? JSON.parse(data) : [];
+    const d = localStorage.getItem('c-projets_zones');
+    return d ? JSON.parse(d) : [];
   },
-
-  setZonesData: zonesData => {
-    localStorage.setItem('c-projets_zones', JSON.stringify(zonesData));
-  },
+  setZonesData: v => localStorage.setItem('c-projets_zones', JSON.stringify(v)),
 
   getTagsData: () => {
-    const data = localStorage.getItem('c-projets_tags');
-    return data ? JSON.parse(data) : [];
+    const d = localStorage.getItem('c-projets_tags');
+    return d ? JSON.parse(d) : [];
   },
-
-  setTagsData: tagsData => {
-    localStorage.setItem('c-projets_tags', JSON.stringify(tagsData));
-  },
+  setTagsData: v => localStorage.setItem('c-projets_tags', JSON.stringify(v)),
 
   getContracts: () => {
-    const data = localStorage.getItem('c-projets_contracts');
-    return data ? JSON.parse(data) : [];
+    const d = localStorage.getItem('c-projets_contracts');
+    return d ? JSON.parse(d) : [];
   },
+  setContracts: v => localStorage.setItem('c-projets_contracts', JSON.stringify(v)),
 
-  setContracts: contracts => {
-    localStorage.setItem('c-projets_contracts', JSON.stringify(contracts));
+  clear: () => localStorage.removeItem(STORAGE_KEY),
+  getAllKeys: () => Object.keys(localStorage),
+
+  async exportAll() {
+    return storage.getDb();
   },
-
-  clear: () => {
-    localStorage.removeItem(STORAGE_KEY);
-    PROJECT_KEYS.forEach(key => {
-      const prefix = 'board-';
-      Object.keys(localStorage).forEach(k => {
-        if (k.startsWith(prefix) && k.includes(key)) {
-          localStorage.removeItem(k);
-        }
-      });
-    });
-  },
-
-  getAllKeys: () => {
-    return Object.keys(localStorage);
-  },
-
-  exportAll: () => {
-    const data = {};
-    Object.keys(localStorage).forEach(key => {
-      try {
-        data[key] = JSON.parse(localStorage.getItem(key));
-      } catch {
-        data[key] = localStorage.getItem(key);
-      }
-    });
-    return data;
-  },
-
-  importAll: data => {
-    Object.entries(data).forEach(([key, value]) => {
-      if (typeof value === 'string') {
-        localStorage.setItem(key, value);
-      } else {
-        localStorage.setItem(key, JSON.stringify(value));
-      }
-    });
+  async importAll(data) {
+    if (data) await storage.setDb(data);
   },
 };
 

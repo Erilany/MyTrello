@@ -79,8 +79,14 @@ function Settings() {
   };
 
   const allUsers = getUsers();
-  const sortedUsers = [...allUsers].sort((a, b) => formatUserName(a.name).localeCompare(formatUserName(b.name)));
-  const filteredUsers = userSearch ? sortedUsers.filter(u => formatUserName(u.name).toLowerCase().includes(userSearch.toLowerCase())) : sortedUsers;
+  const sortedUsers = [...allUsers].sort((a, b) =>
+    formatUserName(a.name).localeCompare(formatUserName(b.name))
+  );
+  const filteredUsers = userSearch
+    ? sortedUsers.filter(u =>
+        formatUserName(u.name).toLowerCase().includes(userSearch.toLowerCase())
+      )
+    : sortedUsers;
 
   const handleSelectUser = user => {
     setLocalUsername(user.name);
@@ -194,12 +200,12 @@ function Settings() {
       if (!file) return;
 
       const reader = new FileReader();
-      reader.onload = event => {
+      reader.onload = async event => {
         try {
-          const result = importData(event.target?.result);
+          const result = await importData(event.target?.result);
           if (result.success) {
             alert('Données importées avec succès !');
-            window.location.reload();
+            setTimeout(() => window.location.reload(), 500);
           } else {
             alert("Erreur lors de l'importation: " + (result.error || 'Erreur inconnue'));
           }
@@ -402,7 +408,13 @@ function Settings() {
                     <div className="relative">
                       <input
                         type="text"
-                        value={showNewUserInput ? newUserName : (localUsername ? formatUserName(localUsername) : '')}
+                        value={
+                          showNewUserInput
+                            ? newUserName
+                            : localUsername
+                              ? formatUserName(localUsername)
+                              : ''
+                        }
                         onChange={e => {
                           if (showNewUserInput) {
                             setNewUserName(e.target.value);
@@ -453,7 +465,8 @@ function Settings() {
                     {showNewUserInput ? (
                       <div className="mt-2 p-3 bg-card-hover rounded-lg border border-std">
                         <p className="text-xs text-muted mb-2">
-                          Le nom sera formaté: <strong>{formatUserName(newUserName) || '...'}</strong>
+                          Le nom sera formaté:{' '}
+                          <strong>{formatUserName(newUserName) || '...'}</strong>
                         </p>
                         <button
                           onClick={handleCreateUser}
@@ -543,10 +556,13 @@ function Settings() {
                   Base des interlocuteurs
                 </h2>
                 <p className="text-sm text-muted mb-4">
-                  Cette liste contient tous les interlocuteurs utilisés dans les projets. Elle est automatiquement mise à jour lors de la création de nouveaux interlocuteurs.
+                  Cette liste contient tous les interlocuteurs utilisés dans les projets. Elle est
+                  automatiquement mise à jour lors de la création de nouveaux interlocuteurs.
                 </p>
                 {usersList.length === 0 ? (
-                  <p className="text-sm text-muted text-center py-4">Aucun interlocuteur dans la base</p>
+                  <p className="text-sm text-muted text-center py-4">
+                    Aucun interlocuteur dans la base
+                  </p>
                 ) : (
                   <>
                     <div className="grid grid-cols-12 gap-2 p-2 text-xs font-semibold text-muted border-b border-std">
@@ -556,61 +572,82 @@ function Settings() {
                       <div className="col-span-1"></div>
                     </div>
                     <div className="space-y-1 max-h-[60vh] overflow-y-auto">
-                      {[...usersList].sort((a, b) => formatUserName(a.name).localeCompare(formatUserName(b.name))).map(user => {
-                        const userProjects = [];
-                        const userFunctions = new Set();
-                        boards.forEach(board => {
-                          const contacts = getContactsForBoard(board.id);
-                          contacts.forEach(c => {
-                            if (c.name && c.name.toLowerCase() === user.name.toLowerCase()) {
-                              userProjects.push(board.title);
-                              if (c.title) userFunctions.add(c.title);
-                            }
+                      {[...usersList]
+                        .sort((a, b) =>
+                          formatUserName(a.name).localeCompare(formatUserName(b.name))
+                        )
+                        .map(user => {
+                          const userProjects = [];
+                          const userFunctions = new Set();
+                          boards.forEach(board => {
+                            const contacts = getContactsForBoard(board.id);
+                            contacts.forEach(c => {
+                              if (c.name && c.name.toLowerCase() === user.name.toLowerCase()) {
+                                userProjects.push(board.title);
+                                if (c.title) userFunctions.add(c.title);
+                              }
+                            });
                           });
-                        });
-                        const functionsList = Array.from(userFunctions);
-                        const projectsList = userProjects;
-                        return (
-                          <div
-                            key={user.id}
-                            className="grid grid-cols-12 gap-2 p-2 bg-card-hover rounded-lg border border-std items-center"
-                          >
-                            <div className="col-span-4 text-sm font-medium text-primary">{formatUserName(user.name)}</div>
-                            <div className="col-span-4 text-xs text-secondary">
-                              {functionsList.length > 0 ? (
-                                <div className="max-h-16 overflow-y-auto">
-                                  {functionsList.map((f, i) => (
-                                    <div key={i} title={f}>{f}</div>
-                                  ))}
-                                </div>
-                              ) : '-'}
+                          const functionsList = Array.from(userFunctions);
+                          const projectsList = userProjects;
+                          return (
+                            <div
+                              key={user.id}
+                              className="grid grid-cols-12 gap-2 p-2 bg-card-hover rounded-lg border border-std items-center"
+                            >
+                              <div className="col-span-4 text-sm font-medium text-primary">
+                                {formatUserName(user.name)}
+                              </div>
+                              <div className="col-span-4 text-xs text-secondary">
+                                {functionsList.length > 0 ? (
+                                  <div className="max-h-16 overflow-y-auto">
+                                    {functionsList.map((f, i) => (
+                                      <div key={i} title={f}>
+                                        {f}
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  '-'
+                                )}
+                              </div>
+                              <div className="col-span-3 text-xs text-muted">
+                                {projectsList.length > 0 ? (
+                                  <div className="max-h-16 overflow-y-auto">
+                                    {projectsList.map((p, i) => (
+                                      <div key={i} title={p}>
+                                        {p}
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  '-'
+                                )}
+                              </div>
+                              <div className="col-span-1">
+                                <button
+                                  onClick={() => {
+                                    if (
+                                      window.confirm(
+                                        `Supprimer "${formatUserName(user.name)}" de la base ?`
+                                      )
+                                    ) {
+                                      const newList = usersList.filter(u => u.id !== user.id);
+                                      setUsersList(newList);
+                                      localStorage.setItem(
+                                        'c-projets-users',
+                                        JSON.stringify(newList)
+                                      );
+                                    }
+                                  }}
+                                  className="text-muted hover:text-urgent"
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              </div>
                             </div>
-                            <div className="col-span-3 text-xs text-muted">
-                              {projectsList.length > 0 ? (
-                                <div className="max-h-16 overflow-y-auto">
-                                  {projectsList.map((p, i) => (
-                                    <div key={i} title={p}>{p}</div>
-                                  ))}
-                                </div>
-                              ) : '-'}
-                            </div>
-                            <div className="col-span-1">
-                              <button
-                                onClick={() => {
-                                  if (window.confirm(`Supprimer "${formatUserName(user.name)}" de la base ?`)) {
-                                    const newList = usersList.filter(u => u.id !== user.id);
-                                    setUsersList(newList);
-                                    localStorage.setItem('c-projets-users', JSON.stringify(newList));
-                                  }
-                                }}
-                                className="text-muted hover:text-urgent"
-                              >
-                                <Trash2 size={14} />
-                              </button>
-                            </div>
-                          </div>
-                        );
-                      })}
+                          );
+                        })}
                     </div>
                   </>
                 )}

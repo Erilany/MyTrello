@@ -108,6 +108,7 @@ export const normalizeImportData = data => {
     normalizedData = migrateFromV1ToV2(data);
   } else if (version === CURRENT_VERSION) {
     console.log('[Migration] Données déjà en v2.0');
+    normalizedData = addDefaultColumns(normalizedData);
   } else {
     console.warn('[Migration] Version inconnue:', version);
   }
@@ -117,6 +118,37 @@ export const normalizeImportData = data => {
     errors: [],
     warnings,
     data: normalizedData,
+  };
+};
+
+const addDefaultColumns = data => {
+  if (!data.databases?.core) return data;
+
+  const core = { ...data.databases.core };
+
+  if (!core.columns || core.columns.length === 0) {
+    core.columns = [];
+    let nextColId = 1;
+
+    core.boards.forEach(board => {
+      const defaultColumns = [
+        { id: nextColId++, board_id: board.id, title: 'À faire', position: 0, color: '#4A90D9' },
+        { id: nextColId++, board_id: board.id, title: 'En cours', position: 1, color: '#F5A623' },
+        { id: nextColId++, board_id: board.id, title: 'En attente', position: 2, color: '#9CA3AF' },
+        { id: nextColId++, board_id: board.id, title: 'Terminée', position: 3, color: '#7ED321' },
+        { id: nextColId++, board_id: board.id, title: 'Archiver', position: 4, color: '#475569' },
+      ];
+      core.columns.push(...defaultColumns);
+    });
+    console.log('[Migration] Colonnes par défaut ajoutées pour', core.boards.length, 'projects');
+  }
+
+  return {
+    ...data,
+    databases: {
+      ...data.databases,
+      core,
+    },
   };
 };
 

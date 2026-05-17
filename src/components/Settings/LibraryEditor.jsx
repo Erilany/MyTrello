@@ -27,6 +27,7 @@ import {
   buildTree,
   treeToCSV,
 } from './libraryEditorUtils';
+import { syncTagsToProjects, loadAllProjects } from './librarySyncUtils';
 
 const STORAGE_KEY = 'c-projets_library_editor';
 
@@ -168,31 +169,33 @@ function convertTreeToLibraryItems(treeData) {
   return libraryItems;
 }
 
-// Fonction de migration pour restaurer les champs tags/temps manquants
+// Fonction de migration pour restaurer les champs manquants ou vides
 function migrateLibraryTree(tree) {
+  if (!tree || !Array.isArray(tree)) return [];
+
   const newTree = JSON.parse(JSON.stringify(tree));
 
   function traverseNodes(nodes) {
     for (const node of nodes) {
       if (!node.data) node.data = {};
 
-      // Migrer selon le type de nœud
+      // Migrer selon le type de nœud - réparer aussi les champs vides
       if (node.type === 'chapitre') {
         node.data.chapitre = node.data.chapitre || node.titre || '';
         node.data.temps = node.data.temps || 0;
-        // Pas de tags pour chapitre
       } else if (node.type === 'carte') {
         node.data.carte = node.data.carte || node.titre || '';
         node.data.temps = node.data.temps || 0;
-        node.data.systemTag = '';
+        if (node.data.skipAction === undefined) node.data.skipAction = false;
+        if (node.data.systemTag === undefined) node.data.systemTag = '';
       } else if (node.type === 'categorie') {
         node.data.categorie = node.data.categorie || node.titre || '';
         node.data.temps = node.data.temps || 0;
-        node.data.systemTag = node.data.systemTag || '';
+        if (node.data.systemTag === undefined) node.data.systemTag = '';
       } else if (node.type === 'souscategorie') {
         node.data.sousCat1 = node.data.sousCat1 || node.titre || '';
         node.data.temps = node.data.temps || 0;
-        node.data.systemTag = node.data.systemTag || '';
+        if (node.data.systemTag === undefined) node.data.systemTag = '';
       }
 
       if (node.children && node.children.length > 0) {
@@ -204,7 +207,6 @@ function migrateLibraryTree(tree) {
   traverseNodes(newTree);
   return newTree;
 }
-
 
 // parseCSV, buildTree, treeToCSV imported from libraryEditorUtils
 
@@ -222,18 +224,23 @@ function TreeNode({
   dragOverNode,
   dropPosition,
 }) {
+  if (!node || typeof node !== 'object' || !node.type) return null;
+
+  const safeData = node.data || {};
   const [isExpanded, setIsExpanded] = useState(node.expanded !== false);
-  const [localData, setLocalData] = useState(node.data);
+  const [localData, setLocalData] = useState(safeData);
   const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
     if (!isEditing) {
-      setLocalData(node.data);
+      const safeData = node?.data || {};
+      setLocalData(safeData);
     }
-  }, [node.data, isEditing]);
+  }, [node, node?.data, isEditing]);
 
   const handleChange = (field, value) => {
-    const updatedData = { ...localData, [field]: value };
+    const currentData = localData || node?.data || {};
+    const updatedData = { ...currentData, [field]: value };
     setLocalData(updatedData);
     setIsEditing(true);
     onEdit(node.id, updatedData);
@@ -303,7 +310,7 @@ function TreeNode({
           <>
             <input
               type="text"
-              value={localData.chapitre || ''}
+              value={localData?.chapitre || node?.titre || ''}
               onChange={e => handleChange('chapitre', e.target.value)}
               onBlur={handleBlur}
               className="flex-1 px-3 py-1.5 text-sm bg-[var(--bg-input)] border border-[var(--border)] rounded text-[var(--txt-primary)] font-medium cursor-text"
@@ -316,7 +323,7 @@ function TreeNode({
           <>
             <input
               type="text"
-              value={localData.carte || ''}
+              value={localData?.carte || node?.titre || ''}
               onChange={e => handleChange('carte', e.target.value)}
               onBlur={handleBlur}
               className="flex-1 px-3 py-1.5 text-sm bg-[var(--bg-input)] border border-[var(--border)] rounded text-[var(--txt-primary)] cursor-text"
@@ -329,7 +336,7 @@ function TreeNode({
           <>
             <input
               type="text"
-              value={localData.categorie || ''}
+              value={localData?.categorie || node?.titre || ''}
               onChange={e => handleChange('categorie', e.target.value)}
               onBlur={handleBlur}
               className="flex-1 px-3 py-1.5 text-sm bg-[var(--bg-input)] border border-[var(--border)] rounded text-[var(--txt-primary)] cursor-text"
@@ -343,7 +350,7 @@ function TreeNode({
           <>
             <input
               type="text"
-              value={localData.sousCat1 || ''}
+              value={localData?.sousCat1 || node?.titre || ''}
               onChange={e => handleChange('sousCat1', e.target.value)}
               onBlur={handleBlur}
               className="flex-[2] px-3 py-1.5 text-sm bg-[var(--bg-input)] border border-[var(--border)] rounded text-[var(--txt-primary)] cursor-text"
@@ -361,7 +368,7 @@ function TreeNode({
 
         <input
           type="number"
-          value={localData.temps || 0}
+          value={localData?.temps || 0}
           onChange={e => handleChange('temps', parseInt(e.target.value) || 0)}
           onBlur={handleBlur}
           className="w-20 px-2 py-1.5 text-sm bg-[var(--bg-input)] border border-[var(--border)] rounded text-[var(--txt-primary)] text-center cursor-text"
@@ -455,20 +462,21 @@ function LibraryEditor() {
     if (stored) {
       try {
         let parsed = JSON.parse(stored);
-        // Appliquer la migration pour restaurer les champs tags/temps manquants
+        if (!Array.isArray(parsed)) {
+          parsed = parsed.children || [];
+        }
         const migrated = migrateLibraryTree(parsed);
-        setTreeData(migrated);
-        // Si la migration a modifié les données, les sauvegarder
-        if (JSON.stringify(migrated) !== stored) {
+        setTreeData(Array.isArray(migrated) ? migrated : []);
+        if (JSON.stringify(migrated) !== JSON.stringify(parsed)) {
           localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated));
         }
       } catch {
         const tree = convertLibraryDataToTree(libraryTemplates);
-        setTreeData(tree);
+        setTreeData(migrateLibraryTree(tree.children || []));
       }
     } else {
       const tree = convertLibraryDataToTree(libraryTemplates);
-      setTreeData(tree);
+      setTreeData(migrateLibraryTree(tree.children || []));
     }
   }, []);
 
@@ -854,6 +862,41 @@ function LibraryEditor() {
       localStorage.setItem('c-projets_db', JSON.stringify(newDb));
     }
 
+    // Synchroniser automatiquement les tags vers tous les projets
+    try {
+      // Build tagMap from treeData directly
+      const tagMap = {};
+      const buildTagMap = (nodes, chapitre = '', carte = '') => {
+        for (const node of nodes) {
+          const curChap =
+            node.type === 'chapitre' ? node.data?.chapitre || node.titre || '' : chapitre;
+          const curCart = node.type === 'carte' ? node.data?.carte || node.titre || '' : carte;
+          if (node.type === 'souscategorie') {
+            const key = `${curChap}|${curCart}|${node.data?.sousCat1 || node.titre || ''}`;
+            tagMap[key] = {
+              systemTag: node.data?.systemTag || '',
+              chapitre: curChap,
+              carte: curCart,
+              sousCat1: node.data?.sousCat1 || node.titre || '',
+            };
+          }
+          if (node.children && node.children.length > 0) {
+            buildTagMap(node.children, curChap, curCart);
+          }
+        }
+      };
+      buildTagMap(treeData);
+
+      const allProjects = loadAllProjects();
+      const updatedProjects = syncTagsToProjects(tagMap, allProjects);
+
+      if (updatedProjects.length > 0) {
+        console.log('[LibraryEditor] Tags synchronisés vers les projets:', updatedProjects);
+      }
+    } catch (e) {
+      console.error('[LibraryEditor] Erreur lors de la synchronisation des tags:', e);
+    }
+
     // Dispatch event to notify other components
     window.dispatchEvent(new Event('library-updated'));
 
@@ -865,7 +908,7 @@ function LibraryEditor() {
     if (!window.confirm('Réinitialiser toutes les modifications ?')) return;
     localStorage.removeItem(STORAGE_KEY);
     const tree = convertLibraryDataToTree(libraryTemplates);
-    setTreeData(tree);
+    setTreeData(tree.children || []);
     setHasChanges(false);
   }, []);
 

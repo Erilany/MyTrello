@@ -1,0 +1,58 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Clear All Data - C-PRojets</title>
+  </head>
+  <body>
+    <h1>🗑️ Clear All C-PRojets Data</h1>
+    <button onclick="clearAll()" style="font-size: 20px; padding: 10px">Clear ALL Data</button>
+    <pre
+      id="result"
+      style="background: #f0f0f0; padding: 10px; max-height: 400px; overflow: auto"
+    ></pre>
+
+    <script>
+      function log(msg) {
+        document.getElementById('result').textContent += msg + '\n';
+        console.log(msg);
+      }
+
+      async function clearAll() {
+        const result = document.getElementById('result');
+        result.textContent = '';
+
+        try {
+          // Clear IndexedDB
+          const req = indexedDB.deleteDatabase('c-projets-db');
+          await new Promise((resolve, reject) => {
+            req.onsuccess = () => {
+              log('✅ IndexedDB cleared');
+              resolve();
+            };
+            req.onerror = () => {
+              log('❌ IndexedDB error');
+              resolve();
+            };
+          });
+        } catch (e) {
+          log('❌ IndexedDB: ' + e.message);
+        }
+
+        try {
+          // Clear localStorage
+          const keys = Object.keys(localStorage).filter(
+            k => k.startsWith('c-projets') || k.startsWith('board-')
+          );
+          keys.forEach(k => localStorage.removeItem(k));
+          log('✅ localStorage cleared (' + keys.length + ' keys)');
+        } catch (e) {
+          log('❌ localStorage: ' + e.message);
+        }
+
+        log('\n🔄 Please refresh the page to start fresh!');
+        log('Then re-import your clean JSON file.');
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,40 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Clear Cache - C-PRojets</title>
+  </head>
+  <body>
+    <h1>Clear C-PRojets Cache</h1>
+    <button onclick="clearCaches()">🗑️ Clear All Caches</button>
+    <p id="result"></p>
+    <script>
+      async function clearCaches() {
+        const result = document.getElementById('result');
+
+        try {
+          // Clear IndexedDB
+          const req = indexedDB.deleteDatabase('c-projets-db');
+          await new Promise((resolve, reject) => {
+            req.onsuccess = resolve;
+            req.onerror = reject;
+          });
+          result.textContent = '✅ IndexedDB cleared';
+        } catch (e) {
+          result.textContent = '❌ IndexedDB: ' + e.message;
+        }
+
+        try {
+          // Clear localStorage
+          const keys = Object.keys(localStorage).filter(k => k.startsWith('c-projets'));
+          keys.forEach(k => localStorage.removeItem(k));
+          result.textContent += ' | ✅ localStorage cleared (' + keys.length + ' keys)';
+        } catch (e) {
+          result.textContent += ' | ❌ localStorage: ' + e.message;
+        }
+
+        result.textContent += ' | 🔄 Please refresh the page';
+      }
+    </script>
+  </body>
+</html>

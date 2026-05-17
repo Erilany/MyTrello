@@ -18,12 +18,19 @@ import {
   quillFormats,
 } from './subCategoryUtils';
 import { addWorkingDays, subtractWorkingDays } from './workingDaysUtils';
+import {
+  getSubcategoryTagFromLibrary,
+  getParentCardTitle,
+  getSubcategorySystemTag,
+  findLibraryItemById,
+} from '../Settings/favoritesUtils';
 
 function SubCategoryModal({ subcategory, onClose }) {
   const {
     updateSubcategory,
     saveToLibrary,
     categories: contextCategories,
+    cards: contextCards,
     currentBoard,
     getInternalContacts,
     addEmailToSubcategory,
@@ -37,20 +44,30 @@ function SubCategoryModal({ subcategory, onClose }) {
   } = useApp();
 
   const allTags = loadTagsData();
+  const categories = contextCategories;
+  const cards = contextCards;
 
-  // Load data directly from localStorage for consistency
+  // Load library items for tag synchronization
   const [libraryItems, setLibraryItems] = useState([]);
-  const [cards, setCards] = useState([]);
-  const [categories, setCategories] = useState([]);
-
   useEffect(() => {
     const data = localStorage.getItem('c-projets_db');
     if (data) {
       const parsed = JSON.parse(data);
       if (parsed.libraryItems) setLibraryItems(parsed.libraryItems);
-      if (parsed.cards) setCards(parsed.cards);
-      if (parsed.categories) setCategories(parsed.categories);
     }
+  }, []);
+
+  // Listen for library updates to refresh tags
+  useEffect(() => {
+    const handleLibraryUpdated = () => {
+      const data = localStorage.getItem('c-projets_db');
+      if (data) {
+        const parsed = JSON.parse(data);
+        if (parsed.libraryItems) setLibraryItems(parsed.libraryItems);
+      }
+    };
+    window.addEventListener('library-updated', handleLibraryUpdated);
+    return () => window.removeEventListener('library-updated', handleLibraryUpdated);
   }, []);
 
   const [title, setTitle] = useState(subcategory.title);
@@ -141,9 +158,11 @@ function SubCategoryModal({ subcategory, onClose }) {
   const [anchorOnStart, setAnchorOnStart] = useState(!!subcategory.start_date);
   const [anchorOnEnd, setAnchorOnEnd] = useState(!!subcategory.due_date && !subcategory.start_date);
 
-  // Tag inheritance: use task tag, or inherit from parent category
+  // Tag inheritance: use dynamic systemTag from library, or inherit from parent category
   const parentCategory = categories?.find(c => c.id === subcategory.category_id);
-  const effectiveTag = subcategory.tag || (parentCategory ? parentCategory.tag : null);
+  const dynamicSystemTag = getSubcategorySystemTag(subcategory, libraryItems);
+  const effectiveTag =
+    dynamicSystemTag || subcategory.tag || (parentCategory ? parentCategory.tag : null);
   const tagInfo = effectiveTag ? allTags.find(t => t.name === effectiveTag) : null;
 
   // Temps repère from library (read-only)
@@ -151,9 +170,17 @@ function SubCategoryModal({ subcategory, onClose }) {
   if (parentCategory && libraryItems) {
     const parentCard = cards?.find(c => Number(c.id) === Number(parentCategory.card_id));
     if (parentCard) {
-      const libraryCard = libraryItems.find(
-        item => item.type === 'card' && item.title === parentCard.title
-      );
+      // Try to find library card using library_item_id (handles both numeric and UUID)
+      let libraryCard = null;
+      if (parentCard.library_item_id) {
+        libraryCard = findLibraryItemById(libraryItems, parentCard.library_item_id);
+      }
+      // Fallback: search by title
+      if (!libraryCard) {
+        libraryCard = libraryItems.find(
+          item => item.type === 'card' && item.title === parentCard.title
+        );
+      }
       if (libraryCard && libraryCard.content_json) {
         try {
           const content = JSON.parse(libraryCard.content_json);
@@ -598,9 +625,11 @@ function SubCategoryModal({ subcategory, onClose }) {
                     {effectiveTag}
                   </div>
                   <p className="text-xs text-muted mt-1">
-                    {subcategory.tag
-                      ? "Tag assigné par l'administrateur"
-                      : 'Tag hérité de la catégorie parente'}
+                    {dynamicSystemTag
+                      ? `Tag synchronisé depuis la bibliothèque (${dynamicSystemTag})`
+                      : subcategory.tag
+                        ? 'Tag assigné manuellement'
+                        : 'Tag hérité de la catégorie parente'}
                   </p>
                 </div>
               )}

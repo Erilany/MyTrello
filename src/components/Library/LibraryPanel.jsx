@@ -93,6 +93,59 @@ function LibraryPanel({ standalone = false }) {
   const [selectedImportTemplates, setSelectedImportTemplates] = useState([]);
   const [showTemplatesList, setShowTemplatesList] = useState(false);
 
+  // Helper: Find tree node ID by searching the library tree
+  // For cards: findTreeNodeId(cardTitle) -> returns the 'carte' node ID
+  // For categories: findTreeNodeId(cardTitle, categoryTitle) -> returns the 'categorie' node ID
+  // For subcategories: findTreeNodeId(cardTitle, categoryTitle, subcategoryTitle) -> returns the 'souscategorie' node ID
+  const findTreeNodeId = (cardTitle, categoryTitle = null, subcategoryTitle = null) => {
+    try {
+      const treeRaw = localStorage.getItem('c-projets_library_editor');
+      if (!treeRaw) return null;
+      const treeData = JSON.parse(treeRaw);
+      const nodes = treeData.children || treeData;
+
+      let foundNodeId = null;
+
+      const traverse = (node, currentCarte = '', currentCategorie = '') => {
+        if (foundNodeId) return;
+
+        const carte = node.type === 'carte' ? node.data?.carte || node.titre : currentCarte;
+        const cat =
+          node.type === 'categorie' ? node.data?.categorie || node.titre : currentCategorie;
+
+        // Check if this node matches what we're looking for
+        if (subcategoryTitle && node.type === 'souscategorie') {
+          if (node.data?.sousCat1 === subcategoryTitle && carte === cardTitle) {
+            if (!categoryTitle || cat === categoryTitle) {
+              foundNodeId = node.id;
+              return;
+            }
+          }
+        } else if (!subcategoryTitle && categoryTitle && node.type === 'categorie') {
+          if (cat === categoryTitle && carte === cardTitle) {
+            foundNodeId = node.id;
+            return;
+          }
+        } else if (!subcategoryTitle && !categoryTitle && node.type === 'carte') {
+          if (carte === cardTitle) {
+            foundNodeId = node.id;
+            return;
+          }
+        }
+
+        if (node.children) {
+          node.children.forEach(child => traverse(child, carte, cat));
+        }
+      };
+
+      nodes.forEach(node => traverse(node));
+      return foundNodeId;
+    } catch (e) {
+      console.error('[findTreeNodeId] Error:', e);
+      return null;
+    }
+  };
+
   // Load templates from localStorage
   useEffect(() => {
     const stored = localStorage.getItem('c-projets_templates');
@@ -912,119 +965,6 @@ function LibraryPanel({ standalone = false }) {
     }
   };
 
-  const handlePanelConfirmUse = () => {
-    if (!selectedBoardId || (!selectedColumnId && useFormDestination !== 'board2')) {
-      alert('Veuillez sélectionner un projet et une colonne');
-      return;
-    }
-
-    let columnId;
-    if (useFormDestination === 'board2') {
-      const boardColumns = db.columns.filter(c => Number(c.board_id) === parseInt(selectedBoardId));
-      if (boardColumns.length === 0) {
-        alert('Aucune colonne trouvée pour ce projet');
-        return;
-      }
-      columnId = boardColumns.sort((a, b) => a.position - b.position)[0].id;
-    } else {
-      columnId = parseInt(selectedColumnId);
-    }
-    const boardId = parseInt(selectedBoardId);
-
-    selectedCards.forEach(card => {
-      try {
-        const content = JSON.parse(card.content_json);
-        const tagsStr = card.tags || '';
-        const tags = tagsStr.split(',');
-        const chapter = tags[0] || null;
-
-        const cardId = createCard(
-          columnId,
-          content.card?.title || card.title,
-          content.card?.description || '',
-          content.card?.priority || 'normal',
-          content.card?.due_date || null,
-          content.card?.assignee || '',
-          null,
-          1,
-          null,
-          null,
-          null,
-          chapter,
-          card.id,
-          content.card?.skipAction || false
-        );
-
-        const selectedCatsForCard = selectedCategories.filter(c => c.cardTitle === card.title);
-        selectedCatsForCard.forEach(cat => {
-          const categoryId = createCategory(
-            cardId,
-            cat.title,
-            cat.description || '',
-            cat.priority || 'normal',
-            cat.due_date || null,
-            cat.assignee || '',
-            null,
-            1,
-            null,
-            null,
-            null,
-            cat.tag || null
-          );
-
-          const selectedSubcats = selectedSubcategories.filter(
-            s => s.categoryTitle === cat.title && s.cardTitle === card.title
-          );
-          selectedSubcats.forEach(subcat => {
-            createSubcategory(
-              categoryId,
-              subcat.title,
-              subcat.description || '',
-              subcat.priority || 'normal',
-              subcat.due_date || null,
-              subcat.assignee || '',
-              null,
-              1,
-              null,
-              subcat.tag || cat.tag || null
-            );
-          });
-        });
-      } catch (e) {
-        console.error('Error creating card:', e);
-      }
-    });
-
-    setTimeout(() => {
-      setShowUseForm(false);
-      setSelectedCards([]);
-      setSelectedCategories([]);
-      setSelectedSubcategories([]);
-      setUseFormBoardId('');
-      setUseFormColumnId('');
-
-      if (useFormDestination === 'board2') {
-        window.dispatchEvent(
-          new CustomEvent('board2-import', {
-            detail: {
-              cards: selectedCards,
-              categories: selectedCategories,
-              subcategories: selectedSubcategories,
-            },
-          })
-        );
-        loadBoard(boardId);
-        setLibraryOpen(false);
-        navigate('/board2');
-      } else {
-        loadBoard(boardId);
-        setLibraryOpen(false);
-        navigate('/board');
-      }
-      alert('Éléments ajoutés au projet avec succès !');
-    }, 100);
-  };
-
   const handlePanelCardClick = cardItem => {
     setPanelSelectedCard(cardItem);
     setPanelSelectedCategory(null);
@@ -1163,6 +1103,10 @@ function LibraryPanel({ standalone = false }) {
           const tags = tagsStr.split(',');
           const chapter = tags[0] || null;
 
+          // Get stable tree node ID for this card
+          const cardTreeNodeId = findTreeNodeId(cardTitle, null, null);
+          console.log('[DEBUG] cardTreeNodeId:', cardTreeNodeId, 'for card:', cardTitle);
+
           cardId = await createCard(
             firstColumnId,
             cardTitle,
@@ -1179,7 +1123,7 @@ function LibraryPanel({ standalone = false }) {
             null,
             null,
             chapter,
-            card.id,
+            cardTreeNodeId, // Stable tree node ID as the link
             content.card?.skipAction || false
           );
           isNewCard = true;
@@ -1219,6 +1163,7 @@ function LibraryPanel({ standalone = false }) {
                   null,
                   1,
                   null,
+                  null,
                   null
                 );
                 defaultCat = { id: newCatId };
@@ -1228,6 +1173,31 @@ function LibraryPanel({ standalone = false }) {
             }
             if (defaultCat) {
               try {
+                // Find the stable tree node ID using the path (card -> category -> subcategory)
+                const treeNodeId = findTreeNodeId(cardTitle, null, subcat.title);
+                console.log('[DEBUG] Found treeNodeId:', treeNodeId, 'for subcat:', subcat.title);
+
+                // Get systemTag from library tree using the tree node ID
+                let systemTag = null;
+                if (treeNodeId) {
+                  try {
+                    const treeRaw = localStorage.getItem('c-projets_library_editor');
+                    if (treeRaw) {
+                      const treeData = JSON.parse(treeRaw);
+                      const findTag = nodes => {
+                        for (const node of nodes) {
+                          if (node.id === treeNodeId) {
+                            systemTag = node.data?.systemTag || '';
+                            return true;
+                          }
+                          if (node.children && findTag(node.children)) return true;
+                        }
+                        return false;
+                      };
+                      findTag(treeData.children || treeData);
+                    }
+                  } catch (e) {}
+                }
                 await createSubcategory(
                   defaultCat.id,
                   subcat.title,
@@ -1236,9 +1206,10 @@ function LibraryPanel({ standalone = false }) {
                   subcat.due_date || null,
                   subcat.assignee || '',
                   null,
-                  subcat.duration_days || 1,
+                  subcatDuration,
                   null,
-                  subcat.tag || subcat.systemTag || null
+                  systemTag,
+                  treeNodeId // Stable tree node ID as the link
                 );
                 console.log('[DEBUG] Created subcategory directly:', subcat.title);
               } catch (e) {
@@ -1296,6 +1267,49 @@ function LibraryPanel({ standalone = false }) {
                           );
                         } else {
                           const subcatDuration = subcat.duration_days ?? 1;
+                          const parentCardTitle = card.tags || '';
+                          console.log(
+                            '[DEBUG] Looking for library subcat:',
+                            subcat.title,
+                            'with parentCardTitle:',
+                            parentCardTitle
+                          );
+                          const librarySubcat = libraryItems.find(
+                            item =>
+                              item.type === 'subcategory' &&
+                              item.title === subcat.title &&
+                              item.tags === parentCardTitle
+                          );
+                          console.log(
+                            '[DEBUG] Found librarySubcat:',
+                            librarySubcat?.id,
+                            'for subcat:',
+                            subcat.title
+                          );
+                          // Get systemTag from library tree
+                          let systemTag = librarySubcat?.systemTag || librarySubcat?.tag || null;
+                          if (!systemTag) {
+                            try {
+                              const treeRaw = localStorage.getItem('c-projets_library_editor');
+                              if (treeRaw) {
+                                const treeData = JSON.parse(treeRaw);
+                                const findTag = nodes => {
+                                  for (const node of nodes) {
+                                    if (
+                                      node.type === 'souscategorie' &&
+                                      node.data?.sousCat1 === subcat.title
+                                    ) {
+                                      systemTag = node.data?.systemTag || '';
+                                      return true;
+                                    }
+                                    if (node.children && findTag(node.children)) return true;
+                                  }
+                                  return false;
+                                };
+                                findTag(treeData.children || treeData);
+                              }
+                            } catch (e) {}
+                          }
                           await createSubcategory(
                             categoryId,
                             subcat.title,
@@ -1306,7 +1320,8 @@ function LibraryPanel({ standalone = false }) {
                             null,
                             subcatDuration,
                             null,
-                            subcat.tag || cat.tag || null
+                            systemTag,
+                            librarySubcat?.id
                           );
                           subcategoriesAdded++;
                         }
@@ -1316,6 +1331,15 @@ function LibraryPanel({ standalone = false }) {
                     }
                   }
                 } else {
+                  // Get stable tree node ID for this category
+                  const categoryTreeNodeId = findTreeNodeId(cardTitle, cat.title, null);
+                  console.log(
+                    '[DEBUG] categoryTreeNodeId:',
+                    categoryTreeNodeId,
+                    'for category:',
+                    cat.title
+                  );
+
                   const categoryId = await createCategory(
                     cardId,
                     cat.title,
@@ -1327,7 +1351,7 @@ function LibraryPanel({ standalone = false }) {
                     categoryDuration,
                     null,
                     null,
-                    cat.tag || null
+                    categoryTreeNodeId // Stable tree node ID as the link
                   );
                   categoriesAdded++;
 
@@ -1354,6 +1378,49 @@ function LibraryPanel({ standalone = false }) {
                           );
                         } else {
                           const subcatDuration = subcat.duration_days ?? 1;
+                          const parentCardTitle = card.tags || '';
+                          console.log(
+                            '[DEBUG] Looking for library subcat:',
+                            subcat.title,
+                            'with parentCardTitle:',
+                            parentCardTitle
+                          );
+                          const librarySubcat = libraryItems.find(
+                            item =>
+                              item.type === 'subcategory' &&
+                              item.title === subcat.title &&
+                              item.tags === parentCardTitle
+                          );
+                          console.log(
+                            '[DEBUG] Found librarySubcat:',
+                            librarySubcat?.id,
+                            'for subcat:',
+                            subcat.title
+                          );
+                          // Get systemTag from library tree
+                          let systemTag = librarySubcat?.systemTag || librarySubcat?.tag || null;
+                          if (!systemTag) {
+                            try {
+                              const treeRaw = localStorage.getItem('c-projets_library_editor');
+                              if (treeRaw) {
+                                const treeData = JSON.parse(treeRaw);
+                                const findTag = nodes => {
+                                  for (const node of nodes) {
+                                    if (
+                                      node.type === 'souscategorie' &&
+                                      node.data?.sousCat1 === subcat.title
+                                    ) {
+                                      systemTag = node.data?.systemTag || '';
+                                      return true;
+                                    }
+                                    if (node.children && findTag(node.children)) return true;
+                                  }
+                                  return false;
+                                };
+                                findTag(treeData.children || treeData);
+                              }
+                            } catch (e) {}
+                          }
                           await createSubcategory(
                             categoryId,
                             subcat.title,
@@ -1364,7 +1431,8 @@ function LibraryPanel({ standalone = false }) {
                             null,
                             subcatDuration,
                             null,
-                            subcat.tag || cat.tag || null
+                            systemTag,
+                            librarySubcat?.id
                           );
                           subcategoriesAdded++;
                         }
@@ -1409,6 +1477,15 @@ function LibraryPanel({ standalone = false }) {
           continue;
         }
 
+        // Get stable tree node ID for this standalone category
+        const categoryTreeNodeId = findTreeNodeId(cat.cardTitle, cat.title, null);
+        console.log(
+          '[DEBUG] categoryTreeNodeId:',
+          categoryTreeNodeId,
+          'for standalone category:',
+          cat.title
+        );
+
         const categoryId = await createCategory(
           null,
           cat.title,
@@ -1420,7 +1497,7 @@ function LibraryPanel({ standalone = false }) {
           categoryDuration,
           null,
           null,
-          cat.tag || null
+          categoryTreeNodeId // Stable tree node ID as the link
         );
         categoriesAdded++;
 
@@ -1441,6 +1518,36 @@ function LibraryPanel({ standalone = false }) {
             }
 
             const subcatDuration = subcat.duration_days ?? 1;
+            // Find stable tree node ID for this subcategory
+            const treeNodeId = findTreeNodeId(cat.cardTitle || '', cat.title, subcat.title);
+            console.log(
+              '[DEBUG] Found treeNodeId:',
+              treeNodeId,
+              'for standalone subcat:',
+              subcat.title
+            );
+
+            // Get systemTag from library tree using the tree node ID
+            let systemTag = null;
+            if (treeNodeId) {
+              try {
+                const treeRaw = localStorage.getItem('c-projets_library_editor');
+                if (treeRaw) {
+                  const treeData = JSON.parse(treeRaw);
+                  const findTag = nodes => {
+                    for (const node of nodes) {
+                      if (node.id === treeNodeId) {
+                        systemTag = node.data?.systemTag || '';
+                        return true;
+                      }
+                      if (node.children && findTag(node.children)) return true;
+                    }
+                    return false;
+                  };
+                  findTag(treeData.children || treeData);
+                }
+              } catch (e) {}
+            }
             await createSubcategory(
               categoryId,
               subcat.title,
@@ -1451,7 +1558,8 @@ function LibraryPanel({ standalone = false }) {
               null,
               subcatDuration,
               null,
-              subcat.tag || cat.tag || null
+              systemTag,
+              treeNodeId // Stable tree node ID as the link
             );
             subcategoriesAdded++;
           } catch (subcatErr) {
@@ -2856,7 +2964,7 @@ function LibraryPanel({ standalone = false }) {
                     Annuler
                   </button>
                   <button
-                    onClick={handlePanelConfirmUse}
+                    onClick={handleMainViewConfirmUse}
                     className="px-4 py-2 bg-accent text-white rounded-lg hover:opacity-90 transition-std"
                   >
                     Confirmer

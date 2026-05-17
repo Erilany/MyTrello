@@ -2,6 +2,54 @@ import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import { Plus, Trash2, Copy, Search, Star } from 'lucide-react';
 
+// Helper: Find tree node ID by searching the library tree
+const findTreeNodeId = (cardTitle, categoryTitle = null, subcategoryTitle = null) => {
+  try {
+    const treeRaw = localStorage.getItem('c-projets_library_editor');
+    if (!treeRaw) return null;
+    const treeData = JSON.parse(treeRaw);
+    const nodes = treeData.children || treeData;
+
+    let foundNodeId = null;
+
+    const traverse = (node, currentCarte = '', currentCategorie = '') => {
+      if (foundNodeId) return;
+
+      const carte = node.type === 'carte' ? node.data?.carte || node.titre : currentCarte;
+      const cat = node.type === 'categorie' ? node.data?.categorie || node.titre : currentCategorie;
+
+      if (subcategoryTitle && node.type === 'souscategorie') {
+        if (node.data?.sousCat1 === subcategoryTitle && carte === cardTitle) {
+          if (!categoryTitle || cat === categoryTitle) {
+            foundNodeId = node.id;
+            return;
+          }
+        }
+      } else if (!subcategoryTitle && categoryTitle && node.type === 'categorie') {
+        if (cat === categoryTitle && carte === cardTitle) {
+          foundNodeId = node.id;
+          return;
+        }
+      } else if (!subcategoryTitle && !categoryTitle && node.type === 'carte') {
+        if (carte === cardTitle) {
+          foundNodeId = node.id;
+          return;
+        }
+      }
+
+      if (node.children) {
+        node.children.forEach(child => traverse(child, carte, cat));
+      }
+    };
+
+    nodes.forEach(node => traverse(node));
+    return foundNodeId;
+  } catch (e) {
+    console.error('[findTreeNodeId] Error:', e);
+    return null;
+  }
+};
+
 function Library() {
   const {
     libraryItems,
@@ -15,6 +63,7 @@ function Library() {
     createCategory,
     createSubcategory,
     columns,
+    db,
   } = useApp();
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
@@ -94,7 +143,7 @@ function Library() {
 
     try {
       const content = JSON.parse(item.content_json);
-      const boardColumns = columns.filter(c => c.board_id === currentBoard?.id);
+      const boardColumns = columns.filter(c => Number(c.board_id) === Number(currentBoard?.id));
       const firstColumn = boardColumns.length > 0 ? boardColumns[0] : null;
 
       if (!firstColumn) {
@@ -102,8 +151,35 @@ function Library() {
         return;
       }
 
-      let cardTitle =
+      const cardTitle =
         content.card?.title || content.category?.title || content.subcategory?.title || item.title;
+
+      // Get stable tree node ID for this card
+      const cardTreeNodeId = findTreeNodeId(cardTitle, null, null);
+      console.log('[Library.jsx] cardTreeNodeId:', cardTreeNodeId, 'for card:', cardTitle);
+
+      // Get systemTag from library tree
+      let systemTag = null;
+      if (cardTreeNodeId) {
+        try {
+          const treeRaw = localStorage.getItem('c-projets_library_editor');
+          if (treeRaw) {
+            const treeData = JSON.parse(treeRaw);
+            const nodes = treeData.children || treeData;
+            const findTag = nodes => {
+              for (const node of nodes) {
+                if (node.id === cardTreeNodeId && node.data?.systemTag) {
+                  systemTag = node.data.systemTag;
+                  return true;
+                }
+                if (node.children && findTag(node.children)) return true;
+              }
+              return false;
+            };
+            findTag(nodes);
+          }
+        } catch (e) {}
+      }
 
       createCard(
         firstColumn.id,
@@ -114,8 +190,16 @@ function Library() {
           '',
         content.card?.priority || 'normal',
         content.card?.due_date || null,
-        content.card?.assignee || ''
-      ).then(cardId => {
+        content.card?.assignee || '',
+        null,
+        content.card?.duration_days ?? item.duration ?? 1,
+        null,
+        null,
+        null,
+        systemTag, // Use systemTag from tree, not chapter name
+        cardTreeNodeId, // Stable tree node ID as the link
+        content.card?.skipAction || false
+      ).then(async cardId => {
         if (!cardId) {
           alert('Erreur lors de la création de la carte');
           return;
@@ -123,9 +207,18 @@ function Library() {
 
         const categoriesToCreate = content.categories || [];
 
-        if (categoriesToCreate.length > 0) {
-          categoriesToCreate.forEach(cat => {
-            createCategory(
+        for (const cat of categoriesToCreate) {
+          try {
+            // Get stable tree node ID for this category
+            const categoryTreeNodeId = findTreeNodeId(cardTitle, cat.title, null);
+            console.log(
+              '[Library.jsx] categoryTreeNodeId:',
+              categoryTreeNodeId,
+              'for category:',
+              cat.title
+            );
+
+            const categoryId = await createCategory(
               cardId,
               cat.title,
               cat.description || '',
@@ -133,13 +226,50 @@ function Library() {
               cat.due_date || null,
               cat.assignee || '',
               null,
-              1,
+              cat.duration_days ?? 1,
               null,
-              cat.tag || null
-            ).then(categoryId => {
-              if (categoryId && cat.subcategories) {
-                cat.subcategories.forEach(subcat => {
-                  createSubcategory(
+              null,
+              categoryTreeNodeId // Stable tree node ID as the link
+            );
+
+            if (categoryId && cat.subcategories) {
+              for (const subcat of cat.subcategories) {
+                try {
+                  // Get stable tree node ID for this subcategory
+                  const subTreeNodeId = findTreeNodeId(cardTitle, cat.title, subcat.title);
+                  console.log(
+                    '[Library.jsx] subTreeNodeId:',
+                    subTreeNodeId,
+                    'for subcat:',
+                    subcat.title
+                  );
+
+                  // Get systemTag from library tree
+                  let systemTag = item.systemTag || item.tag || null;
+                  if (!systemTag) {
+                    try {
+                      const treeRaw = localStorage.getItem('c-projets_library_editor');
+                      if (treeRaw) {
+                        const treeData = JSON.parse(treeRaw);
+                        const findTag = nodes => {
+                          for (const node of nodes) {
+                            if (
+                              node.type === 'souscategorie' &&
+                              node.data?.sousCat1 === subcat.title
+                            ) {
+                              systemTag = node.data?.systemTag || '';
+                              return true;
+                            }
+                            if (node.children && findTag(node.children)) return true;
+                          }
+                          return false;
+                        };
+                        findTag(treeData.children || treeData);
+                      }
+                    } catch (e) {}
+                  }
+
+                  await createSubcategory(
                     categoryId,
                     subcat.title,
                     subcat.description || '',
@@ -147,14 +277,19 @@ function Library() {
                     subcat.due_date || null,
                     subcat.assignee || '',
                     null,
-                    1,
+                    subcat.duration_days ?? 1,
                     null,
-                    subcat.tag || null
+                    systemTag,
+                    subTreeNodeId // Stable tree node ID as the link
                   );
-                });
+                } catch (subErr) {
+                  console.error('Error creating subcategory:', subErr);
+                }
               }
-            });
-          });
+            }
+          } catch (catErr) {
+            console.error('Error creating category:', catErr);
+          }
         }
 
         if (currentBoard) {

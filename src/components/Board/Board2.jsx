@@ -6,7 +6,11 @@ import { getOrderedChapters } from '../../data/ChaptersData';
 import { formatDateFrench } from '../../utils/dateUtils';
 import { PlanningView } from '../Planning';
 import { PaiementsForm } from './forms/PaiementsForm';
-import { loadFunctionsFromAllProjects, addFunction as addFunctionToGlobal, importFunctionsFromProjects } from '../../data/FunctionsData';
+import {
+  loadFunctionsFromAllProjects,
+  addFunction as addFunctionToGlobal,
+  importFunctionsFromProjects,
+} from '../../data/FunctionsData';
 import {
   normalizeChapter,
   normalizeString,
@@ -44,6 +48,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { GROUPES_MARCHANDISES, CATEGORY_KEYS } from '../../data/GroupesMarchandises';
+import { getSubcategoryTagFromLibrary } from '../Settings/favoritesUtils';
 
 // =============================================================================
 // SECTION: DÉFINITION DU COMPOSANT PRINCIPAL
@@ -1494,6 +1499,22 @@ Affaire: ${commande.affaire || 'N/A'}
                                               {sub.title}
                                             </div>
                                             <div className="flex items-center gap-[10px] text-xs text-[var(--txt-muted)]">
+                                              {(() => {
+                                                // Dynamically resolve TAG from library_item_id
+                                                // This returns item.tags (e.g., "COMMANDE MARCHE ETUDE")
+                                                // When user modifies tags in library, it updates automatically
+                                                const libraryTag = getSubcategoryTagFromLibrary(
+                                                  sub.library_item_id,
+                                                  libraryItems
+                                                );
+                                                return (
+                                                  (libraryTag || sub.tag) && (
+                                                    <span className="flex items-center gap-1 px-1.5 py-0.5 bg-purple-100 text-purple-700 rounded text-xs">
+                                                      {libraryTag || sub.tag}
+                                                    </span>
+                                                  )
+                                                );
+                                              })()}
                                               {sub.assignee && (
                                                 <span className="truncate">👤 {sub.assignee}</span>
                                               )}
@@ -1774,6 +1795,28 @@ Affaire: ${commande.affaire || 'N/A'}
                                   </button>
                                 </div>
                                 <div className="flex items-center gap-[10px] mt-1 text-xs text-muted pl-7">
+                                  {(() => {
+                                    // Dynamically resolve TAG from library_item_id
+                                    // This returns item.tags (e.g., "COMMANDE MARCHE ETUDE")
+                                    // When user modifies tags in library, it updates automatically
+                                    const libraryTag = getSubcategoryTagFromLibrary(
+                                      subcat.library_item_id,
+                                      libraryItems
+                                    );
+                                    console.log(
+                                      '[Board2] subcat.library_item_id:',
+                                      subcat.library_item_id,
+                                      'libraryTag:',
+                                      libraryTag
+                                    );
+                                    return (
+                                      (libraryTag || subcat.tag) && (
+                                        <span className="flex items-center gap-1 px-1.5 py-0.5 bg-purple-100 text-purple-700 rounded text-xs">
+                                          {libraryTag || subcat.tag}
+                                        </span>
+                                      )
+                                    );
+                                  })()}
                                   {subcat.assignee && (
                                     <span className="flex items-center gap-[10px]">
                                       👤 {subcat.assignee}

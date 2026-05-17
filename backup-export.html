@@ -1,0 +1,40 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Backup C-PRojets</title>
+  </head>
+  <body>
+    <h1>Export localStorage C-PRojets</h1>
+    <p>Cliquez sur le bouton pour télécharger toutes vos données:</p>
+    <button onclick="exportAll()">📥 Download Backup</button>
+    <pre id="output"></pre>
+    <script>
+      function exportAll() {
+        const data = {};
+        const prefix = 'c-projets_';
+
+        Object.keys(localStorage).forEach(key => {
+          if (key.startsWith(prefix) || key.startsWith('board-')) {
+            try {
+              data[key] = JSON.parse(localStorage.getItem(key));
+            } catch {
+              data[key] = localStorage.getItem(key);
+            }
+          }
+        });
+
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'c-projets-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+        a.click();
+        URL.revokeObjectURL(url);
+
+        document.getElementById('output').textContent =
+          '✅ Export créé! ' + Object.keys(data).length + ' clés exportées.';
+      }
+    </script>
+  </body>
+</html>

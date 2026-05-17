@@ -96,6 +96,7 @@ export function useCardCrud(db, saveDb, loadBoard, currentBoard, saveToStorage) 
       };
       saveDb(newDb);
       if (currentBoard) loadBoard(currentBoard.id, newDb);
+      window.dispatchEvent(new Event('project-updated'));
     },
     [db, saveDb, currentBoard, loadBoard]
   );
@@ -109,6 +110,7 @@ export function useCardCrud(db, saveDb, loadBoard, currentBoard, saveToStorage) 
       };
       saveDb(newDb);
       if (currentBoard) loadBoard(currentBoard.id, newDb);
+      window.dispatchEvent(new Event('project-updated'));
     },
     [db, saveDb, currentBoard, loadBoard]
   );
@@ -120,6 +122,7 @@ export function useCardCrud(db, saveDb, loadBoard, currentBoard, saveToStorage) 
         cards: db.cards.map(c => (Number(c.id) === Number(id) ? { ...c, is_archived: 1 } : c)),
       };
       saveDb(newDb);
+      window.dispatchEvent(new Event('project-updated'));
     },
     [db, saveDb]
   );
@@ -131,6 +134,7 @@ export function useCardCrud(db, saveDb, loadBoard, currentBoard, saveToStorage) 
         cards: db.cards.map(c => (Number(c.id) === Number(id) ? { ...c, is_archived: 0 } : c)),
       };
       saveDb(newDb);
+      window.dispatchEvent(new Event('project-updated'));
     },
     [db, saveDb]
   );

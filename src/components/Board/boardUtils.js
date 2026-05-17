@@ -30,6 +30,22 @@ export function normalizeString(str) {
   return str.toLowerCase().trim().replace(/\s+/g, ' ');
 }
 
+// Helper: Find library item by library_item_id (handles both numeric IDs and UUIDs)
+// library_item_id should be the tree node UUID, but libraryItems may have numeric IDs
+function findLibraryItem(libraryItems, libraryItemId) {
+  if (!libraryItemId || !libraryItems || !Array.isArray(libraryItems)) return null;
+  const strId = String(libraryItemId);
+
+  // If it's a UUID (contains dashes), match on treeNodeId first
+  if (strId.includes('-')) {
+    const item = libraryItems.find(item => String(item.treeNodeId) === strId);
+    if (item) return item;
+  }
+
+  // Otherwise try direct match on id (handles numeric IDs)
+  return libraryItems.find(item => String(item.id) === strId);
+}
+
 export function getCardSkipAction(card, libraryItems) {
   if (!card) {
     return false;
@@ -40,7 +56,7 @@ export function getCardSkipAction(card, libraryItems) {
   }
 
   if (card.library_item_id && libraryItems) {
-    const libraryCard = libraryItems.find(item => item.id === card.library_item_id);
+    const libraryCard = findLibraryItem(libraryItems, card.library_item_id);
     if (libraryCard && libraryCard.content_json) {
       try {
         const content = JSON.parse(libraryCard.content_json);
@@ -88,7 +104,7 @@ export function getCardTasks(card, libraryItems) {
   let libraryCard = null;
 
   if (card.library_item_id) {
-    libraryCard = libraryItems.find(item => item.id === card.library_item_id);
+    libraryCard = findLibraryItem(libraryItems, card.library_item_id);
   }
 
   if (!libraryCard) {
