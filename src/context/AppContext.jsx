@@ -16,89 +16,23 @@ import { loadChaptersOrder, saveChaptersOrder } from '../data/ChaptersData';
 import { normalizeImportData, generateExportData, downloadExport } from '../services/migration';
 import storage from '../services/storage';
 import { TimerProvider } from '../hooks/useTimer.jsx';
-import { useSettings } from '../hooks/useSettings.jsx';
 import { useHiddenMilestones } from '../hooks/useHiddenMilestones.jsx';
 import { useUserSettings } from '../hooks/useUserSettings.jsx';
 import { useProjectTime } from '../hooks/useProjectTime.jsx';
 import { useInternalContacts } from '../hooks/useInternalContacts.jsx';
-import { useUI } from '../hooks/useUI.jsx';
 import { useArchived } from '../hooks/useArchived.jsx';
+import { useCardOperations } from '../hooks/useCardOperations.js';
+import { useCategorySubcategoryOperations } from '../hooks/useCategorySubcategoryOperations.js';
+import { useBoardCrud } from '../hooks/useBoardCrud.jsx';
+import { useLibraryOperations } from '../hooks/useLibraryOperations.js';
+import { useOrderOperations } from '../hooks/useOrderOperations.js';
+import { useMessageOperations } from '../hooks/useMessageOperations.js';
+import { useUserManagement } from '../hooks/useUserManagement.js';
+import { useUIContext } from './UIContext.jsx';
 
 const STORAGE_KEY = 'c-projets_db';
 
 // Migration des clés localStorage de MyTrello vers C-PRojeTs
-function migrateLocalStorageKeys() {
-  const keyMappings = [
-    { old: 'mytrello_db', newKey: 'c-projets_db' },
-    { old: 'mytrello_library_editor', newKey: 'c-projets_library_editor' },
-    { old: 'mytrello_templates', newKey: 'c-projets_templates' },
-    { old: 'mytrello_library_favorites', newKey: 'c-projets_library_favorites' },
-    { old: 'mytrello_project_time', newKey: 'c-projets_project_time' },
-    { old: 'mytrello-theme', newKey: 'c-projets-theme' },
-    { old: 'mytrello-cardColors', newKey: 'c-projets-cardColors' },
-    { old: 'mytrello-username', newKey: 'c-projets-username' },
-    { old: 'mytrello-user-role', newKey: 'c-projets-user-role' },
-    { old: 'mytrello_contracts', newKey: 'c-projets_contracts' },
-    { old: 'mytrello_charge_resentie', newKey: 'c-projets_charge_resentie' },
-    { old: 'mytrello_open_tab', newKey: 'c-projets_open_tab' },
-    { old: 'mytrello_chapters_order', newKey: 'c-projets_chapters_order' },
-    { old: 'mytrello_priority_data', newKey: 'c-projets_priority_data' },
-    { old: 'mytrello_tags_data', newKey: 'c-projets_tags_data' },
-    { old: 'mytrello_gmr_data', newKey: 'c-projets_gmr_data' },
-    { old: 'mytrello_zones_data', newKey: 'c-projets_zones_data' },
-    { old: 'c-projets_db', newKey: 'c-projets_db' },
-    { old: 'c-projets_library_editor', newKey: 'c-projets_library_editor' },
-    { old: 'c-projets_templates', newKey: 'c-projets_templates' },
-    { old: 'c-projets_library_favorites', newKey: 'c-projets_library_favorites' },
-    { old: 'c-projets_project_time', newKey: 'c-projets_project_time' },
-    { old: 'c-projets-theme', newKey: 'c-projets-theme' },
-    { old: 'c-projets-cardColors', newKey: 'c-projets-cardColors' },
-    { old: 'c-projets-username', newKey: 'c-projets-username' },
-    { old: 'c-projets-user-role', newKey: 'c-projets-user-role' },
-    { old: 'c-projets_contracts', newKey: 'c-projets_contracts' },
-    { old: 'c-projets_charge_resentie', newKey: 'c-projets_charge_resentie' },
-    { old: 'c-projets_open_tab', newKey: 'c-projets_open_tab' },
-    { old: 'c-projets_chapters_order', newKey: 'c-projets_chapters_order' },
-    { old: 'c-projets_priority_data', newKey: 'c-projets_priority_data' },
-    { old: 'c-projets_tags_data', newKey: 'c-projets_tags_data' },
-    { old: 'c-projets_gmr_data', newKey: 'c-projets_gmr_data' },
-    { old: 'c-projets_zones_data', newKey: 'c-projets_zones_data' },
-    { old: 'c-projets_hidden_milestones', newKey: 'c-projets_hidden_milestones' },
-    { old: 'c-projets_entreprises', newKey: 'c-projets_entreprises' },
-    { old: 'c-projets_library_templates', newKey: 'c-projets_library_templates' },
-  ];
-
-  let migrated = false;
-  const emailKeys = [];
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    if (key.startsWith('mytrello_email_') || key.startsWith('c-projets_email_')) {
-      emailKeys.push(key);
-    }
-  }
-  emailKeys.forEach(oldKey => {
-    const newKey = oldKey
-      .replace('mytrello_email_', 'c-projets_email_')
-      .replace('c-projets_email_', 'c-projets_email_');
-    if (!localStorage.getItem(newKey)) {
-      localStorage.setItem(newKey, localStorage.getItem(oldKey));
-    }
-    localStorage.removeItem(oldKey);
-    migrated = true;
-  });
-
-  keyMappings.forEach(({ old, newKey }) => {
-    const oldVal = localStorage.getItem(old);
-    if (oldVal && !localStorage.getItem(newKey)) {
-      localStorage.setItem(newKey, oldVal);
-      migrated = true;
-    }
-  });
-
-  if (migrated) {
-    console.log('[Migration] Clés localStorage migrées vers C-PRojeTs');
-  }
-}
 
 function formatDuration(days) {
   const hours = days * 24;
@@ -276,7 +210,7 @@ export function loadFromStorage() {
         return parsed;
       }
     } catch (e) {
-      console.log('[AppContext] Erreur:', e);
+      console.error('[AppContext] Erreur:', e);
     }
   }
   return {
@@ -303,15 +237,13 @@ export function loadFromStorage() {
 
 function saveToStorage(data) {
   return storage.setDb(data).catch(e => {
-    console.log('[saveToStorage] Erreur:', e.message);
+    console.error('[saveToStorage] Erreur:', e.message);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   });
 }
 
 function initDefaultData() {
-  migrateLocalStorageKeys();
   const data = loadFromStorage();
-  console.log('[initDefaultData] Loaded boards:', data.boards?.length);
   if (!data.orders) {
     data.orders = [];
   }
@@ -478,103 +410,25 @@ export function AppProvider({ children }) {
   const [messages, setMessages] = useState([]);
   const [subcategoryEmails, setSubcategoryEmails] = useState([]);
   const { username, setUsername, userRole, setUserRole } = useUserSettings();
+  const { setTheme } = useUIContext();
   const [loading, setLoading] = useState(false);
   const [unreadMentions, setUnreadMentions] = useState({});
   const [filterMyProjects, setFilterMyProjects] = useState(
     () => localStorage.getItem('c-projets-filter-my-projects') === 'true'
   );
-  const [usersList, setUsersList] = useState(() => {
-    const saved = localStorage.getItem('c-projets-users');
-    return saved ? JSON.parse(saved) : [];
-  });
-
-  const formatUserName = name => {
-    if (!name) return '';
-    const parts = name.trim().split(/\s+/);
-    if (parts.length === 1) return parts[0].toUpperCase();
-    const lastName = parts[parts.length - 1].toUpperCase();
-    const firstName = parts
-      .slice(0, -1)
-      .map(p => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase())
-      .join(' ');
-    return `${lastName} ${firstName}`;
-  };
-
-  const addNewUser = name => {
-    if (!name.trim()) return null;
-    const formattedName = formatUserName(name);
-    const existing = usersList.find(u => u.name.toLowerCase() === formattedName.toLowerCase());
-    if (existing) return existing;
-    const newUser = { id: Date.now(), name: formattedName };
-    const newList = [...(usersList || []), newUser].sort((a, b) => a.name.localeCompare(b.name));
-    setUsersList(newList);
-    localStorage.setItem('c-projets-users', JSON.stringify(newList));
-    return newUser;
-  };
-
-  const getUsers = () => usersList.sort((a, b) => a.name.localeCompare(b.name));
-
-  const searchUsers = query => {
-    if (!query) return getUsers();
-    const lowerQuery = query.toLowerCase();
-    return usersList.filter(u => u.name.toLowerCase().includes(lowerQuery));
-  };
-
-  const migrateUsersFromBoards = () => {
-    const existingUsers = new Set(usersList.map(u => u.name));
-    const allBoards = db.boards || [];
-    let migrated = 0;
-    allBoards.forEach(board => {
-      const contacts = getInternalContacts(board.id) || [];
-      contacts.forEach(contact => {
-        if (contact.name && contact.name.trim()) {
-          const formatted = formatUserName(contact.name);
-          if (!existingUsers.has(formatted)) {
-            const newUser = { id: Date.now() + Math.random(), name: formatted };
-            usersList.push(newUser);
-            existingUsers.add(formatted);
-            migrated++;
-          }
-        }
-      });
-    });
-    if (migrated > 0) {
-      const newList = [...usersList].sort((a, b) => a.name.localeCompare(b.name));
-      setUsersList(newList);
-      localStorage.setItem('c-projets-users', JSON.stringify(newList));
-    }
-  };
-
   useEffect(() => {
     async function loadData() {
       try {
         const stored = await storage.getDb();
         if (stored && stored.boards?.length > 0) {
-          console.log('[AppContext] Chargement IndexedDB, boards:', stored.boards.length);
           setDb(stored);
         }
       } catch (e) {
-        console.log('[AppContext] Erreur loadData:', e);
+        console.error('[AppContext] Erreur loadData:', e);
       }
     }
     loadData();
   }, []);
-
-  useEffect(() => {
-    if (db.boards && db.boards.length > 0 && usersList.length === 0) {
-      migrateUsersFromBoards();
-    }
-  }, [db.boards]);
-
-  const {
-    theme,
-    setTheme,
-    toggleTheme,
-    cardColors,
-    setCardColors,
-    updateCardColors,
-    resetCardColors,
-  } = useSettings();
 
   const {
     hiddenMilestones,
@@ -584,34 +438,23 @@ export function AppProvider({ children }) {
     isHiddenMilestone,
   } = useHiddenMilestones();
 
-  const {
-    guideOpen,
-    setGuideOpen,
-    toggleGuide,
-    searchOpen,
-    setSearchOpen,
-    toggleSearch,
-    sidebarOpen,
-    setSidebarOpen,
-    libraryOpen,
-    setLibraryOpen,
-    libraryViewMode,
-    setLibraryViewMode,
-    selectedCard,
-    setSelectedCard,
-    selectedCategory,
-    setSelectedCategory,
-    selectedSubcategory,
-    setSelectedSubcategory,
-    selectedCommande,
-    setSelectedCommande,
-    activeTabCommande,
-    setActiveTabCommande,
-    activeTab,
-    setActiveTab,
-  } = useUI();
-
   const { getInternalContacts } = useInternalContacts();
+
+  const {
+    usersList,
+    setUsersList,
+    formatUserName,
+    addNewUser,
+    getUsers,
+    searchUsers,
+    migrateUsersFromBoards,
+  } = useUserManagement(db, getInternalContacts);
+
+  useEffect(() => {
+    if (db.boards && db.boards.length > 0 && usersList.length === 0) {
+      migrateUsersFromBoards();
+    }
+  }, [db.boards]);
 
   useEffect(() => {
     let activeBoards = db.boards.filter(b => !b.is_archived);
@@ -624,37 +467,45 @@ export function AppProvider({ children }) {
     setBoards(activeBoards.sort((a, b) => a.title.localeCompare(b.title)));
   }, [db.boards, username, getInternalContacts, filterMyProjects]);
 
-  const saveDb = useCallback(newDbOrFn => {
-    if (typeof newDbOrFn === 'function') {
-      setDb(currentDb => {
-        const newDb = newDbOrFn(currentDb);
-        saveToStorage(newDb);
-        // Notify that project data changed
-        setTimeout(() => window.dispatchEvent(new Event('project-updated')), 50);
-        return newDb;
-      });
-    } else {
-      setDb(newDbOrFn);
-      saveToStorage(newDbOrFn);
-      // Notify that project data changed
+  const pendingSaveRef = useRef(null);
+  const saveTimer = useRef(null);
+
+  const flushSave = useCallback(() => {
+    if (pendingSaveRef.current) {
+      saveToStorage(pendingSaveRef.current);
+      pendingSaveRef.current = null;
       setTimeout(() => window.dispatchEvent(new Event('project-updated')), 50);
     }
   }, []);
 
+  const saveDb = useCallback(newDbOrFn => {
+    if (typeof newDbOrFn === 'function') {
+      setDb(currentDb => {
+        const newDb = newDbOrFn(currentDb);
+        // Store result for deferred save — avoids double-invoke in StrictMode
+        pendingSaveRef.current = newDb;
+        return newDb;
+      });
+    } else {
+      setDb(newDbOrFn);
+      pendingSaveRef.current = newDbOrFn;
+    }
+    // Debounce: coalesce rapid CRUD calls into one save (16ms = 1 frame)
+    clearTimeout(saveTimer.current);
+    saveTimer.current = setTimeout(flushSave, 16);
+  }, [flushSave]);
+
   const loadBoard = useCallback(
     (boardId, data = null) => {
-      console.log('[loadBoard] Called with boardId:', boardId);
       const sourceData = data || db;
       const board = sourceData.boards.find(b => Number(b.id) === Number(boardId));
       if (board) {
-        console.log('[loadBoard] Board found:', board.title);
         setCurrentBoard(board);
 
         let boardColumns = sourceData.columns.filter(c => Number(c.board_id) === Number(boardId));
 
         // Create default columns if none exist
         if (boardColumns.length === 0) {
-          console.log('[loadBoard] No columns found, creating defaults');
           const nextColId = Math.max(0, ...(sourceData.columns || []).map(c => c.id)) + 1;
           boardColumns = [
             { id: nextColId, board_id: boardId, title: 'À faire', position: 0, color: '#4A90D9' },
@@ -704,16 +555,9 @@ export function AppProvider({ children }) {
         setColumns(boardColumns.sort((a, b) => a.position - b.position));
         setCards(filteredCards.sort((a, b) => a.position - b.position));
         const cardIds = filteredCards.map(c => Number(c.id));
-        console.log('[loadBoard] cardIds for filtering categories:', cardIds);
-        console.log('[loadBoard] All categories in sourceData:', sourceData.categories.length);
         const filteredCategories = sourceData.categories
           .filter(c => cardIds.includes(Number(c.card_id)))
           .sort((a, b) => a.position - b.position);
-        console.log(
-          '[loadBoard] Filtered categories:',
-          filteredCategories.length,
-          filteredCategories.map(c => c.title)
-        );
         setCategories(filteredCategories);
         const catIds = sourceData.categories
           .filter(c => cardIds.includes(Number(c.card_id)))
@@ -786,7 +630,6 @@ export function AppProvider({ children }) {
       });
 
       if (Object.keys(idMapping).length === 0) {
-        console.log('[Migration] No mapping found, skipping');
         return;
       }
 
@@ -814,13 +657,10 @@ export function AppProvider({ children }) {
 
       if (updated > 0) {
         localStorage.setItem('c-projets_db', JSON.stringify(db));
-        console.log('[Migration] Updated', updated, 'library_item_id from numeric to UUID');
         // Reload board if needed
         if (currentBoard) {
           setTimeout(() => loadBoard(currentBoard.id, db), 100);
         }
-      } else {
-        console.log('[Migration] No items needed migration');
       }
     } catch (e) {
       console.error('[Migration] Error:', e);
@@ -1244,10 +1084,6 @@ export function AppProvider({ children }) {
         });
       }
 
-      console.log(
-        '[ImportData] Import réussi!',
-        normalized.warnings.length > 0 ? `Warnings: ${normalized.warnings.join(', ')}` : ''
-      );
       return { success: true, warnings: normalized.warnings };
     } catch (error) {
       console.error('[ImportData] Erreur:', error);
@@ -1255,1077 +1091,68 @@ export function AppProvider({ children }) {
     }
   };
 
-  const createBoard = (title, description = '') => {
-    const boardId = db.nextIds.board++;
-    const newBoard = {
-      id: boardId,
-      title,
-      description,
-      created_at: new Date().toISOString(),
-      is_archived: 0,
-    };
-    const newDb = {
-      ...db,
-      boards: [...db.boards, newBoard],
-      columns: [
-        ...db.columns,
-        {
-          id: db.nextIds.column++,
-          board_id: boardId,
-          title: 'À faire',
-          position: 0,
-          color: '#4A90D9',
-        },
-        {
-          id: db.nextIds.column++,
-          board_id: boardId,
-          title: 'En cours',
-          position: 1,
-          color: '#F5A623',
-        },
-        {
-          id: db.nextIds.column++,
-          board_id: boardId,
-          title: 'En attente',
-          position: 2,
-          color: '#9CA3AF',
-        },
-        {
-          id: db.nextIds.column++,
-          board_id: boardId,
-          title: 'Terminée',
-          position: 3,
-          color: '#7ED321',
-        },
-        {
-          id: db.nextIds.column++,
-          board_id: boardId,
-          title: 'Archiver',
-          position: 4,
-          color: '#475569',
-        },
-      ],
-      nextIds: { ...db.nextIds },
-    };
-    saveDb(newDb);
-    loadBoard(boardId);
-    return boardId;
-  };
+  const {
+    createBoard,
+    updateBoard,
+    deleteBoard,
+    createColumn,
+    updateColumn,
+    deleteColumn,
+    moveColumn,
+  } = useBoardCrud(db, saveDb, loadBoard, currentBoard);
+
+  const {
+    createOrder,
+    updateOrder,
+    deleteOrder,
+    addAvenant,
+    updateAvenant,
+    deleteAvenant,
+    getOrdersByBoard,
+  } = useOrderOperations(db, saveDb);
+
+
+  const {
+    createCard,
+    updateCard,
+    deleteCard,
+    archiveCard,
+    restoreCard,
+    canArchiveBoard,
+    archiveBoard,
+    restoreBoard,
+    moveCard,
+  } = useCardOperations(db, saveDb, loadBoard, currentBoard);
+
+  const {
+    createCategory,
+    updateCategory,
+    deleteCategory,
+    moveCategory,
+    createSubcategory,
+    updateSubcategory,
+    toggleMilestone,
+    deleteSubcategory,
+    moveSubcategory,
+    addEmailToSubcategory,
+    removeEmailFromSubcategory,
+    updateEmailSubject,
+    updateEmailStatus,
+    getEmailsForSubcategory,
+    saveEmailFile,
+    getEmailFile,
+  } = useCategorySubcategoryOperations(db, saveDb, loadBoard, currentBoard);
+
+
+  const {
+    loadLibrary,
+    saveToLibrary,
+    updateLibraryItem,
+    deleteLibraryItem,
+    syncTagsFromLibrary,
+  } = useLibraryOperations(db, saveDb, setLibraryItems, loadBoard, currentBoard);
 
-  const updateBoard = (id, title, description) => {
-    const newDb = {
-      ...db,
-      boards: db.boards.map(b =>
-        Number(b.id) === Number(id)
-          ? { ...b, title, description, updated_at: new Date().toISOString() }
-          : b
-      ),
-    };
-    saveDb(newDb);
-  };
 
-  const deleteBoard = id => {
-    const newDb = {
-      ...db,
-      boards: db.boards.filter(b => Number(b.id) !== Number(id)),
-      columns: db.columns.filter(c => Number(c.board_id) !== Number(id)),
-      cards: db.cards.filter(c => {
-        const col = db.columns.find(col => Number(col.id) === Number(c.column_id));
-        return !col || Number(col.board_id) !== Number(id);
-      }),
-    };
-    saveDb(newDb);
-  };
-
-  const createOrder = (boardId, title) => {
-    const orderId = db.nextIds.order++;
-    const newOrder = {
-      id: orderId,
-      board_id: Number(boardId),
-      title,
-      donnees: { numero: '', date: '', objet: '', estimation: '' },
-      groupes: null,
-      avenants: [],
-      ficheAchat: null,
-      created_at: new Date().toISOString(),
-    };
-    const newDb = {
-      ...db,
-      orders: [...(db.orders || []), newOrder],
-      nextIds: { ...db.nextIds },
-    };
-    saveDb(newDb);
-    return orderId;
-  };
-
-  const updateOrder = (orderId, updates) => {
-    const newDb = {
-      ...db,
-      orders: (db.orders || []).map(o =>
-        Number(o.id) === Number(orderId) ? { ...o, ...updates } : o
-      ),
-    };
-    saveDb(newDb);
-  };
-
-  const deleteOrder = orderId => {
-    const newDb = {
-      ...db,
-      orders: (db.orders || []).filter(o => Number(o.id) !== Number(orderId)),
-    };
-    saveDb(newDb);
-  };
-
-  const addAvenant = (orderId, title) => {
-    const order = (db.orders || []).find(o => Number(o.id) === Number(orderId));
-    if (!order) return null;
-    const avenantNumber = (order.avenants?.length || 0) + 1;
-    const newAvenant = {
-      id: Date.now(),
-      numero: avenantNumber,
-      title: title || `Avenant ${avenantNumber}`,
-      groupes: null,
-      ficheAchat: null,
-    };
-    const updatedAvenants = [...(order.avenants || []), newAvenant];
-    const newDb = {
-      ...db,
-      orders: (db.orders || []).map(o =>
-        Number(o.id) === Number(orderId) ? { ...o, avenants: updatedAvenants } : o
-      ),
-    };
-    saveDb(newDb);
-    return newAvenant.id;
-  };
-
-  const updateAvenant = (orderId, avenantId, updates) => {
-    const newDb = {
-      ...db,
-      orders: (db.orders || []).map(o => {
-        if (Number(o.id) !== Number(orderId)) return o;
-        return {
-          ...o,
-          avenants: (o.avenants || []).map(a =>
-            Number(a.id) === Number(avenantId) ? { ...a, ...updates } : a
-          ),
-        };
-      }),
-    };
-    saveDb(newDb);
-  };
-
-  const deleteAvenant = (orderId, avenantId) => {
-    const newDb = {
-      ...db,
-      orders: (db.orders || []).map(o => {
-        if (Number(o.id) !== Number(orderId)) return o;
-        return {
-          ...o,
-          avenants: (o.avenants || []).filter(a => Number(a.id) !== Number(avenantId)),
-        };
-      }),
-    };
-    saveDb(newDb);
-  };
-
-  const getOrdersByBoard = boardId => {
-    return (db.orders || []).filter(o => Number(o.board_id) === Number(boardId));
-  };
-
-  const createColumn = (boardId, title, color = '#4A90D9') => {
-    const maxPos = db.columns
-      .filter(c => Number(c.board_id) === Number(boardId))
-      .reduce((max, c) => Math.max(max, c.position), -1);
-    const colId = db.nextIds.column++;
-    const newDb = {
-      ...db,
-      columns: [
-        ...db.columns,
-        { id: colId, board_id: Number(boardId), title, position: maxPos + 1, color },
-      ],
-      nextIds: { ...db.nextIds },
-    };
-    saveDb(newDb);
-    loadBoard(boardId);
-    return colId;
-  };
-
-  const updateColumn = (id, title, color) => {
-    const newDb = {
-      ...db,
-      columns: db.columns.map(c => (Number(c.id) === Number(id) ? { ...c, title, color } : c)),
-    };
-    saveDb(newDb);
-    if (currentBoard) loadBoard(currentBoard.id, newDb);
-  };
-
-  const deleteColumn = id => {
-    const newDb = {
-      ...db,
-      columns: db.columns.filter(c => Number(c.id) !== Number(id)),
-      cards: db.cards.filter(c => Number(c.column_id) !== Number(id)),
-    };
-    saveDb(newDb);
-    if (currentBoard) loadBoard(currentBoard.id, newDb);
-  };
-
-  const moveColumn = (columnId, newPosition) => {
-    const column = db.columns.find(c => Number(c.id) === Number(columnId));
-    if (!column) return;
-    const oldPosition = column.position;
-    if (oldPosition === newPosition) return;
-
-    let newColumns = db.columns.map(c => {
-      if (Number(c.id) === Number(columnId)) return { ...c, position: newPosition };
-      if (
-        Number(c.board_id) === Number(column.board_id) &&
-        c.position >= Math.min(oldPosition, newPosition) &&
-        c.position <= Math.max(oldPosition, newPosition)
-      ) {
-        return { ...c, position: c.position + (newPosition > oldPosition ? -1 : 1) };
-      }
-      return c;
-    });
-
-    const newDb = { ...db, columns: newColumns };
-    saveDb(newDb);
-    if (currentBoard) loadBoard(currentBoard.id, newDb);
-  };
-
-  const createCard = (
-    columnId,
-    title,
-    description = '',
-    priority = 'normal',
-    dueDate = null,
-    assignee = '',
-    startDate = null,
-    durationDays = 1,
-    parentId = null,
-    predecessorId = null,
-    reloadBoardId = null,
-    chapter = null,
-    libraryItemId = null,
-    skipAction = false
-  ) => {
-    console.log('[createCard] Called with columnId:', columnId, 'title:', title);
-
-    // Check for duplicate card title in current project (same column)
-    const existingCard = db.cards.find(
-      c =>
-        Number(c.column_id) === Number(columnId) &&
-        c.title &&
-        c.title.toLowerCase() === title.toLowerCase() &&
-        !c.is_archived
-    );
-    if (existingCard) {
-      console.log('[createCard] Duplicate card title found:', title);
-      return Promise.reject(
-        new Error(`Une carte avec le titre "${title}" existe déjà dans ce projet.`)
-      );
-    }
-
-    return new Promise(resolve => {
-      let cardId;
-
-      setDb(currentDb => {
-        const safeDb = currentDb || { cards: [], nextIds: { card: 1 } };
-        cardId = safeDb.nextIds?.card || 1;
-        const newCard = {
-          id: cardId,
-          column_id: Number(columnId),
-          title,
-          description,
-          priority,
-          due_date: dueDate,
-          assignee,
-          position: 0,
-          is_archived: 0,
-          start_date: startDate,
-          duration_days: durationDays,
-          parent_id: parentId,
-          predecessor_id: predecessorId,
-          created_at: new Date().toISOString(),
-          chapter,
-          library_item_id: libraryItemId,
-          skip_action: skipAction,
-        };
-
-        const maxPos = (safeDb.cards || [])
-          .filter(c => Number(c.column_id) === Number(columnId))
-          .reduce((max, c) => Math.max(max, c.position || 0), -1);
-        newCard.position = maxPos + 1;
-
-        const newDb = {
-          ...currentDb,
-          cards: [...currentDb.cards, newCard],
-          nextIds: { ...safeDb.nextIds, card: cardId + 1 },
-        };
-        saveToStorage(newDb);
-        console.log(
-          '[createCard] Card saved, id:',
-          cardId,
-          'column_id:',
-          newCard.column_id,
-          'total cards:',
-          newDb.cards.length
-        );
-        return newDb;
-      });
-
-      if (cardId) {
-        resolve(cardId);
-      } else {
-        setTimeout(() => {
-          resolve(cardId);
-        }, 300);
-      }
-    });
-  };
-
-  const updateCard = (id, updates) => {
-    console.log('[AppContext] updateCard called:', id, updates);
-    const newDb = {
-      ...db,
-      cards: db.cards.map(c =>
-        Number(c.id) === Number(id) ? { ...c, ...updates, updated_at: new Date().toISOString() } : c
-      ),
-    };
-    saveDb(newDb);
-    if (currentBoard) loadBoard(currentBoard.id, newDb);
-  };
-
-  const deleteCard = id => {
-    const newDb = {
-      ...db,
-      cards: db.cards.filter(c => Number(c.id) !== Number(id)),
-      categories: db.categories.filter(cat => Number(cat.card_id) !== Number(id)),
-    };
-    saveDb(newDb);
-    if (currentBoard) loadBoard(currentBoard.id, newDb);
-  };
-
-  const archiveCard = id => {
-    const newDb = {
-      ...db,
-      cards: db.cards.map(c => (Number(c.id) === Number(id) ? { ...c, is_archived: 1 } : c)),
-    };
-    saveDb(newDb);
-    if (currentBoard) loadBoard(currentBoard.id, newDb);
-  };
-
-  const restoreCard = id => {
-    const newDb = {
-      ...db,
-      cards: db.cards.map(c => (Number(c.id) === Number(id) ? { ...c, is_archived: 0 } : c)),
-    };
-    saveDb(newDb);
-    if (currentBoard) loadBoard(currentBoard.id, newDb);
-  };
-
-  const canArchiveBoard = boardId => {
-    const boardColumns = db.columns.filter(c => Number(c.board_id) === Number(boardId));
-    const archiveColumn = boardColumns.find(c => c.title.toLowerCase().includes('archiv'));
-    if (!archiveColumn) return { canArchive: false, reason: 'Colonne Archiver non trouvée' };
-
-    const columnIds = boardColumns.map(c => Number(c.id));
-    const boardCards = db.cards.filter(c => columnIds.includes(Number(c.column_id)));
-
-    if (boardCards.length === 0) return { canArchive: true, reason: '' };
-
-    const allInArchive = boardCards.every(c => Number(c.column_id) === Number(archiveColumn.id));
-    if (allInArchive) {
-      return { canArchive: true, reason: '' };
-    } else {
-      return {
-        canArchive: false,
-        reason: 'Toutes les cartes doivent être dans la colonne Archiver',
-      };
-    }
-  };
-
-  const archiveBoard = id => {
-    const { canArchive, reason } = canArchiveBoard(id);
-    if (!canArchive) {
-      alert(reason);
-      return false;
-    }
-    const newDb = {
-      ...db,
-      boards: db.boards.map(b => (Number(b.id) === Number(id) ? { ...b, is_archived: 1 } : b)),
-    };
-    saveDb(newDb);
-    return true;
-  };
-
-  const restoreBoard = id => {
-    const newDb = {
-      ...db,
-      boards: db.boards.map(b => (Number(b.id) === Number(id) ? { ...b, is_archived: 0 } : b)),
-    };
-    saveDb(newDb);
-  };
-
-  const moveCard = (cardId, newColumnId, newPosition) => {
-    const card = db.cards.find(c => Number(c.id) === Number(cardId));
-    if (!card) return;
-
-    const oldColumnId = Number(card.column_id);
-    const oldPosition = card.position;
-    const destColumnId = Number(newColumnId);
-
-    let newCards = db.cards.map(c => {
-      const cId = Number(c.id);
-      const cColId = Number(c.column_id);
-
-      if (cId === Number(cardId)) {
-        return { ...c, column_id: destColumnId, position: newPosition };
-      }
-
-      if (oldColumnId === destColumnId) {
-        if (oldPosition < newPosition) {
-          if (cColId === oldColumnId && c.position > oldPosition && c.position <= newPosition) {
-            return { ...c, position: c.position - 1 };
-          }
-        } else if (oldPosition > newPosition) {
-          if (cColId === oldColumnId && c.position >= newPosition && c.position < oldPosition) {
-            return { ...c, position: c.position + 1 };
-          }
-        }
-      } else {
-        if (cColId === destColumnId && c.position >= newPosition && cId !== Number(cardId)) {
-          return { ...c, position: c.position + 1 };
-        }
-        if (cColId === oldColumnId && c.position > oldPosition) {
-          return { ...c, position: c.position - 1 };
-        }
-      }
-      return c;
-    });
-
-    const newDb = { ...db, cards: newCards };
-    saveDb(newDb);
-    if (currentBoard) loadBoard(currentBoard.id, newDb);
-  };
-
-  const createCategory = (
-    cardId,
-    title,
-    description = '',
-    priority = 'normal',
-    dueDate = null,
-    assignee = '',
-    parentId = null,
-    durationDays = 1,
-    reloadBoardId = null,
-    tag = null,
-    libraryItemId = null
-  ) => {
-    console.log(
-      '[createCategory] Called with cardId:',
-      cardId,
-      'title:',
-      title,
-      'tag:',
-      tag,
-      'libraryItemId:',
-      libraryItemId
-    );
-
-    // Check for duplicate category title for this card
-    const existingCategory = db.categories.find(
-      c =>
-        c.title &&
-        c.title.toLowerCase() === title.toLowerCase() &&
-        Number(c.card_id) === Number(cardId) &&
-        !c.parent_id
-    );
-    if (existingCategory) {
-      console.log('[createCategory] Duplicate category title found:', title);
-      return Promise.reject(
-        new Error(`Une catégorie avec le titre "${title}" existe déjà pour cette carte.`)
-      );
-    }
-
-    return new Promise(resolve => {
-      let catId;
-      setDb(currentDb => {
-        let filter;
-        if (parentId) {
-          filter = currentDb.categories.filter(c => Number(c.parent_id) === Number(parentId));
-        } else if (cardId) {
-          filter = currentDb.categories.filter(
-            c => Number(c.card_id) === Number(cardId) && !c.parent_id
-          );
-        } else {
-          filter = [];
-        }
-        const maxPos = filter.reduce((max, c) => Math.max(max, c.position || 0), -1);
-        const safeDb = currentDb || { nextIds: { category: 1 }, categories: [] };
-        catId = safeDb.nextIds?.category || 1;
-        const newCategory = {
-          id: catId,
-          card_id: cardId ? Number(cardId) : null,
-          parent_id: parentId || null,
-          title,
-          description,
-          priority,
-          due_date: dueDate,
-          assignee,
-          position: maxPos + 1,
-          start_date: null,
-          duration_days: durationDays,
-          tag,
-          library_item_id: libraryItemId || null,
-          created_at: new Date().toISOString(),
-        };
-        const newDb = {
-          ...currentDb,
-          categories: [...currentDb.categories, newCategory],
-          nextIds: { ...currentDb.nextIds, category: catId + 1 },
-        };
-        saveToStorage(newDb);
-        return newDb;
-      });
-
-      setTimeout(() => {
-        resolve(catId);
-      }, 200);
-    });
-  };
-
-  const updateCategory = (id, updates) => {
-    console.log(
-      '[updateCategory] Called with id:',
-      id,
-      'updates:',
-      updates,
-      'currentBoard:',
-      currentBoard?.id
-    );
-    const newDb = {
-      ...db,
-      categories: db.categories.map(c =>
-        Number(c.id) === Number(id) ? { ...c, ...updates, updated_at: new Date().toISOString() } : c
-      ),
-    };
-    saveDb(newDb);
-    if (currentBoard) {
-      console.log('[updateCategory] Calling loadBoard with boardId:', currentBoard.id);
-      loadBoard(currentBoard.id, newDb);
-    } else {
-      console.log('[updateCategory] currentBoard is null, skipping loadBoard');
-    }
-    // Notify BDLibraryView that project data changed
-    window.dispatchEvent(new Event('project-updated'));
-  };
-
-  const deleteCategory = id => {
-    const newDb = {
-      ...db,
-      categories: db.categories.filter(c => Number(c.id) !== Number(id)),
-      subcategories: db.subcategories.filter(s => Number(s.category_id) !== Number(id)),
-    };
-    saveDb(newDb);
-    if (currentBoard) loadBoard(currentBoard.id, newDb);
-    window.dispatchEvent(new Event('project-updated'));
-  };
-
-  const moveCategory = (categoryId, newCardId, newPosition) => {
-    console.log('[moveCategory] Called with:', { categoryId, newCardId, newPosition });
-    const category = db.categories.find(c => Number(c.id) === Number(categoryId));
-    if (!category) {
-      console.log('[moveCategory] Category not found:', categoryId);
-      return;
-    }
-    console.log('[moveCategory] Found category:', category);
-
-    const oldCardId = Number(category.card_id);
-    const oldPosition = category.position;
-    const destCardId = Number(newCardId);
-
-    console.log('[moveCategory] oldCardId:', oldCardId, 'destCardId:', destCardId);
-
-    let newCategories = db.categories.map(c => {
-      const cId = Number(c.id);
-      const cCardId = Number(c.card_id);
-
-      if (cId === Number(categoryId)) {
-        return { ...c, card_id: destCardId, position: newPosition };
-      }
-
-      if (oldCardId === destCardId) {
-        if (oldPosition < newPosition) {
-          if (cCardId === oldCardId && c.position > oldPosition && c.position <= newPosition) {
-            return { ...c, position: c.position - 1 };
-          }
-        } else if (oldPosition > newPosition) {
-          if (cCardId === oldCardId && c.position >= newPosition && c.position < oldPosition) {
-            return { ...c, position: c.position + 1 };
-          }
-        }
-      } else {
-        if (cCardId === destCardId && c.position >= newPosition && cId !== Number(categoryId)) {
-          return { ...c, position: c.position + 1 };
-        }
-        if (cCardId === oldCardId && c.position > oldPosition) {
-          return { ...c, position: c.position - 1 };
-        }
-      }
-      return c;
-    });
-
-    const newDb = { ...db, categories: newCategories };
-    saveDb(newDb);
-    if (currentBoard) loadBoard(currentBoard.id, newDb);
-  };
-
-  const createSubcategory = (
-    categoryId,
-    title,
-    description = '',
-    priority = 'normal',
-    dueDate = null,
-    assignee = '',
-    startDate = null,
-    durationDays = 1,
-    reloadBoardId = null,
-    tag = null,
-    libraryItemId = null
-  ) => {
-    console.log('[createSubcategory] tag:', tag, 'libraryItemId:', libraryItemId);
-    // Check for duplicate subcategory title for this category
-    const existingSubcategory = db.subcategories.find(
-      s =>
-        s.title &&
-        s.title.toLowerCase() === title.toLowerCase() &&
-        Number(s.category_id) === Number(categoryId)
-    );
-    if (existingSubcategory) {
-      console.log('[createSubcategory] Duplicate subcategory title found:', title);
-      return Promise.reject(
-        new Error(`Une sous-catégorie avec le titre "${title}" existe déjà pour cette catégorie.`)
-      );
-    }
-
-    return new Promise(resolve => {
-      let subcatId;
-      let newDbRef;
-      setDb(currentDb => {
-        const maxPos = (currentDb?.subcategories || [])
-          .filter(s => Number(s.category_id) === Number(categoryId))
-          .reduce((max, s) => Math.max(max, s.position || 0), -1);
-        const safeDb = currentDb || { nextIds: { subcategory: 1 }, subcategories: [] };
-        subcatId = safeDb.nextIds?.subcategory || 1;
-        const newSubcategory = {
-          id: subcatId,
-          category_id: Number(categoryId),
-          title,
-          description,
-          priority,
-          due_date: dueDate,
-          assignee,
-          position: maxPos + 1,
-          start_date: startDate,
-          duration_days: durationDays,
-          tag: tag,
-          library_item_id: libraryItemId,
-          created_at: new Date().toISOString(),
-          predecessors: [],
-        };
-        const newDb = {
-          ...safeDb,
-          subcategories: [...(safeDb.subcategories || []), newSubcategory],
-          nextIds: { ...safeDb.nextIds, subcategory: subcatId + 1 },
-        };
-        newDbRef = newDb;
-        saveToStorage(newDb);
-        return newDb;
-      });
-
-      setTimeout(() => {
-        if (currentBoard) loadBoard(currentBoard.id, newDbRef);
-      }, 100);
-
-      setTimeout(() => {
-        resolve(subcatId);
-      }, 200);
-    });
-  };
-
-  const updateSubcategory = (id, updates) => {
-    const newDb = {
-      ...db,
-      subcategories: db.subcategories.map(s =>
-        Number(s.id) === Number(id) ? { ...s, ...updates, updated_at: new Date().toISOString() } : s
-      ),
-    };
-    saveDb(newDb);
-    if (currentBoard) {
-      setTimeout(() => loadBoard(currentBoard.id, newDb), 100);
-    }
-    // Notify BDLibraryView that project data changed
-    window.dispatchEvent(new Event('project-updated'));
-  };
-
-  const toggleMilestone = (subcategoryId, milestoneId) => {
-    const sub = db.subcategories.find(s => Number(s.id) === Number(subcategoryId));
-    if (!sub) return;
-
-    let milestones = sub.milestones;
-    if (typeof milestones === 'string') {
-      try {
-        milestones = JSON.parse(milestones);
-      } catch (e) {
-        milestones = [];
-      }
-    }
-    if (!Array.isArray(milestones)) milestones = [];
-
-    const updatedMilestones = milestones.map(m => {
-      if (Number(m.id) === Number(milestoneId)) {
-        return { ...m, done: !m.done };
-      }
-      return m;
-    });
-
-    updateSubcategory(subcategoryId, { milestones: updatedMilestones });
-
-    setTimeout(() => {
-      window.dispatchEvent(new CustomEvent('milestone-updated'));
-    }, 100);
-  };
-
-  const deleteSubcategory = id => {
-    const newDb = {
-      ...db,
-      subcategories: db.subcategories.filter(s => Number(s.id) !== Number(id)),
-    };
-    saveDb(newDb);
-    if (currentBoard) {
-      setTimeout(() => loadBoard(currentBoard.id, newDb), 100);
-    }
-    window.dispatchEvent(new Event('project-updated'));
-  };
-
-  const addEmailToSubcategory = (subcategoryId, emailData) => {
-    const emailId = db.nextIds.email++;
-    const newEmail = {
-      id: emailId,
-      subcategory_id: Number(subcategoryId),
-      date: emailData.date,
-      subject: emailData.subject,
-      filepath: emailData.filepath,
-      filename: emailData.filename,
-      status: 'pending',
-      created_at: new Date().toISOString(),
-    };
-    const newDb = {
-      ...db,
-      subcategoryEmails: [...(db.subcategoryEmails || []), newEmail],
-      nextIds: { ...db.nextIds },
-    };
-    saveDb(newDb);
-    return emailId;
-  };
-
-  const removeEmailFromSubcategory = emailId => {
-    const email = db.subcategoryEmails?.find(e => Number(e.id) === Number(emailId));
-    if (email && email.filepath) {
-      localStorage.removeItem(`c-projets_email_${emailId}`);
-    }
-    const newDb = {
-      ...db,
-      subcategoryEmails: (db.subcategoryEmails || []).filter(e => Number(e.id) !== Number(emailId)),
-    };
-    saveDb(newDb);
-  };
-
-  const updateEmailSubject = (emailId, newSubject) => {
-    const newDb = {
-      ...db,
-      subcategoryEmails: (db.subcategoryEmails || []).map(e =>
-        Number(e.id) === Number(emailId) ? { ...e, customSubject: newSubject } : e
-      ),
-    };
-    saveDb(newDb);
-  };
-
-  const updateEmailStatus = (emailId, newStatus) => {
-    const newDb = {
-      ...db,
-      subcategoryEmails: (db.subcategoryEmails || []).map(e =>
-        Number(e.id) === Number(emailId) ? { ...e, status: newStatus } : e
-      ),
-    };
-    saveDb(newDb);
-  };
-
-  const getEmailsForSubcategory = subcategoryId => {
-    return (db.subcategoryEmails || []).filter(
-      e => Number(e.subcategory_id) === Number(subcategoryId)
-    );
-  };
-
-  const saveEmailFile = (emailId, fileData) => {
-    localStorage.setItem(`c-projets_email_${emailId}`, fileData);
-  };
-
-  const getEmailFile = emailId => {
-    return localStorage.getItem(`c-projets_email_${emailId}`);
-  };
-
-  const moveSubcategory = (subcategoryId, newCategoryId, newPosition) => {
-    const subcategory = db.subcategories.find(s => Number(s.id) === Number(subcategoryId));
-    if (!subcategory) return;
-
-    const oldCategoryId = Number(subcategory.category_id);
-    const oldPosition = subcategory.position;
-    const destCategoryId = Number(newCategoryId);
-
-    let newSubcategories = db.subcategories.map(s => {
-      const sId = Number(s.id);
-      const sCatId = Number(s.category_id);
-
-      if (sId === Number(subcategoryId)) {
-        return { ...s, category_id: destCategoryId, position: newPosition };
-      }
-
-      if (oldCategoryId === destCategoryId) {
-        if (oldPosition < newPosition) {
-          if (sCatId === oldCategoryId && s.position > oldPosition && s.position <= newPosition) {
-            return { ...s, position: s.position - 1 };
-          }
-        } else if (oldPosition > newPosition) {
-          if (sCatId === oldCategoryId && s.position >= newPosition && s.position < oldPosition) {
-            return { ...s, position: s.position + 1 };
-          }
-        }
-      } else {
-        if (
-          sCatId === destCategoryId &&
-          s.position >= newPosition &&
-          sId !== Number(subcategoryId)
-        ) {
-          return { ...s, position: s.position + 1 };
-        }
-        if (sCatId === oldCategoryId && s.position > oldPosition) {
-          return { ...s, position: s.position - 1 };
-        }
-      }
-      return s;
-    });
-
-    const newDb = { ...db, subcategories: newSubcategories };
-    saveDb(newDb);
-    if (currentBoard) loadBoard(currentBoard.id, newDb);
-  };
-
-  const loadLibrary = useCallback(() => {
-    setLibraryItems(db.libraryItems || []);
-  }, [db]);
-
-  const saveToLibrary = useCallback(
-    (type, title, contentJson) => {
-      const existingItems = db.libraryItems || [];
-      const existingItem = existingItems.find(item => item.type === type && item.title === title);
-      if (existingItem) {
-        console.log('[saveToLibrary] Item already exists:', type, title);
-        return existingItem.id;
-      }
-
-      const itemId = db.nextIds.libraryItem++;
-      const newItem = {
-        id: itemId,
-        type,
-        title,
-        content_json: contentJson,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
-      const newDb = {
-        ...db,
-        libraryItems: [...(db.libraryItems || []), newItem],
-        nextIds: { ...db.nextIds },
-      };
-      saveDb(newDb);
-      loadLibrary();
-      setTimeout(() => {
-        window.dispatchEvent(new Event('library-updated'));
-      }, 100);
-      return itemId;
-    },
-    [db, saveDb, loadLibrary]
-  );
-
-  const updateLibraryItem = (id, title, contentJson) => {
-    const newDb = {
-      ...db,
-      libraryItems: (db.libraryItems || []).map(item =>
-        Number(item.id) === Number(id)
-          ? { ...item, title, content_json: contentJson, updated_at: new Date().toISOString() }
-          : item
-      ),
-    };
-    saveDb(newDb);
-    loadLibrary();
-    setTimeout(() => {
-      window.dispatchEvent(new Event('library-updated'));
-    }, 100);
-  };
-
-  const deleteLibraryItem = id => {
-    const newDb = {
-      ...db,
-      libraryItems: (db.libraryItems || []).filter(item => Number(item.id) !== Number(id)),
-    };
-    saveDb(newDb);
-    loadLibrary();
-    setTimeout(() => {
-      window.dispatchEvent(new Event('library-updated'));
-    }, 100);
-  };
-
-  const syncTagsFromLibrary = () => {
-    console.log('[syncTagsFromLibrary] Starting sync - library is source of truth');
-    let updatedCount = 0;
-
-    // Read fresh db from localStorage to avoid stale closure
-    let currentDb;
-    try {
-      const dbRaw = localStorage.getItem('c-projets_db');
-      currentDb = dbRaw ? JSON.parse(dbRaw) : db;
-    } catch (e) {
-      currentDb = db;
-    }
-
-    // Build tree lookup: treeNodeId (UUID) -> systemTag
-    const treeTagsByNodeId = {};
-    const treeRaw = localStorage.getItem('c-projets_library_editor');
-    if (treeRaw) {
-      try {
-        const treeData = JSON.parse(treeRaw);
-        const extractTags = nodes => {
-          (nodes || []).forEach(node => {
-            if (node.id && node.data?.systemTag && node.data.systemTag.trim()) {
-              treeTagsByNodeId[String(node.id)] = node.data.systemTag.trim();
-            }
-            if (node.children && node.children.length > 0) extractTags(node.children);
-          });
-        };
-        extractTags(treeData.children || treeData);
-      } catch (e) {
-        console.error('[syncTagsFromLibrary] Error parsing tree:', e);
-      }
-    }
-
-    // Build mapping: numeric libraryItemId -> treeNodeId (UUID)
-    // This handles legacy data where library_item_id was numeric
-    const numericIdToUUID = {};
-    (currentDb.libraryItems || []).forEach(item => {
-      if (item.id && item.treeNodeId) {
-        numericIdToUUID[String(item.id)] = String(item.treeNodeId);
-      }
-    });
-    console.log('[syncTagsFromLibrary] numericIdToUUID mapping:', numericIdToUUID);
-
-    // Helper: resolve library_item_id to tree node ID
-    const resolveToTreeNodeId = libItemId => {
-      if (!libItemId) return null;
-      const strId = String(libItemId);
-      // If it's already a UUID (contains dashes), use it directly
-      if (strId.includes('-')) return strId;
-      // Otherwise, look up in our mapping (legacy numeric ID)
-      return numericIdToUUID[strId] || null;
-    };
-
-    // Sync subcategories: library is source of truth for tags
-    const newSubcategories = currentDb.subcategories.map(sub => {
-      if (!sub.library_item_id) return sub; // No link to library
-
-      // Resolve to tree node ID (handle both UUID and legacy numeric IDs)
-      const treeNodeId = resolveToTreeNodeId(sub.library_item_id);
-      if (!treeNodeId) {
-        console.log(
-          '[syncTagsFromLibrary] No tree node ID found for sub:',
-          sub.title,
-          'library_item_id:',
-          sub.library_item_id
-        );
-        return sub;
-      }
-
-      const tagFromTree = treeTagsByNodeId[treeNodeId];
-      if (!tagFromTree) {
-        console.log(
-          '[syncTagsFromLibrary] No tag in tree for node:',
-          treeNodeId,
-          'sub:',
-          sub.title
-        );
-        return sub;
-      }
-
-      // Force update: library is source of truth
-      if (tagFromTree !== sub.tag) {
-        console.log(
-          '[syncTagsFromLibrary] Updating subcategory:',
-          sub.title,
-          'tag:',
-          sub.tag,
-          '->',
-          tagFromTree,
-          '(library is source of truth)'
-        );
-        updatedCount++;
-        return { ...sub, tag: tagFromTree };
-      }
-      return sub;
-    });
-
-    // Sync categories similarly
-    const newCategories = currentDb.categories.map(cat => {
-      if (!cat.library_item_id) return cat;
-
-      const treeNodeId = resolveToTreeNodeId(cat.library_item_id);
-      if (!treeNodeId) return cat;
-
-      const tagFromTree = treeTagsByNodeId[treeNodeId];
-      if (!tagFromTree) return cat;
-
-      if (tagFromTree !== cat.tag) {
-        console.log(
-          '[syncTagsFromLibrary] Updating category:',
-          cat.title,
-          'tag:',
-          cat.tag,
-          '->',
-          tagFromTree
-        );
-        updatedCount++;
-        return { ...cat, tag: tagFromTree };
-      }
-      return cat;
-    });
-
-    if (updatedCount > 0) {
-      const newDb = {
-        ...currentDb,
-        categories: newCategories,
-        subcategories: newSubcategories,
-      };
-      saveDb(newDb);
-
-      if (currentBoard) {
-        setTimeout(() => loadBoard(currentBoard.id, newDb), 100);
-      }
-      console.log('[syncTagsFromLibrary] Updated', updatedCount, 'items from library');
-    } else {
-      console.log('[syncTagsFromLibrary] All tags already in sync');
-    }
-
-    return updatedCount;
-  };
   const getArchivedCards = () => {
     return db.cards.filter(c => c.is_archived);
   };
@@ -2334,90 +1161,8 @@ export function AppProvider({ children }) {
     return db.boards.filter(b => b.is_archived);
   };
 
-  const getMessages = useCallback(
-    boardId => {
-      return (db.messages || []).filter(m => Number(m.board_id) === Number(boardId));
-    },
-    [db.messages]
-  );
-
-  const addMessage = useCallback(
-    (boardId, content, attachments = []) => {
-      const mentions = content.match(/@(\w+)/g)?.map(m => m.slice(1)) || [];
-      const newMessage = {
-        id: db.nextIds.message++,
-        board_id: boardId,
-        author: username,
-        content,
-        mentions,
-        attachments: attachments.map(att => ({
-          name: att.name,
-          type: att.type,
-          data: att.data,
-          size: att.size,
-        })),
-        created_at: new Date().toISOString(),
-        read_by: [username],
-      };
-      const newDb = {
-        ...db,
-        messages: [...(db.messages || []), newMessage],
-      };
-      saveDb(newDb);
-      setMessages(newDb.messages);
-
-      if (mentions.length > 0) {
-        const newUnread = { ...unreadMentions };
-        mentions.forEach(user => {
-          if (user !== username) {
-            if (!newUnread[user]) newUnread[user] = [];
-            newUnread[user].push(newMessage.id);
-          }
-        });
-        setUnreadMentions(newUnread);
-      }
-      return newMessage;
-    },
-    [db, username, saveDb, unreadMentions]
-  );
-
-  const markMessagesAsRead = useCallback(
-    boardId => {
-      const boardMessages = (db.messages || []).filter(m => Number(m.board_id) === Number(boardId));
-      const updatedMessages = boardMessages.map(msg => {
-        if (!msg.read_by.includes(username)) {
-          return { ...msg, read_by: [...msg.read_by, username] };
-        }
-        return msg;
-      });
-
-      const newDb = {
-        ...db,
-        messages: (db.messages || []).map(msg => {
-          const updated = updatedMessages.find(u => u.id === msg.id);
-          return updated || msg;
-        }),
-      };
-      saveDb(newDb);
-      setMessages(newDb.messages);
-
-      if (unreadMentions[username]) {
-        const newUnread = { ...unreadMentions };
-        delete newUnread[username];
-        setUnreadMentions(newUnread);
-      }
-    },
-    [db, username, saveDb, unreadMentions]
-  );
-
-  const getUnreadCount = useCallback(
-    boardId => {
-      if (!username) return 0;
-      const boardMessages = (db.messages || []).filter(m => Number(m.board_id) === Number(boardId));
-      return boardMessages.filter(msg => !msg.read_by.includes(username) && msg.author !== username)
-        .length;
-    },
-    [db.messages, username]
+  const { getMessages, addMessage, markMessagesAsRead, getUnreadCount } = useMessageOperations(
+    db, saveDb, username, setMessages, unreadMentions, setUnreadMentions
   );
 
   const addComment = (refType, refId, content) => {
@@ -2430,7 +1175,7 @@ export function AppProvider({ children }) {
 
   const deleteComment = id => {};
 
-  const value = {
+  const value = useMemo(() => ({
     boards,
     currentBoard,
     columns,
@@ -2450,30 +1195,6 @@ export function AppProvider({ children }) {
     markMessagesAsRead,
     getUnreadCount,
     loading,
-    sidebarOpen,
-    libraryOpen,
-    libraryViewMode,
-    setSidebarOpen,
-    setLibraryOpen,
-    setLibraryViewMode,
-    theme,
-    toggleTheme,
-    guideOpen,
-    toggleGuide,
-    searchOpen,
-    toggleSearch,
-    selectedCard,
-    setSelectedCard,
-    selectedCategory,
-    setSelectedCategory,
-    selectedSubcategory,
-    setSelectedSubcategory,
-    selectedCommande,
-    setSelectedCommande,
-    activeTabCommande,
-    setActiveTabCommande,
-    activeTab,
-    setActiveTab,
     loadBoard,
     loadBoards,
     createBoard,
@@ -2533,9 +1254,6 @@ export function AppProvider({ children }) {
     addComment,
     getComments,
     deleteComment,
-    cardColors,
-    updateCardColors,
-    resetCardColors,
     addWorkingDays,
     getWorkingDaysBetween,
     getWeekNumber,
@@ -2552,7 +1270,10 @@ export function AppProvider({ children }) {
     loadProjectTime,
     getProjectTime,
     getAllProjectTime,
-  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }), [db, currentBoard, columns, cards, categories, subcategories, libraryItems,
+    messages, subcategoryEmails, username, userRole, loading,
+    filterMyProjects, usersList, hiddenMilestones]);
 
   return (
     <AppContext.Provider value={value}>
@@ -2562,9 +1283,10 @@ export function AppProvider({ children }) {
 }
 
 export function useApp() {
-  const context = useContext(AppContext);
-  if (!context) {
+  const appContext = useContext(AppContext);
+  if (!appContext) {
     throw new Error('useApp must be used within an AppProvider');
   }
-  return context;
+  const uiContext = useUIContext();
+  return { ...appContext, ...uiContext };
 }

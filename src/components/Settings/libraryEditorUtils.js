@@ -241,3 +241,177 @@ export function treeToCSV(nodes, depth = 0) {
 
   return csv;
 }
+
+export function migrateLibraryTreeFull(tree) {
+  if (!tree || !Array.isArray(tree)) return [];
+
+  const newTree = JSON.parse(JSON.stringify(tree));
+
+  function traverseNodes(nodes) {
+    for (const node of nodes) {
+      if (!node.data) node.data = {};
+
+      if (node.type === 'chapitre') {
+        node.data.chapitre = node.data.chapitre || node.titre || '';
+        node.data.temps = node.data.temps || 0;
+      } else if (node.type === 'carte') {
+        node.data.carte = node.data.carte || node.titre || '';
+        node.data.temps = node.data.temps || 0;
+        if (node.data.skipAction === undefined) node.data.skipAction = false;
+        if (node.data.systemTag === undefined) node.data.systemTag = '';
+      } else if (node.type === 'categorie') {
+        node.data.categorie = node.data.categorie || node.titre || '';
+        node.data.temps = node.data.temps || 0;
+        if (node.data.systemTag === undefined) node.data.systemTag = '';
+      } else if (node.type === 'souscategorie') {
+        node.data.sousCat1 = node.data.sousCat1 || node.titre || '';
+        node.data.temps = node.data.temps || 0;
+        if (node.data.systemTag === undefined) node.data.systemTag = '';
+      }
+
+      if (node.children && node.children.length > 0) {
+        traverseNodes(node.children);
+      }
+    }
+  }
+
+  traverseNodes(newTree);
+  return newTree;
+}
+
+export function convertTreeToLibraryItems(treeData) {
+  const libraryItems = [];
+  const cardMap = new Map();
+  const categorySet = new Set();
+  const subcategorySet = new Set();
+  let itemId = 1;
+
+  const processNode = (node, chapitre = '', carte = '', categorie = '') => {
+    let currentChapitre = chapitre;
+    let currentCarte = carte;
+    let currentCategorie = categorie;
+
+    if (node.type === 'chapitre') {
+      currentChapitre = node.data.chapitre || node.titre;
+    } else if (node.type === 'carte') {
+      currentCarte = node.data.carte || node.titre;
+    } else if (node.type === 'categorie') {
+      currentCategorie = node.data.categorie || node.titre;
+    }
+
+    if (node.type === 'carte' || node.type === 'categorie' || node.type === 'souscategorie') {
+      const tags = currentChapitre;
+      let cardItem = cardMap.get(currentCarte);
+      if (!cardItem) {
+        cardItem = {
+          id: itemId++,
+          title: currentCarte,
+          type: 'card',
+          tags: tags,
+          duration: node.data.temps || 0,
+          content_json: JSON.stringify({
+            card: {
+              title: currentCarte,
+              description: '',
+              priority: 'normal',
+              duration_days: node.data.temps || 0,
+              skipAction: node.data.skipAction || false,
+            },
+            categories: [],
+          }),
+        };
+        cardMap.set(currentCarte, cardItem);
+        libraryItems.push(cardItem);
+      } else {
+        const content = JSON.parse(cardItem.content_json);
+        if (node.data.skipAction !== undefined) {
+          content.card.skipAction = node.data.skipAction;
+          cardItem.content_json = JSON.stringify(content);
+        }
+      }
+
+      if (node.type === 'categorie' || node.type === 'souscategorie') {
+        const content = JSON.parse(cardItem.content_json);
+        const catKey = `${currentCarte}_${currentCategorie}`;
+        let category = content.categories.find(c => c.title === currentCategorie);
+        if (!category) {
+          category = {
+            title: currentCategorie,
+            description: '',
+            priority: 'normal',
+            duration_days: node.data.temps || 0,
+            tag: node.data.systemTag || null,
+            subcategories: [],
+          };
+          content.categories.push(category);
+        } else if (node.data.systemTag) {
+          category.tag = node.data.systemTag;
+        }
+
+        if (!categorySet.has(catKey)) {
+          categorySet.add(catKey);
+          libraryItems.push({
+            id: itemId++,
+            title: currentCategorie,
+            type: 'category',
+            tags: '',
+            duration: node.data.temps || 0,
+            content_json: JSON.stringify({
+              category: {
+                title: currentCategorie,
+                description: '',
+                priority: 'normal',
+                duration_days: node.data.temps || 0,
+                tag: null,
+              },
+            }),
+          });
+        }
+
+        if (node.type === 'souscategorie' && node.data.sousCat1) {
+          const subCatKey = `${catKey}_${node.data.sousCat1}`;
+          if (!category.subcategories.find(s => s.title === node.data.sousCat1)) {
+            category.subcategories.push({
+              title: node.data.sousCat1,
+              description: '',
+              priority: 'normal',
+              duration_days: node.data.temps || 0,
+              tag: node.data.systemTag || null,
+            });
+          }
+
+          if (!subcategorySet.has(subCatKey)) {
+            subcategorySet.add(subCatKey);
+            libraryItems.push({
+              id: itemId++,
+              title: node.data.sousCat1,
+              type: 'subcategory',
+              tags: tags,
+              duration: node.data.temps || 0,
+              content_json: JSON.stringify({
+                subcategory: {
+                  title: node.data.sousCat1,
+                  description: '',
+                  priority: 'normal',
+                  duration_days: node.data.temps || 0,
+                  tag: node.data.systemTag || null,
+                },
+              }),
+            });
+          }
+        }
+
+        cardItem.content_json = JSON.stringify(content);
+      }
+    }
+
+    if (node.children) {
+      node.children.forEach(child =>
+        processNode(child, currentChapitre, currentCarte, currentCategorie)
+      );
+    }
+  };
+
+  treeData.forEach(node => processNode(node));
+  return libraryItems;
+}

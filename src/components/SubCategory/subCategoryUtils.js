@@ -86,7 +86,6 @@ export const handleOpenEmail = async email => {
     return;
   }
 
-  console.log('[handleOpenEmail] Opening email:', email.filename);
 
   try {
     const base64Response = fileData.includes(',') ? fileData.split(',')[1] : fileData;
@@ -108,7 +107,6 @@ export const handleOpenEmail = async email => {
 
     setTimeout(() => URL.revokeObjectURL(url), 60000);
 
-    console.log('[handleOpenEmail] File downloaded:', email.filename);
   } catch (error) {
     console.error('[handleOpenEmail] Error:', error);
     alert("Erreur lors de l'ouverture du fichier: " + error.message);

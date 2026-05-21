@@ -40,6 +40,65 @@
 
 ---
 
+## [Décisions d'architecture] — 2026-05-18
+
+### ⚠️ Breaking Changes (orientations définitives)
+
+- **Web uniquement** : l'application tourne exclusivement en browser (React + Vite). Electron abandonné.
+- **Dexie conservé** : SQLite (WASM) abandonné — Dexie/IndexedDB offre plusieurs GB de capacité,
+  ce qui résout le problème de limite localStorage (5-10 MB). Pas de gain réel à passer sur SQLite
+  dans un contexte web-only.
+- **Outlook 365 uniquement** : EWS on-premise et Gmail abandonnés. Seul Microsoft Graph API
+  avec MSAL.js browser est supporté.
+- **Calendrier Outlook** : module abandonné (hors périmètre).
+
+### 🗑️ Suppressions (docs et packages)
+
+- `AUDIT_IMPLEMENTATION.md` supprimé (toutes les corrections appliquées)
+- `C-PRojeTs_V2.1.md` supprimé (Gmail abandonné)
+- `C-PRojeTs_V2.2.md` supprimé (Calendrier Outlook abandonné)
+- `@azure/msal-node` → remplacé par `@azure/msal-browser` pour V2.0
+
+### 🔧 Mises à jour documentation
+
+- `DOC_2_C-PRojeTs_ARCHITECTURE_TECHNIQUE.md` réécrit : web-only, Dexie, MSAL.js browser
+- `C-PRojeTs_V2.0.md` simplifié : Outlook 365 uniquement, plus d'EWS
+- `C-PRojeTs_V3.0_Finale.md` simplifié : sync Outlook uniquement, Gmail/Calendrier retirés
+- `C-PRojeTs_Specification_v3.md` mis à jour : stack web, Dexie, périmètre Outlook 365
+
+---
+
+## [Audit sécurité & performances] — 2026-05-17/18
+
+### 🔒 Sécurité
+
+- **DOMPurify** : sanitisation du HTML Quill dans SubCategoryModal avant sauvegarde (P0)
+- **ErrorBoundary** : composant `src/components/ErrorBoundary.jsx` ajouté, wrappant `App` (P0)
+- **Zod** : validation du JSON importé via `src/utils/importSchema.js` (P1)
+
+### ⚡ Performances
+
+- **UIContext.jsx** : création de `src/context/UIContext.jsx` — états UI (theme, cardColors, modals, panels) extraits d'AppContext ; `useApp()` devient une façade fusionnant les deux contextes (P2)
+- **useMemo** sur `AppContext.Provider` : évite les re-renders des consommateurs à chaque render du provider (P1)
+- **React.memo** sur Card, Category, SubCategory : mémoïsation des composants feuilles (P2)
+- **saveDb debounce** : remplacement du double-save StrictMode par un pattern `pendingSaveRef` + timer 16ms (P2)
+- **storage.setDb** : IndexedDB désormais déboncé à 800ms (write immédiat en localStorage pour la sécurité des données) (P2)
+- **StorageEvent** supprimé : dispatch inutile retiré du chemin hot (P2)
+
+### 🔧 Améliorations
+
+- **BoardCommandesTab.jsx** : onglet "commandes" extrait de Board2.jsx dans `src/components/Board/BoardCommandesTab.jsx` — Board2 réduit de ~2800 à ~1431 lignes (−51%) (P2)
+- **createCard / createCategory / createSubcategory** : correction du double-save dans StrictMode (les fonctions d'état ne doivent pas appeler `saveToStorage` depuis l'intérieur d'un updater) (P2)
+- **Card.jsx** : correction de plusieurs bugs — fonctions manquantes (`handleToggleCollapse`, `handleArchive`, `handleSaveToLibrary`), `setModalOpen` remplacé par `setSelectedCard`, déclaration dupliquée de `cardCategories` supprimée (P2)
+
+### 🗑️ Suppressions
+
+- **Dépendances inutilisées** supprimées : `@azure/msal-node`, `@microsoft/microsoft-graph-client`, `date-fns`, `google-auth-library`, `googleapis` (P3)
+- **Code migration mytrello_*** : `migrateLocalStorageKeys()` et son appel supprimés d'AppContext (P3)
+- **console.log** de production : ~30 appels retirés des chemins hot (loadBoard, updateCategory, moveCategory, createCard, createCategory, createSubcategory, storage.js) (P3)
+
+---
+
 ## Roadmap des versions
 
 | Version   | Objectif                                                                     | Date cible |

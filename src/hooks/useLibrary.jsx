@@ -10,7 +10,6 @@ export function useLibrary(db, saveDb, setLibraryItems) {
       const existingItems = db.libraryItems || [];
       const existingItem = existingItems.find(item => item.type === type && item.title === title);
       if (existingItem) {
-        console.log('[saveToLibrary] Item already exists:', type, title);
         return existingItem.id;
       }
 
@@ -74,7 +73,6 @@ export function useLibrary(db, saveDb, setLibraryItems) {
 
   const syncTagsFromLibrary = useCallback(() => {
     const treeRaw = localStorage.getItem('c-projets_library_editor');
-    console.log('[syncTagsFromLibrary] treeRaw exists:', !!treeRaw);
     const categoriesWithTags = [];
     const subcategoriesWithTags = [];
 
@@ -102,10 +100,6 @@ export function useLibrary(db, saveDb, setLibraryItems) {
           });
         };
         findTagsInNodes(treeData);
-        console.log('[syncTagsFromLibrary] Found tags:', {
-          categoriesWithTags,
-          subcategoriesWithTags,
-        });
         localStorage.setItem(
           'c-projets_tags_synced',
           JSON.stringify({ categoriesWithTags, subcategoriesWithTags })

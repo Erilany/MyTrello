@@ -64,55 +64,53 @@ export const storage = {
       };
       if (data.boards.length > 0) return data;
     } catch (e) {
-      console.log('[Storage] IndexedDB non dispo, fallback localStorage');
+      // fallback to localStorage
     }
     const fallback = localStorage.getItem(STORAGE_KEY);
     return fallback ? JSON.parse(fallback) : null;
   },
 
-  async setDb(dbData) {
-    if (!dbData) return;
+  setDb(dbData) {
+    if (!dbData) return Promise.resolve();
 
-    // Always save to localStorage as backup
+    // Immediate localStorage write (fast, data safety)
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(dbData));
-      console.log('[Storage] Sauvegardé localStorage');
-      window.dispatchEvent(new StorageEvent('storage', { key: STORAGE_KEY }));
     } catch (e) {
-      console.log('[Storage] Erreur localStorage:', e.message);
+      console.error('[Storage] Erreur localStorage:', e.message);
     }
 
-    // Also save to IndexedDB
-    try {
-      await storage.init();
-      await db.transaction(
-        'rw',
-        db.boards,
-        db.columns,
-        db.cards,
-        db.categories,
-        db.subcategories,
-        db.library,
-        async () => {
-          await db.boards.clear();
-          await db.columns.clear();
-          await db.cards.clear();
-          await db.categories.clear();
-          await db.subcategories.clear();
-          await db.library.clear();
+    // Debounced IndexedDB write — batches rapid CRUD into a single transaction
+    clearTimeout(storage._idbTimer);
+    storage._idbTimer = setTimeout(async () => {
+      try {
+        await storage.init();
+        const snapshot = dbData;
+        await db.transaction(
+          'rw',
+          db.boards, db.columns, db.cards, db.categories, db.subcategories, db.library,
+          async () => {
+            await db.boards.clear();
+            await db.columns.clear();
+            await db.cards.clear();
+            await db.categories.clear();
+            await db.subcategories.clear();
+            await db.library.clear();
 
-          if (dbData.boards?.length) await db.boards.bulkPut(dbData.boards);
-          if (dbData.columns?.length) await db.columns.bulkPut(dbData.columns);
-          if (dbData.cards?.length) await db.cards.bulkPut(dbData.cards);
-          if (dbData.categories?.length) await db.categories.bulkPut(dbData.categories);
-          if (dbData.subcategories?.length) await db.subcategories.bulkPut(dbData.subcategories);
-          if (dbData.libraryItems?.length) await db.library.bulkPut(dbData.libraryItems);
-        }
-      );
-      console.log('[Storage] Sauvegardé IndexedDB');
-    } catch (e) {
-      console.log('[Storage] Erreur IndexedDB:', e.message);
-    }
+            if (snapshot.boards?.length) await db.boards.bulkPut(snapshot.boards);
+            if (snapshot.columns?.length) await db.columns.bulkPut(snapshot.columns);
+            if (snapshot.cards?.length) await db.cards.bulkPut(snapshot.cards);
+            if (snapshot.categories?.length) await db.categories.bulkPut(snapshot.categories);
+            if (snapshot.subcategories?.length) await db.subcategories.bulkPut(snapshot.subcategories);
+            if (snapshot.libraryItems?.length) await db.library.bulkPut(snapshot.libraryItems);
+          }
+        );
+      } catch (e) {
+        console.error('[Storage] Erreur IndexedDB:', e.message);
+      }
+    }, 800);
+
+    return Promise.resolve();
   },
 
   getProjectData: (boardId, key) => localStorage.getItem(`board-${boardId}-${key}`),

@@ -1,23 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
+import { useEmailPanel } from '../../hooks/useEmailPanel';
+import { useMilestonePanel } from '../../hooks/useMilestonePanel';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import { X, Bookmark, Trash2, Mail, FileText, GripVertical } from 'lucide-react';
 import { loadTagsData } from '../../data/TagsData';
 import {
   sortEmails,
-  handleDrop,
   handleOpenEmail,
-  sortMilestones,
-  createMilestone,
-  getMaxPositionWithoutDate,
   priorities,
   statuses,
   getStatusBadgeClass,
   quillModules,
   quillFormats,
 } from './subCategoryUtils';
-import { addWorkingDays, subtractWorkingDays } from './workingDaysUtils';
+import { useSubcategoryForm } from '../../hooks/useSubcategoryForm';
 import {
   getSubcategoryTagFromLibrary,
   getParentCardTitle,
@@ -70,93 +68,22 @@ function SubCategoryModal({ subcategory, onClose }) {
     return () => window.removeEventListener('library-updated', handleLibraryUpdated);
   }, []);
 
-  const [title, setTitle] = useState(subcategory.title);
-  const [description, setDescription] = useState(subcategory.description || '');
-  const [progress, setProgress] = useState(subcategory.progress || 0);
-  const [priority, setPriority] = useState(subcategory.priority || 'normal');
-  const [status, setStatus] = useState(subcategory.status || 'todo');
-  const [dueDate, setDueDate] = useState(subcategory.due_date || '');
-  const [assignee, setAssignee] = useState(subcategory.assignee || '');
-
-  // Auto-update status based on progress
-  useEffect(() => {
-    if (status === 'waiting') return;
-    if (progress === 100) {
-      setStatus('done');
-      return;
-    }
-    if (progress > 0 && status === 'todo') {
-      setStatus('in_progress');
-    }
-  }, [progress, status]);
-
-  // Auto-update progress to 100% when status is done
-  useEffect(() => {
-    if (status === 'done' && progress !== 100) {
-      setProgress(100);
-    }
-  }, [status, progress]);
-
-  // Email panel state
-  const [emailPanelOpen, setEmailPanelOpen] = useState(false);
-  const [emails, setEmails] = useState([]);
-  const [isDragOver, setIsDragOver] = useState(false);
-  const [editingEmailId, setEditingEmailId] = useState(null);
-  const [editingSubject, setEditingSubject] = useState('');
-  const [sortMode, setSortMode] = useState('date');
-  const [sortDropdownOpen, setSortDropdownOpen] = useState(false);
-
-  // Load emails for this subcategory
-  useEffect(() => {
-    const loadedEmails = getEmailsForSubcategory(subcategory.id);
-    setEmails(loadedEmails);
-  }, [subcategory.id]);
-
-  const handleDragOver = e => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragOver(true);
-  };
-
-  const handleDragLeave = e => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragOver(false);
-  };
-
-  const onDrop = async e => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragOver(false);
-    const files = Array.from(e.dataTransfer.files);
-    const newEmails = await handleDrop(files, subcategory.id, addEmailToSubcategory);
-    setEmails(prev => [...prev, ...newEmails]);
-  };
-
-  const handleDeleteEmail = emailId => {
-    if (window.confirm('Supprimer cet email ?')) {
-      removeEmailFromSubcategory(emailId);
-      setEmails(prev => prev.filter(e => e.id !== emailId));
-    }
-  };
-
-  const handleStartEditSubject = email => {
-    setEditingEmailId(email.id);
-    setEditingSubject(email.customSubject || email.subject);
-  };
-
-  const handleSaveSubject = emailId => {
-    updateEmailSubject(emailId, editingSubject);
-    setEmails(prev => prev.map(e => (e.id === emailId ? { ...e, subject: editingSubject } : e)));
-    setEditingEmailId(null);
-    setEditingSubject('');
-  };
-
-  // MS Project fields
-  const [startDate, setStartDate] = useState(subcategory.start_date || '');
-  const [durationDays, setDurationDays] = useState(subcategory.duration_days || 0);
-  const [anchorOnStart, setAnchorOnStart] = useState(!!subcategory.start_date);
-  const [anchorOnEnd, setAnchorOnEnd] = useState(!!subcategory.due_date && !subcategory.start_date);
+  const {
+    emailPanelOpen, setEmailPanelOpen,
+    emails, setEmails,
+    isDragOver,
+    editingEmailId, editingSubject, setEditingSubject,
+    sortMode, setSortMode,
+    sortDropdownOpen, setSortDropdownOpen,
+    handleDragOver, handleDragLeave, onDrop,
+    handleDeleteEmail, handleStartEditSubject, handleSaveSubject,
+  } = useEmailPanel(
+    subcategory.id,
+    addEmailToSubcategory,
+    removeEmailFromSubcategory,
+    updateEmailSubject,
+    getEmailsForSubcategory
+  );
 
   // Tag inheritance: use dynamic systemTag from library, or inherit from parent category
   const parentCategory = categories?.find(c => c.id === subcategory.category_id);
@@ -194,227 +121,39 @@ function SubCategoryModal({ subcategory, onClose }) {
     }
   }
 
-  // Milestones
-  const [milestones, setMilestones] = useState(subcategory.milestones || []);
-  const [isAddingMilestone, setIsAddingMilestone] = useState(false);
-  const [newMilestoneTitle, setNewMilestoneTitle] = useState('');
-  const [newMilestoneDate, setNewMilestoneDate] = useState('');
-  const [draggedId, setDraggedId] = useState(null);
+  const {
+    milestones, setMilestones,
+    isAddingMilestone,
+    newMilestoneTitle, setNewMilestoneTitle,
+    newMilestoneDate, setNewMilestoneDate,
+    draggedId,
+    addMilestone, saveNewMilestone, cancelAddMilestone,
+    handleNewMilestoneKeyDown, toggleMilestone, deleteMilestone,
+    updateMilestoneTitle, updateMilestoneDate,
+    handleMilestoneDragStart, handleMilestoneDragOver,
+    handleMilestoneDrop, handleMilestoneDragEnd,
+  } = useMilestonePanel(subcategory.id, subcategory.milestones, addHiddenMilestone);
 
-  useEffect(() => {
-    const handleMilestoneUpdated = () => {
-      const data = localStorage.getItem('c-projets_db');
-      if (data) {
-        try {
-          const parsed = JSON.parse(data);
-          const updatedSub = parsed.subcategories?.find(
-            s => Number(s.id) === Number(subcategory.id)
-          );
-          if (updatedSub) {
-            setMilestones(sortMilestones(updatedSub.milestones || []));
-          }
-        } catch (e) {
-          console.error('Error parsing milestones:', e);
-        }
-      }
-    };
-    window.addEventListener('milestone-updated', handleMilestoneUpdated);
-    return () => window.removeEventListener('milestone-updated', handleMilestoneUpdated);
-  }, [subcategory.id]);
-
-  useEffect(() => {
-    setMilestones(sortMilestones(subcategory.milestones || []));
-  }, [subcategory.id]);
-
-  const handleDurationChange = newDuration => {
-    const duration = parseInt(newDuration) || 0;
-    setDurationDays(duration);
-
-    if (anchorOnStart && startDate && duration >= 0) {
-      const calculatedDueDate = addWorkingDays(startDate, duration);
-      setDueDate(calculatedDueDate);
-    } else if (anchorOnEnd && dueDate && duration >= 0) {
-      const calculatedStartDate = subtractWorkingDays(dueDate, duration);
-      setStartDate(calculatedStartDate);
-    }
-  };
-
-  const handleStartDateChange = newStartDate => {
-    setStartDate(newStartDate);
-    if (anchorOnStart && newStartDate && durationDays >= 0) {
-      const calculatedDueDate = addWorkingDays(newStartDate, durationDays);
-      setDueDate(calculatedDueDate);
-    }
-  };
-
-  const handleDueDateChange = newDueDate => {
-    setDueDate(newDueDate);
-    if (anchorOnEnd && newDueDate && durationDays >= 0) {
-      const calculatedStartDate = subtractWorkingDays(newDueDate, durationDays);
-      setStartDate(calculatedStartDate);
-    }
-  };
-
-  const handleAnchorOnStartChange = checked => {
-    setAnchorOnStart(checked);
-    if (checked) {
-      setAnchorOnEnd(false);
-    }
-  };
-
-  const handleAnchorOnEndChange = checked => {
-    setAnchorOnEnd(checked);
-    if (checked) {
-      setAnchorOnStart(false);
-    }
-  };
-
-  const handleSave = async () => {
-    console.log('[SubCategoryModal] Saving subcategory:', subcategory.id, {
-      due_date: dueDate,
-      start_date: startDate,
-      duration_days: durationDays,
-    });
-    await updateSubcategory(subcategory.id, {
-      title,
-      description,
-      progress,
-      priority,
-      status,
-      due_date: dueDate || null,
-      assignee,
-      start_date: startDate || null,
-      duration_days: durationDays || 0,
-      milestones,
-    });
-    onClose();
-  };
-
-  const handleSaveToLibrary = async () => {
-    const content = {
-      subcategory: {
-        title,
-        description,
-        priority,
-        due_date: dueDate,
-        assignee,
-        status,
-        start_date: startDate,
-        duration_days: durationDays,
-      },
-    };
-
-    await saveToLibrary('subcategory', title, JSON.stringify(content));
-    alert('Sous-catégorie sauvegardée dans la bibliothèque');
-  };
-
-  const addMilestone = () => {
-    setIsAddingMilestone(true);
-    setNewMilestoneTitle('');
-    setNewMilestoneDate('');
-  };
-
-  const saveNewMilestone = () => {
-    if (newMilestoneTitle.trim()) {
-      const maxPosition = milestones
-        .filter(m => !m.date)
-        .reduce((max, m) => Math.max(max, m.position || 0), 0);
-      const newMilestoneObj = {
-        id: Date.now(),
-        title: newMilestoneTitle.trim(),
-        done: false,
-        date: newMilestoneDate || null,
-        position: maxPosition + 1,
-      };
-      setMilestones(sortMilestones([...milestones, newMilestoneObj]));
-    }
-    setIsAddingMilestone(false);
-    setNewMilestoneTitle('');
-    setNewMilestoneDate('');
-  };
-
-  const cancelAddMilestone = () => {
-    setIsAddingMilestone(false);
-    setNewMilestoneTitle('');
-    setNewMilestoneDate('');
-  };
-
-  const handleNewMilestoneKeyDown = e => {
-    if (e.key === 'Enter') {
-      saveNewMilestone();
-    } else if (e.key === 'Escape') {
-      cancelAddMilestone();
-    }
-  };
-
-  const toggleMilestone = id => {
-    const milestone = milestones.find(m => m.id === id);
-    const isBeingChecked = milestone && !milestone.done;
-
-    if (isBeingChecked) {
-      addHiddenMilestone(id);
-    }
-
-    const newMilestones = milestones
-      .map(m => (m.id === id ? { ...m, done: !m.done } : m))
-      .sort((a, b) => {
-        if (a.done !== b.done) return a.done ? 1 : -1;
-        return 0;
-      });
-    setMilestones(newMilestones);
-  };
-
-  const deleteMilestone = id => {
-    setMilestones(milestones.filter(m => m.id !== id));
-  };
-
-  const updateMilestoneTitle = (id, newTitle) => {
-    if (!newTitle.trim()) return;
-    const newMilestones = milestones.map(m => (m.id === id ? { ...m, title: newTitle.trim() } : m));
-    setMilestones(newMilestones);
-  };
-
-  const updateMilestoneDate = (id, newDate) => {
-    const newMilestones = milestones.map(m => (m.id === id ? { ...m, date: newDate || null } : m));
-    setMilestones(sortMilestones(newMilestones));
-  };
-
-  const handleMilestoneDragStart = (e, id) => {
-    setDraggedId(id);
-    e.dataTransfer.effectAllowed = 'move';
-  };
-
-  const handleMilestoneDragOver = (e, id) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-  };
-
-  const handleMilestoneDrop = (e, targetId) => {
-    e.preventDefault();
-    if (!draggedId || draggedId === targetId) return;
-
-    const withoutDate = milestones.filter(m => !m.date);
-    const withDate = milestones.filter(m => m.date);
-
-    const draggedIdxInWithout = withoutDate.findIndex(m => m.id === draggedId);
-    const targetIdxInWithout = withoutDate.findIndex(m => m.id === targetId);
-
-    if (draggedIdxInWithout === -1 || targetIdxInWithout === -1) return;
-
-    const reordered = [...withoutDate];
-    const [removed] = reordered.splice(draggedIdxInWithout, 1);
-    reordered.splice(targetIdxInWithout, 0, removed);
-
-    const withUpdatedPositions = reordered.map((m, idx) => ({ ...m, position: idx + 1 }));
-
-    setMilestones(sortMilestones([...withUpdatedPositions, ...withDate]));
-
-    setDraggedId(null);
-  };
-
-  const handleMilestoneDragEnd = () => {
-    setDraggedId(null);
-  };
+  const {
+    title, setTitle,
+    description, setDescription,
+    progress, setProgress,
+    priority, setPriority,
+    status, setStatus,
+    dueDate, setDueDate,
+    assignee, setAssignee,
+    startDate, setStartDate,
+    durationDays, setDurationDays,
+    anchorOnStart, setAnchorOnStart,
+    anchorOnEnd, setAnchorOnEnd,
+    handleDurationChange,
+    handleStartDateChange,
+    handleDueDateChange,
+    handleAnchorOnStartChange,
+    handleAnchorOnEndChange,
+    handleSave,
+    handleSaveToLibrary,
+  } = useSubcategoryForm(subcategory, updateSubcategory, saveToLibrary);
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[99999]">
@@ -903,7 +642,7 @@ function SubCategoryModal({ subcategory, onClose }) {
               Annuler
             </button>
             <button
-              onClick={handleSave}
+              onClick={() => handleSave(milestones, onClose)}
               className="px-4 py-2 bg-accent text-white rounded-lg hover:opacity-90 transition-std"
             >
               Enregistrer

@@ -1,262 +1,159 @@
 # 🏗️ C-PRojeTs — Architecture Technique
 
+> **Version actuelle** : application **web browser uniquement** (React + Vite).
+> Aucun processus Electron, aucun IPC, aucun backend Node en production.
+
 ---
 
 ## 1. Vue d'ensemble
 
-C-PRojeTs repose sur **Electron**, qui combine deux processus distincts :
-
 ```
-┌─────────────────────────────────────────────────────────┐
-│                    ELECTRON APP                         │
-│                                                         │
-│  ┌──────────────────┐        ┌──────────────────────┐  │
-│  │   MAIN PROCESS   │◄──IPC──►  RENDERER PROCESS    │  │
-│  │   (electron.js)  │        │  (React / src/)       │  │
-│  │                  │        │                       │  │
-│  │ - SQLite         │        │ - Composants UI       │  │
-│  │ - Auth OAuth     │        │ - Drag & Drop         │  │
-│  │ - Graph API      │        │ - Commandes vocales   │  │
-│  │ - EWS            │        │ - État global         │  │
-│  │ - Gmail API      │        │ - Calendrier          │  │
-│  │ - electron-store │        │                       │  │
-│  └──────────────────┘        └──────────────────────┘  │
-└─────────────────────────────────────────────────────────┘
-```
-
-**Main Process** → accès système, base de données, APIs externes, stockage sécurisé
-**Renderer Process** → interface utilisateur React, interactions utilisateur
-**IPC (Inter-Process Communication)** → canal de communication entre les deux
-
----
-
-## 2. Communication IPC (Main ↔ Renderer)
-
-Toutes les opérations sensibles (BDD, APIs externes) passent par IPC.
-
-### 2.1 Convention de nommage des canaux IPC
-
-```
-[domaine]:[entité]:[action]
-
-Exemples :
-  db:cards:getAll
-  db:cards:create
-  db:cards:update
-  db:cards:delete
-  outlook:emails:list
-  outlook:emails:move
-  gmail:labels:add
-  calendar:events:getByTags
-  voice:commands:execute
-```
-
-### 2.2 Structure d'un appel IPC
-
-```javascript
-// Renderer → Main (appel)
-const result = await window.electron.invoke('db:cards:create', {
-  column_id: 1,
-  title: 'Poste 400kV Lyon-Est',
-  priority: 'urgent'
-});
-
-// Main → Renderer (réponse standardisée)
-{
-  success: true,
-  data: { id: 42, title: 'Poste 400kV Lyon-Est', ... },
-  error: null
-}
-
-// En cas d'erreur
-{
-  success: false,
-  data: null,
-  error: { code: 'DB_INSERT_FAILED', message: '...', details: '...' }
-}
-```
-
-### 2.3 Exposition sécurisée via preload.js
-
-```javascript
-// preload.js — expose uniquement les canaux autorisés
-const { contextBridge, ipcRenderer } = require('electron');
-
-contextBridge.exposeInMainWorld('electron', {
-  invoke: (channel, data) => {
-    const allowedChannels = [
-      'db:boards:getAll',
-      'db:boards:create' /* ... */,
-      'outlook:emails:list',
-      'outlook:emails:move' /* ... */,
-      'gmail:labels:add' /* ... */,
-      'calendar:events:getByTags' /* ... */,
-    ];
-    if (allowedChannels.includes(channel)) {
-      return ipcRenderer.invoke(channel, data);
-    }
-    throw new Error(`Canal IPC non autorisé : ${channel}`);
-  },
-});
+┌──────────────────────────────────────────────────────────┐
+│                     NAVIGATEUR WEB                       │
+│                                                          │
+│  ┌───────────────────────────────────────────────────┐   │
+│  │               React Application                   │   │
+│  │                                                   │   │
+│  │   AppContext (données)   UIContext (UI)            │   │
+│  │        │                      │                   │   │
+│  │        └──── useApp() facade ─┘                   │   │
+│  │                                                   │   │
+│  │   Board2   Card   Category   SubCategory   ...    │   │
+│  └───────────────────────────────────────────────────┘   │
+│                        │                                 │
+│          ┌─────────────┴─────────────┐                   │
+│          │                           │                   │
+│  ┌───────▼──────┐         ┌──────────▼────────┐          │
+│  │ localStorage │         │  Dexie (IndexedDB) │          │
+│  │ (écriture    │         │  (stockage principal│          │
+│  │  immédiate)  │         │   grand volume)    │          │
+│  └──────────────┘         └───────────────────┘          │
+│                                                          │
+│  ┌───────────────────────────────────────────────────┐   │
+│  │  Microsoft Graph API (Outlook 365)                │   │
+│  │  OAuth 2.0 via MSAL.js (browser)                  │   │
+│  └───────────────────────────────────────────────────┘   │
+└──────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 3. Gestion de l'état global (React)
+## 2. Stack technique
 
-### 3.1 Choix : React Context API
+| Composant              | Technologie                              |
+| ---------------------- | ---------------------------------------- |
+| Interface utilisateur  | **React 18** + Vite                      |
+| Styles                 | **TailwindCSS**                          |
+| Drag & Drop            | **@hello-pangea/dnd**                    |
+| Commandes vocales      | **Web Speech API** (navigateur natif)    |
+| Stockage local         | **Dexie (IndexedDB)** + localStorage     |
+| Messagerie             | **Microsoft Graph API** (Outlook 365)    |
+| Auth messagerie        | **MSAL.js** (`@azure/msal-browser`)      |
+| Sanitisation HTML      | **DOMPurify**                            |
+| Validation imports     | **Zod**                                  |
+| Éditeur riche          | **react-quill**                          |
 
-Pour le MVP et les premières versions, **React Context API** est suffisant.
-Redux sera envisagé uniquement si la complexité le justifie (V2.x+).
+---
 
-### 3.2 Structure des contextes
+## 3. Gestion de l'état global (React Context)
+
+### 3.1 Structure des contextes
 
 ```
 src/context/
-├── AppContext.js          → État global de l'application (thème, paramètres)
-├── BoardContext.js        → État du tableau actif (colonnes, cartes)
-├── VoiceContext.js        → État de la reconnaissance vocale
-├── MessagingContext.js    → État des panels messagerie (Outlook, Gmail)
-└── CalendarContext.js     → État du calendrier (tags actifs, vue)
+├── AppContext.jsx    → Données métier (boards, columns, cards, categories,
+│                       subcategories, library, messages, emails)
+│                       + toutes les fonctions CRUD
+└── UIContext.jsx     → État UI pur (theme, cardColors, modals ouverts,
+                        panels, activeTab, settings)
 ```
 
-### 3.3 Flux de données
+### 3.2 Pattern useApp()
 
+`useApp()` est une **façade** qui fusionne les deux contextes :
+
+```javascript
+export function useApp() {
+  const appContext = useContext(AppContext);
+  const uiContext = useUIContext();
+  return { ...appContext, ...uiContext };
+}
 ```
-                    ┌─────────────────┐
-                    │   AppContext    │
-                    │  (thème, settings)│
-                    └────────┬────────┘
-                             │
-           ┌─────────────────┼─────────────────┐
-           │                 │                 │
-    ┌──────▼──────┐  ┌───────▼──────┐  ┌──────▼──────┐
-    │BoardContext │  │VoiceContext  │  │MessagingCtx │
-    │colonnes     │  │commandes     │  │emails       │
-    │cartes       │  │historique    │  │calendrier   │
-    └──────┬──────┘  └──────────────┘  └─────────────┘
-           │
-    ┌──────▼──────┐
-    │  Composants │
-    │  UI React   │
-    └─────────────┘
-```
+
+Tous les composants utilisent `useApp()` — pas de changement d'import nécessaire.
+
+### 3.3 Optimisations
+
+- `useMemo` sur la valeur du `AppContext.Provider` (re-renders réduits)
+- `React.memo` sur Card, Category, SubCategory
+- `useCallback` sur toutes les fonctions CRUD
+- `pendingSaveRef` + debounce 16ms pour éviter le double-save en StrictMode
 
 ---
 
-## 4. Architecture des services
+## 4. Stratégie de stockage
 
-### 4.1 Service Base de données (`database.js`)
+### 4.1 Double couche localStorage + IndexedDB
 
-```javascript
-// Pattern : toutes les fonctions retournent { success, data, error }
-class DatabaseService {
-  // CRUD générique
-  getAll(table, filters)
-  getById(table, id)
-  create(table, data)
-  update(table, id, data)
-  delete(table, id)
-
-  // Fonctions spécifiques
-  reorderItems(table, items)     // Mise à jour des positions
-  archiveCard(cardId)            // Archive récursive (catégories + sous-catégories)
-  getCardWithChildren(cardId)    // Carte avec toute sa hiérarchie
-  saveLibraryItem(element)       // Sérialise en JSON imbriqué
-  restoreLibraryItem(itemId, targetType, targetId)
-}
+```
+Action CRUD
+    │
+    ▼
+saveDb(newDb)
+    │
+    ├── Écriture IMMÉDIATE → localStorage
+    │   (JSON sérialisé, ~5-10 MB, sécurité des données)
+    │
+    └── Écriture DEBOUNCÉE (800ms) → Dexie / IndexedDB
+        (capacité GB, tables structurées)
 ```
 
-### 4.2 Interface Outlook (`IOutlookService.js`)
+**Pourquoi deux couches ?**
+- `localStorage` : écriture synchrone immédiate — garantit qu'aucune donnée n'est perdue
+  si l'utilisateur ferme l'onglet dans le délai de debounce
+- `Dexie / IndexedDB` : supporte les volumes importants (plusieurs GB vs 5-10 MB localStorage)
+
+### 4.2 Schéma Dexie
 
 ```javascript
-// Interface commune — implémentée par outlook.js ET outlookEWS.js
-class IOutlookService {
-  // Détection
-  detectMode()                              // 'graph' | 'ews'
-
-  // Emails
-  listEmails(folder, limit, offset)
-  getEmail(emailId)
-  markAsRead(emailId, isRead)
-  moveEmail(emailId, targetFolder)
-  applyCategory(emailId, categoryName)
-  deleteEmail(emailId)
-  sendReply(emailId, body)
-  forwardEmail(emailId, to, body)
-  listFolders()
-  listCategories()
-
-  // Calendrier
-  listCalendarTags()
-  getEventsByTags(tags, dateFrom, dateTo)
-  getEventsForPeriod(dateFrom, dateTo)
-}
+this.version(1).stores({
+  boards:        '++id, title',
+  columns:       '++id, board_id, position',
+  cards:         '++id, board_id, title',
+  categories:    '++id, card_id, title',
+  subcategories: '++id, category_id, title',
+  library:       '++id, type, title, tags',
+});
 ```
 
-### 4.3 Sélection automatique du service Outlook
+### 4.3 Stockage complémentaire (localStorage direct)
 
-```javascript
-// outlookDetect.js
-async function createOutlookService() {
-  try {
-    const graphService = new OutlookGraphService();
-    await graphService.testConnection();
-    return graphService; // ✅ Mode cloud
-  } catch (e) {
-    return new OutlookEWSService(); // 🏢 Mode on-premise
-  }
-}
-```
+| Clé                    | Contenu                              |
+| ---------------------- | ------------------------------------ |
+| `c-projets_gmr`        | Items GMR (zones géographiques)      |
+| `c-projets_zones`      | Zones du projet                      |
+| `c-projets_tags`       | Tags personnalisés                   |
+| `c-projets_contracts`  | Contrats/marchés                     |
+| `board-{id}-{key}`     | Données spécifiques à un projet      |
 
 ---
 
 ## 5. Flux de données — Drag & Drop
 
-### 5.1 Drag & Drop interne C-PRojeTs
-
 ```
 Utilisateur drag une carte
-        │
-        ▼
-react-beautiful-dnd (onDragEnd)
-        │
-        ▼
-BoardContext.moveItem(source, destination, type)
-        │
-        ▼
-window.electron.invoke('db:cards:move', { id, newColumnId, newPosition })
-        │
-        ▼
-Main Process → DatabaseService.reorderItems()
-        │
-        ▼
-Réponse IPC → BoardContext met à jour l'état local
-        │
-        ▼
+    │
+    ▼
+@hello-pangea/dnd (onDragEnd)
+    │
+    ▼
+AppContext.moveCard(source, destination)
+    │
+    ▼
+saveDb(newDb) → localStorage + IndexedDB (debounce)
+    │
+    ▼
 React re-render des composants concernés
-```
-
-### 5.2 Drag & Drop email → C-PRojeTs
-
-```
-Utilisateur drag un email depuis le panel Outlook/Gmail
-        │
-        ▼
-EmailDraggable → données email mises dans le drag payload
-        │
-        ▼
-Drop sur une zone C-PRojeTs (Carte / Catégorie / Sous-catégorie)
-        │
-        ▼
-Détection du type de zone cible
-        │
-        ├── Zone Carte     → createCategoryFromEmail(email, cardId)
-        ├── Zone Catégorie → createSubCategoryFromEmail(email, categoryId)
-        └── Zone SubCat    → attachEmailLink(email, subCategoryId)
-                │
-                ▼
-        DatabaseService.create() + email_links.create()
 ```
 
 ---
@@ -265,83 +162,78 @@ Détection du type de zone cible
 
 ```
 Microphone → Web Speech API (SpeechRecognition)
-        │
-        ▼
-voice.js → normalizeText(transcript)
-        │
-        ▼
-commandMatcher.findMatch(normalizedText)
-        │
-        ├── Match trouvé  → extractParams(command, text)
-        │                         │
-        │                         ▼
-        │                 commandExecutor.execute(command, params)
-        │                         │
-        │                         ▼
-        │                 Action sur BoardContext / IPC / etc.
-        │                         │
-        │                         ▼
-        │                 Toast de confirmation + VoiceHistory.log()
-        │
-        └── Pas de match → Toast "Commande non reconnue" + VoiceHistory.log()
+    │
+    ▼
+VoiceControl → normalisation du transcript
+    │
+    ▼
+Correspondance de commande
+    │
+    ├── Match → action sur AppContext (createCard, updateCard, etc.)
+    │           → Toast de confirmation
+    │
+    └── Pas de match → Toast "Commande non reconnue"
 ```
 
 ---
 
-## 7. Gestion du mode hors ligne
+## 7. Module Messagerie — Outlook 365
+
+> **Scope** : Microsoft 365 uniquement (Graph API).
+> EWS on-premise et Gmail ne sont pas supportés.
+
+```
+Paramètres → Activer Outlook
+    │
+    ▼
+MSAL.js (browser) → OAuth 2.0 Microsoft
+    │
+    ▼
+Token stocké en mémoire (MSAL cache) ou sessionStorage
+    │
+    ▼
+Appels Microsoft Graph API (fetch depuis le navigateur)
+    │
+    ├── Liste emails
+    ├── Actions (déplacer, taguer, répondre)
+    └── Liaison email → Carte/Catégorie/Sous-catégorie
+```
+
+**Différence avec l'architecture Electron précédente** : les appels Graph API sont
+effectués directement depuis le navigateur (fetch), sans processus backend.
+Les tokens ne sont pas chiffrés dans electron-store mais gérés par MSAL.js browser.
+
+---
+
+## 8. Mode hors ligne
 
 ```
 Connexion internet disponible ?
-        │
-        ├── OUI → Mode normal
-        │         - Toutes les fonctionnalités disponibles
-        │         - Sync en temps réel ou périodique
-        │
-        └── NON → Mode hors ligne
-                  - C-PRojeTs de base : ✅ 100% fonctionnel (SQLite local)
-                  - Outlook / Gmail : ❌ Indisponible
-                  - Calendrier      : ✅ Données en cache (TTL 5 min)
-                  - Commandes vocales : ✅ Fonctionnel (Web Speech API locale)
-                  - Indicateur "Hors ligne" dans le header
-                  - Reconnexion automatique détectée via navigator.onLine
+    │
+    ├── OUI → Mode normal
+    │         - C-PRojeTs : 100% fonctionnel
+    │         - Outlook : fonctionnel si token valide
+    │
+    └── NON → Mode hors ligne
+              - C-PRojeTs de base : ✅ 100% fonctionnel (données locales)
+              - Outlook : ❌ Indisponible (API distante)
+              - Commandes vocales : ✅ Fonctionnel (Web Speech API locale)
 ```
 
 ---
 
-## 8. Stratégie de cache
+## 9. Décisions d'architecture
 
-```javascript
-// cache.js — Cache en mémoire avec TTL configurable
-class CacheService {
-  set(key, data, ttlMinutes)
-  get(key)              // null si expiré
-  invalidate(key)
-  invalidatePrefix(prefix)   // ex: invalidatePrefix('outlook:emails')
-}
-
-// Clés de cache utilisées
-'outlook:emails:inbox'          TTL: 5 min
-'outlook:folders'               TTL: 30 min
-'outlook:categories'            TTL: 30 min
-'gmail:labels'                  TTL: 30 min
-'calendar:events:YYYY-MM'       TTL: 15 min
-'calendar:tags'                 TTL: 30 min
-```
+| Décision                       | Alternative rejetée          | Raison                                                     |
+| ------------------------------ | ---------------------------- | ---------------------------------------------------------- |
+| Web browser uniquement         | Electron desktop             | Simplification du déploiement et de la maintenance         |
+| Dexie (IndexedDB)              | SQLite (WASM), PouchDB       | Natif browser, grande capacité, API async simple           |
+| Double couche localStorage+IDB | IndexedDB seul               | localStorage garantit la donnée en cas de fermeture rapide |
+| Context API (AppContext+UI)     | Redux, Zustand               | Suffisant pour ce volume, moins de boilerplate             |
+| MSAL.js browser                | msal-node + backend proxy    | Pas de backend Node nécessaire pour l'auth                 |
+| Outlook 365 (Graph API) seul   | EWS on-premise, Gmail        | Périmètre réduit au besoin réel                            |
+| @hello-pangea/dnd              | dnd-kit, react-dnd           | Fork maintenu de react-beautiful-dnd, API stable           |
 
 ---
 
-## 9. Décisions d'architecture — Justifications
-
-| Décision                  | Alternative rejetée        | Raison du choix                                           |
-| ------------------------- | -------------------------- | --------------------------------------------------------- |
-| Electron + React          | Tauri, NW.js               | Maturité, écosystème npm complet, IPC bien documenté      |
-| Context API               | Redux, Zustand             | Suffisant pour ce volume de données, moins de boilerplate |
-| SQLite (better-sqlite3)   | IndexedDB, PouchDB         | Synchrone, performant, SQL standard, pas de serveur       |
-| react-beautiful-dnd       | dnd-kit, react-dnd         | API simple, supporte les listes imbriquées                |
-| framer-motion             | CSS transitions, GSAP      | Intégration React native, API déclarative                 |
-| Interface IOutlookService | Deux services indépendants | Code UI identique quel que soit le mode Outlook           |
-| electron-store chiffré    | localStorage, fichier JSON | Chiffrement natif, adapté aux tokens OAuth                |
-
----
-
-_C-PRojeTs — Architecture Technique — 23 février 2026_
+_C-PRojeTs — Architecture Technique — mise à jour mai 2026_

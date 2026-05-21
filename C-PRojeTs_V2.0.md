@@ -1,20 +1,20 @@
 # 📋 C-PRojeTs — Version 2.0
 
-> **Objectif** : Intégration Outlook native — Module messagerie Outlook complet avec drag & drop et commandes vocales
-> **Prérequis** : V1.2 validée et tous les tests V1.2 passés
-> **Basé sur** : Phase 5 + Phase 7 + Phase 8 (partielle) du plan de développement
+> **Objectif** : Intégration Outlook 365 native — Module messagerie avec drag & drop et commandes vocales
+> **Prérequis** : V1.2 validée
+> **Scope** : Microsoft 365 / Outlook 365 uniquement (Graph API). EWS on-premise et Gmail non supportés.
 
 ---
 
 ## 🎯 Périmètre V2.0
 
-| Nouveautés V2.0                                        | Reporté                              |
+| Nouveautés V2.0                                        | Hors périmètre                       |
 | ------------------------------------------------------ | ------------------------------------ |
-| Activation Outlook par bouton paramètres               | Intégration Gmail (V2.1)             |
-| Authentification OAuth 2.0 Microsoft                   | Synchronisation tags complète (V3.0) |
-| Panel email Outlook dans l'interface                   | Tests automatisés (V3.0)             |
-| Navigation emails (suivant / précédent)                |                                      |
-| Actions sur emails (lire, déplacer, taguer, supprimer) |                                      |
+| Activation Outlook par bouton paramètres               | Gmail (abandonné)                    |
+| Authentification OAuth 2.0 Microsoft (MSAL.js browser) | EWS on-premise (abandonné)           |
+| Panel email Outlook dans l'interface                   | Calendrier Outlook (hors périmètre)  |
+| Navigation emails (suivant / précédent)                | Synchronisation tags (V3.0)          |
+| Actions sur emails (lire, déplacer, taguer, supprimer) | Tests automatisés (V3.0)             |
 | Drag & drop email → Carte / Catégorie / Sous-catégorie |                                      |
 | Copier / Coller vocal Outlook → C-PRojeTs              |                                      |
 | Création de carte depuis email                         |                                      |
@@ -45,48 +45,59 @@ src/components/
 
 ```
 src/services/
-├── messaging/                         ← NOUVEAU (dossier)
-│   └── outlook.js                     → Microsoft Graph API
+├── messaging/                         ← NOUVEAU
+│   └── outlook.js                     → Microsoft Graph API (fetch navigateur)
 └── auth/                              ← NOUVEAU
-    └── microsoft.js                   → OAuth 2.0 Microsoft
+    └── microsoft.js                   → OAuth 2.0 via MSAL.js browser
 ```
 
-### Nouvelles dépendances
+### Dépendances à ajouter
 
 ```json
-"@azure/msal-node":       "^2.6.0",
-"@microsoft/microsoft-graph-client": "^3.0.7",
-"electron-store":         "^8.1.0"
+"@azure/msal-browser": "^3.x"
 ```
+
+> **Note** : utiliser `@azure/msal-browser` (et non `msal-node`),
+> car l'app est une SPA web sans backend Node.
 
 ---
 
-## 🗄️ Évolutions base de données V2.0
+## 🗄️ Évolutions stockage V2.0
 
-```sql
--- Tokens OAuth Microsoft (chiffrés via electron-store)
--- Stockage hors SQLite pour raisons de sécurité
+Les liens email sont stockés dans **Dexie (IndexedDB)**, table `email_links` à ajouter
+via une migration de version Dexie :
 
--- Nouvelle table : emails liés aux éléments C-PRojeTs
-CREATE TABLE email_links (
-  id          INTEGER PRIMARY KEY AUTOINCREMENT,
-  ref_type    TEXT NOT NULL,    -- 'card' | 'category' | 'subcategory'
-  ref_id      INTEGER NOT NULL,
-  source      TEXT NOT NULL,    -- 'outlook' | 'gmail'
-  email_id    TEXT NOT NULL,    -- ID email côté serveur
-  subject     TEXT,
-  sender      TEXT,
-  received_at DATETIME,
-  linked_at   DATETIME DEFAULT CURRENT_TIMESTAMP
-);
-
--- Extension table settings
-INSERT INTO settings (key, value) VALUES
-  ('outlook_enabled',       'false'),
-  ('outlook_refresh_min',   '5'),
-  ('outlook_inbox_limit',   '50'),
-  ('email_clipboard',       '');   -- email en mémoire tampon (JSON)
+```javascript
+// storage.js — migration vers DB_VERSION 2
+this.version(2).stores({
+  boards:        '++id, title',
+  columns:       '++id, board_id, position',
+  cards:         '++id, board_id, title',
+  categories:    '++id, card_id, title',
+  subcategories: '++id, category_id, title',
+  library:       '++id, type, title, tags',
+  email_links:   '++id, ref_type, ref_id, source, email_id',  // ← NOUVEAU
+});
 ```
+
+Structure d'un `email_link` :
+
+```javascript
+{
+  id:          number,     // auto-incrémenté
+  ref_type:    string,     // 'card' | 'category' | 'subcategory'
+  ref_id:      number,     // ID de l'élément C-PRojeTs
+  source:      'outlook',
+  email_id:    string,     // ID email côté Graph API
+  subject:     string,
+  sender:      string,
+  received_at: string,     // ISO date
+  linked_at:   string,     // ISO date
+}
+```
+
+Les tokens OAuth sont gérés par **MSAL.js** (cache browser en sessionStorage/localStorage),
+pas dans Dexie.
 
 ---
 
@@ -94,25 +105,26 @@ INSERT INTO settings (key, value) VALUES
 
 ### ÉTAPE 1 — Configuration Microsoft Graph API
 
-- [ ] Créer l'application dans Azure Active Directory
-- [ ] Configurer les permissions nécessaires :
+- [ ] Enregistrer l'application dans Azure Active Directory (portail Azure)
+- [ ] Configurer le type d'application : **SPA** (Single Page Application)
+- [ ] Configurer les permissions déléguées :
   - `Mail.Read` — Lecture des emails
   - `Mail.ReadWrite` — Modification / déplacement
   - `Mail.Send` — Envoi / réponse
   - `MailboxSettings.Read` — Paramètres boîte mail
-- [ ] Implémenter le flux OAuth 2.0 avec `@azure/msal-node`
-- [ ] Stocker les tokens de manière chiffrée (`electron-store`)
-- [ ] Gérer le rafraîchissement automatique des tokens (refresh_token)
+- [ ] Configurer l'URL de redirection OAuth (ex: `http://localhost:5173/auth`)
+- [ ] Implémenter le flux OAuth 2.0 avec `@azure/msal-browser`
+- [ ] Gérer le rafraîchissement automatique des tokens (MSAL s'en charge)
 - [ ] Gérer la révocation (déconnexion)
 
 ### ÉTAPE 2 — Bouton d'activation Outlook (paramètres)
 
 - [ ] Ajouter l'onglet **Messagerie** dans les paramètres
 - [ ] Bouton à cocher "Activer Microsoft Outlook"
-- [ ] Au premier coche → lancer le flux OAuth Microsoft
+- [ ] Au premier coche → lancer le flux OAuth Microsoft (popup ou redirect)
 - [ ] Indicateur de statut : Non connecté / Connexion en cours / Connecté
-- [ ] Bouton "Se déconnecter" (révoque les tokens)
-- [ ] Persistance de l'état activé/désactivé
+- [ ] Bouton "Se déconnecter" (révoque la session MSAL)
+- [ ] Persistance de l'état activé/désactivé (localStorage)
 
 ### ÉTAPE 3 — Service Outlook (outlook.js)
 
@@ -130,8 +142,8 @@ INSERT INTO settings (key, value) VALUES
 
 ### ÉTAPE 4 — Panel Outlook dans l'interface
 
-- [ ] Panel latéral gauche ou droit (configurable)
-- [ ] Liste des emails avec : expéditeur, sujet, date, indicateur lu/non lu
+- [ ] Panel latéral (configurable gauche ou droit)
+- [ ] Liste des emails : expéditeur, sujet, date, indicateur lu/non lu
 - [ ] Email sélectionné → aperçu complet dans un panneau dédié
 - [ ] Barre d'actions : Répondre / Transférer / Déplacer / Supprimer / Taguer
 - [ ] Navigation clavier dans la liste (touches ↑ ↓)
@@ -147,233 +159,117 @@ INSERT INTO settings (key, value) VALUES
 - [ ] À la dépose sur une **Carte** → créer une Catégorie avec les données email
 - [ ] À la dépose sur une **Catégorie** → créer une Sous-catégorie
 - [ ] À la dépose sur une **Sous-catégorie** → attacher comme note/lien
-- [ ] L'email créé contient : titre = sujet, description = corps, expéditeur, date
-- [ ] Enregistrer le lien dans la table `email_links`
+- [ ] Enregistrer le lien dans la table `email_links` (Dexie)
 - [ ] Indicateur visuel sur l'élément C-PRojeTs "Email lié"
 
 ### ÉTAPE 6 — Copier / Coller vocal Outlook → C-PRojeTs
 
-- [ ] Implémenter la mémoire tampon email (table settings, clé `email_clipboard`)
+- [ ] Mémoire tampon email (state AppContext ou localStorage)
 - [ ] Commande _"Copie email dans C-PRojeTs"_ → stocke l'email en mémoire tampon
-- [ ] Indicateur visuel persistant de l'email en mémoire tampon (barre supérieure)
+- [ ] Indicateur visuel persistant de l'email en mémoire tampon
 - [ ] Commande _"Colle l'email ici"_ → crée l'élément dans la cible active
 - [ ] Bouton "Vider le presse-papier email" dans l'indicateur
-- [ ] Vidage automatique de la mémoire tampon après collage
+- [ ] Vidage automatique après collage
 
 ### ÉTAPE 7 — Commandes vocales Outlook
 
 #### Navigation emails
-
 - [ ] _"Ouvrir Outlook"_ → Bascule vers le panel Outlook
-- [ ] _"Email suivant"_ → Email suivant dans la liste
-- [ ] _"Email précédent"_ → Email précédent dans la liste
-- [ ] _"Ouvre l'email"_ → Ouvre l'aperçu complet
-- [ ] _"Ferme l'email"_ → Ferme l'aperçu
+- [ ] _"Email suivant"_ / _"Email précédent"_ → Navigation dans la liste
+- [ ] _"Ouvre l'email"_ / _"Ferme l'email"_
 
 #### Actions sur emails
-
-- [ ] _"Répondre"_ → Ouvre la fenêtre de réponse
-- [ ] _"Transférer à [nom]"_ → Transfert de l'email
-- [ ] _"Marquer comme lu"_ → Marque comme lu
-- [ ] _"Marquer comme non lu"_ → Marque comme non lu
-- [ ] _"Supprimer l'email"_ → Supprime l'email (avec confirmation)
-- [ ] _"Déplacer dans [dossier]"_ → Déplace dans le dossier dit
-- [ ] _"Taguer [catégorie]"_ → Applique une catégorie Outlook
-- [ ] _"Afficher emails de [projet]"_ → Filtre les emails liés au projet
+- [ ] _"Répondre"_, _"Transférer à [nom]"_
+- [ ] _"Marquer comme lu"_ / _"Marquer comme non lu"_
+- [ ] _"Supprimer l'email"_ (avec confirmation)
+- [ ] _"Déplacer dans [dossier]"_
+- [ ] _"Taguer [catégorie]"_
+- [ ] _"Afficher emails de [projet]"_
 
 #### Liaison Outlook → C-PRojeTs
-
 - [ ] _"Crée une carte"_ → Crée une carte depuis l'email ouvert
 - [ ] _"Copie email dans C-PRojeTs"_ → Met en mémoire tampon
 - [ ] _"Colle l'email ici"_ → Colle dans l'élément actif C-PRojeTs
-- [ ] _"Lier à la carte [nom]"_ → Associe à une carte existante
+- [ ] _"Lier à la carte [nom]"_
 
 ---
 
 ## 🧪 Tests de validation V2.0
 
 ### TEST V2.0-01 — Activation Outlook
-
 ```
-🧪 Dans Paramètres → Messagerie, cocher "Activer Microsoft Outlook"
-
-✅ La fenêtre OAuth Microsoft s'ouvre dans le navigateur système
-✅ Après connexion, le panel Outlook apparaît dans C-PRojeTs
+✅ La popup OAuth Microsoft s'ouvre
+✅ Après connexion, le panel Outlook apparaît
 ✅ Les emails de la boîte de réception sont listés (50 max)
-✅ Le token est conservé après redémarrage (pas de re-connexion)
+✅ Le token est conservé après rechargement de page (MSAL cache)
 ✅ L'indicateur de connexion affiche "Connecté"
-❌ Erreur d'authentification
-❌ La fenêtre OAuth ne s'ouvre pas
 ```
 
 ### TEST V2.0-02 — Navigation et lecture emails
-
 ```
-🧪 Cliquer sur un email dans le panel Outlook
-
-✅ L'aperçu complet s'affiche (expéditeur, sujet, date, corps, pièces jointes)
+✅ Cliquer sur un email → aperçu complet affiché
 ✅ L'email est marqué comme lu automatiquement
-✅ Le badge "non lu" disparaît dans la liste
-
-🧪 Naviguer avec les touches ↑ ↓ dans la liste
-
-✅ L'email suivant / précédent est sélectionné et affiché
+✅ Navigation ↑ ↓ clavier fonctionne
 ```
 
 ### TEST V2.0-03 — Actions sur les emails
-
 ```
-🧪 Déplacer un email dans le dossier "Projets 400kV"
-
-✅ L'email disparaît de la boîte de réception
-✅ L'email est bien dans "Projets 400kV" dans Outlook
-
-🧪 Appliquer la catégorie "Urgent" sur un email
-
-✅ La catégorie est visible dans le panel C-PRojeTs
-✅ La catégorie est également visible dans Outlook (vérification externe)
-
-🧪 Rafraîchissement automatique après 5 minutes
-
-✅ Les nouveaux emails apparaissent sans action manuelle
-✅ Le badge "non lus" se met à jour
+✅ Déplacement dans un dossier → l'email disparaît de la réception
+✅ Application d'une catégorie Outlook → visible dans C-PRojeTs ET dans Outlook
+✅ Rafraîchissement automatique toutes les 5 min
 ```
 
 ### TEST V2.0-04 — Drag & drop email → Carte
-
 ```
-🧪 Glisser l'email "RE: Plan de masse poste Lyon-Est" vers la carte "Poste 400kV Lyon-Est"
-
-✅ Une catégorie est créée avec :
-   - Titre = "RE: Plan de masse poste Lyon-Est"
-   - Description = corps de l'email
-   - Expéditeur et date visibles
+✅ Une catégorie est créée avec titre = sujet, description = corps email
 ✅ L'icône "Email lié" apparaît sur la catégorie
-✅ Le lien est enregistré dans email_links
-✅ La zone de dépôt est mise en évidence pendant le drag
-❌ Les données de l'email sont perdues lors du drag
+✅ Le lien est enregistré dans Dexie (email_links)
 ```
 
 ### TEST V2.0-05 — Drag & drop email → Catégorie / Sous-catégorie
-
 ```
-🧪 Glisser un email vers la catégorie "Études Électriques HTB"
-
-✅ Une sous-catégorie est créée avec les données de l'email
-
-🧪 Glisser un email vers une sous-catégorie existante
-
-✅ L'email est attaché comme note/lien à la sous-catégorie
-✅ Le lien est accessible depuis la sous-catégorie
-❌ Une nouvelle sous-catégorie est créée au lieu d'un lien
+✅ Drop sur catégorie → sous-catégorie créée
+✅ Drop sur sous-catégorie → email attaché comme lien
 ```
 
 ### TEST V2.0-06 — Copier / Coller vocal
-
 ```
-🧪 Email ouvert, dire "Copie email dans C-PRojeTs"
-
-✅ L'indicateur "Email en mémoire tampon" apparaît (barre supérieure)
-✅ Le titre de l'email est affiché dans l'indicateur
-✅ L'écoute reste active
-
-🧪 Naviguer vers la catégorie "Réalisation GC", dire "Colle l'email ici"
-
-✅ Une sous-catégorie est créée avec les données de l'email
-✅ L'indicateur de mémoire tampon disparaît
-✅ Le lien email est enregistré
-
-🧪 Dire "Copie email dans C-PRojeTs" sans email ouvert
-
-✅ Message "Aucun email sélectionné" affiché
-❌ L'application plante ou crée un élément vide
+✅ "Copie email dans C-PRojeTs" → indicateur tampon visible
+✅ "Colle l'email ici" → élément créé, tampon vidé
+✅ Sans email ouvert → message "Aucun email sélectionné"
 ```
 
-### TEST V2.0-07 — Commandes vocales navigation Outlook
-
+### TEST V2.0-07 — Déconnexion et hors ligne
 ```
-🧪 Dire "Email suivant" 3 fois de suite
-
-✅ Les 3 emails suivants sont parcourus l'un après l'autre
-✅ Chaque changement est confirmé visuellement et vocalement
-
-🧪 Dire "Ouvre l'email"
-
-✅ L'email sélectionné s'ouvre en aperçu complet
-
-🧪 Dire "Ferme l'email"
-
-✅ L'aperçu se ferme, la liste est active
+✅ Se déconnecter → panel Outlook disparaît, session MSAL révoquée
+✅ Perte de connexion internet → indicateur hors ligne, C-PRojeTs continue
+✅ Les liens email dans C-PRojeTs restent visibles (données locales Dexie)
 ```
 
-### TEST V2.0-08 — Commandes vocales actions Outlook
-
+### TEST V2.0-08 — Régression V1.2
 ```
-🧪 Dire "Déplacer dans Projets 400kV"
-
-✅ L'email actif est déplacé dans le dossier "Projets 400kV" d'Outlook
-✅ Toast de confirmation "Email déplacé dans Projets 400kV"
-✅ Vérification possible : l'email n'est plus dans la boîte de réception
-
-🧪 Dire "Taguer Urgent"
-
-✅ La catégorie "Urgent" est appliquée sur l'email dans Outlook
-✅ La couleur de la catégorie apparaît dans le panel C-PRojeTs
-
-🧪 Dire "Crée une carte"
-
-✅ Une carte est créée dans C-PRojeTs avec les données de l'email ouvert
-✅ L'application bascule vers C-PRojeTs et sélectionne la nouvelle carte
-```
-
-### TEST V2.0-09 — Sécurité et déconnexion
-
-```
-🧪 Couper la connexion internet pendant l'utilisation d'Outlook
-
-✅ Un indicateur "Hors ligne" apparaît dans le panel Outlook
-✅ C-PRojeTs de base continue de fonctionner normalement
-✅ La reconnexion est automatique au retour de la connexion
-
-🧪 Se déconnecter du compte Outlook (Paramètres → Messagerie)
-
-✅ Le panel Outlook disparaît
-✅ Les tokens sont supprimés de manière sécurisée
-✅ Les liens email dans C-PRojeTs restent visibles (données locales conservées)
-```
-
-### TEST V2.0-10 — Régression V1.2
-
-```
-🧪 Rejouer les 10 tests V1.2 + 10 tests V1.1 + 10 tests MVP
-
-✅ Tous les tests passent toujours
-✅ L'activation d'Outlook n'affecte pas les performances générales
-✅ Le drag & drop C-PRojeTs fonctionne normalement en présence du panel Outlook
-❌ Une fonctionnalité précédente est cassée
+✅ Tous les tests précédents passent
+✅ L'activation Outlook n'affecte pas les performances générales
+✅ Le drag & drop C-PRojeTs fonctionne normalement avec le panel Outlook ouvert
 ```
 
 ---
 
 ## 📊 Récapitulatif V2.0
 
-| Critère                     | Détail                                |
-| --------------------------- | ------------------------------------- |
-| **Phases couvertes**        | Phase 5 + Phase 7 + Phase 8 partielle |
-| **Tâches de développement** | 44 tâches                             |
-| **Tests de validation**     | 10 tests (+ 30 tests régression)      |
-| **Drag & drop**             | ✅ Email → C-PRojeTs (tous niveaux)   |
-| **Commandes vocales**       | ✅ Outlook complet                    |
-| **Outlook**                 | ✅ Complet                            |
-| **Gmail**                   | ❌ Non (prévu V2.1)                   |
-| **Connexion internet**      | ✅ Requise pour Outlook uniquement    |
+| Critère                     | Détail                                 |
+| --------------------------- | -------------------------------------- |
+| **Plateforme**              | Web browser uniquement                 |
+| **Auth Outlook**            | MSAL.js browser — OAuth 2.0            |
+| **API**                     | Microsoft Graph API                    |
+| **Scope Outlook**           | Microsoft 365 / Outlook 365 uniquement |
+| **EWS on-premise**          | ❌ Non supporté                        |
+| **Gmail**                   | ❌ Abandonné                           |
+| **Stockage liens email**    | Dexie (IndexedDB)                      |
+| **Drag & drop**             | ✅ Email → C-PRojeTs (tous niveaux)    |
+| **Commandes vocales**       | ✅ Outlook complet                     |
+| **Connexion internet**      | ✅ Requise pour Outlook uniquement     |
 
 ---
 
-## ➡️ Prochaine version : V2.1
-
-Intégration Gmail + cohabitation Outlook / Gmail simultanés
-
----
-
-_C-PRojeTs — Version 2.0 — 23 février 2026_
+_C-PRojeTs — Version 2.0 — mise à jour mai 2026_

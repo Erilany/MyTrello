@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 
 const searchInText = (text, query) => {
   if (!text || !query) return false;
@@ -21,10 +21,7 @@ import {
   Briefcase,
   ShoppingCart,
 } from 'lucide-react';
-import { loadChaptersOrder } from '../../data/ChaptersData';
-import { loadGMRData } from '../../data/GMRData';
-import { loadZonesData } from '../../data/ZonesData';
-import { loadTagsData } from '../../data/TagsData';
+import { useSearchData } from '../../hooks/useSearchData';
 
 function SearchPanel() {
   const {
@@ -47,111 +44,18 @@ function SearchPanel() {
   const [query, setQuery] = useState('');
   const [exitChecked, setExitChecked] = useState(false);
 
-  const [chapters, setChapters] = useState(() => loadChaptersOrder());
-  const [gmrs, setGmrs] = useState(() => loadGMRData());
-  const [zones, setZones] = useState(() => loadZonesData());
-  const [tags, setTags] = useState(() => loadTagsData());
-  const [contracts, setContracts] = useState(() => {
-    const saved = localStorage.getItem('c-projets_contracts');
-    return saved ? JSON.parse(saved) : [];
-  });
-
-  const [commandes, setCommandes] = useState(() => {
-    const allCommandes = [];
-    const savedDb = localStorage.getItem('c-projets_db');
-    if (savedDb) {
-      const db = JSON.parse(savedDb);
-      if (db.boards) {
-        db.boards.forEach(board => {
-          const boardCommandes = localStorage.getItem(`board-${board.id}-commandes`);
-          if (boardCommandes) {
-            const parsed = JSON.parse(boardCommandes);
-            parsed.forEach(cmd => {
-              allCommandes.push({ ...cmd, boardId: board.id, boardName: board.title });
-            });
-          }
-        });
-      }
-    }
-    return allCommandes;
-  });
-
-  const loadedRef = React.useRef(false);
-
-  useEffect(() => {
-    if (loadedRef.current) return;
-    loadedRef.current = true;
-
-    setChapters(loadChaptersOrder());
-    setGmrs(loadGMRData());
-    setZones(loadZonesData());
-    setTags(loadTagsData());
-    const savedContracts = localStorage.getItem('c-projets_contracts');
-    if (savedContracts) {
-      setContracts(JSON.parse(savedContracts));
-    }
-    const allCommandes = [];
-    const savedDb = localStorage.getItem('c-projets_db');
-    if (savedDb) {
-      const db = JSON.parse(savedDb);
-      if (db.boards) {
-        db.boards.forEach(board => {
-          const boardCommandes = localStorage.getItem(`board-${board.id}-commandes`);
-          if (boardCommandes) {
-            const parsed = JSON.parse(boardCommandes);
-            parsed.forEach(cmd => {
-              allCommandes.push({ ...cmd, boardId: board.id, boardName: board.title });
-            });
-          }
-        });
-      }
-    }
-    setCommandes(allCommandes);
-  }, []);
-
-  const loadFromStorage = () => {
-    const savedDb = localStorage.getItem('c-projets_db');
-    if (savedDb) {
-      const db = JSON.parse(savedDb);
-      return {
-        boards: db.boards || [],
-        cards: db.cards || [],
-        subcategories: db.subcategories || [],
-        categories: db.categories || [],
-      };
-    }
-    return {
-      boards,
-      cards,
-      subcategories,
-      categories: [],
-    };
-  };
-
-  const [allBoards, setAllBoards] = useState(() => {
-    const data = loadFromStorage();
-    return data.boards;
-  });
-  const [allCardsData, setAllCardsData] = useState(() => {
-    const data = loadFromStorage();
-    return data.cards;
-  });
-  const [allSubcategoriesData, setAllSubcategoriesData] = useState(() => {
-    const data = loadFromStorage();
-    return data.subcategories;
-  });
-  const [allCategoriesData, setAllCategoriesData] = useState(() => {
-    const data = loadFromStorage();
-    return data.categories;
-  });
-
-  useEffect(() => {
-    const data = loadFromStorage();
-    setAllBoards(data.boards);
-    setAllCardsData(data.cards);
-    setAllSubcategoriesData(data.subcategories);
-    setAllCategoriesData(data.categories);
-  }, [boards, cards, subcategories, categories]);
+  const {
+    chapters,
+    gmrs,
+    zones,
+    tags,
+    contracts,
+    commandes,
+    allBoards,
+    allCardsData,
+    allSubcategoriesData,
+    allCategoriesData,
+  } = useSearchData(boards, cards, subcategories, categories);
 
   const searchResults = useMemo(() => {
     if (!query.trim()) return {};
@@ -282,9 +186,7 @@ function SearchPanel() {
     });
 
     // Recherche dans les commandes
-    console.log('[Search] Recherche commandes avec query:', q, 'total:', commandes.length);
     if (commandes[0]) {
-      console.log('[Search] Sample full:', JSON.stringify(commandes[0]));
     }
     commandes.forEach((commande, idx) => {
       const donnees = commande.donnees || {};
@@ -298,12 +200,6 @@ function SearchPanel() {
       const matchMarche = searchInText(marche, q);
       const matchFournisseur = searchInText(fournisseur, q);
       if (idx === 0) {
-        console.log('[Search] Test commande:', {
-          numero,
-          marche,
-          fournisseur,
-          match: matchNumero || matchMarche || matchFournisseur,
-        });
       }
       if (matchNumero || matchMarche || matchFournisseur) {
         results.commandes.push({
@@ -312,7 +208,6 @@ function SearchPanel() {
         });
       }
     });
-    console.log('[Search] Résultats commandes:', results.commandes.length);
 
     return results;
   }, [

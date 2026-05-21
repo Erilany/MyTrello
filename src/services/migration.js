@@ -3,49 +3,28 @@ import { loadPriorityData } from '../data/PriorityData';
 import { loadZonesData } from '../data/ZonesData';
 import { loadTagsData } from '../data/TagsData';
 import { loadChaptersOrder } from '../data/ChaptersData';
+import { validateImportDataWithSchema } from '../utils/importSchema';
 
 export const CURRENT_VERSION = '2.0';
 
 export const validateImportData = data => {
-  const errors = [];
-  const warnings = [];
-
   if (!data) {
-    errors.push('Aucune donnée trouvée');
-    return { valid: false, errors, warnings, version: null };
+    return { valid: false, errors: ['Aucune donnée trouvée'], warnings: [], version: null };
   }
-
-  const version = data.version || '1.0';
 
   if (!data.data && !data.databases) {
-    errors.push('Format invalide: aucune structure de données trouvée');
+    return {
+      valid: false,
+      errors: ['Format invalide : aucune structure de données trouvée (clé "data" ou "databases" manquante)'],
+      warnings: [],
+      version: data.version || null,
+    };
   }
 
-  if (version === '1.0') {
-    if (!data.data?.boards) {
-      warnings.push('Aucun projet trouvé dans les données');
-    }
-    if (!data.data?.cards) {
-      warnings.push('Aucune carte trouvée');
-    }
-  }
-
-  if (version === '2.0') {
-    if (!data.databases?.core?.boards) {
-      errors.push('Structure v2 invalide: databases.core.boards manquant');
-    }
-  }
-
-  return {
-    valid: errors.length === 0,
-    version,
-    errors,
-    warnings,
-  };
+  return validateImportDataWithSchema(data);
 };
 
 export const migrateFromV1ToV2 = data => {
-  console.log('[Migration] Conversion v1.0 → v2.0...');
 
   const migrated = {
     version: CURRENT_VERSION,
@@ -85,10 +64,6 @@ export const migrateFromV1ToV2 = data => {
     migrated.databases.params.chaptersOrder = data.databases.chaptersOrder;
   }
 
-  console.log('[Migration] Conversion terminée:', {
-    boards: migrated.databases.core.boards?.length || 0,
-    projects: migrated.projects.length,
-  });
 
   return migrated;
 };
@@ -104,10 +79,8 @@ export const normalizeImportData = data => {
   let normalizedData = data;
 
   if (version === '1.0') {
-    console.log('[Migration] Migration automatique v1.0 → v2.0');
     normalizedData = migrateFromV1ToV2(data);
   } else if (version === CURRENT_VERSION) {
-    console.log('[Migration] Données déjà en v2.0');
     normalizedData = addDefaultColumns(normalizedData);
   } else {
     console.warn('[Migration] Version inconnue:', version);
@@ -140,7 +113,6 @@ const addDefaultColumns = data => {
       ];
       core.columns.push(...defaultColumns);
     });
-    console.log('[Migration] Colonnes par défaut ajoutées pour', core.boards.length, 'projects');
   }
 
   return {

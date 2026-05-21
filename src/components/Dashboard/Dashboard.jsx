@@ -1,4 +1,6 @@
-import React, { useState, useEffect, useMemo, Fragment } from 'react';
+import React, { useState, useMemo, Fragment } from 'react';
+import { useMilestoneNotification } from '../../hooks/useMilestoneNotification';
+import { useTaskFilters } from '../../hooks/useTaskFilters';
 import { useApp } from '../../context/AppContext';
 import { useNavigate } from 'react-router-dom';
 import SubCategoryModal from '../SubCategory/SubCategoryModal';
@@ -56,33 +58,24 @@ export default function Dashboard() {
     addHiddenMilestone,
   } = useApp();
 
-  // Load all data from localStorage for dashboard
-  const STORAGE_KEY = 'c-projets_db';
-  const [storageData, setStorageData] = useState(null);
   const [selectedWeek, setSelectedWeek] = useState(() => getWeekNumber(new Date()));
   const [timeRange, setTimeRange] = useState('week');
-  const [showMyTasks, setShowMyTasks] = useState(true);
-  const [showOtherTasks, setShowOtherTasks] = useState(false);
-  const [showCompletedTasks, setShowCompletedTasks] = useState(false);
-  const [selectedProjectForOthers, setSelectedProjectForOthers] = useState(null);
+  const { milestoneNotification, recentlyCompletedMilestones, handleMilestoneToggle } =
+    useMilestoneNotification(toggleMilestone, addHiddenMilestone);
+  const {
+    showMyTasks,
+    showOtherTasks,
+    setShowOtherTasks,
+    showCompletedTasks,
+    setShowCompletedTasks,
+    selectedProjectForOthers,
+    setSelectedProjectForOthers,
+    expandedProjects,
+    toggleProject,
+  } = useTaskFilters();
   const [selectedTaskDashboard, setSelectedTaskDashboard] = useState(null);
   const [activeTab, setActiveTab] = useState('time');
   const [refreshKey, setRefreshKey] = useState(0);
-  const [expandedProjects, setExpandedProjects] = useState({});
-  const [recentlyCompletedMilestones, setRecentlyCompletedMilestones] = useState([]);
-  const [milestoneNotification, setMilestoneNotification] = useState(null);
-
-  const handleMilestoneToggle = (e, milestone) => {
-    e.stopPropagation();
-    toggleMilestone(milestone.subcategoryId, milestone.id);
-    setRecentlyCompletedMilestones(prev => [...prev, milestone.id]);
-    setTimeout(() => {
-      setRecentlyCompletedMilestones(prev => prev.filter(id => id !== milestone.id));
-      addHiddenMilestone(milestone.id);
-      setMilestoneNotification('Jalon terminé !');
-      setTimeout(() => setMilestoneNotification(null), 2000);
-    }, 1000);
-  };
 
   const handleTaskClick = task => {
     setSelectedTaskDashboard(task);
@@ -101,11 +94,11 @@ export default function Dashboard() {
     }
   };
 
-  const allBoards = storageData?.boards || db?.boards || boards;
-  const allCards = storageData?.cards || db?.cards || cards;
-  const allCategories = storageData?.categories || db?.categories || categories;
-  const allSubcategories = storageData?.subcategories || db?.subcategories || subcategories;
-  const allColumns = storageData?.columns || db?.columns || [];
+  const allBoards = db?.boards || boards;
+  const allCards = db?.cards || cards;
+  const allCategories = db?.categories || categories;
+  const allSubcategories = db?.subcategories || subcategories;
+  const allColumns = db?.columns || [];
 
   const resetProjectTime = projectId => {
     if (!window.confirm('Réinitialiser le temps pour ce projet cette semaine ?')) return;
@@ -129,52 +122,6 @@ export default function Dashboard() {
       days
     );
   }, [allSubcategories, allCategories, allCards, allBoards, allColumns, timeRange]);
-
-  const getOtherTasksFiltered = () => {
-    let tasks = otherTasks;
-    if (selectedProjectForOthers) {
-      tasks = tasks.filter(t => Number(t.board?.id) === Number(selectedProjectForOthers));
-    }
-
-    const groups = {};
-    tasks.forEach(task => {
-      const boardId = task.board?.id || 'unassigned';
-      if (!groups[boardId]) {
-        groups[boardId] = {
-          board: task.board,
-          tasks: [],
-        };
-      }
-      groups[boardId].tasks.push(task);
-    });
-
-    Object.keys(groups).forEach(boardId => {
-      groups[boardId].tasks.sort((a, b) => {
-        const dateA = a.due_date ? new Date(a.due_date) : new Date('9999-12-31');
-        const dateB = b.due_date ? new Date(b.due_date) : new Date('9999-12-31');
-        return dateA - dateB;
-      });
-    });
-
-    const sortedGroups = Object.values(groups).sort((a, b) => {
-      if (!a.board) return 1;
-      if (!b.board) return -1;
-      const firstTaskA = a.tasks[0];
-      const firstTaskB = b.tasks[0];
-      const dateA = firstTaskA?.due_date ? new Date(firstTaskA.due_date) : new Date('9999-12-31');
-      const dateB = firstTaskB?.due_date ? new Date(firstTaskB.due_date) : new Date('9999-12-31');
-      return dateA - dateB;
-    });
-
-    return sortedGroups;
-  };
-
-  const toggleProject = boardId => {
-    setExpandedProjects(prev => ({
-      ...prev,
-      [boardId]: !prev[boardId],
-    }));
-  };
 
   const weekOptions = useMemo(() => {
     const timeData = loadProjectTime();

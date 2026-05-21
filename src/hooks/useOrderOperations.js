@@ -1,15 +1,17 @@
 import { useCallback } from 'react';
 
-export function useOrders(db, saveDb) {
+export function useOrderOperations(db, saveDb) {
   const createOrder = useCallback(
     (boardId, title) => {
+      const orderId = db.nextIds.order++;
       const newOrder = {
-        id: db.nextIds.order++,
-        board_id: boardId,
+        id: orderId,
+        board_id: Number(boardId),
         title,
-        lignes: [],
+        donnees: { numero: '', date: '', objet: '', estimation: '' },
+        groupes: null,
         avenants: [],
-        decomptes: [],
+        ficheAchat: null,
         created_at: new Date().toISOString(),
       };
       const newDb = {
@@ -18,7 +20,7 @@ export function useOrders(db, saveDb) {
         nextIds: { ...db.nextIds },
       };
       saveDb(newDb);
-      return newOrder.id;
+      return orderId;
     },
     [db, saveDb]
   );
@@ -51,19 +53,20 @@ export function useOrders(db, saveDb) {
     (orderId, title) => {
       const order = (db.orders || []).find(o => Number(o.id) === Number(orderId));
       if (!order) return null;
+      const avenantNumber = (order.avenants?.length || 0) + 1;
       const newAvenant = {
         id: Date.now(),
-        title,
-        lignes: [],
-        created_at: new Date().toISOString(),
+        numero: avenantNumber,
+        title: title || `Avenant ${avenantNumber}`,
+        groupes: null,
+        ficheAchat: null,
       };
-      const updatedOrder = {
-        ...order,
-        avenants: [...(order.avenants || []), newAvenant],
-      };
+      const updatedAvenants = [...(order.avenants || []), newAvenant];
       const newDb = {
         ...db,
-        orders: (db.orders || []).map(o => (Number(o.id) === Number(orderId) ? updatedOrder : o)),
+        orders: (db.orders || []).map(o =>
+          Number(o.id) === Number(orderId) ? { ...o, avenants: updatedAvenants } : o
+        ),
       };
       saveDb(newDb);
       return newAvenant.id;
@@ -107,64 +110,11 @@ export function useOrders(db, saveDb) {
     [db, saveDb]
   );
 
-  const addDecompte = useCallback(
-    (orderId, title) => {
-      const order = (db.orders || []).find(o => Number(o.id) === Number(orderId));
-      if (!order) return null;
-      const newDecompte = {
-        id: Date.now(),
-        title,
-        lignes: [],
-        created_at: new Date().toISOString(),
-      };
-      const updatedOrder = {
-        ...order,
-        decomptes: [...(order.decomptes || []), newDecompte],
-      };
-      const newDb = {
-        ...db,
-        orders: (db.orders || []).map(o => (Number(o.id) === Number(orderId) ? updatedOrder : o)),
-      };
-      saveDb(newDb);
-      return newDecompte.id;
+  const getOrdersByBoard = useCallback(
+    boardId => {
+      return (db.orders || []).filter(o => Number(o.board_id) === Number(boardId));
     },
-    [db, saveDb]
-  );
-
-  const updateDecompte = useCallback(
-    (orderId, decompteId, updates) => {
-      const newDb = {
-        ...db,
-        orders: (db.orders || []).map(o => {
-          if (Number(o.id) !== Number(orderId)) return o;
-          return {
-            ...o,
-            decomptes: (o.decomptes || []).map(d =>
-              Number(d.id) === Number(decompteId) ? { ...d, ...updates } : d
-            ),
-          };
-        }),
-      };
-      saveDb(newDb);
-    },
-    [db, saveDb]
-  );
-
-  const deleteDecompte = useCallback(
-    (orderId, decompteId) => {
-      const newDb = {
-        ...db,
-        orders: (db.orders || []).map(o => {
-          if (Number(o.id) !== Number(orderId)) return o;
-          return {
-            ...o,
-            decomptes: (o.decomptes || []).filter(d => Number(d.id) !== Number(decompteId)),
-          };
-        }),
-      };
-      saveDb(newDb);
-    },
-    [db, saveDb]
+    [db.orders]
   );
 
   return {
@@ -174,10 +124,6 @@ export function useOrders(db, saveDb) {
     addAvenant,
     updateAvenant,
     deleteAvenant,
-    addDecompte,
-    updateDecompte,
-    deleteDecompte,
+    getOrdersByBoard,
   };
 }
-
-export default useOrders;

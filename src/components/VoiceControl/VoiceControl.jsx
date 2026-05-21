@@ -45,7 +45,6 @@ function VoiceControl() {
     });
 
     voiceServiceRef.current.setOnResult(result => {
-      console.log('[VoiceControl] Received result:', JSON.stringify(result));
       setLastCommand(result);
       setDisplayedTranscript(result.original || '');
       if (displayTimeoutRef.current) clearTimeout(displayTimeoutRef.current);
@@ -311,7 +310,6 @@ function VoiceControl() {
             const dest = params.destination?.toLowerCase() || '';
             const tabId = params.tab;
 
-            console.log('[Voice] navigate:', dest, 'tab:', tabId);
 
             if (dest.includes('dashboard') || dest === 'accueil') {
               navigate('/');

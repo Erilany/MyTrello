@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { X, Upload, Folder, FileText, List, CheckSquare, GripVertical, Trash2 } from 'lucide-react';
 import { parseMSProjectXmlWithDates } from '../../utils/xmlParser';
-import { formatDate, normalizeChapter, LEVEL_ICONS } from './planningUtils';
+import { LEVEL_ICONS } from './planningUtils';
+import { useProjectHierarchy } from '../../hooks/useProjectHierarchy';
+import { XmlTree } from './XmlTree';
 
 function PlanningImportCompare({
   isOpen,
@@ -32,101 +34,9 @@ function PlanningImportCompare({
     });
   }, []);
 
-  const projectChapters = useMemo(() => {
-    const chapters = [];
-    const seen = new Set();
-    const isSpacer = item => typeof item === 'string' && item.startsWith('__spacer_');
+  const { projectChapters, projectHierarchy } = useProjectHierarchy(orderedChapters, projectData);
 
-    if (orderedChapters && orderedChapters.length > 0) {
-      orderedChapters.forEach(ch => {
-        if (!seen.has(normalizeChapter(ch)) && !isSpacer(ch)) {
-          seen.add(normalizeChapter(ch));
-          chapters.push({ id: `lib_${ch}`, name: ch, type: 'chapter', level: 1 });
-        }
-      });
-    }
 
-    return chapters.length > 0 ? chapters : [];
-  }, [orderedChapters]);
-
-  const projectHierarchy = useMemo(() => {
-    const cards = projectData?.cards || [];
-    const categories = projectData?.categories || [];
-    const subcategories = projectData?.subcategories || [];
-
-    return projectChapters.map(chapter => {
-      const chapterCards = cards.filter(
-        card => card.chapter && normalizeChapter(card.chapter) === normalizeChapter(chapter.name)
-      );
-
-      return {
-        ...chapter,
-        children: chapterCards.map(card => {
-          const cardCategories = categories.filter(c => Number(c.card_id) === Number(card.id));
-          return {
-            id: `card_${card.id}`,
-            name: card.title,
-            type: 'card',
-            level: 2,
-            cardId: card.id,
-            children: cardCategories.map(cat => {
-              const catSubcats = subcategories.filter(
-                s => Number(s.category_id) === Number(cat.id)
-              );
-              return {
-                id: `cat_${cat.id}`,
-                name: cat.title,
-                type: 'category',
-                level: 3,
-                cardId: card.id,
-                categoryId: cat.id,
-                children: catSubcats.map(sub => ({
-                  id: `sub_${sub.id}`,
-                  name: sub.title,
-                  type: 'subcategory',
-                  level: 4,
-                  cardId: card.id,
-                  categoryId: cat.id,
-                  children: [],
-                })),
-              };
-            }),
-          };
-        }),
-      };
-    });
-  }, [projectChapters, projectData]);
-
-  const xmlHierarchy = useMemo(() => {
-    const root = { children: [] };
-    const stack = [{ node: root, level: 0 }];
-
-    const sortedItems = [...xmlItems].sort((a, b) => a.outlineLevel - b.outlineLevel);
-
-    sortedItems.forEach(item => {
-      while (stack.length > 1 && stack[stack.length - 1].level >= item.outlineLevel) {
-        stack.pop();
-      }
-      const newNode = { ...item, children: [], isProject: false };
-      stack[stack.length - 1].node.children.push(newNode);
-      stack.push({ node: newNode, level: item.outlineLevel });
-    });
-
-    return root.children;
-  }, [xmlItems]);
-
-  const findMatchingChapter = useCallback(
-    xmlChapterName => {
-      const normalized = normalizeChapter(xmlChapterName);
-      for (const ch of projectChapters) {
-        if (normalizeChapter(ch.name) === normalized) {
-          return ch.name;
-        }
-      }
-      return null;
-    },
-    [projectChapters]
-  );
 
   const getDraggedItemsForDropZone = useCallback(
     dropZoneId => {
@@ -135,47 +45,7 @@ function PlanningImportCompare({
     [draggedItems]
   );
 
-  const getDraggedCount = useCallback(
-    chapterName => {
-      return draggedItems.filter(
-        d => normalizeChapter(d.assignedChapter) === normalizeChapter(chapterName)
-      ).length;
-    },
-    [draggedItems]
-  );
 
-  const buildDraggedHierarchy = useCallback(
-    (chapterName, projectCards) => {
-      const chapterDragged = draggedItems.filter(
-        d => normalizeChapter(d.assignedChapter) === normalizeChapter(chapterName)
-      );
-
-      const getChildren = (parentCardId, parentCategoryId) => {
-        return chapterDragged.filter(
-          d =>
-            Number(d.parentCardId) === Number(parentCardId) &&
-            Number(d.parentCategoryId) === Number(parentCategoryId)
-        );
-      };
-
-      const renderDraggedChildren = (parentCardId, parentCategoryId, level) => {
-        const children = getChildren(parentCardId, parentCategoryId);
-        return children.map(child => (
-          <div key={`dragged_${child.originalId}`}>
-            {renderDraggedItem(child, level)}
-            {renderDraggedChildren(
-              child.cardId || child.parentCardId,
-              child.categoryId || child.parentCategoryId,
-              level + 1
-            )}
-          </div>
-        ));
-      };
-
-      return { chapterDragged, getChildren, renderDraggedChildren };
-    },
-    [draggedItems]
-  );
 
   useEffect(() => {
     if (!isOpen) {
@@ -623,116 +493,6 @@ function PlanningImportCompare({
     );
   };
 
-  const renderXmlItem = (item, onSelectAll, childItems) => {
-    const Icon = LEVEL_ICONS[item.outlineLevel] || CheckSquare;
-    const isDragged = draggedItemIds.has(item.id);
-    const isSelected = selectedXmlIdsSet.has(item.id);
-    const isDraggable = !isDragged && isSelected && !isChapter;
-    const isChapter = item.outlineLevel === 1;
-    const levelSize = item.outlineLevel >= 3 ? 'text-xs' : 'text-sm';
-    const importableChildren = childItems.filter(
-      c => c.outlineLevel !== 1 && !draggedItemIds.has(c.id)
-    );
-
-    const bgByLevel = {
-      1: 'bg-blue-50 dark:bg-blue-900/30 border-blue-400',
-      2: 'bg-green-50 dark:bg-green-900/30 border-green-400',
-      3: 'bg-yellow-50 dark:bg-yellow-900/30 border-yellow-400',
-      4: 'bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600',
-    };
-
-    const textByLevel = {
-      1: 'font-bold text-blue-900 dark:text-blue-100',
-      2: 'font-semibold text-green-900 dark:text-green-100',
-      3: 'font-medium text-yellow-900 dark:text-yellow-100',
-      4: 'text-gray-700 dark:text-gray-200',
-    };
-
-    return (
-      <div key={item.id}>
-        <div
-          draggable={isDraggable}
-          onDragStart={e => isDraggable && handleDragStart(e, item, 'xml')}
-          className={`flex items-center gap-2 py-2 px-3 rounded border-l-4 transition-all ${
-            isChapter
-              ? 'opacity-60 bg-gray-100 dark:bg-gray-800 cursor-not-allowed'
-              : isDragged
-                ? 'opacity-40 line-through bg-gray-100 dark:bg-gray-800 cursor-not-allowed'
-                : isSelected
-                  ? 'cursor-grab hover:shadow-md'
-                  : 'cursor-pointer'
-          } ${bgByLevel[item.outlineLevel] || bgByLevel[4]} border-transparent`}
-          style={{ marginLeft: `${(item.outlineLevel - 1) * 16}px` }}
-        >
-          <input
-            type="checkbox"
-            checked={isSelected || isDragged}
-            disabled={isChapter || isDragged}
-            onChange={() => {}}
-            onClick={e => {
-              e.stopPropagation();
-              if (!isChapter && !isDragged) {
-                toggleXmlSelection(item, xmlItems);
-              }
-            }}
-            className="w-4 h-4 accent-green-500 z-10 relative cursor-pointer"
-          />
-          <GripVertical
-            size={12}
-            className={`flex-shrink-0 ${isChapter || isDragged ? 'text-gray-400' : 'text-gray-500'}`}
-          />
-          <Icon
-            size={item.outlineLevel >= 3 ? 12 : 14}
-            className={`flex-shrink-0 ${
-              isChapter || isDragged
-                ? 'text-gray-400'
-                : item.outlineLevel === 1
-                  ? 'text-blue-600'
-                  : item.outlineLevel === 2
-                    ? 'text-green-600'
-                    : item.outlineLevel === 3
-                      ? 'text-yellow-600'
-                      : 'text-gray-500'
-            }`}
-          />
-          <span
-            className={`flex-1 ${levelSize} ${
-              isChapter
-                ? 'text-gray-500 italic'
-                : isDragged
-                  ? 'text-gray-500 line-through'
-                  : textByLevel[item.outlineLevel] || textByLevel[4]
-            } truncate`}
-          >
-            {item.name}
-          </span>
-          <span className={`${levelSize} text-gray-400`}>{formatDate(item.start)}</span>
-          <span className={`${levelSize} text-gray-400`}>{formatDate(item.finish)}</span>
-          <span className={`${levelSize} text-gray-500 w-12 text-right font-mono`}>
-            {item.duration > 0 ? `${item.duration}j` : '-'}
-          </span>
-          {!isChapter && importableChildren.length > 0 && (
-            <button
-              onClick={e => {
-                e.stopPropagation();
-                const allItems = [item, ...importableChildren];
-                allItems.forEach(i => {
-                  if (!draggedItemIds.has(i.id) && !selectedXmlIdsSet.has(i.id)) {
-                    toggleXmlSelection(i, xmlItems);
-                  }
-                });
-              }}
-              className="text-xs bg-green-100 hover:bg-green-200 text-green-700 px-2 py-0.5 rounded z-10 relative"
-              title="Sélectionner tout"
-            >
-              +{importableChildren.length + 1}
-            </button>
-          )}
-        </div>
-        {childItems.map(child => renderXmlItem(child, onSelectAll, []))}
-      </div>
-    );
-  };
 
   const renderChapterDropZone = chapter => {
     const isDropTarget = dragOverTarget === chapter.id;
@@ -981,112 +741,6 @@ function PlanningImportCompare({
     );
   };
 
-  const getXmlChildren = parentItem => {
-    if (!parentItem) return xmlItems.filter(i => i.outlineLevel > 1);
-
-    const parentLevel = parentItem.outlineLevel;
-    const parentIndex = xmlItems.indexOf(parentItem);
-    const siblings = [];
-
-    for (let i = parentIndex + 1; i < xmlItems.length; i++) {
-      if (xmlItems[i].outlineLevel <= parentLevel) break;
-      siblings.push(xmlItems[i]);
-    }
-
-    return siblings;
-  };
-
-  const renderXmlTree = () => {
-    const roots = xmlItems.filter(i => i.outlineLevel === 1);
-    const processed = new Set();
-
-    const renderRecursive = item => {
-      if (processed.has(item.id)) return null;
-      processed.add(item.id);
-
-      const children = getXmlChildren(item);
-      const isDragged = draggedItemIds.has(item.id);
-      const isSelected = selectedXmlIdsSet.has(item.id);
-      const isDraggable = !isDragged && isSelected;
-      const importableChildren = children.filter(
-        c => c.outlineLevel !== 1 && !draggedItemIds.has(c.id)
-      );
-
-      return (
-        <div key={item.id}>
-          <div
-            draggable={isDraggable}
-            onDragStart={e => isDraggable && handleDragStart(e, item, 'xml')}
-            className={`flex items-center gap-2 py-2 px-3 rounded border-l-4 transition-all ${
-              isDragged
-                ? 'opacity-40 line-through bg-gray-100 dark:bg-gray-800 cursor-not-allowed'
-                : isSelected
-                  ? 'cursor-grab hover:shadow-md'
-                  : 'cursor-pointer'
-            } ${item.outlineLevel === 1 ? 'bg-blue-50 dark:bg-blue-900/30 border-blue-400' : item.outlineLevel === 2 ? 'bg-green-50 dark:bg-green-900/30 border-green-400' : item.outlineLevel === 3 ? 'bg-yellow-50 dark:bg-yellow-900/30 border-yellow-400' : 'bg-white dark:bg-gray-800 border-gray-300'}`}
-            style={{ marginLeft: `${(item.outlineLevel - 1) * 16}px` }}
-          >
-            <input
-              type="checkbox"
-              checked={isSelected || isDragged}
-              onChange={() => {}}
-              onClick={e => {
-                e.stopPropagation();
-                if (item.outlineLevel !== 1 && !isDragged) {
-                  toggleXmlSelection(item, xmlItems);
-                }
-              }}
-              className="w-4 h-4 accent-green-500 z-10 relative cursor-pointer"
-              disabled={item.outlineLevel === 1 || isDragged}
-            />
-            <GripVertical size={12} className="text-gray-500 flex-shrink-0" />
-            {React.createElement(LEVEL_ICONS[item.outlineLevel] || CheckSquare, {
-              size: item.outlineLevel >= 3 ? 12 : 14,
-              className: `flex-shrink-0 ${item.outlineLevel === 1 ? 'text-blue-600' : item.outlineLevel === 2 ? 'text-green-600' : item.outlineLevel === 3 ? 'text-yellow-600' : 'text-gray-500'}`,
-            })}
-            <span
-              className={`flex-1 ${item.outlineLevel >= 3 ? 'text-xs' : 'text-sm'} ${
-                item.outlineLevel === 1
-                  ? 'font-bold text-blue-900 dark:text-blue-100'
-                  : item.outlineLevel === 2
-                    ? 'font-semibold text-green-900 dark:text-green-100'
-                    : item.outlineLevel === 3
-                      ? 'font-medium text-yellow-900 dark:text-yellow-100'
-                      : 'text-gray-700 dark:text-gray-200'
-              } truncate`}
-            >
-              {item.name}
-            </span>
-            <span className="text-xs text-gray-400">{formatDate(item.start)}</span>
-            <span className="text-xs text-gray-400">{formatDate(item.finish)}</span>
-            <span className="text-xs text-gray-500 w-12 text-right font-mono">
-              {item.duration > 0 ? `${item.duration}j` : '-'}
-            </span>
-            {!item.isChapter && importableChildren.length > 0 && (
-              <button
-                onClick={e => {
-                  e.stopPropagation();
-                  const allItems = [item, ...importableChildren];
-                  allItems.forEach(i => {
-                    if (!draggedItemIds.has(i.id) && !selectedXmlIdsSet.has(i.id)) {
-                      toggleXmlSelection(i, xmlItems);
-                    }
-                  });
-                }}
-                className="text-xs bg-green-100 hover:bg-green-200 text-green-700 px-2 py-0.5 rounded z-10 relative"
-                title="Sélectionner tout avec enfants"
-              >
-                +{importableChildren.length + 1}
-              </button>
-            )}
-          </div>
-          {children.map(child => renderRecursive(child))}
-        </div>
-      );
-    };
-
-    return roots.map(renderRecursive);
-  };
 
   if (!isOpen) return null;
 
@@ -1224,7 +878,13 @@ function PlanningImportCompare({
                   <p>Sélectionnez un fichier XML</p>
                 </div>
               ) : (
-                renderXmlTree()
+                <XmlTree
+                  xmlItems={xmlItems}
+                  draggedItemIds={draggedItemIds}
+                  selectedXmlIdsSet={selectedXmlIdsSet}
+                  handleDragStart={handleDragStart}
+                  toggleXmlSelection={toggleXmlSelection}
+                />
               )}
             </div>
           </div>

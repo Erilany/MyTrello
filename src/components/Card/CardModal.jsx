@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
+import { useCardForm } from '../../hooks/useCardForm';
 import {
   X,
   Calendar,
@@ -28,12 +29,7 @@ function CardModal({ card, onClose }) {
     getEmailsForSubcategory,
   } = useApp();
 
-  const [title, setTitle] = useState(card.title);
   const [refreshKey, setRefreshKey] = useState(0);
-
-  useEffect(() => {
-    console.log('[CardModal] MOUNTED for card:', card.id, card.title);
-  }, []);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -45,9 +41,6 @@ function CardModal({ card, onClose }) {
   const triggerRefresh = () => {
     setRefreshKey(k => k + 1);
   };
-
-  const [description, setDescription] = useState(card.description || '');
-  const [dueDate, setDueDate] = useState(card.due_date || '');
 
   const cardCategories = useMemo(() => {
     const cats =
@@ -73,105 +66,25 @@ function CardModal({ card, onClose }) {
   const [editingCategoryTitle, setEditingCategoryTitle] = useState('');
   const [deletingCategoryId, setDeletingCategoryId] = useState(null);
 
-  const [startDate, setStartDate] = useState(card.start_date || '');
-  const [durationDays, setDurationDays] = useState(card.duration_days || 1);
-  const [parentId, setParentId] = useState(card.parent_id || null);
-  const [predecessorId, setPredecessorId] = useState(card.predecessor_id || null);
+  const {
+    title, setTitle,
+    description, setDescription,
+    dueDate, setDueDate,
+    startDate, setStartDate,
+    durationDays, setDurationDays,
+    parentId, setParentId,
+    predecessorId, setPredecessorId,
+    handleDurationChange,
+    handleStartDateChange,
+    handleDueDateChange,
+    handleSave,
+    handleSaveToLibrary,
+  } = useCardForm(card, updateCard, saveToLibrary, categories, subcategories);
 
   const libraryCard = libraryItems?.find(item => item.type === 'card' && item.title === card.title);
   const tempsRepere = libraryCard
     ? JSON.parse(libraryCard.content_json)?.card?.duration_days || libraryCard.duration || null
     : null;
-
-  const addWorkingDays = (startDateStr, days) => {
-    if (!startDateStr || days <= 0) return '';
-    const date = new Date(startDateStr);
-    let daysAdded = 0;
-    while (daysAdded < days) {
-      date.setDate(date.getDate() + 1);
-      const dayOfWeek = date.getDay();
-      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-        daysAdded++;
-      }
-    }
-    return date.toISOString().split('T')[0];
-  };
-
-  const subtractWorkingDays = (endDateStr, days) => {
-    if (!endDateStr || days <= 0) return '';
-    const date = new Date(endDateStr);
-    let daysSubtracted = 0;
-    while (daysSubtracted < days) {
-      date.setDate(date.getDate() - 1);
-      const dayOfWeek = date.getDay();
-      if (dayOfWeek !== 0 && dayOfWeek !== 6) {
-        daysSubtracted++;
-      }
-    }
-    return date.toISOString().split('T')[0];
-  };
-
-  const handleDurationChange = newDuration => {
-    const duration = parseInt(newDuration) || 1;
-    setDurationDays(duration);
-
-    if (startDate && !dueDate) {
-      const calculatedDueDate = addWorkingDays(startDate, duration);
-      setDueDate(calculatedDueDate);
-    } else if (dueDate && !startDate) {
-      const calculatedStartDate = subtractWorkingDays(dueDate, duration);
-      setStartDate(calculatedStartDate);
-    }
-  };
-
-  const handleStartDateChange = newStartDate => {
-    setStartDate(newStartDate);
-    if (newStartDate && durationDays > 0 && !dueDate) {
-      const calculatedDueDate = addWorkingDays(newStartDate, durationDays);
-      setDueDate(calculatedDueDate);
-    }
-  };
-
-  const handleDueDateChange = newDueDate => {
-    setDueDate(newDueDate);
-    if (newDueDate && durationDays > 0 && !startDate) {
-      const calculatedStartDate = subtractWorkingDays(newDueDate, durationDays);
-      setStartDate(calculatedStartDate);
-    }
-  };
-
-  const handleSave = async () => {
-    await updateCard(card.id, {
-      title,
-      description,
-      due_date: dueDate || null,
-      start_date: startDate || null,
-      duration_days: durationDays || 1,
-      parent_id: parentId || null,
-      predecessor_id: predecessorId || null,
-    });
-    onClose();
-  };
-
-  const handleSaveToLibrary = async () => {
-    const cats = categories.filter(c => Number(c.card_id) === Number(card.id));
-    const content = {
-      card: {
-        title,
-        description,
-        due_date: dueDate,
-        start_date: startDate,
-        duration_days: durationDays,
-      },
-      categories: cats.map(cat => ({
-        ...cat,
-        subcategories: subcategories.filter(sc => Number(sc.category_id) === Number(cat.id)),
-      })),
-    };
-
-    await saveToLibrary('card', title, JSON.stringify(content));
-    alert('Carte sauvegardée dans la bibliothèque');
-  };
 
   const handleAddCategory = async e => {
     e.preventDefault();
@@ -501,7 +414,7 @@ function CardModal({ card, onClose }) {
             Annuler
           </button>
           <button
-            onClick={handleSave}
+            onClick={() => handleSave(onClose)}
             className="px-4 py-2 bg-accent text-white rounded-lg hover:opacity-90 transition-std"
           >
             Enregistrer

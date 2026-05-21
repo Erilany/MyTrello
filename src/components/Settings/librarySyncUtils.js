@@ -150,6 +150,7 @@ export function loadAllProjects() {
       cards: db.cards || [],
       categories: db.categories || [],
       subcategories: db.subcategories || [],
+      libraryItems: db.libraryItems || [],
     };
   } catch (e) {
     console.error('[librarySyncUtils] Error loading projects:', e);

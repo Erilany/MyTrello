@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, memo } from 'react';
 import { Droppable, Draggable } from '@hello-pangea/dnd';
 import { useApp } from '../../context/AppContext';
 import Category from '../Category/Category';
@@ -23,6 +23,8 @@ function Card({ card, isDragging, columnColor, columnTitle }) {
     saveToLibrary,
     subcategories,
     getEmailsForSubcategory,
+    cardColors,
+    moveCategory,
   } = useApp();
 
   const [showMenu, setShowMenu] = useState(false);
@@ -30,15 +32,6 @@ function Card({ card, isDragging, columnColor, columnTitle }) {
   const cardCategories = categories
     .filter(cat => Number(cat.card_id) === Number(card.id))
     .sort((a, b) => (a.position || 0) - (b.position || 0));
-
-  useEffect(() => {
-    console.log(
-      '[Card] categories changed, cardId:',
-      card.id,
-      'categories:',
-      categories.filter(c => Number(c.card_id) === Number(card.id)).map(c => c.title)
-    );
-  }, [categories, card.id]);
 
   const handleDoubleClick = () => {
     setSelectedCard(card);
@@ -50,6 +43,23 @@ function Card({ card, isDragging, columnColor, columnTitle }) {
     }
   };
 
+  const handleToggleCollapse = () => {
+    updateCard(card.id, { collapsed: card.collapsed ? 0 : 1 });
+  };
+
+  const handleArchive = () => {
+    if (window.confirm(`Voulez-vous archiver "${card.title}" ?`)) {
+      archiveCard(card.id);
+    }
+  };
+
+  const handleSaveToLibrary = async () => {
+    const content = { card: { title: card.title, description: card.description, priority: card.priority } };
+    await saveToLibrary('card', card.title, JSON.stringify(content));
+    alert('Carte sauvegardée dans la bibliothèque !');
+    setShowMenu(false);
+  };
+
   useEffect(() => {
     const handleClickOutside = e => {
       if (showMenu && !e.target.closest('.card-menu')) {
@@ -59,10 +69,6 @@ function Card({ card, isDragging, columnColor, columnTitle }) {
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
   }, [showMenu]);
-
-  const cardCategories = categories
-    .filter(cat => Number(cat.card_id) === Number(card.id))
-    .sort((a, b) => (a.position || 0) - (b.position || 0));
 
   const getAccentBarStyle = () => {
     const t = (columnTitle || '').toLowerCase();
@@ -141,9 +147,6 @@ function Card({ card, isDragging, columnColor, columnTitle }) {
         break;
       }
     }
-  }
-  if (hasEmails) {
-    console.log('[Card] EMAIL DETECTED for card:', card.id, card.title);
   }
 
   const priorityBadge = getPriorityBadge();
@@ -256,7 +259,7 @@ function Card({ card, isDragging, columnColor, columnTitle }) {
                     <button
                       onClick={e => {
                         e.stopPropagation();
-                        setModalOpen(true);
+                        setSelectedCard(card);
                         setShowMenu(false);
                       }}
                       className="flex items-center w-full px-3 py-2 text-sm text-primary hover:bg-card-hover"
@@ -315,7 +318,6 @@ function Card({ card, isDragging, columnColor, columnTitle }) {
                 e.preventDefault();
                 try {
                   const data = JSON.parse(e.dataTransfer.getData('application/json'));
-                  console.log('[Card] Drop received:', data);
                   if (data.type === 'category') {
                     const maxPos = Math.max(...cardCategories.map(c => c.position), -1);
                     moveCategory(data.categoryId, card.id, maxPos + 1);
@@ -336,4 +338,4 @@ function Card({ card, isDragging, columnColor, columnTitle }) {
   );
 }
 
-export default Card;
+export default memo(Card);

@@ -125,16 +125,6 @@ export default function BDLibraryView() {
       }
 
       const allProjects = loadAllProjects();
-
-      // Add libraryItems to allProjects for ID resolution
-      const dbRaw = localStorage.getItem('c-projets_db');
-      if (dbRaw) {
-        try {
-          const db = JSON.parse(dbRaw);
-          allProjects.libraryItems = db.libraryItems || [];
-        } catch (e) {}
-      }
-
       setTableData(flattenTree(treeChildren, allProjects));
     } catch (e) {
       console.error('[BDLibraryView] Error:', e);

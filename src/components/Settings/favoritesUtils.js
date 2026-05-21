@@ -37,20 +37,8 @@ export const getCardSkipAction = cardItem => {
 };
 
 export const getSubcategoryTagFromLibrary = (libraryItemId, libraryItems) => {
-  console.log(
-    '[getSubcategoryTagFromLibrary] libraryItemId:',
-    libraryItemId,
-    'libraryItems:',
-    libraryItems?.length
-  );
   if (!libraryItemId || !libraryItems) return null;
   const libraryItem = findLibraryItemById(libraryItems, libraryItemId);
-  console.log(
-    '[getSubcategoryTagFromLibrary] found item:',
-    libraryItem?.title,
-    'tags:',
-    libraryItem?.tags
-  );
   if (!libraryItem) return null;
   // If tags contains a card name, it's the parent card - return it as the display name
   if (libraryItem.tags) {
@@ -72,15 +60,12 @@ export const getSubcategoryTagFromLibrary = (libraryItemId, libraryItems) => {
 // When user renames card in library, title changes and project items reflect it
 export const getLibraryItemTitle = (libraryItemId, libraryItems) => {
   if (!libraryItemId || !libraryItems) {
-    console.log('[getLibraryItemTitle] No libraryItemId or libraryItems');
     return null;
   }
   const item = findLibraryItemById(libraryItems, libraryItemId);
   if (!item) {
-    console.log('[getLibraryItemTitle] No item found for ID:', libraryItemId);
     return null;
   }
-  console.log('[getLibraryItemTitle] ID:', libraryItemId, 'item.title:', item.title);
   return item.title || null;
 };
 

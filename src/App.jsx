@@ -1,6 +1,8 @@
 import React, { lazy, Suspense, useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { AppProvider, useApp } from './context/AppContext';
+import { UIProvider } from './context/UIContext';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import Sidebar from './components/Sidebar/Sidebar';
 import Dashboard from './components/Dashboard/Dashboard';
 import Header from './components/Header/Header';
@@ -103,12 +105,16 @@ function AppContent() {
 
 function App() {
   return (
-    <AppProvider>
-      <BrowserRouter>
-        <AppContent />
-        <VoiceControl />
-      </BrowserRouter>
-    </AppProvider>
+    <ErrorBoundary>
+      <UIProvider>
+        <AppProvider>
+          <BrowserRouter>
+            <AppContent />
+            <VoiceControl />
+          </BrowserRouter>
+        </AppProvider>
+      </UIProvider>
+    </ErrorBoundary>
   );
 }
 

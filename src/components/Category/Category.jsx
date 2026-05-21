@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, memo } from 'react';
 import { Draggable } from '@hello-pangea/dnd';
 import { useApp } from '../../context/AppContext';
 import SubCategory from '../SubCategory/SubCategory';
@@ -27,9 +27,6 @@ function Category({ category, isDragging = false, dragHandleProps, depth = 0, ca
     getEmailsForSubcategory,
   } = useApp();
 
-  useEffect(() => {
-    console.log('[Category] Render - categoryId:', category.id, 'title:', category.title);
-  }, [category.id, category.title]);
 
   const catSubcategories = subcategories?.filter(s => s.category_id === category.id) || [];
   const hasEmails = catSubcategories.some(
@@ -334,7 +331,6 @@ function Category({ category, isDragging = false, dragHandleProps, depth = 0, ca
               e.preventDefault();
               try {
                 const data = JSON.parse(e.dataTransfer.getData('application/json'));
-                console.log('[Category] Drop received:', data);
                 if (data.type === 'subcategory') {
                   const maxPos = Math.max(...categorySubcategories.map(s => s.position), -1);
                   moveSubcategory(data.subcategoryId, category.id, maxPos + 1);
@@ -429,4 +425,4 @@ function Category({ category, isDragging = false, dragHandleProps, depth = 0, ca
   );
 }
 
-export default Category;
+export default memo(Category);

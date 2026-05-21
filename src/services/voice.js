@@ -17,18 +17,15 @@ class VoiceService {
   setupElectronListeners() {
     if (window.electron && window.electron.on) {
       window.electron.on('speech:started', () => {
-        console.log('[VoiceService] Windows Speech: started event received');
       });
 
       window.electron.on('speech:result', data => {
-        console.log('[VoiceService] Windows Speech: result received:', data.transcript);
         if (data.transcript) {
           this.processCommand(data.transcript);
         }
       });
 
       window.electron.on('speech:stopped', () => {
-        console.log('[VoiceService] Windows Speech: stopped event received');
         this.isListening = false;
         if (this.onListeningChange) {
           this.onListeningChange(false);
@@ -38,13 +35,10 @@ class VoiceService {
   }
 
   initWindowsSpeechRecognition() {
-    console.log('[VoiceService] Initializing Windows Speech Recognition...');
 
     if (window.electron && window.electron.invoke) {
-      console.log('[VoiceService] Using Electron IPC for Windows Speech');
       this.useWindowsSpeech = true;
     } else {
-      console.log('[VoiceService] Fallback to Web Speech API');
       this.useWindowsSpeech = false;
       this.initWebSpeechRecognition();
     }
@@ -63,7 +57,6 @@ class VoiceService {
     this.recognition.lang = 'fr-FR';
 
     this.recognition.onstart = () => {
-      console.log('[VoiceService] Web Speech started');
     };
 
     this.recognition.onresult = event => {
@@ -84,7 +77,6 @@ class VoiceService {
     };
 
     this.recognition.onend = () => {
-      console.log('[VoiceService] Web Speech ended');
       if (this.isListening) {
         try {
           this.recognition.start();
@@ -98,10 +90,8 @@ class VoiceService {
   start() {
     if (this.isListening) return;
 
-    console.log('[VoiceService] Starting voice recognition...');
 
     const canUseWindowsSpeech = !!(window.electron && window.electron.invoke);
-    console.log('[VoiceService] Windows Speech available:', canUseWindowsSpeech);
 
     if (canUseWindowsSpeech) {
       this.useWindowsSpeech = true;
@@ -121,14 +111,12 @@ class VoiceService {
 
   async startWindowsSpeech() {
     try {
-      console.log('[VoiceService] Invoking Windows Speech via IPC...');
 
       const result = await window.electron.invoke('speech:start', { lang: 'fr-FR' });
 
       if (result.success) {
         this.isListening = true;
         if (this.onListeningChange) this.onListeningChange(true);
-        console.log('[VoiceService] Windows Speech started successfully');
       } else {
         console.error('[VoiceService] Windows Speech failed:', result.error);
         if (this.onError) this.onError(result.error);
@@ -360,7 +348,6 @@ class VoiceService {
     const normalized = this.normalizeText(cleanText);
     const finalCleanText = normalized.replace(/\s+/g, ' ').trim();
 
-    console.log('[VoiceService] processCommand input:', finalCleanText);
 
     // === COMMANDES DE BASE (toujours en premier, plus précis) ===
     if (this.matchCommand(cleanText, this.commands.activation)) {
@@ -648,7 +635,6 @@ class VoiceService {
       oscillator.start();
       oscillator.stop(audioContext.currentTime + 0.1);
     } catch (e) {
-      console.log('Audio not available');
     }
   }
 
@@ -671,7 +657,6 @@ class VoiceService {
       }, 100);
       oscillator.stop(audioContext.currentTime + 0.2);
     } catch (e) {
-      console.log('Audio not available');
     }
   }
 

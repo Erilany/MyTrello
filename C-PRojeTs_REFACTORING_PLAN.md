@@ -8,16 +8,21 @@ Améliorer la maintenabilité du projet sans régression fonctionnelle.
 
 ### Fichiers volumineux
 
-| Fichier        | Lignes | Problème                |
-| -------------- | ------ | ----------------------- |
-| Board2.jsx     | ~2800  | Trop de responsabilités |
-| AppContext.jsx | 1780   | Contexte trop gros      |
+| Fichier                | Lignes  | Statut                                                      |
+| ---------------------- | ------- | ----------------------------------------------------------- |
+| Board2.jsx             | ~1431   | ✅ Tab commandes extraite dans BoardCommandesTab.jsx (était ~2800) |
+| BoardCommandesTab.jsx  | ~1538   | ✅ Nouveau fichier — onglet commandes complet               |
+| AppContext.jsx         | ~1780   | ✅ UIContext.jsx créé — états UI extraits                   |
+| UIContext.jsx          | ~25     | ✅ Nouveau fichier — wraps useUI() + useSettings()          |
 
-### Résumé Phase déjà effectuée (Un seul formulaire)
+### Résumé Phases déjà effectuées
 
 - ✅ SubCategoryModal enrichi avec statut + jalons
 - ✅ Board2 utilise SubCategoryModal via setSelectedSubcategory
 - ✅ Un seul formulaire pour Kanban, Tâches et Planning
+- ✅ UIContext.jsx créé (mai 2026) — theme, cardColors, modals, panels extraits d'AppContext
+- ✅ Board2.jsx découpé (mai 2026) — BoardCommandesTab.jsx extrait, Board2 réduit de 51%
+- ✅ useApp() est maintenant une façade fusionnant AppContext + UIContext
 
 ---
 
@@ -172,7 +177,11 @@ src/components/Planning/
 
 ---
 
-## Phase 4: Simplifier Board2.jsx
+## Phase 4: Simplifier Board2.jsx ✅ (partiellement)
+
+### Statut mai 2026
+BoardCommandesTab.jsx extrait de Board2.jsx. Board2 passe de ~2800 à ~1431 lignes.
+La structure cible ci-dessous reste valide pour les onglets tâches, planning, informations.
 
 ### Objectif
 

@@ -5,7 +5,6 @@ export const getSystemTagFromLibraryItemId = (libraryItemId, libraryItems) => {
     if (libraryItems && Array.isArray(libraryItems)) {
       const item = libraryItems.find(item => item.id == libraryItemId);
       if (item?.tags) {
-        console.log('[getSystemTagFromLibraryItemId] Found tags from libraryItems:', item.tags);
         return item.tags;
       }
       if (item?.content_json) {
@@ -21,7 +20,6 @@ export const getSystemTagFromLibraryItemId = (libraryItemId, libraryItems) => {
     if (!treeRaw) return null;
 
     const treeData = JSON.parse(treeRaw);
-    console.log('[getSystemTagFromLibraryItemId] treeRaw exists, libraryItemId:', libraryItemId);
 
     const findSystemTag = (nodes, targetId, depth = 0) => {
       for (const node of nodes) {
@@ -37,7 +35,6 @@ export const getSystemTagFromLibraryItemId = (libraryItemId, libraryItems) => {
     };
 
     const result = findSystemTag(treeData, libraryItemId);
-    console.log('[getSystemTagFromLibraryItemId] Result for', libraryItemId, ':', result);
     return result;
   } catch (e) {
     console.error('[getSystemTagFromLibraryItemId] Error:', e);

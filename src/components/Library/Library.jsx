@@ -156,7 +156,6 @@ function Library() {
 
       // Get stable tree node ID for this card
       const cardTreeNodeId = findTreeNodeId(cardTitle, null, null);
-      console.log('[Library.jsx] cardTreeNodeId:', cardTreeNodeId, 'for card:', cardTitle);
 
       // Get systemTag from library tree
       let systemTag = null;
@@ -195,7 +194,6 @@ function Library() {
         content.card?.duration_days ?? item.duration ?? 1,
         null,
         null,
-        null,
         systemTag, // Use systemTag from tree, not chapter name
         cardTreeNodeId, // Stable tree node ID as the link
         content.card?.skipAction || false
@@ -211,12 +209,6 @@ function Library() {
           try {
             // Get stable tree node ID for this category
             const categoryTreeNodeId = findTreeNodeId(cardTitle, cat.title, null);
-            console.log(
-              '[Library.jsx] categoryTreeNodeId:',
-              categoryTreeNodeId,
-              'for category:',
-              cat.title
-            );
 
             const categoryId = await createCategory(
               cardId,
@@ -228,7 +220,6 @@ function Library() {
               null,
               cat.duration_days ?? 1,
               null,
-              null,
               categoryTreeNodeId // Stable tree node ID as the link
             );
 
@@ -237,12 +228,6 @@ function Library() {
                 try {
                   // Get stable tree node ID for this subcategory
                   const subTreeNodeId = findTreeNodeId(cardTitle, cat.title, subcat.title);
-                  console.log(
-                    '[Library.jsx] subTreeNodeId:',
-                    subTreeNodeId,
-                    'for subcat:',
-                    subcat.title
-                  );
 
                   // Get systemTag from library tree
                   let systemTag = item.systemTag || item.tag || null;
@@ -278,7 +263,6 @@ function Library() {
                     subcat.assignee || '',
                     null,
                     subcat.duration_days ?? 1,
-                    null,
                     systemTag,
                     subTreeNodeId // Stable tree node ID as the link
                   );

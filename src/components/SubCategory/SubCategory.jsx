@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, memo } from 'react';
 import { useApp } from '../../context/AppContext';
 import SubCategoryModal from './SubCategoryModal';
 import { MoreHorizontal, Trash2, BookMarked, Mail } from 'lucide-react';
@@ -199,4 +199,4 @@ function SubCategory({ subcategory, isDragging = false }) {
   );
 }
 
-export default SubCategory;
+export default memo(SubCategory);
