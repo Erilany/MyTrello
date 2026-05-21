@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
 import { useEmailPanel } from '../../hooks/useEmailPanel';
 import { useMilestonePanel } from '../../hooks/useMilestonePanel';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
-import { X, Bookmark, Trash2, Mail, FileText, GripVertical } from 'lucide-react';
+import { X, Bookmark, Trash2, Mail, FileText, GripVertical, Link, ChevronDown } from 'lucide-react';
 import { loadTagsData } from '../../data/TagsData';
+import { formatUserName } from '../../utils/nameUtils';
 import {
   sortEmails,
   handleOpenEmail,
@@ -54,6 +55,60 @@ function SubCategoryModal({ subcategory, onClose }) {
       if (parsed.libraryItems) setLibraryItems(parsed.libraryItems);
     }
   }, []);
+
+  // Library subcategory options for manual linking
+  const [librarySubs, setLibrarySubs] = useState([]);
+  const [linkNodeId, setLinkNodeId] = useState('');
+  const [linkOpen, setLinkOpen] = useState(false);
+  const [linkSearch, setLinkSearch] = useState('');
+  const linkRef = useRef(null);
+
+  useEffect(() => {
+    const treeRaw = localStorage.getItem('c-projets_library_editor');
+    if (!treeRaw) return;
+    try {
+      const treeData = JSON.parse(treeRaw);
+      const nodes = Array.isArray(treeData) ? treeData : treeData.children || [];
+      const subs = [];
+      const traverse = (node, ch = '', ca = '', cat = '') => {
+        const curCh = node.type === 'chapitre' ? node.data?.chapitre || node.titre || '' : ch;
+        const curCa = node.type === 'carte' ? node.data?.carte || node.titre || '' : ca;
+        const curCat = node.type === 'categorie' ? node.data?.categorie || node.titre || '' : cat;
+        if (node.type === 'souscategorie' && node.data?.sousCat1) {
+          const parts = [curCh, curCa, curCat, node.data.sousCat1].filter(Boolean);
+          subs.push({
+            nodeId: String(node.id),
+            title: node.data.sousCat1,
+            label: parts.join(' › '),
+            systemTag: node.data.systemTag?.trim() || '',
+          });
+        }
+        (node.children || []).forEach(child => traverse(child, curCh, curCa, curCat));
+      };
+      nodes.forEach(n => traverse(n));
+      setLibrarySubs(subs);
+    } catch (e) {}
+  }, []);
+
+  useEffect(() => {
+    if (!linkOpen) return;
+    const handler = e => { if (linkRef.current && !linkRef.current.contains(e.target)) setLinkOpen(false); };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [linkOpen]);
+
+  const applyLibraryLink = (nodeId) => {
+    const sub = librarySubs.find(s => s.nodeId === nodeId);
+    if (!sub) return;
+    updateSubcategory(subcategory.id, {
+      library_item_id: nodeId,
+      tag: sub.systemTag || subcategory.tag,
+    });
+    setLinkNodeId(nodeId);
+    setLinkOpen(false);
+    setLinkSearch('');
+    window.dispatchEvent(new Event('library-updated'));
+  };
 
   // Listen for library updates to refresh tags
   useEffect(() => {
@@ -346,32 +401,102 @@ function SubCategoryModal({ subcategory, onClose }) {
                 >
                   <option value="">Sélectionner...</option>
                   <option value="TEAM">Team - Tous les interlocuteurs</option>
-                  {getInternalContacts(currentBoard?.id).map(contact => (
-                    <option key={contact.id} value={contact.name || contact.title}>
-                      {contact.name || contact.title}
-                    </option>
-                  ))}
+                  {getInternalContacts(currentBoard?.id).map(contact => {
+                    const displayName = contact.name
+                      ? formatUserName(contact.name)
+                      : contact.title;
+                    return (
+                      <option key={contact.id} value={displayName}>
+                        {displayName}
+                      </option>
+                    );
+                  })}
                 </select>
               </div>
 
-              {effectiveTag && (
-                <div>
-                  <label className="block text-sm font-medium text-primary mb-1">Tag</label>
-                  <div
-                    className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-white"
-                    style={{ backgroundColor: tagInfo?.color || '#6B7280' }}
-                  >
-                    {effectiveTag}
+              <div>
+                <label className="block text-sm font-medium text-primary mb-1">Tag</label>
+                {effectiveTag && (
+                  <>
+                    <div
+                      className="inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-white"
+                      style={{ backgroundColor: tagInfo?.color || '#6B7280' }}
+                    >
+                      {effectiveTag}
+                    </div>
+                    <p className="text-xs text-muted mt-1">
+                      {dynamicSystemTag
+                        ? `Tag synchronisé depuis la bibliothèque (${dynamicSystemTag})`
+                        : subcategory.tag
+                          ? 'Tag assigné manuellement'
+                          : 'Tag hérité de la catégorie parente'}
+                    </p>
+                  </>
+                )}
+                {!dynamicSystemTag && (
+                  <div className="mt-2" ref={linkRef}>
+                    <p className="text-xs text-blue-400 flex items-center gap-1 mb-1">
+                      <Link size={11} />
+                      Lier au modèle bibliothèque
+                    </p>
+                    <div className="relative">
+                      <button
+                        type="button"
+                        onClick={() => setLinkOpen(v => !v)}
+                        className="w-full px-2 py-1.5 bg-[var(--bg-input)] border border-[var(--border)] rounded text-[var(--txt-primary)] text-xs text-left flex items-center justify-between gap-1"
+                      >
+                        <span className="truncate">
+                          {linkNodeId
+                            ? librarySubs.find(s => s.nodeId === linkNodeId)?.label || '—'
+                            : '— Sélectionner un modèle —'}
+                        </span>
+                        <ChevronDown size={12} className="shrink-0 opacity-50" />
+                      </button>
+                      {linkOpen && (
+                        <div className="absolute z-[9999] top-full left-0 mt-1 bg-[var(--bg-card)] border border-[var(--border)] rounded shadow-xl w-full" style={{ minWidth: '320px' }}>
+                          <div className="p-1.5 border-b border-[var(--border)]">
+                            <input
+                              autoFocus
+                              type="text"
+                              value={linkSearch}
+                              onChange={e => setLinkSearch(e.target.value)}
+                              placeholder="Rechercher…"
+                              className="w-full px-2 py-1 text-xs bg-[var(--bg-input)] border border-[var(--border)] rounded text-[var(--txt-primary)] outline-none"
+                            />
+                          </div>
+                          <div className="max-h-52 overflow-auto">
+                            {librarySubs
+                              .filter(s =>
+                                !linkSearch ||
+                                s.label.toLowerCase().includes(linkSearch.toLowerCase()) ||
+                                s.systemTag.toLowerCase().includes(linkSearch.toLowerCase())
+                              )
+                              .map(s => (
+                                <div
+                                  key={s.nodeId}
+                                  onClick={() => applyLibraryLink(s.nodeId)}
+                                  className="px-2 py-1.5 text-xs cursor-pointer hover:bg-[var(--bg-card-hover)] text-[var(--txt-primary)]"
+                                >
+                                  <span>{s.label}</span>
+                                  {s.systemTag && (
+                                    <span className="ml-1 text-[var(--txt-muted)]">[{s.systemTag}]</span>
+                                  )}
+                                </div>
+                              ))}
+                            {librarySubs.filter(s =>
+                              !linkSearch ||
+                              s.label.toLowerCase().includes(linkSearch.toLowerCase()) ||
+                              s.systemTag.toLowerCase().includes(linkSearch.toLowerCase())
+                            ).length === 0 && (
+                              <div className="px-2 py-2 text-xs text-[var(--txt-muted)] italic">Aucun résultat</div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <p className="text-xs text-muted mt-1">
-                    {dynamicSystemTag
-                      ? `Tag synchronisé depuis la bibliothèque (${dynamicSystemTag})`
-                      : subcategory.tag
-                        ? 'Tag assigné manuellement'
-                        : 'Tag hérité de la catégorie parente'}
-                  </p>
-                </div>
-              )}
+                )}
+              </div>
             </div>
 
             <div>

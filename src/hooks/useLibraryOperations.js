@@ -75,19 +75,30 @@ export function useLibraryOperations(db, saveDb, setLibraryItems, loadBoard, cur
     }
 
     const treeTagsByNodeId = {};
+    const titleToNodeInfo = {}; // fallback: subcategory title → { nodeId, systemTag }
     const treeRaw = localStorage.getItem('c-projets_library_editor');
     if (treeRaw) {
       try {
         const treeData = JSON.parse(treeRaw);
-        const extractTags = nodes => {
-          (nodes || []).forEach(node => {
+        const nodes = Array.isArray(treeData) ? treeData : treeData.children || [];
+        const extractTags = ns => {
+          (ns || []).forEach(node => {
             if (node.id && node.data?.systemTag && node.data.systemTag.trim()) {
               treeTagsByNodeId[String(node.id)] = node.data.systemTag.trim();
+            }
+            // Build title fallback for subcategory nodes
+            if (node.type === 'souscategorie' && node.data?.sousCat1 && node.id) {
+              if (!titleToNodeInfo[node.data.sousCat1]) {
+                titleToNodeInfo[node.data.sousCat1] = {
+                  nodeId: String(node.id),
+                  systemTag: node.data.systemTag?.trim() || '',
+                };
+              }
             }
             if (node.children && node.children.length > 0) extractTags(node.children);
           });
         };
-        extractTags(treeData.children || treeData);
+        extractTags(nodes);
       } catch (e) {
         console.error('[syncTagsFromLibrary] Error parsing tree:', e);
       }
@@ -107,10 +118,24 @@ export function useLibraryOperations(db, saveDb, setLibraryItems, loadBoard, cur
       return numericIdToUUID[strId] || null;
     };
 
+    const titleFallback = (sub) => {
+      const info = sub.title ? titleToNodeInfo[sub.title] : null;
+      if (!info || !info.nodeId) return sub;
+      const updated = { ...sub, library_item_id: info.nodeId };
+      if (info.systemTag && info.systemTag !== sub.tag) {
+        updatedCount++;
+        return { ...updated, tag: info.systemTag };
+      }
+      return updated;
+    };
+
     const newSubcategories = currentDb.subcategories.map(sub => {
-      if (!sub.library_item_id) return sub;
+      if (!sub.library_item_id) {
+        return titleFallback(sub);
+      }
       const treeNodeId = resolveToTreeNodeId(sub.library_item_id);
-      if (!treeNodeId) return sub;
+      // UUID resolution failed (e.g. old numeric ID with no UUID mapping) — use title fallback
+      if (!treeNodeId) return titleFallback(sub);
       const tagFromTree = treeTagsByNodeId[treeNodeId];
       if (!tagFromTree) return sub;
       if (tagFromTree !== sub.tag) {

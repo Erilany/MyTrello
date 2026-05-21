@@ -2,6 +2,7 @@ import React, { useState, useEffect, memo } from 'react';
 import { useApp } from '../../context/AppContext';
 import SubCategoryModal from './SubCategoryModal';
 import { MoreHorizontal, Trash2, BookMarked, Mail } from 'lucide-react';
+import { formatUserName } from '../../utils/nameUtils';
 
 function SubCategory({ subcategory, isDragging = false }) {
   const {
@@ -139,7 +140,7 @@ function SubCategory({ subcategory, isDragging = false }) {
 
             {subcategory.assignee && (
               <span className="badge badge-category">
-                {subcategory.assignee}
+                {formatUserName(subcategory.assignee)}
                 {hasEmails && <Mail size={12} className="ml-1" />}
               </span>
             )}

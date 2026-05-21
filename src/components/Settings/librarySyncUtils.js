@@ -67,12 +67,54 @@ export function syncTagsToProjects(tagMap, allData) {
     }
   });
 
-  // Sync subcategories using library_item_id (handles both formats)
+  // Build title-based fallback map from the live tree (for items with no library_item_id)
+  const titleToNodeInfo = {};
+  try {
+    const treeRaw = localStorage.getItem('c-projets_library_editor');
+    if (treeRaw) {
+      const treeData = JSON.parse(treeRaw);
+      const nodes = Array.isArray(treeData) ? treeData : treeData.children || [];
+      const walkTree = ns => {
+        for (const node of ns) {
+          if (node.type === 'souscategorie' && node.data?.sousCat1 && node.id) {
+            if (!titleToNodeInfo[node.data.sousCat1]) {
+              titleToNodeInfo[node.data.sousCat1] = {
+                nodeId: String(node.id),
+                systemTag: node.data.systemTag?.trim() || '',
+              };
+            }
+          }
+          if (node.children?.length > 0) walkTree(node.children);
+        }
+      };
+      walkTree(nodes);
+    }
+  } catch (e) {}
+
+  // Sync subcategories
   for (const sub of subcategories) {
-    if (!sub.library_item_id) continue;
-    // Resolve to tree node ID (handle both UUID and legacy numeric IDs)
+    const applyTitleFallback = () => {
+      const info = sub.title ? titleToNodeInfo[sub.title] : null;
+      if (info && info.nodeId) {
+        sub.library_item_id = info.nodeId;
+        if (info.systemTag && sub.tag !== info.systemTag) {
+          sub.tag = info.systemTag;
+          globalModified = true;
+        }
+      }
+    };
+
+    if (!sub.library_item_id) {
+      applyTitleFallback();
+      continue;
+    }
     const strId = String(sub.library_item_id);
-    const treeNodeId = strId.includes('-') ? strId : numericIdToUUID[strId] || strId;
+    const treeNodeId = strId.includes('-') ? strId : numericIdToUUID[strId] || null;
+    if (!treeNodeId) {
+      // Old numeric ID with no UUID mapping — use title fallback to re-link
+      applyTitleFallback();
+      continue;
+    }
     const tagInfo = tagMap[treeNodeId];
     if (tagInfo && sub.tag !== tagInfo.systemTag) {
       sub.tag = tagInfo.systemTag;
@@ -80,7 +122,7 @@ export function syncTagsToProjects(tagMap, allData) {
     }
   }
 
-  // Sync categories using library_item_id (handles both formats)
+  // Sync categories using library_item_id
   for (const cat of categories) {
     if (!cat.library_item_id) continue;
     const strId = String(cat.library_item_id);
@@ -92,7 +134,6 @@ export function syncTagsToProjects(tagMap, allData) {
     }
   }
 
-  // Save all changes at once
   if (globalModified) {
     saveProject(allData);
   }
@@ -182,22 +223,21 @@ export function findProjectsUsingTask(chapitre, carte, sousCat1, allData) {
       const traverse = (node, currentCarte = '', currentCategorie = '') => {
         if (targetTreeNodeId) return;
 
-        const carte = node.type === 'carte' ? node.data?.carte || node.titre : currentCarte;
-        const cat =
+        const nodeCarte = node.type === 'carte' ? node.data?.carte || node.titre : currentCarte;
+        const nodeCat =
           node.type === 'categorie' ? node.data?.categorie || node.titre : currentCategorie;
 
         if (
           node.type === 'souscategorie' &&
           node.data?.sousCat1 === sousCat1 &&
-          carte === carte &&
-          (!cat || cat === currentCategorie)
+          nodeCarte === carte
         ) {
           targetTreeNodeId = node.id;
           return;
         }
 
         if (node.children) {
-          node.children.forEach(child => traverse(child, carte, cat));
+          node.children.forEach(child => traverse(child, nodeCarte, nodeCat));
         }
       };
 
@@ -240,11 +280,11 @@ export function findProjectsUsingTask(chapitre, carte, sousCat1, allData) {
               }
             }
 
-            // Fallback: match by title
-            if (!match && sub.title === sousCat1) {
+            // Fallback: match by subcategory title + card title (chapter optional for robustness)
+            if (!match && sub.title === sousCat1 && card.title === carte) {
               const cardChapter =
                 card.chapter || (card.tags ? card.tags.split(',')[0]?.trim() : '');
-              if (cardChapter === chapitre && card.title === carte) {
+              if (!chapitre || !cardChapter || cardChapter === chapitre) {
                 match = true;
               }
             }

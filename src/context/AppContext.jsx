@@ -139,6 +139,7 @@ function convertTreeToLibraryItems(treeData) {
             title: node.data.sousCat1,
             type: 'subcategory',
             tags: tags,
+            systemTag: node.data.systemTag?.trim() || '',
             duration: node.data.temps || 0,
             content_json: JSON.stringify({
               subcategory: {
@@ -409,7 +410,7 @@ export function AppProvider({ children }) {
   const [libraryItems, setLibraryItems] = useState([]);
   const [messages, setMessages] = useState([]);
   const [subcategoryEmails, setSubcategoryEmails] = useState([]);
-  const { username, setUsername, userRole, setUserRole } = useUserSettings();
+  const { username, setUsername, userRole, setUserRole, showTagOnCard, setShowTagOnCard } = useUserSettings();
   const { setTheme } = useUIContext();
   const [loading, setLoading] = useState(false);
   const [unreadMentions, setUnreadMentions] = useState({});
@@ -672,12 +673,32 @@ export function AppProvider({ children }) {
     migrateLibraryItemIds();
   }, []);
 
+  // Refs to always capture the latest versions — avoids stale closures in the
+  // library-updated event listener which is registered once with [] deps.
+  const syncTagsFromLibraryRef = useRef(null);
+  const currentBoardRef = useRef(null);
+  const loadBoardRef = useRef(loadBoard);
+
   useEffect(() => {
     const handleLibraryUpdate = () => {
       forceLibraryItems();
-      // Auto-sync tags from library to projects when library is updated
+      migrateLibraryItemIds();
       setTimeout(() => {
-        syncTagsFromLibrary();
+        syncTagsFromLibraryRef.current?.();
+        // Always reload the board from fresh localStorage so the UI reflects
+        // every change — even if syncTagsFromLibrary found nothing new to update
+        // (the DB may already be correct from a previous direct localStorage write).
+        if (currentBoardRef.current) {
+          setTimeout(() => {
+            try {
+              const dbRaw = localStorage.getItem('c-projets_db');
+              if (dbRaw) {
+                const freshDb = JSON.parse(dbRaw);
+                loadBoardRef.current?.(currentBoardRef.current.id, freshDb);
+              }
+            } catch (e) {}
+          }, 200);
+        }
       }, 100);
     };
 
@@ -1152,6 +1173,11 @@ export function AppProvider({ children }) {
     syncTagsFromLibrary,
   } = useLibraryOperations(db, saveDb, setLibraryItems, loadBoard, currentBoard);
 
+  // Keep refs in sync so the library-updated listener always calls the latest versions
+  syncTagsFromLibraryRef.current = syncTagsFromLibrary;
+  currentBoardRef.current = currentBoard;
+  loadBoardRef.current = loadBoard;
+
 
   const getArchivedCards = () => {
     return db.cards.filter(c => c.is_archived);
@@ -1190,6 +1216,8 @@ export function AppProvider({ children }) {
     setUsername,
     userRole,
     setUserRole,
+    showTagOnCard,
+    setShowTagOnCard,
     addMessage,
     getMessages,
     markMessagesAsRead,
@@ -1272,7 +1300,7 @@ export function AppProvider({ children }) {
     getAllProjectTime,
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }), [db, currentBoard, columns, cards, categories, subcategories, libraryItems,
-    messages, subcategoryEmails, username, userRole, loading,
+    messages, subcategoryEmails, username, userRole, showTagOnCard, loading,
     filterMyProjects, usersList, hiddenMilestones]);
 
   return (

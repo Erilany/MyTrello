@@ -35,6 +35,8 @@ function Settings() {
     setUsername,
     filterMyProjects,
     setFilterMyProjects,
+    showTagOnCard,
+    setShowTagOnCard,
     searchUsers,
     addNewUser,
     formatUserName,
@@ -396,6 +398,18 @@ function Settings() {
                   />
                   <label htmlFor="filterMyProjects" className="text-sm text-secondary">
                     Ne voir que les projets où je suis interlocuteur interne
+                  </label>
+                </div>
+                <div className="mb-4 flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    id="showTagOnCard"
+                    checked={showTagOnCard}
+                    onChange={e => setShowTagOnCard(e.target.checked)}
+                    className="w-4 h-4 accent-accent"
+                  />
+                  <label htmlFor="showTagOnCard" className="text-sm text-secondary">
+                    Afficher le tag Revue d'activité sur les cartes de tâches
                   </label>
                 </div>
                 <button

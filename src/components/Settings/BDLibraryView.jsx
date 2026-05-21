@@ -3,6 +3,7 @@ import { loadTagsData } from '../../data/TagsData';
 import { libraryTemplates } from '../../data/libraryData';
 import { convertLibraryDataToTree } from './libraryEditorUtils';
 import { findProjectsUsingTask, loadAllProjects } from './librarySyncUtils';
+import { LibraryLinkWizard } from './LibraryLinkWizard';
 
 const STORAGE_KEY = 'c-projets_library_editor';
 
@@ -106,6 +107,7 @@ function flattenTree(treeData, allProjects = []) {
 
 export default function BDLibraryView() {
   const [tableData, setTableData] = useState([]);
+  const [showLinkWizard, setShowLinkWizard] = useState(false);
 
   const loadData = useCallback(() => {
     try {
@@ -322,6 +324,12 @@ export default function BDLibraryView() {
         <h2 className="text-xl font-semibold text-[var(--txt-primary)]">BD Modele Bibliotheque</h2>
         <div className="flex gap-2">
           <button
+            onClick={() => setShowLinkWizard(true)}
+            className="px-3 py-1 text-sm bg-purple-500 text-white rounded hover:bg-purple-600"
+          >
+            Lier les tâches non liées
+          </button>
+          <button
             onClick={syncTags}
             className="px-3 py-1 text-sm bg-green-500 text-white rounded hover:bg-green-600"
           >
@@ -429,6 +437,16 @@ export default function BDLibraryView() {
           </tbody>
         </table>
       </div>
+
+      {showLinkWizard && (
+        <LibraryLinkWizard
+          onClose={() => setShowLinkWizard(false)}
+          onApplied={() => {
+            setShowLinkWizard(false);
+            loadData();
+          }}
+        />
+      )}
     </div>
   );
 }

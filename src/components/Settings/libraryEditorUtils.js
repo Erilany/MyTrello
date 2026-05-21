@@ -384,6 +384,7 @@ export function convertTreeToLibraryItems(treeData) {
             subcategorySet.add(subCatKey);
             libraryItems.push({
               id: itemId++,
+              treeNodeId: node.id,
               title: node.data.sousCat1,
               type: 'subcategory',
               tags: tags,

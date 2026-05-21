@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import { formatDateFrench } from '../../utils/dateUtils';
+import { formatUserName } from '../../utils/nameUtils';
 import { PaiementsForm } from './forms/PaiementsForm';
 import {
   Trash2,
@@ -10,6 +11,8 @@ import {
   Upload,
   ChevronDown,
   ChevronRight,
+  CheckCircle2,
+  Clock,
 } from 'lucide-react';
 import { GROUPES_MARCHANDISES, CATEGORY_KEYS } from '../../data/GroupesMarchandises';
 import { useCommandeDetail } from '../../hooks/useCommandeDetail';
@@ -554,16 +557,30 @@ Affaire: ${commande.affaire || 'N/A'}
                   >
                     Commande
                   </button>
-                  <button
-                    onClick={() => contextSetActiveTabCommande('decompte')}
-                    className={`px-3 py-1 text-xs rounded ${
-                      contextActiveTabCommande === 'decompte'
-                        ? 'bg-accent text-white'
-                        : 'border border-accent text-accent hover:bg-accent-soft'
-                    }`}
-                  >
-                    Décompte
-                  </button>
+                  {(() => {
+                    const bothSigned = commandeDetail.commande.signatureRTE && commandeDetail.commande.signatureTitulaire;
+                    return (
+                      <div className="relative group">
+                        <button
+                          onClick={() => bothSigned && contextSetActiveTabCommande('decompte')}
+                          className={`px-3 py-1 text-xs rounded transition-colors ${
+                            !bothSigned
+                              ? 'border border-gray-400 text-gray-400 cursor-not-allowed opacity-50'
+                              : contextActiveTabCommande === 'decompte'
+                                ? 'bg-accent text-white'
+                                : 'border border-accent text-accent hover:bg-accent-soft'
+                          }`}
+                        >
+                          Décompte
+                        </button>
+                        {!bothSigned && (
+                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover:block z-50 w-52 bg-gray-800 text-white text-[10px] rounded px-2 py-1.5 text-center shadow-lg pointer-events-none">
+                            Requiert la signature RTE et du titulaire
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
             </div>
@@ -752,11 +769,14 @@ Affaire: ${commande.affaire || 'N/A'}
                         className="w-full px-2 py-1 text-sm bg-input border border-std rounded"
                       >
                         <option value="">-- Sélectionner --</option>
-                        {(internalContacts || []).map(contact => (
-                          <option key={contact.id} value={contact.name || contact.title}>
-                            {contact.name || contact.title}
-                          </option>
-                        ))}
+                        {(internalContacts || []).map(contact => {
+                          const displayName = formatUserName(contact.name || contact.title);
+                          return (
+                            <option key={contact.id} value={displayName}>
+                              {displayName}
+                            </option>
+                          );
+                        })}
                       </select>
                     </div>
                     <div>
@@ -770,6 +790,65 @@ Affaire: ${commande.affaire || 'N/A'}
                         className="w-full px-2 py-1 text-sm bg-input border border-std rounded"
                       />
                     </div>
+
+                    {/* Signatures */}
+                    <div className="col-span-2">
+                      <label className="block text-xs text-secondary mb-2 font-medium">Signatures</label>
+                      <div className="grid grid-cols-2 gap-3">
+                        {/* Signature RTE */}
+                        <div className={`p-3 rounded-lg border-2 transition-colors ${commandeDetail.commande.signatureRTE ? 'border-green-500 bg-green-500/10' : 'border-std bg-card'}`}>
+                          <div className="flex items-center gap-2 mb-2">
+                            <input
+                              type="checkbox"
+                              id="signatureRTE"
+                              checked={commandeDetail.commande.signatureRTE}
+                              onChange={e => handleUpdateCommande('signatureRTE', e.target.checked)}
+                              className="w-4 h-4 accent-green-500"
+                            />
+                            <label htmlFor="signatureRTE" className="text-sm font-medium text-primary cursor-pointer flex items-center gap-1">
+                              {commandeDetail.commande.signatureRTE
+                                ? <CheckCircle2 size={14} className="text-green-500" />
+                                : <Clock size={14} className="text-[var(--txt-muted)]" />}
+                              Signé par RTE
+                            </label>
+                          </div>
+                          <input
+                            type="date"
+                            value={commandeDetail.commande.dateSignatureRTE}
+                            onChange={e => handleUpdateCommande('dateSignatureRTE', e.target.value)}
+                            disabled={!commandeDetail.commande.signatureRTE}
+                            className="w-full px-2 py-1 text-xs bg-input border border-std rounded disabled:opacity-40"
+                          />
+                        </div>
+
+                        {/* Signature Titulaire */}
+                        <div className={`p-3 rounded-lg border-2 transition-colors ${commandeDetail.commande.signatureTitulaire ? 'border-green-500 bg-green-500/10' : 'border-std bg-card'}`}>
+                          <div className="flex items-center gap-2 mb-2">
+                            <input
+                              type="checkbox"
+                              id="signatureTitulaire"
+                              checked={commandeDetail.commande.signatureTitulaire}
+                              onChange={e => handleUpdateCommande('signatureTitulaire', e.target.checked)}
+                              className="w-4 h-4 accent-green-500"
+                            />
+                            <label htmlFor="signatureTitulaire" className="text-sm font-medium text-primary cursor-pointer flex items-center gap-1">
+                              {commandeDetail.commande.signatureTitulaire
+                                ? <CheckCircle2 size={14} className="text-green-500" />
+                                : <Clock size={14} className="text-[var(--txt-muted)]" />}
+                              Signé par le titulaire
+                            </label>
+                          </div>
+                          <input
+                            type="date"
+                            value={commandeDetail.commande.dateSignatureTitulaire}
+                            onChange={e => handleUpdateCommande('dateSignatureTitulaire', e.target.value)}
+                            disabled={!commandeDetail.commande.signatureTitulaire}
+                            className="w-full px-2 py-1 text-xs bg-input border border-std rounded disabled:opacity-40"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
                     <div className="relative">
                       <label className="block text-xs text-secondary mb-1">
                         Marché cadre N°

@@ -7,6 +7,10 @@ export function useUserSettings() {
     () => localStorage.getItem('c-projets-user-role') || 'user'
   );
 
+  const [showTagOnCard, setShowTagOnCardState] = useState(
+    () => localStorage.getItem('c-projets-show-tag-on-card') !== 'false'
+  );
+
   const updateUsername = useCallback(name => {
     setUsername(name);
     localStorage.setItem('c-projets-username', name);
@@ -17,11 +21,18 @@ export function useUserSettings() {
     localStorage.setItem('c-projets-user-role', role);
   }, []);
 
+  const setShowTagOnCard = useCallback(val => {
+    setShowTagOnCardState(val);
+    localStorage.setItem('c-projets-show-tag-on-card', val);
+  }, []);
+
   return {
     username,
     setUsername: updateUsername,
     userRole,
     setUserRole: updateUserRole,
+    showTagOnCard,
+    setShowTagOnCard,
   };
 }
 

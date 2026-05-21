@@ -12,6 +12,7 @@ import {
   Plus,
   Mail,
 } from 'lucide-react';
+import { formatUserName } from '../../utils/nameUtils';
 
 function Category({ category, isDragging = false, dragHandleProps, depth = 0, cardId }) {
   const {
@@ -265,7 +266,7 @@ function Category({ category, isDragging = false, dragHandleProps, depth = 0, ca
 
               {category.assignee && (
                 <span className="badge badge-category">
-                  {category.assignee}
+                  {formatUserName(category.assignee)}
                   {hasEmails && <Mail size={12} className="ml-1" />}
                 </span>
               )}

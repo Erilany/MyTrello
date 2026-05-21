@@ -3,7 +3,8 @@ import { useApp } from '../../context/AppContext';
 import { Plus, Trash2, X, Mail } from 'lucide-react';
 import { getOrderedChapters } from '../../data/ChaptersData';
 import { normalizeChapter, isSpacer } from './boardUtils';
-import { getSubcategoryTagFromLibrary } from '../Settings/favoritesUtils';
+import { getSubcategorySystemTag } from '../Settings/favoritesUtils';
+import { formatUserName } from '../../utils/nameUtils';
 
 export default function BoardTachesTab({
   selectedChapter,
@@ -30,6 +31,7 @@ export default function BoardTachesTab({
     deleteCard,
     deleteSubcategory,
     getEmailsForSubcategory,
+    showTagOnCard,
   } = useApp();
 
   return (
@@ -178,21 +180,19 @@ export default function BoardTachesTab({
                                           {sub.title}
                                         </div>
                                         <div className="flex items-center gap-[10px] text-xs text-[var(--txt-muted)]">
-                                          {(() => {
-                                            const libraryTag = getSubcategoryTagFromLibrary(
-                                              sub.library_item_id,
-                                              libraryItems
-                                            );
+                                          {showTagOnCard && (() => {
+                                            const libraryTag = getSubcategorySystemTag(sub, libraryItems);
+                                            const displayTag = libraryTag || sub.tag;
                                             return (
-                                              (libraryTag || sub.tag) && (
+                                              displayTag && (
                                                 <span className="flex items-center gap-1 px-1.5 py-0.5 bg-purple-100 text-purple-700 rounded text-xs">
-                                                  {libraryTag || sub.tag}
+                                                  {displayTag}
                                                 </span>
                                               )
                                             );
                                           })()}
                                           {sub.assignee && (
-                                            <span className="truncate">👤 {sub.assignee}</span>
+                                            <span className="truncate">👤 {formatUserName(sub.assignee)}</span>
                                           )}
                                           {sub.due_date && (
                                             <span className="whitespace-nowrap">
@@ -318,7 +318,7 @@ export default function BoardTachesTab({
                                                   <div className="flex items-center gap-[10px] text-xs text-[var(--txt-muted)]">
                                                     {sub.assignee && (
                                                       <span className="truncate">
-                                                        👤 {sub.assignee}
+                                                        👤 {formatUserName(sub.assignee)}
                                                       </span>
                                                     )}
                                                     {sub.due_date && (
@@ -446,22 +446,20 @@ export default function BoardTachesTab({
                               </button>
                             </div>
                             <div className="flex items-center gap-[10px] mt-1 text-xs text-muted pl-7">
-                              {(() => {
-                                const libraryTag = getSubcategoryTagFromLibrary(
-                                  subcat.library_item_id,
-                                  libraryItems
-                                );
+                              {showTagOnCard && (() => {
+                                const libraryTag = getSubcategorySystemTag(subcat, libraryItems);
+                                const displayTag = libraryTag || subcat.tag;
                                 return (
-                                  (libraryTag || subcat.tag) && (
+                                  displayTag && (
                                     <span className="flex items-center gap-1 px-1.5 py-0.5 bg-purple-100 text-purple-700 rounded text-xs">
-                                      {libraryTag || subcat.tag}
+                                      {displayTag}
                                     </span>
                                   )
                                 );
                               })()}
                               {subcat.assignee && (
                                 <span className="flex items-center gap-[10px]">
-                                  👤 {subcat.assignee}
+                                  👤 {formatUserName(subcat.assignee)}
                                 </span>
                               )}
                               {subcat.due_date && (

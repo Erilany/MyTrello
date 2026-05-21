@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { formatUserName as formatUserNameUtil } from '../utils/nameUtils';
 
 const USERS_STORAGE_KEY = 'c-projets-users';
 
@@ -8,17 +9,7 @@ export function useUserManagement(db, getInternalContacts) {
     return saved ? JSON.parse(saved) : [];
   });
 
-  const formatUserName = useCallback(name => {
-    if (!name) return '';
-    const parts = name.trim().split(/\s+/);
-    if (parts.length === 1) return parts[0].toUpperCase();
-    const lastName = parts[parts.length - 1].toUpperCase();
-    const firstName = parts
-      .slice(0, -1)
-      .map(p => p.charAt(0).toUpperCase() + p.slice(1).toLowerCase())
-      .join(' ');
-    return `${lastName} ${firstName}`;
-  }, []);
+  const formatUserName = useCallback(name => formatUserNameUtil(name), []);
 
   const addNewUser = useCallback(
     name => {

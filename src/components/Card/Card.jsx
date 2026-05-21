@@ -12,6 +12,7 @@ import {
   BookMarked,
   Mail,
 } from 'lucide-react';
+import { formatUserName } from '../../utils/nameUtils';
 
 function Card({ card, isDragging, columnColor, columnTitle }) {
   const {
@@ -228,7 +229,7 @@ function Card({ card, isDragging, columnColor, columnTitle }) {
                   <span className="badge badge-category">📁 {cardCategories.length}</span>
                 )}
 
-                {card.assignee && <span className="badge badge-category">{card.assignee}</span>}
+                {card.assignee && <span className="badge badge-category">{formatUserName(card.assignee)}</span>}
 
                 {hasEmails && (
                   <span className="badge bg-blue-500/20 text-blue-400 flex items-center gap-1">

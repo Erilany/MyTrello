@@ -250,10 +250,9 @@ export function useLibraryUseForm() {
                           errors.push(`Sous-catégorie "${subcat.title}": existe déjà dans la catégorie "${cat.title}"`);
                         } else {
                           const subcatDuration = subcat.duration_days ?? 1;
-                          const parentCardTitle = card.tags || '';
-                          const librarySubcat = libraryItems.find(item => item.type === 'subcategory' && item.title === subcat.title && item.tags === parentCardTitle);
-                          const systemTag = librarySubcat?.systemTag || librarySubcat?.tag || getSystemTagBySubcatTitle(subcat.title);
-                          await createSubcategory(categoryId, subcat.title, subcat.description || '', subcat.priority || 'normal', subcat.due_date || null, subcat.assignee || '', null, subcatDuration, systemTag, librarySubcat?.id);
+                          const subcatTreeNodeId = findTreeNodeId(cardTitle, cat.title, subcat.title);
+                          const systemTag = getSystemTagFromTree(subcatTreeNodeId) || getSystemTagBySubcatTitle(subcat.title);
+                          await createSubcategory(categoryId, subcat.title, subcat.description || '', subcat.priority || 'normal', subcat.due_date || null, subcat.assignee || '', null, subcatDuration, systemTag, subcatTreeNodeId);
                           subcategoriesAdded++;
                         }
                       } catch (subcatErr) {
@@ -278,10 +277,9 @@ export function useLibraryUseForm() {
                           errors.push(`Sous-catégorie "${subcat.title}": existe déjà dans la catégorie "${cat.title}"`);
                         } else {
                           const subcatDuration = subcat.duration_days ?? 1;
-                          const parentCardTitle = card.tags || '';
-                          const librarySubcat = libraryItems.find(item => item.type === 'subcategory' && item.title === subcat.title && item.tags === parentCardTitle);
-                          const systemTag = librarySubcat?.systemTag || librarySubcat?.tag || getSystemTagBySubcatTitle(subcat.title);
-                          await createSubcategory(categoryId, subcat.title, subcat.description || '', subcat.priority || 'normal', subcat.due_date || null, subcat.assignee || '', null, subcatDuration, systemTag, librarySubcat?.id);
+                          const subcatTreeNodeId = findTreeNodeId(cardTitle, cat.title, subcat.title);
+                          const systemTag = getSystemTagFromTree(subcatTreeNodeId) || getSystemTagBySubcatTitle(subcat.title);
+                          await createSubcategory(categoryId, subcat.title, subcat.description || '', subcat.priority || 'normal', subcat.due_date || null, subcat.assignee || '', null, subcatDuration, systemTag, subcatTreeNodeId);
                           subcategoriesAdded++;
                         }
                       } catch (subcatErr) {

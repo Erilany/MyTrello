@@ -19,6 +19,10 @@ const INITIAL_COMMANDE_DETAIL = {
     dateCommande: '',
     redacteur: '',
     signataireFinal: '',
+    signatureRTE: false,
+    dateSignatureRTE: '',
+    signatureTitulaire: false,
+    dateSignatureTitulaire: '',
     marcheCadre: '',
     affaire: '',
     informations: '',
@@ -47,6 +51,13 @@ export function useCommandeDetail() {
     if (cmd.detail) {
       setCommandeDetail({
         ...cmd.detail,
+        commande: {
+          ...cmd.detail.commande,
+          signatureRTE: cmd.detail.commande?.signatureRTE || false,
+          dateSignatureRTE: cmd.detail.commande?.dateSignatureRTE || '',
+          signatureTitulaire: cmd.detail.commande?.signatureTitulaire || false,
+          dateSignatureTitulaire: cmd.detail.commande?.dateSignatureTitulaire || '',
+        },
         otpIdentiqueChecked: cmd.detail.otpIdentiqueChecked || false,
         dateReceptionUniqueChecked: cmd.detail.dateReceptionUniqueChecked || false,
       });
